@@ -26,6 +26,9 @@ export type Kept = Pick<Check, 'issuer' | 'buys' | 'note' | 'tickets'>
 
 export const keptOf = ({ issuer, buys, note, tickets }: Check): Kept => ({ issuer, buys, note, tickets })
 
+/** Whether the issuer gave this note number its gift before, for other buys: a setup done again, its first buys lost. No credits come. */
+export const giftGiven = ({ tickets }: Check): boolean => (tickets as { error?: string } | undefined)?.error === 'given'
+
 /** One buy at each service the gift names, for exactly the credits a ticket there gives. */
 export async function giftBuys(issuer: Issuer): Promise<GiftBuy[]> {
   return Promise.all(

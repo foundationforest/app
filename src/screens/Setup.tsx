@@ -2,25 +2,29 @@
 // the device keeping only the seed's fingerprint; and the face check, each of its stages kept on the
 // device as it is got, sealed under a key mixed from the seed, finished in a tab of its own. The
 // seed the passkey gave is held from the first step to the check, so the check's tab opens on the
-// tap; a face check that stopped is taken up again after one face, until the vault is written. A
-// face the issuer has from another setup sends the person back to Start, to sign in with that one.
+// tap; a face check that stopped is taken up again after one face, until the vault is written. The
+// passkey may also come from Sign in, one whose setup stopped before its vault. A face the issuer
+// has from another setup sends the person back to Start, to sign in with that one, and the passkey
+// this setup made, which can never get a note, is offered to the manager to drop. A note number
+// whose gift was given before gets no credits: setup ends anyway if the vault's folder can pay for
+// the vault, and says so; if it cannot, setup waits, nothing lost, and says so too.
 
 import { useEffect, useRef, useState } from 'react'
 
 import type { Check, Kept } from '../flows/setup.ts'
 import { saveProfiles } from '../local.ts'
-import { NoPrf } from '../seed/passkey.ts'
-import { beginSetup, endSetup, keepSetup, readSetup, withSeed } from '../seed/seed.ts'
+import { NoPrf, type Passkey, dropPasskey } from '../seed/passkey.ts'
+import { beginSetup, endSetup, keepSetup, readSetup, setupMadePasskey, withSeed } from '../seed/seed.ts'
 import { ServiceError } from '../services/http.ts'
 import { settings } from '../settings.ts'
-import { profilesOf } from '../vault.ts'
-import { DUPLICATE_FACE, Progress, ScanFaceIcon, Spinner, useAction } from '../ui.tsx'
+import { NoVaultWrites, profilesOf } from '../vault.ts'
+import { DUPLICATE_FACE, GIFT_GIVEN, Progress, ScanFaceIcon, Spinner, useAction } from '../ui.tsx'
 
 type Props = {
   step: 1 | 2
-  draft: Uint8Array | null
-  /** The passkey is made: its seed, for the check. */
-  onOpened: (seed: Uint8Array) => void
+  draft: Passkey | null
+  /** The passkey is made: it and its seed, for the check. */
+  onOpened: (passkey: Passkey) => void
   /** Back to Start, which says why: no PRF from the passkey, or a face with a setup already. */
   onStopped: (why: string) => void
   onDone: () => void
@@ -60,13 +64,15 @@ function Face({ draft, onStopped, onDone }: Pick<Props, 'draft' | 'onStopped' | 
   useEffect(() => () => running.current?.abort(), [])
   // The check's tab is open, and the note not yet here.
   const [away, setAway] = useState(false)
+  // Setup ended with no credits: the gift was given before. Continue goes on to the board.
+  const [given, setGiven] = useState(false)
 
   /** The check from where it stopped, with the seed; `page` is the check's tab when a note is still needed. */
   const run = async (seed: Uint8Array, page: Window | null) => {
     running.current = new AbortController()
     let opened = false
     // Setup's own flow: loaded when first needed, not with the first screen.
-    const { faceCheck } = await import('../flows/setup.ts')
+    const { faceCheck, giftGiven } = await import('../flows/setup.ts')
     try {
       const vault = await faceCheck(
         seed,
@@ -95,7 +101,8 @@ function Face({ draft, onStopped, onDone }: Pick<Props, 'draft' | 'onStopped' | 
       setAway(false)
     }
     endSetup()
-    onDone()
+    if (giftGiven(check.current)) setGiven(true)
+    else onDone()
   }
 
   /** The check's tab, opened while the tap counts, so the seed stays here; Didit sends the person back to /back there. */
@@ -107,17 +114,25 @@ function Face({ draft, onStopped, onDone }: Pick<Props, 'draft' | 'onStopped' | 
   }
 
   const start = useAction(async () => {
+    let passkey = draft?.id
     try {
       // Setup's own seed, in memory since the passkey gave it.
-      if (draft) return await run(draft, tab())
+      if (draft) return await run(draft.seed, tab())
       // Taken up again: the seed and what the device kept, after one face.
-      await withSeed(async (seed) => {
+      await withSeed(async (seed, id) => {
+        passkey = id
         if (!check.current.issuer) Object.assign(check.current, (await readSetup<Kept>(seed)) ?? {})
         await run(seed, tab())
       })
     } catch (err) {
       // This passkey can never get a note: the setup is given up, and the person signs in with theirs.
-      if (err instanceof ServiceError && err.code === 'duplicate_face') return onStopped(DUPLICATE_FACE)
+      // Only a passkey this setup made is dropped: one from Sign in may hold another setup's note.
+      if (err instanceof ServiceError && err.code === 'duplicate_face') {
+        if (passkey && setupMadePasskey()) await dropPasskey(passkey)
+        return onStopped(DUPLICATE_FACE)
+      }
+      // No credits, and the vault's folder cannot pay for the vault: setup waits, and Start tries again.
+      if (err instanceof NoVaultWrites && (await import('../flows/setup.ts')).giftGiven(check.current)) throw new Error(GIFT_GIVEN)
       throw err
     }
   })
@@ -131,9 +146,9 @@ function Face({ draft, onStopped, onDone }: Pick<Props, 'draft' | 'onStopped' | 
         <ScanFaceIcon />
       </div>
       {start.busy && away && <p className="center">Finish it in the other tab.</p>}
-      {start.error && <p className="error">{start.error}</p>}
-      <button className="primary" onClick={() => start.run()} disabled={start.busy}>
-        {start.busy ? <Spinner /> : 'Start'}
+      {given ? <p className="center">{GIFT_GIVEN}</p> : start.error && <p className="error">{start.error}</p>}
+      <button className="primary" onClick={() => (given ? onDone() : start.run())} disabled={start.busy}>
+        {start.busy ? <Spinner /> : given ? 'Continue' : 'Start'}
       </button>
     </main>
   )

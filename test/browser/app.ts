@@ -2,12 +2,12 @@
 // that has PRF, against one of each stand-in on loopback (test/stand-ins.ts, `world`): the app's own
 // build, its settings pointed at the stand-ins, served as Vercel serves it, under vercel.json's CSP
 // (its connect-src naming the stand-ins in place of devnet's services), at app.forest.foundation,
-// mapped to loopback and taken as a secure origin, so its passkeys are made for forest.foundation.
+// mapped to loopback and taken as a secure origin, so its passkeys are made for that address.
 //
 //   npm run test:browser
 //
 // 0. The CSP: on every response; an inline script, an inline handler and another origin refused.
-// 1. Setup: Open with your face, the passkey made for forest.foundation, its PRF secret the seed,
+// 1. Setup: Open with your face, the passkey made for app.forest.foundation, its PRF secret the seed,
 //    nothing of it kept but its fingerprint; the face check in a tab of its own (the stand-in's
 //    Didit page sends it back to /back), the screen saying so meanwhile; the gift collected; the
 //    vault's first write refused, so setup stops there; after a reload, taken up again with one
@@ -30,10 +30,14 @@
 //    key removed.
 // 9. A profile hidden from the board, held down or from its page's menu, and shown again from the
 //    menu.
-// 10. The menu: forgetting the device; then, on another subdomain (storage of its own, the same tab
-//     and so the same passkey), Sign in: one face, everything back, and an action after it.
-// 11. A passkey with no setup: "No setup found for this passkey". A device whose passkeys give no
-//     PRF, and a browser that cannot ask for it: Start says so, and nothing is kept.
+// 10. The menu: forgetting the device; another subdomain refused the app's passkeys; then, every
+//     bit of the app's storage cleared as on a new device, the same passkey (the same tab), Sign
+//     in: one face, everything back, and an action after it.
+// 11. A setup that stopped after its note, on a device since lost: Sign in goes on to its face
+//     check; the gift given before, so no credits, and setup waits, saying so; once the vault's
+//     folder can pay, it finishes, saying so. A face the issuer has from another setup: the passkey
+//     this setup made dropped, and Start says to sign in. A device whose passkeys give no PRF, and a
+//     browser that cannot ask for it: Start says so, and nothing is kept.
 // 12. Nothing the app did, through all of it, was refused by the CSP.
 //
 // SHOTS=<dir> keeps a screenshot of each screen there, in light and dark.
@@ -130,11 +134,11 @@ async function phone({ prf = true, browserPrf = true } = {}) {
   return { context, page, counts, cdp: { session: cdp, authenticatorId } }
 }
 
-/** The seed as the app is to derive it, asked by the test itself: the PRF secret for "forest-seed-v1", relying party forest.foundation. One assertion. */
+/** The seed as the app is to derive it, asked by the test itself: the PRF secret for "forest-seed-v1", relying party app.forest.foundation. One assertion. */
 async function seedOn(page: Page): Promise<Uint8Array> {
   const bytes = await page.evaluate(async () => {
     const got = (await navigator.credentials.get({
-      publicKey: { rpId: 'forest.foundation', challenge: crypto.getRandomValues(new Uint8Array(32)), userVerification: 'required', extensions: { prf: { eval: { first: new TextEncoder().encode('forest-seed-v1') } } } },
+      publicKey: { rpId: 'app.forest.foundation', challenge: crypto.getRandomValues(new Uint8Array(32)), userVerification: 'required', extensions: { prf: { eval: { first: new TextEncoder().encode('forest-seed-v1') } } } },
     })) as PublicKeyCredential
     return Array.from(new Uint8Array(got.getClientExtensionResults().prf!.results!.first as ArrayBuffer))
   })
@@ -220,7 +224,7 @@ test("setup: Open with your face, the passkey's PRF secret the seed, nothing of 
   assert.equal(counts.created, 1, 'one passkey made')
   assert.equal(counts.asserted, 0, 'its PRF secret given as it was made, so no get followed (a Safari passkey would need one)')
   const { credentials } = (await cdp.session.send('WebAuthn.getCredentials', { authenticatorId: cdp.authenticatorId })) as { credentials: { rpId?: string; isResidentCredential: boolean; userName?: string }[] }
-  assert.deepEqual(credentials.map((c) => [c.rpId, c.isResidentCredential, c.userName]), [['forest.foundation', true, 'Forest']], 'made for forest.foundation, resident, named Forest')
+  assert.deepEqual(credentials.map((c) => [c.rpId, c.isResidentCredential, c.userName]), [['app.forest.foundation', true, 'Forest']], 'made for app.forest.foundation, resident, named Forest')
 
   seed = await seedOn(page)
   const device = await kept(page)
@@ -266,7 +270,7 @@ test("setup: Open with your face, the passkey's PRF secret the seed, nothing of 
   assert.deepEqual(vault.settings, { forestApp: { ...w.settings, credits: creditsOf(vault) } })
   assert.equal('credits' in vault, false)
   assert.equal(creditsOf(vault).length, 4, 'the gift: 2 registrations and 3 host credits, one spent into the vault folder')
-  say("setup: one passkey for forest.foundation, its PRF secret given as it was made; the device keeps the fingerprint and nothing of the seed; stopped at the vault, taken up again after a reload with one face; vault on the host with the note, and 4 credits with the settings in the app's field")
+  say("setup: one passkey for app.forest.foundation, its PRF secret given as it was made; the device keeps the fingerprint and nothing of the seed; stopped at the vault, taken up again after a reload with one face; vault on the host with the note, and 4 credits with the settings in the app's field")
 })
 
 test('a new profile, made with one face', async () => {
@@ -648,7 +652,7 @@ test('a profile hidden from the board, held down or from its page, and shown aga
   say('hide: a profile held down on the board, or from its page, hidden; the menu shows it again; nothing deleted')
 })
 
-test('the menu: forget this device; then Sign in on another subdomain, with the same passkey: everything back', async () => {
+test('the menu: forget this device; then Sign in with the same passkey on a cleared device: everything back; another subdomain refused', async () => {
   await page.getByRole('button', { name: 'Menu' }).click()
   await page.getByRole('radio', { name: 'Dark' }).click()
   assert.equal(await page.evaluate(() => document.documentElement.dataset.theme), 'dark')
@@ -665,11 +669,19 @@ test('the menu: forget this device; then Sign in on another subdomain, with the 
   const { credentials } = (await cdp.session.send('WebAuthn.getCredentials', { authenticatorId: cdp.authenticatorId })) as { credentials: unknown[] }
   assert.equal(credentials.length, 1, 'the passkey kept')
 
-  // Another subdomain: storage of its own, empty but for the settings the test puts on every page.
-  // The same tab, so the same virtual passkey: Chrome's DevTools cannot hand a passkey's PRF secret to
-  // another browser context, so this is how the test reaches it from a fresh one.
-  await page.goto(OTHER)
-  assert.deepEqual(Object.keys((await kept(page)).local), ['forest.settings'])
+  // Back on the app, every bit of its storage cleared, as a new device has it: its service worker,
+  // its caches, its local and session storage. The same tab, so the same virtual passkey: Chrome's
+  // DevTools cannot hand a passkey's PRF secret to another browser context.
+  await page.evaluate(async () => {
+    for (const registration of await navigator.serviceWorker.getRegistrations()) await registration.unregister()
+    for (const name of await caches.keys()) await caches.delete(name)
+    localStorage.clear()
+    sessionStorage.clear()
+  })
+  await page.reload()
+  await page.getByRole('button', { name: 'Sign in' }).waitFor()
+  assert.equal(await page.evaluate(() => navigator.serviceWorker.controller), null, 'no service worker from before')
+  assert.deepEqual(await kept(page), { local: { 'forest.settings': JSON.stringify(w.settings) }, databases: [] }, 'nothing but the settings the test puts on every page')
   const made = counts.created
   let faces = counts.asserted
   await page.getByRole('button', { name: 'Sign in' }).click()
@@ -688,24 +700,92 @@ test('the menu: forget this device; then Sign in on another subdomain, with the 
   await page.getByRole('button', { name: 'Inbox' }).click()
   await page.locator('button.thread', { hasText: 'Tutoring student' }).waitFor()
   assert.equal(counts.asserted - faces, 1)
-  say(`forget, then Sign in on ${new URL(OTHER).host} with the same passkey (rp id forest.foundation): one face, the board back from the vault, the fingerprint kept; the inbox opened there with one face`)
+
+  // Another subdomain cannot ask for the app's passkeys.
+  await page.goto(OTHER)
+  const there = await page.evaluate(async () => {
+    try {
+      await navigator.credentials.get({ publicKey: { rpId: 'app.forest.foundation', challenge: new Uint8Array(32), userVerification: 'required' } })
+      return 'given'
+    } catch (err) {
+      return (err as Error).name
+    }
+  })
+  assert.equal(there, 'SecurityError', `${new URL(OTHER).host} may not ask for app.forest.foundation's passkeys`)
+
+  say(`forget; the app's storage cleared, then Sign in with the same passkey: one face, the board back from the vault, the fingerprint kept; the inbox opened with one face; ${new URL(OTHER).host} refused app.forest.foundation's passkeys (SecurityError)`)
 })
 
-test('a passkey with no setup: "No setup found for this passkey", and Start again', async () => {
+test('a setup that stopped after its note, on a device since lost: Sign in goes on to its face check; no credits, then finished', async () => {
   const third = await phone()
-  await third.page.goto(APP)
-  await third.page.getByRole('button', { name: 'Start', exact: true }).click()
-  await third.page.getByRole('button', { name: 'Open with your face' }).click()
-  await third.page.getByRole('heading', { name: 'One face check' }).waitFor()
-  // Forgotten before its face check: a passkey made, and no vault for it anywhere.
-  await third.page.evaluate(() => localStorage.clear())
-  await third.page.reload()
-  await third.page.getByRole('button', { name: 'Sign in' }).click()
-  await third.page.getByText('No setup found for this passkey.').waitFor()
-  assert.equal(await third.page.getByRole('button', { name: 'Start', exact: true }).isEnabled(), true)
-  assert.deepEqual(Object.keys((await kept(third.page)).local), ['forest.settings'], 'no fingerprint kept')
+  const p = third.page
+  const gift = 'Your welcome credits were already given once; write to us to get more.'
+  await p.goto(APP)
+  await p.getByRole('button', { name: 'Start', exact: true }).click()
+  await p.getByRole('button', { name: 'Open with your face' }).click()
+  await p.getByRole('heading', { name: 'One face check' }).waitFor()
+  // Stopped at the vault, after the note and the gift's tickets.
+  const stop = w.host.refuse(1)
+  let tab = third.context.waitForEvent('page')
+  await p.getByRole('button', { name: 'Start', exact: true }).click()
+  await tab
+  await p.locator('.error').waitFor({ timeout: 60_000 })
+  stop()
+
+  // Another device: nothing of this one kept. Sign in finds no vault for the passkey, every host answering, and goes on to its face check.
+  await p.evaluate(() => localStorage.clear())
+  await p.reload()
+  const made = third.counts.created
+  await p.getByRole('button', { name: 'Sign in' }).click()
+  await p.getByRole('heading', { name: 'One face check' }).waitFor()
+  assert.equal(third.counts.created - made, 0, 'the passkey signed in with, no new one')
+  const folder: string = JSON.parse((await p.evaluate(() => localStorage.getItem('forest.fingerprint')))!)
+
+  // The check again: new buys, so the issuer says the gift was given; no credits, and the vault's folder holds none.
+  tab = third.context.waitForEvent('page')
+  await p.getByRole('button', { name: 'Start', exact: true }).click()
+  await tab
+  await p.getByText(gift).waitFor({ timeout: 60_000 })
+  assert.equal('forest.setup' in (await kept(p)).local, true, 'setup waits, nothing lost')
+  if (shots) await p.screenshot({ path: `${shots}/27-gift-given-waiting-light.png` })
+
+  // A credit put into the vault's folder, its address the fingerprint: Start again finishes setup, with no new check.
+  w.host.balances.set(folder, 1)
+  const sessions = w.issuer.sessions.size
+  await p.getByRole('button', { name: 'Start', exact: true }).click()
+  await p.getByRole('button', { name: 'Continue' }).waitFor({ timeout: 60_000 })
+  await p.getByText(gift).waitFor()
+  assert.equal(w.issuer.sessions.size, sessions, 'the note kept, no check again')
+  if (shots) await p.screenshot({ path: `${shots}/28-gift-given-done-light.png` })
+  await p.getByRole('button', { name: 'Continue' }).click()
+  await p.getByRole('button', { name: 'New profile' }).waitFor()
+  const vault = (await openVault([w.settings.host], await vaultKeys(await seedOn(p))))!.vault
+  assert.equal(vault.issuerNotes?.length, 1)
+  assert.deepEqual(creditsOf(vault), [], 'no credits')
   await third.context.close()
-  say('a passkey with no vault: "No setup found for this passkey.", on Start, nothing kept')
+  say(`a setup stopped after its note, its device lost: Sign in went on to its face check with the same passkey; the gift given, so no credits, setup waiting with "${gift}"; finished once the vault's folder held a credit, the vault written with the note and no credits`)
+})
+
+test('a face the issuer has from another setup: the passkey made dropped, and Start says to sign in', async () => {
+  const fourth = await phone()
+  const p = fourth.page
+  await p.goto(APP)
+  await p.getByRole('button', { name: 'Start', exact: true }).click()
+  await p.getByRole('button', { name: 'Open with your face' }).click()
+  await p.getByRole('heading', { name: 'One face check' }).waitFor()
+  w.issuer.faceSeen(true)
+  const tab = fourth.context.waitForEvent('page')
+  await p.getByRole('button', { name: 'Start', exact: true }).click()
+  await tab
+  await p.getByText('This face already has a setup. Sign in with that passkey.').waitFor({ timeout: 60_000 })
+  w.issuer.faceSeen(false)
+  assert.equal(await p.getByRole('button', { name: 'Sign in' }).count(), 1, 'on Start, with Sign in')
+  assert.deepEqual(Object.keys((await kept(p)).local), ['forest.settings'], 'the setup and its fingerprint gone')
+  const left = ((await fourth.cdp.session.send('WebAuthn.getCredentials', { authenticatorId: fourth.cdp.authenticatorId })) as { credentials: unknown[] }).credentials.length
+  assert.equal(left, 0, 'the passkey this setup made, dropped')
+  if (shots) await p.screenshot({ path: `${shots}/29-duplicate-face-light.png` })
+  await fourth.context.close()
+  say('a face the issuer has from another setup: "This face already has a setup. Sign in with that passkey." on Start, the setup gone, and the passkey it made dropped from the authenticator')
 })
 
 test('no PRF: Start says so, and nothing is kept', async () => {

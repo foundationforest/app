@@ -24,8 +24,13 @@ In the order a person meets it.
    (AES-GCM) under a key mixed from the seed, until the vault is written, so a setup that stops,
    even with the page closed, is taken up again after one face. The seed the passkey gave at the
    first step is held for this step, so the check's tab opens on the tap. A face the issuer has
-   from another setup ends this one: "This face already has a setup. Sign in with that passkey."
-   (`src/flows/setup.ts`, `src/screens/Setup.tsx`).
+   from another setup ends this one: the passkey it made, which can never get a note, is offered to
+   the person's passkey manager to drop, and Start says "This face already has a setup. Sign in
+   with that passkey." A note number whose gift was given before (a setup done again, its first
+   buys lost) gets no credits: setup says "Your welcome credits were already given once; write to
+   us to get more." It finishes if the vault's own folder can pay for the vault, which costs a
+   write like any record; if the folder holds nothing, setup waits, nothing lost, and Start tries
+   again (`src/flows/setup.ts`, `src/screens/Setup.tsx`).
 4. **The board.** The person's profiles: sellers first, with their offers and scores; buyers after,
    compact. A badge counts the messages each inbox holds, grants left out, counted at every face by
    pulls signed with the same seed (`src/face.ts`, `src/inbox.ts`), and the reviews about it not
@@ -84,13 +89,17 @@ In the order a person meets it.
     password manager.
 12. **Sign in.** One face: the passkey's seed reads the vault from the host, the board is kept on
     the device, and so is the fingerprint. When every host answered and none holds a vault for this
-    passkey: "No setup found for this passkey", and Start again (`src/flows/signin.ts`).
+    passkey, its setup stopped before the vault was written, on this device or another: the app goes
+    on to the face check with it, which gives the same note back to the same face
+    (`src/flows/signin.ts`, `src/seed/seed.ts`).
 
 ## Custody
 
 - **The passkey's secret is the seed.** The passkey is made for the relying party
-  `forest.foundation`, so the app finds it on every subdomain, now and at mainnet: user name
-  Forest, a resident key, the face or fingerprint required. Its PRF extension, with the fixed salt
+  `app.forest.foundation`, the app's own address, now and at mainnet (devnet is only the
+  services): no page on another subdomain can ask for it. User name Forest, a resident key, the
+  face or fingerprint required, and a user id of its own at random, so a second Start never
+  replaces a passkey the manager holds already. Its PRF extension, with the fixed salt
   `forest-seed-v1`, gives 32 bytes, the same each time for the same passkey, and those bytes are
   the seed as they are. Some passkey managers give them as the passkey is made; the others
   (Safari's) only when asked, so one more get follows at once (`src/seed/passkey.ts`).
@@ -109,8 +118,9 @@ In the order a person meets it.
   one manager to another: Apple's Passwords app from iOS, iPadOS and macOS 26, 1Password and
   Bitwarden among others. Its format has a field for the PRF secret (`hmacCredentials`); this app
   has not checked which managers fill it in. A passkey moved without it signs in but gives another
-  seed, or none, and the app says "No setup found for this passkey". Keep the old manager's copy
-  until Sign in works from the new one.
+  seed, or none: Sign in finds no vault for it and goes on to a face check, which the issuer
+  refuses as a face with a setup already. Keep the old manager's copy until Sign in works from the
+  new one.
 - **Which platforms give PRF,** from Corbado's tables of August 2026, not tested here: iCloud
   Keychain on iOS and iPadOS 18 or later (18.4 or later as the phone behind a QR code, after bugs
   there) and macOS 15 or later, in Safari, Chrome and Firefox;
@@ -190,9 +200,10 @@ npm run test:browser   # headless Chromium through Playwright, with a virtual pa
                        # offer, a second person through the message door, the inbox with a reply
                        # and a review, requests approved and declined, access keys made, pasted and
                        # acting, a write topped up from the vault, a profile hidden and shown again,
-                       # the menu, forgetting the device and signing in on another subdomain, a
-                       # passkey with no setup, and no PRF (SHOTS=<dir> keeps a screenshot of each
-                       # screen)
+                       # the menu, forgetting the device and signing in again on a cleared one,
+                       # another subdomain refused the passkeys, a stopped setup taken up through
+                       # Sign in with its gift given before, a face with a setup already, and no PRF
+                       # (SHOTS=<dir> keeps a screenshot of each screen)
 ```
 
 On Vercel, `vercel.json` runs `standard.sh` and the build, sends every path to the app, and sets the
@@ -206,16 +217,16 @@ CSP on every response.
   the passkey deleted, which no manager warns about, or moved without its PRF secret) and nothing
   brings back the profiles, the vault or its credits; nor can the same face set up again, since the
   issuer gives one face one note.
-- **Any page on forest.foundation can ask for the seed.** The passkey's relying party is
-  `forest.foundation` and its salt is public, so a page on any subdomain, the app's or another
-  service's, gets the same seed after the person's face or fingerprint. The seed is as safe as
-  every page served under forest.foundation, not this app's alone.
+- **Any page at app.forest.foundation can ask for the seed.** The passkey's relying party is
+  `app.forest.foundation` and its salt is public, so a page served there, or on a subdomain under
+  it, gets the same seed after the person's face or fingerprint. The seed is as safe as every page
+  served there: nothing but the app belongs under that name.
 - **Tested in Chromium only.** The browser test runs headless Chromium with a virtual passkey
   authenticator, which gives the PRF secret as the passkey is made: Safari's way, the secret only
   at the get that follows, is checked with a stand-in for the browser's passkey API (Vitest), not
   in Safari. Not tested: Safari, Firefox, a real passkey manager, the QR code to a phone, a passkey
   moved between managers, and a real Didit check (the test runs it against a stand-in page). The
-  test reaches a fresh context with the same passkey by moving the same tab to another subdomain,
+  test reaches a fresh device with the same passkey by clearing the app's storage in the same tab,
   since Chrome's DevTools cannot hand a passkey's PRF secret to another browser context.
 - **Two Forest passkeys look alike.** Each is named Forest, so a person with two (a setup they gave
   up, say) picks between them in the system's sheet; the wrong one gets "This passkey belongs to
@@ -225,7 +236,11 @@ CSP on every response.
   all from one network address: whoever runs them can link a person's profiles.
 - **The gift comes once per note.** The issuer gives its welcome gift once for each note number. A
   setup taken up on another device, or done again, gets the note back with the same face, but not
-  the gift: buys made again are refused as `given`.
+  the gift: buys made again are refused as `given`, and the person has no credits. The vault's
+  first write still costs one: setup waits until its folder holds some, which only someone holding
+  host credits can add (the vault's folder is the fingerprint's address). Even then, with no
+  registration or host credits in the vault, no profile can be made. "Write to us" is the only way
+  on, and no screen takes credits in yet.
 - **The credits are the gift's.** No screen shows how many are left, and no money moves in v1, so
   none can be bought. Each profile's folder gets one host credit when it is made; every record and
   every message it sends spends from that balance (0.01 a write and 0.001 a kilobyte by default on
@@ -244,11 +259,9 @@ CSP on every response.
   clearing what the person may be about to paste. Keys made and never pasted still act until
   removed. The card's rows say what each key may do, not who holds it: the permissions record's
   public part has no names. Each read key adds about 2 KB to every message sealed to the profile.
-- **A setup that stopped is taken up on the device it began on.** From another device, or after
-  this one's storage is cleared, Sign in finds no vault for the passkey and says "No setup found
-  for this passkey". If the issuer had already given the note, a new passkey's face check then
-  says the face has a setup: that person is stuck until the app goes on to the face check with
-  the passkey that has no vault.
+- **A setup that stopped is taken up best on the device it began on,** where its buys and tickets
+  are kept. From another device, Sign in goes on to the face check with the same passkey, and the
+  gift is given before (above).
 - **Taking up a check that still needs its note opens the check's tab after the face.** A browser
   that lets a page open a tab only right after a tap may block it; the app then says so.
 - **Decline hides a request on this device only.** A host keeps each message for its keep days (30

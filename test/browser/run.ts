@@ -93,7 +93,7 @@ after(async () => {
 test("the seed: the passkey's PRF secret, asked for at each action, checked against the fingerprint", async () => {
   const { page, asserted } = seller
   const made = await page.evaluate(async () => {
-    const seed: Uint8Array = await (globalThis as any).forest.beginSetup()
+    const { seed } = (await (globalThis as any).forest.beginSetup()) as { seed: Uint8Array }
     const out = Array.from(seed)
     seed.fill(0)
     return { seed: out, local: { ...localStorage }, databases: (await indexedDB.databases()).map((d) => d.name) }

@@ -112,6 +112,9 @@ export const Score = ({ value }: { value: number }) => (
 /** What the face check says when the issuer has this face from another setup: that setup's passkey opens it. */
 export const DUPLICATE_FACE = 'This face already has a setup. Sign in with that passkey.'
 
+/** What setup says when the issuer gave this note number its welcome gift before: no credits come. */
+export const GIFT_GIVEN = 'Your welcome credits were already given once; write to us to get more.'
+
 /** An error in the person's words, where the app has them; a service's own code where it has not. */
 export function errorText(err: unknown): string {
   if (err instanceof NoPrf) return err.message

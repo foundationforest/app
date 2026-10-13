@@ -1,8 +1,8 @@
 // The app's screens and the way between them, in the browser's history so its back button works. A
 // device set up (it keeps the seed's fingerprint) opens on the board; one whose setup stopped before
-// its vault was written opens on setup's face check, which takes it up again. The seed the passkey
-// gave at setup's first step is the draft: kept here for the face check while setup's screens are
-// open, zeroed once they are left. The message door, /message?to=<address>, the link an index gives
+// its vault was written opens on setup's face check, which takes it up again. The passkey that gave
+// the seed, at setup's first step or at a sign in that found no vault, is the draft: kept here for
+// the face check while setup's screens are open, its seed zeroed once they are left. The message door, /message?to=<address>, the link an index gives
 // for a profile, opens a new message to it; a person not set up yet, or with no profile yet, goes
 // through setup or a new profile first, and comes back to it.
 
@@ -16,6 +16,7 @@ import { InboxPage } from './screens/Inbox.tsx'
 import { NewProfile } from './screens/NewProfile.tsx'
 import { Setup } from './screens/Setup.tsx'
 import { Start } from './screens/Start.tsx'
+import type { Passkey } from './seed/passkey.ts'
 import { endSetup, hasSetup } from './seed/seed.ts'
 
 export type Screen =
@@ -48,14 +49,14 @@ export function App() {
 function Screens() {
   const [screen, setScreen] = useState<Screen | null>(null)
   const stage = useRef<Stage>('none')
-  const draft = useRef<Uint8Array | null>(null)
+  const draft = useRef<Passkey | null>(null)
   /** What Start says when a step sent the person back to it. */
   const [said, setSaid] = useState<string>()
 
   /** What the history asks for, unless it is no longer there to show. */
   const show = (to: Screen) => {
     if (to.name !== 'setup' && draft.current) {
-      draft.current.fill(0)
+      draft.current.seed.fill(0)
       draft.current = null
     }
     if (stage.current === 'setup' && !(to.name === 'setup' && to.step === 2)) return reset({ name: 'setup', step: 2 })
@@ -96,10 +97,10 @@ function Screens() {
     return () => removeEventListener('popstate', pop)
   }, [])
 
-  /** The passkey is made and setup is under way: only its face check is left, with the seed it gave. */
-  const opened = (seed: Uint8Array) => {
+  /** Setup is under way with this passkey: only its face check is left, with the seed it gave. */
+  const opened = (passkey: Passkey) => {
     stage.current = 'setup'
-    draft.current = seed
+    draft.current = passkey
     reset({ name: 'setup', step: 2 })
   }
   /** Setup given up (or never begun): back to Start, which says why. */
@@ -127,7 +128,7 @@ function Screens() {
     case undefined:
       return null
     case 'start':
-      return <Start key={said} said={said} onStart={() => nav.go({ name: 'setup', step: 1 })} onSignedIn={signedIn} />
+      return <Start key={said} said={said} onStart={() => nav.go({ name: 'setup', step: 1 })} onSignedIn={signedIn} onNoSetup={opened} />
     case 'setup':
       return <Setup step={screen.step} draft={draft.current} onOpened={opened} onStopped={stopped} onDone={signedIn} />
     case 'board':

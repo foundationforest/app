@@ -90,7 +90,7 @@ export async function saveVault(keys: VaultKeys, hosts: string[], vault: AppVaul
       try {
         credits = (await spendOne(credits, host, (credit) => spend(host, keys.key.address, [credit]))).rest
       } catch (spent) {
-        throw spent instanceof NoCredits ? new Error('Your vault has no writes left.') : spent
+        throw spent instanceof NoCredits ? new NoVaultWrites() : spent
       }
     }
     const paid = withCredits(vault, credits)
@@ -99,10 +99,20 @@ export async function saveVault(keys: VaultKeys, hosts: string[], vault: AppVaul
   }
 }
 
+/** A vault write refused for want of credits, with none left to put into its folder. */
+export class NoVaultWrites extends Error {
+  constructor() {
+    super('Your vault has no writes left.')
+    this.name = 'NoVaultWrites'
+  }
+}
+
 /**
  * The vault after a face check, with its note, credits and settings. A new one on `host`: its hosts
  * record, which is free; one host credit into its folder, since every other write costs; then the
- * vault. Where one is there already, these are added to it, and nothing in it is lost.
+ * vault. With no host credit (a gift given before), the vault is sent as it is: its folder may hold
+ * one from an earlier try, and if it holds none, the host refuses it (NoVaultWrites). Where a vault
+ * is there already, these are added to it, and nothing in it is lost.
  */
 export async function firstVault(keys: VaultKeys, host: string, vault: AppVault): Promise<AppVault> {
   const there = await openVault([host], keys)
@@ -119,7 +129,8 @@ export async function firstVault(keys: VaultKeys, host: string, vault: AppVault)
     return saveVault(keys, there.hosts, merged, there.time)
   }
   await publishRecords([host], [hostsRecord(keys.key, [host], Date.now())])
-  const { rest } = await spendOne(creditsOf(vault), host, (credit) => spend(host, keys.key.address, [credit]))
+  const credits = creditsOf(vault)
+  const { rest } = credits.some((c) => c.service === host) ? await spendOne(credits, host, (credit) => spend(host, keys.key.address, [credit])) : { rest: credits }
   return saveVault(keys, [host], withCredits(vault, rest))
 }
 
