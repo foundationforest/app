@@ -11,7 +11,7 @@ export default defineConfig({
       manifest: {
         name: 'Forest',
         short_name: 'Forest',
-        description: 'Your profiles, your seed, on your device.',
+        description: 'Your profiles, opened with your passkey.',
         start_url: '/',
         scope: '/',
         display: 'standalone',

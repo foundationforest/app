@@ -1,18 +1,20 @@
 // The app's screens in headless Chromium, through Playwright, with a virtual passkey authenticator
 // that has PRF, against one of each stand-in on loopback (test/stand-ins.ts, `world`): the app's own
 // build, its settings pointed at the stand-ins, served as Vercel serves it, under vercel.json's CSP
-// (its connect-src naming the stand-ins in place of devnet's services).
+// (its connect-src naming the stand-ins in place of devnet's services), at app.forest.foundation,
+// mapped to loopback and taken as a secure origin, so its passkeys are made for forest.foundation.
 //
 //   npm run test:browser
 //
 // 0. The CSP: on every response; an inline script, an inline handler and another origin refused.
-// 1. Setup: the words, saved and checked (the field's eye, a line when they do not match), and the
-//    seed locked; the face check in a tab of its own (the stand-in's Didit page sends it back to
-//    /back), the screen saying so meanwhile; the gift collected; the vault's first write refused,
-//    so setup stops there; after a reload, taken up again with one face, and the vault written.
+// 1. Setup: Open with your face, the passkey made for forest.foundation, its PRF secret the seed,
+//    nothing of it kept but its fingerprint; the face check in a tab of its own (the stand-in's
+//    Didit page sends it back to /back), the screen saying so meanwhile; the gift collected; the
+//    vault's first write refused, so setup stops there; after a reload, taken up again with one
+//    face, and the vault written.
 // 2. A new profile, made with one face: the proof in the worker, the row, the folder, the vault.
 // 3. The board and the card page: offers, the score and the reviews about it from the index, the
-//    address copied, an access key removed with one face, the inbox counted at the face, a grant
+//    address copied, an access key removed with one face, the inbox counted at that face, a grant
 //    not counted.
 // 4. An offer posted from its sheet, then changed, one face each; posted with an empty folder, one
 //    more of the vault's credits goes in, silently; with none left there, no writes left.
@@ -28,8 +30,11 @@
 //    key removed.
 // 9. A profile hidden from the board, held down or from its page's menu, and shown again from the
 //    menu.
-// 10. The menu: the 24 words after a face; forgetting the device; the words bring everything back.
-// 11. Nothing the app did, through all of it, was refused by the CSP.
+// 10. The menu: forgetting the device; then, on another subdomain (storage of its own, the same tab
+//     and so the same passkey), Sign in: one face, everything back, and an action after it.
+// 11. A passkey with no setup: "No setup found for this passkey". A device whose passkeys give no
+//     PRF, and a browser that cannot ask for it: Start says so, and nothing is kept.
+// 12. Nothing the app did, through all of it, was refused by the CSP.
 //
 // SHOTS=<dir> keeps a screenshot of each screen there, in light and dark.
 
@@ -39,10 +44,10 @@ import { createServer } from 'node:net'
 import { after, before, test } from 'node:test'
 import { fileURLToPath } from 'node:url'
 
-import { type Browser, type BrowserContext, type Page, chromium } from 'playwright'
+import { type Browser, type BrowserContext, type CDPSession, type Page, chromium } from 'playwright'
 import { type PreviewServer, build, preview } from 'vite'
 
-import { importWords, mainKey } from '../../standard/keys/src/index.ts'
+import { mainKey, vaultKey } from '../../standard/keys/src/index.ts'
 import { accessRecord, b64u, deliver, keyFromPrivate, ownerRecord, permissionsRecord, pull, pullRequest, readProfile } from '../../standard/records/src/index.ts'
 import { DOLLAR } from '../../src/cards.ts'
 import { message, openMessage } from '../../standard/records/src/private.ts'
@@ -75,8 +80,13 @@ let context: BrowserContext
 let page: Page
 /** The first browser's passkeys made and asserted. */
 let counts: { created: number; asserted: number }
-let words: string
+let cdp: { session: CDPSession; authenticatorId: string }
+/** The first person's seed, asked of their passkey by the test itself (`seedOn`). */
+let seed: Uint8Array
 let address: string
+/** The app's origin, and another subdomain's, both on loopback. */
+let APP: string
+let OTHER: string
 /** The CSP the app is served with, and what it refused on any page, as `<directive> <blocked>`. */
 let csp: string
 const refused: string[] = []
@@ -93,8 +103,12 @@ async function shot(name: string) {
 
 const card = (title: string) => page.locator('button.card', { hasText: title })
 
-/** A browser of its own, a phone's size, with the app's settings pointed at the stand-ins and a virtual passkey authenticator with PRF; its passkeys made and asserted, counted. */
-async function phone() {
+/**
+ * A browser of its own, a phone's size, with the app's settings pointed at the stand-ins and a
+ * virtual passkey authenticator, with PRF unless `prf` is false; its passkeys made and asserted,
+ * counted. `browserPrf` false makes the browser say it cannot ask for PRF at all.
+ */
+async function phone({ prf = true, browserPrf = true } = {}) {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, permissions: ['clipboard-read', 'clipboard-write'] })
   // The app's settings, pointed at the stand-ins, on every page it loads; and what the CSP refuses there, reported.
   await context.exposeFunction('cspRefused', (what: string) => void refused.push(what))
@@ -102,18 +116,33 @@ async function phone() {
     localStorage.setItem('forest.settings', JSON.stringify(s))
     addEventListener('securitypolicyviolation', (e) => (globalThis as any).cspRefused(`${e.violatedDirective} ${e.blockedURI}`))
   }, w.settings)
+  if (!browserPrf) await context.addInitScript(() => void ((PublicKeyCredential as any).getClientCapabilities = async () => ({ 'extension:prf': false })))
   const page = await context.newPage()
   page.on('pageerror', (err) => console.log(`  page error: ${err.message}`))
   const cdp = await context.newCDPSession(page)
   await cdp.send('WebAuthn.enable', { enableUI: false })
-  await cdp.send('WebAuthn.addVirtualAuthenticator', {
-    options: { protocol: 'ctap2', ctap2Version: 'ctap2_1', transport: 'internal', hasResidentKey: true, hasUserVerification: true, isUserVerified: true, hasPrf: true, automaticPresenceSimulation: true },
+  const { authenticatorId } = await cdp.send('WebAuthn.addVirtualAuthenticator', {
+    options: { protocol: 'ctap2', ctap2Version: 'ctap2_1', transport: 'internal', hasResidentKey: true, hasUserVerification: true, isUserVerified: true, hasPrf: prf, automaticPresenceSimulation: true },
   })
   const counts = { created: 0, asserted: 0 }
   cdp.on('WebAuthn.credentialAdded', () => void counts.created++)
   cdp.on('WebAuthn.credentialAsserted', () => void counts.asserted++)
-  return { context, page, counts }
+  return { context, page, counts, cdp: { session: cdp, authenticatorId } }
 }
+
+/** The seed as the app is to derive it, asked by the test itself: the PRF secret for "forest-seed-v1", relying party forest.foundation. One assertion. */
+async function seedOn(page: Page): Promise<Uint8Array> {
+  const bytes = await page.evaluate(async () => {
+    const got = (await navigator.credentials.get({
+      publicKey: { rpId: 'forest.foundation', challenge: crypto.getRandomValues(new Uint8Array(32)), userVerification: 'required', extensions: { prf: { eval: { first: new TextEncoder().encode('forest-seed-v1') } } } },
+    })) as PublicKeyCredential
+    return Array.from(new Uint8Array(got.getClientExtensionResults().prf!.results!.first as ArrayBuffer))
+  })
+  return new Uint8Array(bytes)
+}
+
+/** What the page keeps: localStorage, and the names of its IndexedDB databases. */
+const kept = (page: Page) => page.evaluate(async () => ({ local: { ...localStorage }, databases: (await indexedDB.databases()).map((d) => d.name) }))
 
 before(async () => {
   w = await world()
@@ -126,10 +155,17 @@ before(async () => {
     .map((d) => (d.startsWith('connect-src ') ? `connect-src 'self' ${Object.values(services).join(' ')}` : d))
     .join('; ')
   await build({ root: app, configFile: `${app}vite.config.ts`, logLevel: 'warn', build: { outDir, emptyOutDir: true } })
-  server = await preview({ root: app, configFile: `${app}vite.config.ts`, build: { outDir }, preview: { host: 'localhost', port: await freePort(), strictPort: true, headers: { 'Content-Security-Policy': csp } } })
-  browser = await chromium.launch()
-  ;({ context, page, counts } = await phone())
-  say(`Chromium ${browser.version()}, the app at ${server.resolvedUrls!.local[0]}`)
+  const port = await freePort()
+  server = await preview({ root: app, configFile: `${app}vite.config.ts`, build: { outDir }, preview: { host: '127.0.0.1', port, strictPort: true, allowedHosts: ['.forest.foundation'], headers: { 'Content-Security-Policy': csp } } })
+  APP = `http://app.forest.foundation:${port}/`
+  OTHER = `http://other.forest.foundation:${port}/`
+  // Chromium itself, not its headless shell, which does not take an insecure origin as secure; and WebAuthn wants a secure one.
+  browser = await chromium.launch({
+    channel: 'chromium',
+    args: ['--host-resolver-rules=MAP *.forest.foundation 127.0.0.1', `--unsafely-treat-insecure-origin-as-secure=${APP.slice(0, -1)},${OTHER.slice(0, -1)}`],
+  })
+  ;({ context, page, counts, cdp } = await phone())
+  say(`Chromium ${browser.version()}, the app at ${APP} (and ${OTHER}), served from 127.0.0.1`)
 })
 
 after(async () => {
@@ -140,7 +176,7 @@ after(async () => {
 })
 
 test('the CSP: on every response; an inline script, an inline handler and another origin refused', async () => {
-  const res = await page.goto(server.resolvedUrls!.local[0]!)
+  const res = await page.goto(APP)
   assert.equal(res!.headers()['content-security-policy'], csp)
   // What runs here is the test's own, which DevTools exempts from the CSP; what it adds to the page is not.
   const tried = await page.evaluate(async () => {
@@ -167,43 +203,32 @@ test('the CSP: on every response; an inline script, an inline handler and anothe
   refused.length = 0
 })
 
-test('setup: the words saved and checked, the face check in its own tab, the seed locked', async () => {
-  await page.goto(server.resolvedUrls!.local[0]!)
+test("setup: Open with your face, the passkey's PRF secret the seed, nothing of it kept but its fingerprint; the face check in its own tab", async () => {
+  await page.goto(APP)
   await page.getByText('One human, one record, any market, no one in between.').waitFor()
+  await page.getByRole('button', { name: 'Sign in' }).waitFor()
   await shot('1-start')
   await page.getByRole('button', { name: 'Start', exact: true }).click()
 
-  await page.getByRole('heading', { name: 'Your 24 words' }).waitFor()
-  await page.getByText('These words are you. Lose them and nothing brings them back.').waitFor()
-  words = (await page.locator('ol.words li span:last-child').allTextContents()).join(' ')
-  assert.equal(words.split(' ').length, 24)
-  const form = await page.locator('form').evaluate((f) => [...new FormData(f as HTMLFormElement)].map(([k, v]) => [k, v]))
-  assert.deepEqual(form, [['username', 'Forest'], ['password', words]], 'the form the password manager saves: username Forest, the words as the password')
-  await shot('2-words')
-  await page.getByRole('button', { name: 'Save to password manager' }).click()
-
-  await page.getByRole('heading', { name: "Check they're saved" }).waitFor()
-  const next = page.getByRole('button', { name: 'Next' })
-  const field = page.getByLabel('Your 24 words')
-  const mismatch = page.getByText("These aren't your 24 words.")
-  assert.equal(await next.isDisabled(), true)
-  assert.equal(await field.getAttribute('placeholder'), 'Tap to fill')
-  assert.equal(await mismatch.count(), 0, 'no line while the field is empty')
-  await field.fill(words.split(' ').slice(0, 23).join(' ') + ' zoo')
-  assert.equal(await next.isDisabled(), true, 'Next waits for the words themselves')
-  await mismatch.waitFor()
-  await page.getByRole('button', { name: 'Show the words' }).click()
-  assert.equal(await field.getAttribute('type'), 'text', 'the eye shows them')
-  await page.getByRole('button', { name: 'Hide the words' }).click()
-  assert.equal(await field.getAttribute('type'), 'password')
-  await field.fill(words.toUpperCase())
-  assert.equal(await mismatch.count(), 0)
-  await shot('3-check')
-  await next.click()
+  await page.getByRole('heading', { name: 'Your passkey' }).waitFor()
+  await page.getByText('This passkey is you: lose it and nothing brings it back.', { exact: false }).waitFor()
+  await shot('2-passkey')
+  await page.getByRole('button', { name: 'Open with your face' }).click()
 
   await page.getByRole('heading', { name: 'One face check' }).waitFor()
-  await page.getByText('This ties your words to you: one real person, accountable for them.').waitFor()
-  assert.equal(counts.created, 1, 'the seed locked under a passkey before the face check')
+  await page.getByText('This ties your passkey to you: one real person, accountable for it.').waitFor()
+  assert.equal(counts.created, 1, 'one passkey made')
+  assert.equal(counts.asserted, 0, 'its PRF secret given as it was made, so no get followed (a Safari passkey would need one)')
+  const { credentials } = (await cdp.session.send('WebAuthn.getCredentials', { authenticatorId: cdp.authenticatorId })) as { credentials: { rpId?: string; isResidentCredential: boolean; userName?: string }[] }
+  assert.deepEqual(credentials.map((c) => [c.rpId, c.isResidentCredential, c.userName]), [['forest.foundation', true, 'Forest']], 'made for forest.foundation, resident, named Forest')
+
+  seed = await seedOn(page)
+  const device = await kept(page)
+  assert.deepEqual(Object.keys(device.local).sort(), ['forest.fingerprint', 'forest.settings', 'forest.setup'])
+  assert.equal(JSON.parse(device.local['forest.fingerprint']!), (await vaultKey(seed)).address, "the fingerprint: the vault key's public half, of the seed the passkey gives for forest-seed-v1")
+  const stored = JSON.stringify(device.local)
+  assert.ok(!stored.includes(Buffer.from(seed).toString('base64url')) && !stored.includes(Buffer.from(seed).toString('hex')), 'and not the seed')
+  assert.deepEqual(device.databases, [], 'nothing in IndexedDB')
   await shot('4-face')
   // Whether the screen said where the check is while it ran: it shows only until the note is here.
   await page.evaluate(() => {
@@ -222,7 +247,7 @@ test('setup: the words saved and checked, the face check in its own tab, the see
   assert.equal(await page.getByText('Finish it in the other tab.').count(), 0, 'and no longer, once the note came')
   say(`setup: the check's tab went to the stand-in's Didit page and back to /back, closed itself: ${didit.isClosed()}; the vault's first write refused: "${await page.locator('.error').textContent()}"`)
 
-  // Reloaded, the app comes back to the face check, and takes it up again from the locked store with one face.
+  // Reloaded, the app comes back to the face check, and takes it up again from what the device kept, with one face.
   await page.reload()
   await page.getByRole('heading', { name: 'One face check' }).waitFor()
   const faces = counts.asserted
@@ -230,28 +255,18 @@ test('setup: the words saved and checked, the face check in its own tab, the see
   await page.getByRole('button', { name: 'New profile' }).waitFor({ timeout: 60_000 })
   await shot('5-board-empty')
   assert.equal(counts.asserted - faces, 1, 'one face to take it up again')
-  assert.equal(w.issuer.sessions.size, sessions + 1, 'one face check in all: the note and its tickets came back from the locked store')
-  assert.equal(counts.created, 1, 'one passkey made, to lock the seed')
-  assert.deepEqual(await page.evaluate(async () => (await indexedDB.databases()).map((d) => d.name)), ['forest-app'])
-  const stored = await page.evaluate(
-    () =>
-      new Promise<IDBValidKey[]>((resolve) => {
-        const req = indexedDB.open('forest-app')
-        req.onsuccess = () => {
-          const keys = req.result.transaction('lock').objectStore('lock').getAllKeys()
-          keys.onsuccess = () => (resolve(keys.result), req.result.close())
-        }
-      }),
-  )
-  assert.deepEqual(stored, ['seed'], "setup's stages removed from the locked store once the vault was written")
+  assert.equal(w.issuer.sessions.size, sessions + 1, 'one face check in all: the note and its tickets came back from what the device kept, sealed')
+  assert.equal(counts.created, 1, 'one passkey made')
+  const done = await kept(page)
+  assert.equal('forest.setup' in done.local, false, "setup's stages removed once the vault was written")
+  assert.deepEqual(done.databases, [])
 
-  const seed = importWords(words)
   const vault = (await openVault([w.settings.host], await vaultKeys(seed)))!.vault
   assert.equal(vault.issuerNotes?.[0]?.issuer, 'issuer.test')
   assert.deepEqual(vault.settings, { forestApp: { ...w.settings, credits: creditsOf(vault) } })
   assert.equal('credits' in vault, false)
   assert.equal(creditsOf(vault).length, 4, 'the gift: 2 registrations and 3 host credits, one spent into the vault folder')
-  say("setup: stopped at the vault, taken up again after a reload with one face; vault on the host with the note, and 4 credits with the settings in the app's field; seed locked under a passkey")
+  say("setup: one passkey for forest.foundation, its PRF secret given as it was made; the device keeps the fingerprint and nothing of the seed; stopped at the vault, taken up again after a reload with one face; vault on the host with the note, and 4 credits with the settings in the app's field")
 })
 
 test('a new profile, made with one face', async () => {
@@ -270,7 +285,7 @@ test('a new profile, made with one face', async () => {
   say(`new profile: made in ${Date.now() - started} ms, proof in the worker included`)
   assert.equal(counts.asserted - faces, 1, 'one face for the whole of it')
 
-  address = (await mainKey(importWords(words), LABEL)).address
+  address = (await mainKey(seed, LABEL)).address
   const view = await readProfile([w.settings.host], address, Date.now())
   assert.deepEqual(Object.keys(view.current.get('profile')!.record.body!).sort(), ['createdAt', 'inbox', 'inboxKey', 'market', 'role'], 'a card without a name')
   assert.equal(w.registryPayer.sent.length, 1, 'one row through the registry payer')
@@ -280,7 +295,7 @@ test('a new profile, made with one face', async () => {
 })
 
 test('the board and the card: offers, the score and reviews from the index, an access key removed, the inbox counted', async () => {
-  const main = await mainKey(importWords(words), LABEL)
+  const main = await mainKey(seed, LABEL)
   const writer = keyFromPrivate(new Uint8Array(32).fill(42))
   const now = Date.now()
   await publishRecords([w.settings.host], [
@@ -315,13 +330,6 @@ test('the board and the card: offers, the score and reviews from the index, an a
   await page.locator('.sheet-back').click({ position: { x: 20, y: 20 } })
   assert.equal(await page.locator('.dot').count(), 0, 'seen')
 
-  const faces = counts.asserted
-  await page.getByRole('button', { name: 'Remove' }).click()
-  await page.locator('button.remove').waitFor({ state: 'detached' })
-  assert.equal(counts.asserted - faces, 1)
-  assert.deepEqual((await readProfile([w.settings.host], address, Date.now())).access, [{ key: writer.address, was: 'write', paths: ['offer', 'review'] }])
-  say('card: offers and the reviews written from the host; score, review count and the bell from the index; an access key made past with one face')
-
   // A message from someone with a row, and a grant: the next face counts the message alone.
   const buyer = await mainKey(new Uint8Array(32).fill(7), 'tutoring/buyer')
   w.host.rows.add(buyer.address)
@@ -329,17 +337,23 @@ test('the board and the card: offers, the score and reviews from the index, an a
   const grant = { key: b64u.encode(new Uint8Array(32).fill(9)), folder: buyer.address, scope: 'write', paths: ['offer'], from: buyer.address, since: Date.now() }
   const [taken] = await deliver([w.settings.host], [await message(buyer, address, { text: 'Is Tuesday free?' }, Date.now(), theCard), await message(buyer, address, { grant }, Date.now() + 1, theCard)])
   assert.deepEqual(taken!.results.map((r) => r.ok), [true, true])
+
+  const faces = counts.asserted
+  await page.getByRole('button', { name: 'Remove' }).click()
+  await page.locator('button.remove').waitFor({ state: 'detached' })
+  assert.equal(counts.asserted - faces, 1)
+  assert.deepEqual((await readProfile([w.settings.host], address, Date.now())).access, [{ key: writer.address, was: 'write', paths: ['offer', 'review'] }])
+  say('card: offers and the reviews written from the host; score, review count and the bell from the index; an access key made past with one face')
+
   await page.getByRole('button', { name: 'Back' }).click()
   await page.getByRole('button', { name: 'Menu' }).click()
+  await page.getByRole('button', { name: 'Forget this device' }).waitFor()
+  assert.equal(await page.getByText('24 words').count(), 0, 'no words in the menu')
   await shot('11-menu')
-  await page.getByRole('button', { name: 'Your 24 words' }).click()
-  await page.locator('.sheet ol.words').waitFor()
-  assert.equal((await page.locator('.sheet ol.words li span:last-child').allTextContents()).join(' '), words)
-  await shot('12-menu-words')
   await page.locator('.sheet-back').click({ position: { x: 20, y: 20 } })
   await card('Tutoring').locator('.badge', { hasText: '1' }).waitFor()
   assert.equal(await page.evaluate((a) => JSON.parse(localStorage.getItem('forest.inbox')!)[a].count, address), 1, 'the grant not counted')
-  say('inbox: the message counted by the pull signed at the last face, shown on the card; the grant beside it not counted')
+  say('inbox: the message counted by the pull signed at the face that removed the key, shown on the card; the grant beside it not counted')
 })
 
 test('the offer sheet: posted, then changed, one face each', async () => {
@@ -353,7 +367,7 @@ test('the offer sheet: posted, then changed, one face each', async () => {
   await sheet.getByRole('radio', { name: 'Hour' }).click()
   await shot('14-offer-sheet')
   // The folder's balance spent: the post takes one more of the vault's host credits into it, and nothing shows.
-  const keys = await vaultKeys(importWords(words))
+  const keys = await vaultKeys(seed)
   const hostCredits = async () => creditsOf((await openVault([w.settings.host], keys))!.vault).filter((c) => c.service === w.settings.host).length
   assert.equal(await hostCredits(), 1)
   w.host.balances.set(address, 0)
@@ -398,18 +412,10 @@ let secondAddress: string
 test('a second person through the message door: setup, a new profile, then the message', async () => {
   second = await phone()
   const b = second.page
-  await b.goto(`${server.resolvedUrls!.local[0]}message?to=${address}`)
+  await b.goto(`${APP}message?to=${address}`)
   await b.getByRole('button', { name: 'Start', exact: true }).click()
   assert.equal(await b.evaluate(() => location.pathname), '/', 'the door leaves the address bar')
-  await b.getByRole('heading', { name: 'Your 24 words' }).waitFor()
-  const theirWords = (await b.locator('ol.words li span:last-child').allTextContents()).join(' ')
-  secondAddress = (await mainKey(importWords(theirWords), 'tutoring/buyer')).address
-  // The stand-in host takes a message to an inbox open to the issuer's people from a sender it knows holds a row.
-  w.host.rows.add(secondAddress)
-  w.host.rows.add(address)
-  await b.getByRole('button', { name: 'Save to password manager' }).click()
-  await b.getByLabel('Your 24 words').fill(theirWords)
-  await b.getByRole('button', { name: 'Next' }).click()
+  await b.getByRole('button', { name: 'Open with your face' }).click()
   await b.getByRole('heading', { name: 'One face check' }).waitFor()
   const tab = second.context.waitForEvent('page')
   await b.getByRole('button', { name: 'Start', exact: true }).click()
@@ -425,6 +431,10 @@ test('a second person through the message door: setup, a new profile, then the m
   await sheet.waitFor({ timeout: 120_000 })
   await sheet.getByText('Tutoring teacher').waitFor()
   assert.equal(await sheet.getByRole('radio', { checked: true }).textContent(), 'Tutoring student', 'sent from the profile in the same market')
+  // The stand-in host takes a message to an inbox open to the issuer's people from a sender it knows holds a row.
+  secondAddress = JSON.parse((await b.evaluate(() => localStorage.getItem('forest.profiles')))!)[0].address
+  w.host.rows.add(secondAddress)
+  w.host.rows.add(address)
   await sheet.getByLabel('Message').fill('Can we do Thursday?')
   if (shots) await b.screenshot({ path: `${shots}/16-door-light.png` })
   const faces = second.counts.asserted
@@ -432,7 +442,7 @@ test('a second person through the message door: setup, a new profile, then the m
   await sheet.waitFor({ state: 'detached' })
   assert.equal(second.counts.asserted - faces, 1, 'one face to send it')
   await b.locator('button.card', { hasText: 'Tutoring' }).waitFor()
-  say('message door: no seed yet, so setup, then a new profile, then the message, sent with one face')
+  say('message door: not set up yet, so setup, then a new profile, then the message, sent with one face')
 })
 
 test('the inbox: the thread, a reply, and a review from the thread', async () => {
@@ -471,13 +481,13 @@ test('the inbox: the thread, a reply, and a review from the thread', async () =>
   await b.getByText('Thursday at five.').waitFor()
   assert.equal(await b.locator('.message.mine', { hasText: 'Can we do Thursday?' }).count(), 1, 'their own message, from the copy in their own inbox')
   await second.context.close()
-  await page.goto(server.resolvedUrls!.local[0]!)
+  await page.goto(APP)
   await card('Tutoring').waitFor()
   say('inbox: one face, the thread named by the card, a reply sealed and copied, a review posted from the thread; the reply read on the other side')
 })
 
 test('requests from an access key: one approved with one face, one declined', async () => {
-  const main = await mainKey(importWords(words), LABEL)
+  const main = await mainKey(seed, LABEL)
   const helper = keyFromPrivate(new Uint8Array(32).fill(43))
   const view = await readProfile([w.settings.host], address, Date.now())
   await publishRecords([w.settings.host], [permissionsRecord(main, [...view.access, { key: helper.address, scope: 'message' }], Date.now())])
@@ -515,7 +525,7 @@ test('requests from an access key: one approved with one face, one declined', as
   await asked.filter({ hasText: 'Pay' }).getByRole('button', { name: 'Decline' }).click()
   await asked.first().waitFor({ state: 'detached' })
   assert.equal(counts.asserted - faces, 0, 'declining needs no face')
-  await page.goto(server.resolvedUrls!.local[0]!)
+  await page.goto(APP)
   await card('Tutoring').getByText('Chemistry, one hour').waitFor()
   say("requests: an access key asked; the card listed every field of what Approve signs, the devnet dollar by name and the time in the person's clock; approved with one face, signed as shown by the main key; a payment declined")
 })
@@ -556,20 +566,13 @@ test('access keys: three made with one face, the paste shown once, each key acti
   await sheet.waitFor({ state: 'detached' })
 
   // Nothing of the private halves on the device: not in its storage, not on the page.
-  const device = await page.evaluate(async () => {
-    const db = await new Promise<IDBDatabase>((resolve) => {
-      const req = indexedDB.open('forest-app')
-      req.onsuccess = () => resolve(req.result)
-    })
-    const keys = await new Promise<IDBValidKey[]>((resolve) => {
-      const req = db.transaction('lock').objectStore('lock').getAllKeys()
-      req.onsuccess = () => resolve(req.result)
-    })
-    db.close()
-    return { storage: JSON.stringify({ local: { ...localStorage }, session: { ...sessionStorage } }), html: document.documentElement.outerHTML, keys }
-  })
+  const device = await page.evaluate(async () => ({
+    storage: JSON.stringify({ local: { ...localStorage }, session: { ...sessionStorage } }),
+    html: document.documentElement.outerHTML,
+    databases: (await indexedDB.databases()).map((d) => d.name),
+  }))
   for (const key of [writeKey!, messageKey!, readKey!]) assert.ok(!device.storage.includes(key) && !device.html.includes(key), 'no private half kept')
-  assert.deepEqual(device.keys, ['seed'])
+  assert.deepEqual(device.databases, [])
 
   // On the host: the permissions record's public part, the card's readers; on the card, a row for each.
   const view = await readProfile([w.settings.host], address, Date.now())
@@ -645,7 +648,7 @@ test('a profile hidden from the board, held down or from its page, and shown aga
   say('hide: a profile held down on the board, or from its page, hidden; the menu shows it again; nothing deleted')
 })
 
-test('the menu: appearance; forget this device; the words bring everything back', async () => {
+test('the menu: forget this device; then Sign in on another subdomain, with the same passkey: everything back', async () => {
   await page.getByRole('button', { name: 'Menu' }).click()
   await page.getByRole('radio', { name: 'Dark' }).click()
   assert.equal(await page.evaluate(() => document.documentElement.dataset.theme), 'dark')
@@ -654,21 +657,80 @@ test('the menu: appearance; forget this device; the words bring everything back'
   assert.equal(await page.evaluate(() => document.documentElement.dataset.theme), undefined)
 
   await page.getByRole('button', { name: 'Forget this device' }).click()
+  await page.getByText('Your passkey stays in your password manager. Sign in with it to come back.').waitFor()
+  await shot('12-forget')
   await page.getByRole('button', { name: 'Forget this device' }).click()
-  await page.getByRole('button', { name: 'I have my 24 words' }).waitFor()
-  assert.deepEqual(await page.evaluate(() => Object.keys(localStorage)), [])
-  assert.deepEqual(await page.evaluate(async () => (await indexedDB.databases()).map((d) => d.name)), [])
+  await page.getByRole('button', { name: 'Sign in' }).waitFor()
+  assert.deepEqual(await kept(page), { local: {}, databases: [] }, 'the cache and the fingerprint cleared')
+  const { credentials } = (await cdp.session.send('WebAuthn.getCredentials', { authenticatorId: cdp.authenticatorId })) as { credentials: unknown[] }
+  assert.equal(credentials.length, 1, 'the passkey kept')
 
-  await page.reload()
-  await page.getByRole('button', { name: 'I have my 24 words' }).click()
-  await page.getByLabel('Your 24 words').fill(words)
-  await shot('13-restore')
+  // Another subdomain: storage of its own, empty but for the settings the test puts on every page.
+  // The same tab, so the same virtual passkey: Chrome's DevTools cannot hand a passkey's PRF secret to
+  // another browser context, so this is how the test reaches it from a fresh one.
+  await page.goto(OTHER)
+  assert.deepEqual(Object.keys((await kept(page)).local), ['forest.settings'])
   const made = counts.created
-  await page.getByRole('button', { name: 'Restore' }).click()
-  await card('Tutoring').waitFor({ timeout: 30_000 })
-  assert.equal(counts.created - made, 1, 'locked again under a new passkey')
-  await card('Tutoring').getByText('Maths, one hour').waitFor()
-  say('forget, then restore: the board back from the vault, the seed locked again')
+  let faces = counts.asserted
+  await page.getByRole('button', { name: 'Sign in' }).click()
+  await card('Tutoring').getByText('Maths, one hour').waitFor({ timeout: 30_000 })
+  await shot('13-signed-in')
+  assert.equal(counts.created - made, 0, 'no passkey made')
+  assert.equal(counts.asserted - faces, 1, 'one face')
+  const device = await kept(page)
+  assert.equal(JSON.parse(device.local['forest.fingerprint']!), (await vaultKey(seed)).address, 'the fingerprint kept again')
+  assert.deepEqual(JSON.parse(device.local['forest.profiles']!), [{ label: LABEL, address, hosts: [w.settings.host] }], 'the board, from the vault')
+  assert.equal('forest.setup' in device.local, false)
+
+  // An action there: the inbox, with one face.
+  faces = counts.asserted
+  await card('Tutoring').click()
+  await page.getByRole('button', { name: 'Inbox' }).click()
+  await page.locator('button.thread', { hasText: 'Tutoring student' }).waitFor()
+  assert.equal(counts.asserted - faces, 1)
+  say(`forget, then Sign in on ${new URL(OTHER).host} with the same passkey (rp id forest.foundation): one face, the board back from the vault, the fingerprint kept; the inbox opened there with one face`)
+})
+
+test('a passkey with no setup: "No setup found for this passkey", and Start again', async () => {
+  const third = await phone()
+  await third.page.goto(APP)
+  await third.page.getByRole('button', { name: 'Start', exact: true }).click()
+  await third.page.getByRole('button', { name: 'Open with your face' }).click()
+  await third.page.getByRole('heading', { name: 'One face check' }).waitFor()
+  // Forgotten before its face check: a passkey made, and no vault for it anywhere.
+  await third.page.evaluate(() => localStorage.clear())
+  await third.page.reload()
+  await third.page.getByRole('button', { name: 'Sign in' }).click()
+  await third.page.getByText('No setup found for this passkey.').waitFor()
+  assert.equal(await third.page.getByRole('button', { name: 'Start', exact: true }).isEnabled(), true)
+  assert.deepEqual(Object.keys((await kept(third.page)).local), ['forest.settings'], 'no fingerprint kept')
+  await third.context.close()
+  say('a passkey with no vault: "No setup found for this passkey.", on Start, nothing kept')
+})
+
+test('no PRF: Start says so, and nothing is kept', async () => {
+  // This device's passkeys give no PRF secret: the passkey made, refused, and offered to be dropped.
+  const none = await phone({ prf: false })
+  await none.page.goto(APP)
+  await none.page.getByRole('button', { name: 'Start', exact: true }).click()
+  await none.page.getByRole('button', { name: 'Open with your face' }).click()
+  const said = "This device's passkeys can't open Forest. Use a phone with a passkey instead: choose the QR code in the passkey sheet. Or use a newer device."
+  await none.page.getByText(said).waitFor()
+  assert.equal(await none.page.getByRole('button', { name: 'Sign in' }).count(), 1, 'back on Start, to try again with a phone')
+  assert.deepEqual(Object.keys((await kept(none.page)).local), ['forest.settings'], 'nothing kept')
+  if (shots) await none.page.screenshot({ path: `${shots}/25-no-prf-light.png` })
+  const left = ((await none.cdp.session.send('WebAuthn.getCredentials', { authenticatorId: none.cdp.authenticatorId })) as { credentials: unknown[] }).credentials.length
+  await none.context.close()
+
+  // A browser that says it cannot ask for PRF at all: no way on from here, so no buttons.
+  const old = await phone({ prf: false, browserPrf: false })
+  await old.page.goto(APP)
+  await old.page.getByText("This browser can't open Forest: it can't ask a passkey for the secret Forest opens with. Open Forest on a newer device.").waitFor()
+  assert.equal(await old.page.getByRole('button').count(), 0, 'and stops')
+  assert.equal(old.counts.created, 0, 'no passkey made')
+  if (shots) await old.page.screenshot({ path: `${shots}/26-no-prf-browser-light.png` })
+  await old.context.close()
+  say(`no PRF: the device's passkey refused, Start says "${said}", nothing kept (the drop signal ${left === 0 ? 'took the passkey off the virtual authenticator' : `left ${left} passkey on the virtual authenticator`}); a browser without PRF: Start says so, with no buttons`)
 })
 
 test('the CSP: nothing the app did, through all of it, was refused', () => {

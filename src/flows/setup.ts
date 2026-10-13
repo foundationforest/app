@@ -1,10 +1,10 @@
 // Setup's face check, in stages the app can come back to: a buy at each service the issuer's
 // welcome gift names; the note, asked for until the check passes, with the buys' references; the
-// gift's credits collected with the tickets the note came with; then the first vault. The seed is
-// locked on the device before it starts; `keep` puts each stage in the locked store as it is got
-// (the buys before the note is asked for, the note and its tickets once they come), so a setup
-// that stops before the vault is written comes back to where it was, on this device, after one
-// face. The issuer gives the same tickets for the same buys, and a service the same credits for
+// gift's credits collected with the tickets the note came with; then the first vault. The passkey
+// is made before it starts; `keep` puts each stage on the device as it is got, sealed under a key
+// mixed from the seed (the buys before the note is asked for, the note and its tickets once they
+// come), so a setup that stops before the vault is written comes back to where it was, on this
+// device, after one face. The issuer gives the same tickets for the same buys, and a service the same credits for
 // the same ticket, so nothing is lost.
 
 import { issuerSecret } from '../../standard/keys/src/index.ts'
@@ -21,7 +21,7 @@ export type GiftBuy = { service: string; at: Service; buy: Uint8Array; reference
 /** Where the check has got to: each stage is kept, so trying again starts where it stopped. */
 export type Check = { issuer?: Issuer; buys?: GiftBuy[]; note?: NoteJson; tickets?: Record<string, string>; credits?: Credit[]; vault?: AppVault }
 
-/** What the locked store keeps of a check: what cannot be got again. The credits come again from the tickets. */
+/** What the device keeps of a check, sealed: what cannot be got again. The credits come again from the tickets. */
 export type Kept = Pick<Check, 'issuer' | 'buys' | 'note' | 'tickets'>
 
 export const keptOf = ({ issuer, buys, note, tickets }: Check): Kept => ({ issuer, buys, note, tickets })

@@ -1,7 +1,7 @@
 # app
 
 The Forest app is the person's control panel. The index finds people and their offers; the app
-acts for the person: it makes the seed and keeps it on the device, signs their records and
+acts for the person: it opens with their passkey, whose secret is the seed, signs their records and
 messages, and makes access keys; their AI does both, with the access keys the app makes for it.
 A web app first; phones later, from the same code. Devnet only: nothing here is shipped. Free and
 open source, Apache 2.0.
@@ -10,24 +10,26 @@ open source, Apache 2.0.
 
 In the order a person meets it.
 
-1. **Start.** Start, or "I have my 24 words" to restore.
-2. **The 24 words.** The app makes a seed, 32 random bytes, with the standard's keys library, and
-   shows it as 24 words. "Save to password manager" hands them to the browser's own save prompt, as
-   a sign-in (username Forest, the words as the password); the next screen fills them back from
-   it. Then the seed is locked on the device: encrypted (AES-GCM) under a key mixed from a
-   passkey's PRF secret, which the device gives only after the person's face or fingerprint, and
-   kept in IndexedDB. Where a device's passkeys give no PRF secret, the app says so and stops:
-   there is no password route (`src/seed/`).
+1. **Start.** Start, or Sign in with a passkey the person has. Where the browser says it cannot
+   ask a passkey for PRF at all, Start says to open Forest on a newer device, and shows neither.
+2. **Open with your face.** One tap makes the passkey, and its PRF secret is the seed (Custody,
+   below). The device keeps the seed's fingerprint and nothing else of it. Where the passkey made
+   gives no PRF secret, the app asks the person's passkey manager to drop it, keeps nothing, and
+   Start says to use a phone with a passkey (the QR code in the passkey sheet) or a newer device.
 3. **One face check.** The issuer's check opens in a tab of its own, and the app says to finish it
-   there; Didit sends it back to `/back`, which closes. Meanwhile the app buys credits at each service the issuer's welcome gift
-   names, asks for the note until the check passes, collects the gift's credits with the tickets
-   the note came with, and writes the first vault on the host: the note, the credits, the services
-   used. Each stage is kept in the locked store as it is got, so a setup that stops, even with the
-   page closed, is taken up again after one face (`src/flows/setup.ts`).
+   there; Didit sends it back to `/back`, which closes. Meanwhile the app buys credits at each
+   service the issuer's welcome gift names, asks for the note until the check passes, collects the
+   gift's credits with the tickets the note came with, and writes the first vault on the host: the
+   note, the credits, the services used. Each stage is kept on the device as it is got, sealed
+   (AES-GCM) under a key mixed from the seed, until the vault is written, so a setup that stops,
+   even with the page closed, is taken up again after one face. The seed the passkey gave at the
+   first step is held for this step, so the check's tab opens on the tap. A face the issuer has
+   from another setup ends this one: "This face already has a setup. Sign in with that passkey."
+   (`src/flows/setup.ts`, `src/screens/Setup.tsx`).
 4. **The board.** The person's profiles: sellers first, with their offers and scores; buyers after,
    compact. A badge counts the messages each inbox holds, grants left out, counted at every face by
-   pulls signed in the same opening of the seed (`src/face.ts`, `src/inbox.ts`), and the reviews
-   about it not seen yet. A card held down, or Hide in the menu on its page, takes it off the board
+   pulls signed with the same seed (`src/face.ts`, `src/inbox.ts`), and the reviews about it not
+   seen yet. A card held down, or Hide in the menu on its page, takes it off the board
    on this device; the menu's Hidden profiles shows it again. Nothing is deleted.
 5. **A new profile.** A market from the index's list, a side in that market's words, then Make,
    with one face: the person proof made in a Web Worker on the device (`src/proof/`); the row
@@ -77,11 +79,48 @@ In the order a person meets it.
 10. **The message door.** `/message?to=<address>`, the index's Message link: which profile sends,
     the text, one face. With no seed yet, setup comes first; with no profile, a new one; then the
     message (`src/screens/Compose.tsx`).
-11. **The menu.** The AI's door, the hidden profiles, the appearance, the 24 words after a face,
-    and forgetting the device.
-12. **Restore.** The 24 words read the vault from the host and bring the profiles back, and the
-    seed is locked under a new passkey. With no vault for those words, the face check is still to
-    do, and the app goes on to it (`src/flows/restore.ts`).
+11. **The menu.** The AI's door, the hidden profiles, the appearance, and forgetting the device:
+    what it keeps is cleared, the fingerprint with it, and the passkey stays in the person's
+    password manager.
+12. **Sign in.** One face: the passkey's seed reads the vault from the host, the board is kept on
+    the device, and so is the fingerprint. When every host answered and none holds a vault for this
+    passkey: "No setup found for this passkey", and Start again (`src/flows/signin.ts`).
+
+## Custody
+
+- **The passkey's secret is the seed.** The passkey is made for the relying party
+  `forest.foundation`, so the app finds it on every subdomain, now and at mainnet: user name
+  Forest, a resident key, the face or fingerprint required. Its PRF extension, with the fixed salt
+  `forest-seed-v1`, gives 32 bytes, the same each time for the same passkey, and those bytes are
+  the seed as they are. Some passkey managers give them as the passkey is made; the others
+  (Safari's) only when asked, so one more get follows at once (`src/seed/passkey.ts`).
+- **Nothing secret is stored.** The device keeps the seed's fingerprint, the vault key's public
+  half, and nothing else of it. Every action asks the passkey again: one system prompt, its PRF
+  secret checked against the fingerprint ("This passkey belongs to another setup." when another
+  answered), the action run, the seed zeroed (`withSeed`, `src/seed/seed.ts`). There are no words
+  anywhere.
+- **Where the passkey lives is where it syncs.** iCloud Keychain keeps it on every Apple device of
+  the person's Apple Account; Google Password Manager on their Android devices and in Chrome
+  wherever they are signed in; 1Password, Bitwarden and the like wherever those are installed. A
+  security key keeps it on the key alone, and Windows Hello has kept passkeys on the one PC, so
+  check whether yours syncs before relying on it. A device that does not hold the passkey can use a
+  phone that does: the QR code in the passkey sheet.
+- **It can move between managers.** The FIDO Alliance's Credential Exchange moves passkeys from
+  one manager to another: Apple's Passwords app from iOS, iPadOS and macOS 26, 1Password and
+  Bitwarden among others. Its format has a field for the PRF secret (`hmacCredentials`); this app
+  has not checked which managers fill it in. A passkey moved without it signs in but gives another
+  seed, or none, and the app says "No setup found for this passkey". Keep the old manager's copy
+  until Sign in works from the new one.
+- **Which platforms give PRF,** from Corbado's tables of August 2026, not tested here: iCloud
+  Keychain on iOS and iPadOS 18 or later (18.4 or later as the phone behind a QR code, after bugs
+  there) and macOS 15 or later, in Safari, Chrome and Firefox;
+  Google Password Manager, on Android and in Chrome; Windows Hello on Windows 11 24H2 and 25H2 with
+  the February 2026 update (KB5077181), in Chrome and Edge, and in Firefox 148 or later; Firefox on
+  macOS from 139 and on Android from 149; 1Password; security keys with hmac-secret, in Chrome and
+  Firefox, and in Safari from 26.4 with open bugs on some keys; and a phone over the QR code on
+  macOS, Windows 11 and Android. Bitwarden gives it only some of the time. Not: Chrome's own
+  profile authenticator, Windows before that update, iOS before 18.
+- **No paper backup in v1.** The passkey is the only way in (Limits).
 
 Underneath:
 
@@ -97,13 +136,14 @@ Underneath:
 - **The vault** (`src/vault.ts`): the standard's vault, on the person's host, read and written with
   keys mixed from the seed for the action. It holds the labels of their profiles, their grants,
   their issuer's note, and this app's own field, `settings.forestApp`: the services used, and the
-  credits not yet spent, from which a profile's folder is topped up when a host refuses its write
-  for want of credits. Every host asked must answer: one that does not is an error, never "no
+  credits not yet spent, from which a profile's folder, or the vault's own, is topped up when a
+  host refuses its write for want of credits. Every host asked must answer: one that does not is an error, never "no
   vault", so no new vault is written over one. A profile's own folder is read the same way before
   anything is written over it.
-- **On the device** (`src/local.ts`), besides the locked seed: the profiles and their addresses,
-  the profiles hidden from the board, the inbox counts, the reviews seen, the requests answered, the appearance. Opened messages live
-  only while the inbox screen is open.
+- **On the device** (`src/local.ts`), none of it secret: the seed's fingerprint, the profiles and
+  their addresses, the profiles hidden from the board, the inbox counts, the reviews seen, the
+  requests answered, the appearance, the settings, and, while setup is under way, its stages,
+  sealed under a key mixed from the seed. Opened messages live only while the inbox screen is open.
 - **The screens** (`src/screens/`, `src/ui.tsx`, `src/theme.css`): Manrope, carried in the app
   (SIL Open Font License 1.1); four colors and one accent.
 - **The CSP** (`vercel.json`): every response carries a `Content-Security-Policy` header. Scripts,
@@ -120,8 +160,8 @@ sets eleven rules for apps that hold keys. Where the app stands on each:
 
 | Rule | Status |
 |---|---|
-| 1. The seed stays on the device, locked by its secure hardware; keys mixed from it are held only for the action that needs them | Followed. The seed is locked under a passkey's PRF secret; `withSeed` opens it for one action and zeroes it after; nothing mixed from it is stored. Each profile's inbox key, mixed in the same opening, is held after it until that face's count is back, to leave grants out of it |
-| 2. Every signature asks for the face or fingerprint and shows what is signed | Half. Every action that opens the seed asks for the face or fingerprint, once. Shown as signed: an offer, a review and a message, as their sheet shows them, and a request, field by field. Signed without each field shown: setup's records, the vault, the card, the permissions record and the card when an access key is made or removed, and the pulls |
+| 1. The seed stays on the device, locked by its secure hardware; keys mixed from it are held only for the action that needs them | Half. Nothing of the seed is stored: it is the passkey's PRF secret, which `withSeed` asks for at each action, after the face or fingerprint, and zeroes after; the device keeps its fingerprint alone, and nothing mixed from it is stored. Each profile's inbox key, mixed in the same action, is held after it until that face's count is back, to leave grants out of it. But the secret behind the seed is the passkey's, which the person's password manager keeps and syncs between their devices: it is locked by that manager, and by secure hardware where the manager uses it, not by one device's hardware |
+| 2. Every signature asks for the face or fingerprint and shows what is signed | Half. Every action that asks for the seed asks for the face or fingerprint, once. Shown as signed: an offer, a review and a message, as their sheet shows them, and a request, field by field. Signed without each field shown: setup's records, the vault, the card, the permissions record and the card when an access key is made or removed, and the pulls |
 | 3. Nothing leaves the device but access keys and signatures | Followed. No seed, main key, inbox key or issuer secret is sent anywhere. What goes out is signed records, messages and pulls; a row's transaction, signed, with its proof; the note number an issuer signs; blinded buys and credits spent; and the access keys' private halves, only in the paste the person copies |
 | 4. Each app, server or AI gets its own access key for each folder | Followed. Each Make makes new keys at random, for the profile it is made from; none is ever reused or kept |
 | 5. Proofs are made in the app, never delegated | Followed. The person proof is made in a Web Worker on the device |
@@ -130,7 +170,7 @@ sets eleven rules for apps that hold keys. Where the app stands on each:
 | 8. The app that holds the seed is open source | Followed: this repo, Apache 2.0 |
 | 9. Keep a copy of every record signed | Not yet for records. Each message sent is copied to the sending profile's own inbox |
 | 10. Keep each grant in the vault | Kept, not used. A grant that reaches a profile's inbox is added to the vault's grants when the inbox opens; the app does nothing else with it yet |
-| 11. Keep the issuer's note as safely as a key, in the vault | Followed. The seed is locked before the face check; the note waits in the locked store, encrypted under a key mixed from the seed, until the vault holds it |
+| 11. Keep the issuer's note as safely as a key, in the vault | Followed. The passkey is made before the face check; the note waits on the device, sealed under a key mixed from the seed, until the vault holds it |
 
 ## Run it
 
@@ -145,12 +185,14 @@ npm test               # Vitest, on loopback: records' reference host and stand-
 npm run build          # dist/, a static PWA
 npm run test:browser   # headless Chromium through Playwright, with a virtual passkey: the modules,
                        # then the app's build under vercel.json's CSP (its connect-src naming the
-                       # stand-ins), through setup (stopped at the vault and taken up again), a new
-                       # profile, the card, an offer, a second person through the message door, the
-                       # inbox with a reply and a review, requests approved and declined, access
-                       # keys made, pasted and acting, a write topped up from the vault, a profile
-                       # hidden and shown again, the menu, forgetting the device and restoring
-                       # (SHOTS=<dir> keeps a screenshot of each screen)
+                       # stand-ins), at app.forest.foundation mapped to loopback, through setup
+                       # (stopped at the vault and taken up again), a new profile, the card, an
+                       # offer, a second person through the message door, the inbox with a reply
+                       # and a review, requests approved and declined, access keys made, pasted and
+                       # acting, a write topped up from the vault, a profile hidden and shown again,
+                       # the menu, forgetting the device and signing in on another subdomain, a
+                       # passkey with no setup, and no PRF (SHOTS=<dir> keeps a screenshot of each
+                       # screen)
 ```
 
 On Vercel, `vercel.json` runs `standard.sh` and the build, sends every path to the app, and sets the
@@ -160,10 +202,24 @@ CSP on every response.
 
 - **Devnet only.** Nothing is shipped.
 - **A web app.** It installs as a PWA; phones come later, from the same code.
+- **No paper backup in v1.** The passkey is the only way in. Lose it (the manager's account lost,
+  the passkey deleted, which no manager warns about, or moved without its PRF secret) and nothing
+  brings back the profiles, the vault or its credits; nor can the same face set up again, since the
+  issuer gives one face one note.
+- **Any page on forest.foundation can ask for the seed.** The passkey's relying party is
+  `forest.foundation` and its salt is public, so a page on any subdomain, the app's or another
+  service's, gets the same seed after the person's face or fingerprint. The seed is as safe as
+  every page served under forest.foundation, not this app's alone.
 - **Tested in Chromium only.** The browser test runs headless Chromium with a virtual passkey
-  authenticator; Safari and Firefox are not tested yet. Nor is the password manager's own save
-  prompt, nor a real Didit check: the test checks the form the prompt saves, and runs the face check
-  against a stand-in page.
+  authenticator, which gives the PRF secret as the passkey is made: Safari's way, the secret only
+  at the get that follows, is checked with a stand-in for the browser's passkey API (Vitest), not
+  in Safari. Not tested: Safari, Firefox, a real passkey manager, the QR code to a phone, a passkey
+  moved between managers, and a real Didit check (the test runs it against a stand-in page). The
+  test reaches a fresh context with the same passkey by moving the same tab to another subdomain,
+  since Chrome's DevTools cannot hand a passkey's PRF secret to another browser context.
+- **Two Forest passkeys look alike.** Each is named Forest, so a person with two (a setup they gave
+  up, say) picks between them in the system's sheet; the wrong one gets "This passkey belongs to
+  another setup." on a device set up with the other.
 - **Your network address is visible to your host and the index.** The board reads each profile's
   folder from its hosts and its twin from the index, and the inbox pulls each profile's messages,
   all from one network address: whoever runs them can link a person's profiles.
@@ -178,7 +234,7 @@ CSP on every response.
   again; with none left in the vault, it says "This profile has no writes left." A write key's
   records spend from the same balance, and the host refuses them once it is empty: only the app's
   own writes top it up. The vault's own folder, which every vault write spends from, gets one
-  credit at setup and is never topped up.
+  credit at setup and is topped up the same way; with none left: "Your vault has no writes left."
 - **The CSP pins the services.** The hosted copy connects only to devnet's issuer, host, registry
   payer, index and RPC. A profile whose hosts record names another host cannot be read or messaged
   from it.
@@ -188,8 +244,11 @@ CSP on every response.
   clearing what the person may be about to paste. Keys made and never pasted still act until
   removed. The card's rows say what each key may do, not who holds it: the permissions record's
   public part has no names. Each read key adds about 2 KB to every message sealed to the profile.
-- **A setup that stopped is taken up on the device it began on.** From another device, the 24
-  words go on to the face check again.
+- **A setup that stopped is taken up on the device it began on.** From another device, or after
+  this one's storage is cleared, Sign in finds no vault for the passkey and says "No setup found
+  for this passkey". If the issuer had already given the note, a new passkey's face check then
+  says the face has a setup: that person is stuck until the app goes on to the face check with
+  the passkey that has no vault.
 - **Taking up a check that still needs its note opens the check's tab after the face.** A browser
   that lets a page open a tab only right after a tap may block it; the app then says so.
 - **Decline hides a request on this device only.** A host keeps each message for its keep days (30
@@ -204,8 +263,8 @@ CSP on every response.
   from this app yet." A card the app finds on none of the hosts it knows gets "No card for
   <address>."
 - **An offer's price is in one dollar,** the index's devnet dollar.
-- **A hidden profile is hidden on this device only.** Another device, or this one after the 24
-  words bring the profiles back, shows it on the board.
+- **A hidden profile is hidden on this device only.** Another device, or this one after a sign in,
+  shows it on the board.
 - **The seed is as safe as the code the server sends.** A web app's code arrives from its server on
   each visit; installed, it runs from the copy its service worker keeps until the next update. The
   CSP keeps a page from running code from anywhere else.

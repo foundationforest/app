@@ -1,113 +1,60 @@
-// Setup, three steps: the 24 words, saved to the password manager through the browser's own save
-// prompt (a sign-in form: username Forest, password the words); a check that they were saved, by
-// filling them back from it (a tap on the field, the eye to see them), which ends with the seed
-// locked on this device; and the face check, each of its stages kept in the locked store as it is
-// got, finished in a tab of its own. A face check that stopped is taken up again from the locked
-// store, after one face, until the vault is written.
+// Setup, two steps: Open with your face, one tap, which makes the passkey and asks it for the seed,
+// the device keeping only the seed's fingerprint; and the face check, each of its stages kept on the
+// device as it is got, sealed under a key mixed from the seed, finished in a tab of its own. The
+// seed the passkey gave is held from the first step to the check, so the check's tab opens on the
+// tap; a face check that stopped is taken up again after one face, until the vault is written. A
+// face the issuer has from another setup sends the person back to Start, to sign in with that one.
 
-import { type FormEvent, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
-import type { Draft, Nav } from '../App.tsx'
 import type { Check, Kept } from '../flows/setup.ts'
 import { saveProfiles } from '../local.ts'
-import { endSetup, keepSetup, lockSeed, readSetup, withSeed } from '../seed/locked.ts'
+import { NoPrf } from '../seed/passkey.ts'
+import { beginSetup, endSetup, keepSetup, readSetup, withSeed } from '../seed/seed.ts'
+import { ServiceError } from '../services/http.ts'
 import { settings } from '../settings.ts'
 import { profilesOf } from '../vault.ts'
-import { EyeIcon, EyeOffIcon, Progress, ScanFaceIcon, Spinner, Words, useAction } from '../ui.tsx'
+import { DUPLICATE_FACE, Progress, ScanFaceIcon, Spinner, useAction } from '../ui.tsx'
 
-/** The words as a person types or pastes them: case and spacing forgiven, as the keys library forgives them. */
-export const sameWords = (a: string, b: string) => a.trim().toLowerCase().split(/\s+/).join(' ') === b.trim().toLowerCase().split(/\s+/).join(' ')
-
-/** The username the words are saved under, so a password manager offers them back. */
-export const Username = () => <input className="unseen" name="username" autoComplete="username" defaultValue="Forest" tabIndex={-1} aria-hidden="true" />
-
-/** The words' field: a tap fills it from the password manager, and the eye shows what it holds. Nothing in it is corrected or spell-checked. */
-export function WordsField({ value, onChange }: { value: string; onChange: (value: string) => void }) {
-  const [shown, setShown] = useState(false)
-  return (
-    <div className="secret">
-      <input
-        className="field"
-        type={shown ? 'text' : 'password'}
-        name="password"
-        autoComplete="current-password"
-        autoCapitalize="off"
-        autoCorrect="off"
-        spellCheck={false}
-        placeholder="Tap to fill"
-        aria-label="Your 24 words"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-      />
-      <button type="button" className="icon" aria-label={shown ? 'Hide the words' : 'Show the words'} onClick={() => setShown(!shown)}>
-        {shown ? <EyeOffIcon /> : <EyeIcon />}
-      </button>
-    </div>
-  )
+type Props = {
+  step: 1 | 2
+  draft: Uint8Array | null
+  /** The passkey is made: its seed, for the check. */
+  onOpened: (seed: Uint8Array) => void
+  /** Back to Start, which says why: no PRF from the passkey, or a face with a setup already. */
+  onStopped: (why: string) => void
+  onDone: () => void
 }
 
-export function Setup({ step, draft, nav, onSetupLocked, onLocked }: { step: 1 | 2 | 3; draft: Draft | null; nav: Nav; onSetupLocked: () => void; onLocked: () => void }) {
-  if (step === 1) return <Save draft={draft!} nav={nav} />
-  if (step === 2) return <Saved draft={draft!} onSetupLocked={onSetupLocked} />
-  return <Face draft={draft} onLocked={onLocked} />
+export function Setup({ step, draft, onOpened, onStopped, onDone }: Props) {
+  if (step === 1) return <Open onOpened={onOpened} onStopped={onStopped} />
+  return <Face draft={draft} onStopped={onStopped} onDone={onDone} />
 }
 
-function Save({ draft, nav }: { draft: Draft; nav: Nav }) {
-  const save = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    // Chromium shows its save prompt for a stored credential; Safari and Firefox see the form sent.
-    const Credential = (window as { PasswordCredential?: new (form: HTMLFormElement) => Credential }).PasswordCredential
-    if (Credential) await navigator.credentials.store(new Credential(e.currentTarget)).catch(() => undefined)
-    nav.go({ name: 'setup', step: 2 })
-  }
-  return (
-    <main>
-      <Progress step={1} />
-      <h1>Your 24 words</h1>
-      <p>These words are you. Lose them and nothing brings them back.</p>
-      <Words words={draft.words} />
-      <div className="fill" />
-      <form onSubmit={save}>
-        <Username />
-        <input className="unseen" type="password" name="password" autoComplete="new-password" defaultValue={draft.words} tabIndex={-1} aria-hidden="true" />
-        <button className="primary">Save to password manager</button>
-      </form>
-    </main>
-  )
-}
-
-function Saved({ draft, onSetupLocked }: { draft: Draft; onSetupLocked: () => void }) {
-  const [typed, setTyped] = useState('')
-  const ok = sameWords(typed, draft.words)
-  // Locked now, before the face check, so each of its stages is kept in the locked store.
-  const lock = useAction(async () => {
-    await lockSeed(draft.seed, { setup: true })
-    onSetupLocked()
+function Open({ onOpened, onStopped }: Pick<Props, 'onOpened' | 'onStopped'>) {
+  const open = useAction(async () => {
+    try {
+      onOpened(await beginSetup())
+    } catch (err) {
+      if (err instanceof NoPrf) return onStopped(err.message)
+      throw err
+    }
   })
   return (
     <main>
-      <Progress step={2} />
-      <h1>Check they're saved</h1>
-      <form
-        className="grow"
-        onSubmit={(e) => {
-          e.preventDefault()
-          if (ok) void lock.run()
-        }}
-      >
-        <Username />
-        <WordsField value={typed} onChange={setTyped} />
-        <div className="fill" />
-        {lock.error ? <p className="error">{lock.error}</p> : typed.trim() && !ok && <p className="error">These aren't your 24 words.</p>}
-        <button className="primary" disabled={!ok || lock.busy}>
-          {lock.busy ? <Spinner /> : 'Next'}
-        </button>
-      </form>
+      <Progress step={1} />
+      <h1>Your passkey</h1>
+      <p>Forest opens with your face or fingerprint, through a passkey your password manager keeps. This passkey is you: lose it and nothing brings it back.</p>
+      <div className="fill" />
+      {open.error && <p className="error">{open.error}</p>}
+      <button className="primary" onClick={() => open.run()} disabled={open.busy}>
+        {open.busy ? <Spinner /> : 'Open with your face'}
+      </button>
     </main>
   )
 }
 
-function Face({ draft, onLocked }: { draft: Draft | null; onLocked: () => void }) {
+function Face({ draft, onStopped, onDone }: Pick<Props, 'draft' | 'onStopped' | 'onDone'>) {
   const check = useRef<Check>({})
   const running = useRef<AbortController | null>(null)
   useEffect(() => () => running.current?.abort(), [])
@@ -147,8 +94,8 @@ function Face({ draft, onLocked }: { draft: Draft | null; onLocked: () => void }
     } finally {
       setAway(false)
     }
-    await endSetup()
-    onLocked()
+    endSetup()
+    onDone()
   }
 
   /** The check's tab, opened while the tap counts, so the seed stays here; Didit sends the person back to /back there. */
@@ -160,20 +107,26 @@ function Face({ draft, onLocked }: { draft: Draft | null; onLocked: () => void }
   }
 
   const start = useAction(async () => {
-    // Setup's own seed, in memory since its words were shown.
-    if (draft) return run(draft.seed, tab())
-    // Taken up again: the seed and what the locked store kept, after one face.
-    await withSeed(async (seed) => {
-      if (!check.current.issuer) Object.assign(check.current, (await readSetup<Kept>(seed)) ?? {})
-      await run(seed, tab())
-    })
+    try {
+      // Setup's own seed, in memory since the passkey gave it.
+      if (draft) return await run(draft, tab())
+      // Taken up again: the seed and what the device kept, after one face.
+      await withSeed(async (seed) => {
+        if (!check.current.issuer) Object.assign(check.current, (await readSetup<Kept>(seed)) ?? {})
+        await run(seed, tab())
+      })
+    } catch (err) {
+      // This passkey can never get a note: the setup is given up, and the person signs in with theirs.
+      if (err instanceof ServiceError && err.code === 'duplicate_face') return onStopped(DUPLICATE_FACE)
+      throw err
+    }
   })
 
   return (
     <main>
-      <Progress step={3} />
+      <Progress step={2} />
       <h1>One face check</h1>
-      <p>This ties your words to you: one real person, accountable for them.</p>
+      <p>This ties your passkey to you: one real person, accountable for it.</p>
       <div className="fill stack center" style={{ alignContent: 'center', color: 'var(--ink-2)' }}>
         <ScanFaceIcon />
       </div>

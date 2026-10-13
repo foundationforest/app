@@ -4,10 +4,10 @@
 // `settings.forestApp`: the services the person uses, and `credits`, the credits not yet spent, as
 // credits.ts writes them, since a credit is a bearer one and is as safe as the vault. A profile's
 // write that a host refuses for want of credits takes one more of them into its folder there, and
-// is sent once more (`paying`). Read and
-// written with the vault key and its inbox key, both mixed from the seed for the action and dropped
-// with it. A vault an older copy of this app wrote keeps its credits at the top; they are moved into
-// `settings.forestApp` when it is read, and written there at its next write.
+// is sent once more (`paying`); the vault's own folder is topped up the same way (`saveVault`).
+// Read and written with the vault key and its inbox key, both mixed from the seed for the action
+// and dropped with it. A vault an older copy of this app wrote keeps its credits at the top; they
+// are moved into `settings.forestApp` when it is read, and written there at its next write.
 
 import { inboxKey, mainKey, vaultKey } from '../standard/keys/src/index.ts'
 import type { Grant, Key } from '../standard/records/src/index.ts'
@@ -71,9 +71,32 @@ export async function openVault(hosts: string[], keys: VaultKeys): Promise<{ vau
   return read && { vault: migrated(read.vault), hosts: read.hosts.length ? read.hosts : hosts, time: read.time }
 }
 
-/** The vault written to every host its hosts record names, at a time past the one it replaces. */
-export async function saveVault(keys: VaultKeys, hosts: string[], vault: AppVault, after = 0): Promise<void> {
-  await publishRecords(hosts, [await vaultRecord(keys.key, keys.recipient, vault, Math.max(Date.now(), after + 1))])
+/**
+ * The vault written to every host its hosts record names, at a time past the one it replaces; the
+ * vault as written. Every write spends from the vault's own folder: when a host refuses one for
+ * want of credits, one of the vault's credits for that host goes into the folder there, and the
+ * vault is written without it, as a profile's folder is topped up (`paying`).
+ */
+export async function saveVault(keys: VaultKeys, hosts: string[], vault: AppVault, after = 0): Promise<AppVault> {
+  const write = async (v: AppVault) => void (await publishRecords(hosts, [await vaultRecord(keys.key, keys.recipient, v, Math.max(Date.now(), after + 1))]))
+  try {
+    await write(vault)
+    return vault
+  } catch (err) {
+    const short = unpaid(err)
+    if (!short.length) throw err
+    let credits = creditsOf(vault)
+    for (const host of short) {
+      try {
+        credits = (await spendOne(credits, host, (credit) => spend(host, keys.key.address, [credit]))).rest
+      } catch (spent) {
+        throw spent instanceof NoCredits ? new Error('Your vault has no writes left.') : spent
+      }
+    }
+    const paid = withCredits(vault, credits)
+    await write(paid)
+    return paid
+  }
 }
 
 /**
@@ -93,14 +116,11 @@ export async function firstVault(keys: VaultKeys, host: string, vault: AppVault)
       },
       [...creditsOf(there.vault), ...creditsOf(vault)],
     )
-    await saveVault(keys, there.hosts, merged, there.time)
-    return merged
+    return saveVault(keys, there.hosts, merged, there.time)
   }
   await publishRecords([host], [hostsRecord(keys.key, [host], Date.now())])
   const { rest } = await spendOne(creditsOf(vault), host, (credit) => spend(host, keys.key.address, [credit]))
-  const kept = withCredits(vault, rest)
-  await saveVault(keys, [host], kept)
-  return kept
+  return saveVault(keys, [host], withCredits(vault, rest))
 }
 
 /**

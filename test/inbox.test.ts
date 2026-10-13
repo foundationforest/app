@@ -11,7 +11,7 @@ import { readFile } from 'node:fs/promises'
 
 import { afterAll, beforeAll, describe, expect, test } from 'vitest'
 
-import { inboxKey, mainKey } from '../standard/keys/src/index.ts'
+import { inboxKey, mainKey, newSeed } from '../standard/keys/src/index.ts'
 import { type Body, b64u, deliver, hostsRecord, keyFromPrivate, ownerRecord, permissionsRecord, readProfile } from '../standard/records/src/index.ts'
 import { message } from '../standard/records/src/private.ts'
 import { DOLLAR, localTime, ownRecords } from '../src/cards.ts'
@@ -24,7 +24,6 @@ import type { LocalProfile } from '../src/local.ts'
 import { inboxCounts } from '../src/local.ts'
 import type { Artifact } from '../src/proof/circuit.ts'
 import { type ProveRequest, prove } from '../src/proof/prove.ts'
-import { makeSeed } from '../src/seed/seed.ts'
 import { publishRecords } from '../src/services/host.ts'
 import { saveSettings } from '../src/settings.ts'
 import { creditsOf, keepGrants, openVault, saveVault, vaultKeys, withCredits } from '../src/vault.ts'
@@ -47,7 +46,7 @@ const known = () => knownHosts(w.settings.host, [seller.p, buyer.p])
 
 /** A person through setup's face check, with one profile, which the stand-in host knows holds a row. */
 async function person(label: string): Promise<Person> {
-  const { seed } = makeSeed()
+  const seed = newSeed()
   await faceCheck(seed, w.settings, {}, (url) => void fetch(url, { redirect: 'manual' }), 'https://app.example/back')
   const [p] = await makeProfile(seed, label, w.settings, proveHere)
   w.host.rows.add(p!.address)
@@ -143,7 +142,7 @@ describe('a thread', () => {
 
 describe('a profile on another host', () => {
   test("a card whose hosts record names only hosts the app does not reach: the message is not sent", async () => {
-    const far = await mainKey(makeSeed().seed, 'tutoring/seller')
+    const far = await mainKey(newSeed(), 'tutoring/seller')
     w.host.balances.set(far.address, 1)
     const now = Date.now()
     const card = { market: 'tutoring', role: 'seller', inboxKey: (await inboxKey(far.privateKey)).recipient, inbox: { senders: { issuer: w.issuer.issuer.key } }, createdAt: new Date(now).toISOString() }
