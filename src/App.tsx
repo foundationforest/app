@@ -1,10 +1,12 @@
 // The app's screens and the way between them, in the browser's history so its back button works. A
 // device set up (it keeps the seed's fingerprint) opens on the board; one whose setup stopped before
-// its vault was written opens on setup's face check, which takes it up again. The passkey that gave
-// the seed, at setup's first step or at a sign in that found no vault, is the draft: kept here for
-// the face check while setup's screens are open, its seed zeroed once they are left. The message door, /message?to=<address>, the link an index gives
-// for a profile, opens a new message to it; a person not set up yet, or with no profile yet, goes
-// through setup or a new profile first, and comes back to it.
+// its vault was written opens on setup's face check, which takes it up again, with Start under it.
+// The passkey that gave the seed, at setup's first step, at Start taking a setup up, or at a sign in
+// that found no vault, is the draft: kept here for the face check while setup's screens are open,
+// its seed zeroed once they are left. A page reloaded to take a new version (version.ts) opens on
+// the screen it was on. The message door, /message?to=<address>, the link an index gives for a
+// profile, opens a new message to it; a person not set up yet, or with no profile yet, goes through
+// setup or a new profile first, and comes back to it.
 
 import { useEffect, useRef, useState } from 'react'
 
@@ -18,6 +20,7 @@ import { Setup } from './screens/Setup.tsx'
 import { Start } from './screens/Start.tsx'
 import type { Passkey } from './seed/passkey.ts'
 import { endSetup, hasSetup } from './seed/seed.ts'
+import { resuming } from './version.ts'
 
 export type Screen =
   | { name: 'start' }
@@ -30,7 +33,7 @@ export type Screen =
 
 export type Nav = { go: (to: Screen) => void; back: () => void; reset: (to: Screen) => void }
 
-/** Where this device stands: not set up, setup under way (the passkey made, no vault yet), or set up. */
+/** Where this device stands: not set up, setup under way (the passkey made, no vault yet: Start or its face check), or set up. */
 type Stage = 'none' | 'setup' | 'in'
 
 /** The address the message door was opened for, kept for this tab until a message to it can be written. */
@@ -40,6 +43,9 @@ const door = {
   set: (to: string) => sessionStorage.setItem(DOOR, to),
   clear: () => sessionStorage.removeItem(DOOR),
 }
+
+/** Whether this page was opened to take a new version: asked once, as the page loads. */
+const resumed = resuming()
 
 export function App() {
   // Where Didit sends the person back after the face check, in a tab of its own.
@@ -59,7 +65,7 @@ function Screens() {
       draft.current.seed.fill(0)
       draft.current = null
     }
-    if (stage.current === 'setup' && !(to.name === 'setup' && to.step === 2)) return reset({ name: 'setup', step: 2 })
+    if (stage.current === 'setup' && to.name !== 'start' && !(to.name === 'setup' && to.step === 2)) return reset({ name: 'setup', step: 2 })
     if (stage.current === 'in' && (to.name === 'setup' || to.name === 'start')) return home()
     if (stage.current === 'none' && to.name !== 'start' && !(to.name === 'setup' && to.step === 1)) return reset({ name: 'start' })
     setScreen(to)
@@ -92,16 +98,24 @@ function Screens() {
     if (to) door.set(to)
     if (location.pathname !== '/') history.replaceState(null, '', '/')
     stage.current = !fingerprint() ? 'none' : hasSetup() ? 'setup' : 'in'
-    if (stage.current === 'in') home()
-    else reset(stage.current === 'setup' ? { name: 'setup', step: 2 } : { name: 'start' })
+    const was = history.state as Screen | null
+    if (resumed && was) show(was)
+    else if (stage.current === 'in') home()
+    else if (stage.current === 'none') reset({ name: 'start' })
+    // Reloaded on Start or the face check: there still. Opened afresh: the face check, Start under it.
+    else if (was) show(was)
+    else {
+      reset({ name: 'start' })
+      nav.go({ name: 'setup', step: 2 })
+    }
     return () => removeEventListener('popstate', pop)
   }, [])
 
-  /** Setup is under way with this passkey: only its face check is left, with the seed it gave. */
-  const opened = (passkey: Passkey) => {
+  /** Setup is under way with this passkey: only its face check is left, with the seed it gave. From Start, Start stays under it. */
+  const opened = (passkey: Passkey, fromStart = false) => {
     stage.current = 'setup'
     draft.current = passkey
-    reset({ name: 'setup', step: 2 })
+    ;(fromStart ? nav.go : reset)({ name: 'setup', step: 2 })
   }
   /** Setup given up (or never begun): back to Start, which says why. */
   const stopped = (why: string) => {
@@ -128,9 +142,19 @@ function Screens() {
     case undefined:
       return null
     case 'start':
-      return <Start key={said} said={said} onStart={() => nav.go({ name: 'setup', step: 1 })} onSignedIn={signedIn} onNoSetup={opened} />
+      return (
+        <Start
+          key={said}
+          said={said}
+          underWay={stage.current === 'setup'}
+          onStart={() => nav.go({ name: 'setup', step: 1 })}
+          onSignedIn={signedIn}
+          onNoSetup={(passkey) => opened(passkey, true)}
+          onForgotten={forgotten}
+        />
+      )
     case 'setup':
-      return <Setup step={screen.step} draft={draft.current} onOpened={opened} onStopped={stopped} onDone={signedIn} />
+      return <Setup step={screen.step} draft={draft.current} onOpened={opened} onStopped={stopped} onDone={signedIn} onBack={nav.back} />
     case 'board':
     case 'message':
       return <Board nav={nav} onForget={forgotten} compose={screen.name === 'message' ? screen.to : undefined} />

@@ -15,6 +15,7 @@ import { type OfferInput, type Per, type ReviewInput, SCORE, amountOk, freshId, 
 import type { LocalProfile } from '../local.ts'
 import { settings } from '../settings.ts'
 import { Spinner, useAction } from '../ui.tsx'
+import { lazy } from '../version.ts'
 
 const PERS: [Per, string][] = [
   ['hour', 'Hour'],
@@ -151,7 +152,7 @@ export function AccessKeySheet({ p, market, role, onClose, onMade }: { p: LocalP
   const [paste, setPaste] = useState('')
   const [copied, setCopied] = useState(false)
   const make = useAction(async () => {
-    const { makeAccessKeys, pasteOf } = await import('../flows/access.ts')
+    const { makeAccessKeys, pasteOf } = await lazy(() => import('../flows/access.ts'))
     const made = await withFace((seed) => makeAccessKeys(seed, p, choice))
     setPaste(pasteOf(settings().mcp, market, role, p.address, made))
     onMade()

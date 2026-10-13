@@ -1,8 +1,9 @@
 // The app's screens in headless Chromium, through Playwright, with a virtual passkey authenticator
 // that has PRF, against one of each stand-in on loopback (test/stand-ins.ts, `world`): the app's own
-// build, its settings pointed at the stand-ins, served as Vercel serves it, under vercel.json's CSP
-// (its connect-src naming the stand-ins in place of devnet's services), at app.forest.foundation,
-// mapped to loopback and taken as a secure origin, so its passkeys are made for that address.
+// build, its settings pointed at the stand-ins, served as Vercel serves it (vercel.ts: vercel.json's
+// headers, its files, its rewrites, else 404), under vercel.json's CSP (its connect-src naming the
+// stand-ins in place of devnet's services), at app.forest.foundation, mapped to loopback and taken
+// as a secure origin, so its passkeys are made for that address.
 //
 //   npm run test:browser
 //
@@ -38,18 +39,26 @@
 //     folder can pay, it finishes, saying so. A face the issuer has from another setup: the passkey
 //     this setup made dropped, and Start says to sign in. A device whose passkeys give no PRF, and a
 //     browser that cannot ask for it: Start says so, and nothing is kept.
-// 12. Nothing the app did, through all of it, was refused by the CSP.
+// 12. Start twice on one device: back from each step of setup; the second Start takes up the
+//     passkey the first made, and none is made; Forget this device drops it, its check having no
+//     note, and Start makes one anew; one passkey at the end. A passkey kept after forgetting the
+//     device refuses the next: "You have a Forest passkey already."
+// 13. A deploy while setup is open: build A served, its service worker in control, setup opened;
+//     build B, every chunk named anew, put in its place, its service worker taking over and A's
+//     files gone; Start: A's flow is a 404, the check's tab closes, the page reloads once onto B,
+//     back on the face check; Start again, and the check opens. No blank tab at any point.
+// 14. Nothing the app did, through all of it, was refused by the CSP.
 //
 // SHOTS=<dir> keeps a screenshot of each screen there, in light and dark.
 
 import assert from 'node:assert/strict'
-import { mkdirSync, readFileSync } from 'node:fs'
+import { mkdirSync, readFileSync, readdirSync } from 'node:fs'
 import { createServer } from 'node:net'
 import { after, before, test } from 'node:test'
 import { fileURLToPath } from 'node:url'
 
 import { type Browser, type BrowserContext, type CDPSession, type Page, chromium } from 'playwright'
-import { type PreviewServer, build, preview } from 'vite'
+import { build } from 'vite'
 
 import { mainKey, vaultKey } from '../../standard/keys/src/index.ts'
 import { accessRecord, b64u, deliver, keyFromPrivate, ownerRecord, permissionsRecord, pull, pullRequest, readProfile } from '../../standard/records/src/index.ts'
@@ -58,9 +67,12 @@ import { message, openMessage } from '../../standard/records/src/private.ts'
 import { publishRecords } from '../../src/services/host.ts'
 import { creditsOf, openVault, vaultKeys } from '../../src/vault.ts'
 import { world } from '../stand-ins.ts'
+import { serveLikeVercel } from './vercel.ts'
 
 const app = fileURLToPath(new URL('../..', import.meta.url))
 const outDir = fileURLToPath(new URL('app-dist', import.meta.url))
+/** The next deploy: the same app, every chunk named anew. */
+const nextDir = fileURLToPath(new URL('app-dist-next', import.meta.url))
 const LABEL = 'tutoring/seller'
 const shots = process.env.SHOTS
 const report: string[] = []
@@ -78,7 +90,7 @@ async function freePort(): Promise<number> {
 }
 
 let browser: Browser
-let server: PreviewServer
+let server: Awaited<ReturnType<typeof serveLikeVercel>>
 let w: Awaited<ReturnType<typeof world>>
 let context: BrowserContext
 let page: Page
@@ -88,9 +100,11 @@ let cdp: { session: CDPSession; authenticatorId: string }
 /** The first person's seed, asked of their passkey by the test itself (`seedOn`). */
 let seed: Uint8Array
 let address: string
-/** The app's origin, and another subdomain's, both on loopback. */
+/** The app's origin, and another subdomain's, both on loopback; and the address a deploy lands on while setup is open. */
 let APP: string
 let OTHER: string
+let DEPLOY: string
+let deployPort: number
 /** The CSP the app is served with, and what it refused on any page, as `<directive> <blocked>`. */
 let csp: string
 const refused: string[] = []
@@ -159,14 +173,18 @@ before(async () => {
     .map((d) => (d.startsWith('connect-src ') ? `connect-src 'self' ${Object.values(services).join(' ')}` : d))
     .join('; ')
   await build({ root: app, configFile: `${app}vite.config.ts`, logLevel: 'warn', build: { outDir, emptyOutDir: true } })
+  const renamed = { entryFileNames: 'assets/[name]-next-[hash].js', chunkFileNames: 'assets/[name]-next-[hash].js' }
+  await build({ root: app, configFile: `${app}vite.config.ts`, logLevel: 'warn', build: { outDir: nextDir, emptyOutDir: true, rolldownOptions: { output: renamed } } })
   const port = await freePort()
-  server = await preview({ root: app, configFile: `${app}vite.config.ts`, build: { outDir }, preview: { host: '127.0.0.1', port, strictPort: true, allowedHosts: ['.forest.foundation'], headers: { 'Content-Security-Policy': csp } } })
+  server = await serveLikeVercel({ root: outDir, port, override: { 'Content-Security-Policy': csp } })
   APP = `http://app.forest.foundation:${port}/`
   OTHER = `http://other.forest.foundation:${port}/`
+  deployPort = await freePort()
+  DEPLOY = `http://app.forest.foundation:${deployPort}/`
   // Chromium itself, not its headless shell, which does not take an insecure origin as secure; and WebAuthn wants a secure one.
   browser = await chromium.launch({
     channel: 'chromium',
-    args: ['--host-resolver-rules=MAP *.forest.foundation 127.0.0.1', `--unsafely-treat-insecure-origin-as-secure=${APP.slice(0, -1)},${OTHER.slice(0, -1)}`],
+    args: ['--host-resolver-rules=MAP *.forest.foundation 127.0.0.1', `--unsafely-treat-insecure-origin-as-secure=${[APP, OTHER, DEPLOY].map((o) => o.slice(0, -1)).join(',')}`],
   })
   ;({ context, page, counts, cdp } = await phone())
   say(`Chromium ${browser.version()}, the app at ${APP} (and ${OTHER}), served from 127.0.0.1`)
@@ -228,7 +246,8 @@ test("setup: Open with your face, the passkey's PRF secret the seed, nothing of 
 
   seed = await seedOn(page)
   const device = await kept(page)
-  assert.deepEqual(Object.keys(device.local).sort(), ['forest.fingerprint', 'forest.settings', 'forest.setup'])
+  assert.deepEqual(Object.keys(device.local).sort(), ['forest.fingerprint', 'forest.passkeys', 'forest.settings', 'forest.setup'])
+  assert.equal(JSON.parse(device.local['forest.passkeys']!).length, 1, "the passkey's id, kept with those made here")
   assert.equal(JSON.parse(device.local['forest.fingerprint']!), (await vaultKey(seed)).address, "the fingerprint: the vault key's public half, of the seed the passkey gives for forest-seed-v1")
   const stored = JSON.stringify(device.local)
   assert.ok(!stored.includes(Buffer.from(seed).toString('base64url')) && !stored.includes(Buffer.from(seed).toString('hex')), 'and not the seed')
@@ -665,9 +684,20 @@ test('the menu: forget this device; then Sign in with the same passkey on a clea
   await shot('12-forget')
   await page.getByRole('button', { name: 'Forget this device' }).click()
   await page.getByRole('button', { name: 'Sign in' }).waitFor()
-  assert.deepEqual(await kept(page), { local: {}, databases: [] }, 'the cache and the fingerprint cleared')
+  const forgotten = await kept(page)
+  assert.deepEqual([Object.keys(forgotten.local), forgotten.databases], [['forest.passkeys'], []], 'the cache and the fingerprint cleared; the ids of the passkeys made here kept')
   const { credentials } = (await cdp.session.send('WebAuthn.getCredentials', { authenticatorId: cdp.authenticatorId })) as { credentials: unknown[] }
   assert.equal(credentials.length, 1, 'the passkey kept')
+
+  // Start again here: the manager holds the passkey this device made, so it makes no second one, and Start says to sign in.
+  const before = counts.created
+  await page.getByRole('button', { name: 'Start', exact: true }).click()
+  await page.getByRole('button', { name: 'Open with your face' }).click()
+  await page.getByText('You have a Forest passkey already. Sign in with it.').waitFor()
+  await page.getByRole('button', { name: 'Sign in' }).waitFor()
+  assert.equal(counts.created - before, 0, 'no passkey made')
+  assert.equal(((await cdp.session.send('WebAuthn.getCredentials', { authenticatorId: cdp.authenticatorId })) as { credentials: unknown[] }).credentials.length, 1)
+  if (shots) await page.screenshot({ path: `${shots}/30-has-passkey-light.png` })
 
   // Back on the app, every bit of its storage cleared, as a new device has it: its service worker,
   // its caches, its local and session storage. The same tab, so the same virtual passkey: Chrome's
@@ -713,7 +743,7 @@ test('the menu: forget this device; then Sign in with the same passkey on a clea
   })
   assert.equal(there, 'SecurityError', `${new URL(OTHER).host} may not ask for app.forest.foundation's passkeys`)
 
-  say(`forget; the app's storage cleared, then Sign in with the same passkey: one face, the board back from the vault, the fingerprint kept; the inbox opened with one face; ${new URL(OTHER).host} refused app.forest.foundation's passkeys (SecurityError)`)
+  say(`forget: the ids of the passkeys made here kept, so Start then made none ("You have a Forest passkey already. Sign in with it."); the app's storage cleared, then Sign in with the same passkey: one face, the board back from the vault, the fingerprint kept; the inbox opened with one face; ${new URL(OTHER).host} refused app.forest.foundation's passkeys (SecurityError)`)
 })
 
 test('a setup that stopped after its note, on a device since lost: Sign in goes on to its face check; no credits, then finished', async () => {
@@ -749,10 +779,10 @@ test('a setup that stopped after its note, on a device since lost: Sign in goes 
   assert.equal('forest.setup' in (await kept(p)).local, true, 'setup waits, nothing lost')
   if (shots) await p.screenshot({ path: `${shots}/27-gift-given-waiting-light.png` })
 
-  // A credit put into the vault's folder, its address the fingerprint: Start again finishes setup, with no new check.
+  // A credit put into the vault's folder, its address the fingerprint: Try again finishes setup, with no new check.
   w.host.balances.set(folder, 1)
   const sessions = w.issuer.sessions.size
-  await p.getByRole('button', { name: 'Start', exact: true }).click()
+  await p.getByRole('button', { name: 'Try again' }).click()
   await p.getByRole('button', { name: 'Continue' }).waitFor({ timeout: 60_000 })
   await p.getByText(gift).waitFor()
   assert.equal(w.issuer.sessions.size, sessions, 'the note kept, no check again')
@@ -780,7 +810,7 @@ test('a face the issuer has from another setup: the passkey made dropped, and St
   await p.getByText('This face already has a setup. Sign in with that passkey.').waitFor({ timeout: 60_000 })
   w.issuer.faceSeen(false)
   assert.equal(await p.getByRole('button', { name: 'Sign in' }).count(), 1, 'on Start, with Sign in')
-  assert.deepEqual(Object.keys((await kept(p)).local), ['forest.settings'], 'the setup and its fingerprint gone')
+  assert.deepEqual(Object.keys((await kept(p)).local).sort(), ['forest.passkeys', 'forest.settings'], "the setup and its fingerprint gone; the ids of the passkeys made here kept")
   const left = ((await fourth.cdp.session.send('WebAuthn.getCredentials', { authenticatorId: fourth.cdp.authenticatorId })) as { credentials: unknown[] }).credentials.length
   assert.equal(left, 0, 'the passkey this setup made, dropped')
   if (shots) await p.screenshot({ path: `${shots}/29-duplicate-face-light.png` })
@@ -811,6 +841,122 @@ test('no PRF: Start says so, and nothing is kept', async () => {
   if (shots) await old.page.screenshot({ path: `${shots}/26-no-prf-browser-light.png` })
   await old.context.close()
   say(`no PRF: the device's passkey refused, Start says "${said}", nothing kept (the drop signal ${left === 0 ? 'took the passkey off the virtual authenticator' : `left ${left} passkey on the virtual authenticator`}); a browser without PRF: Start says so, with no buttons`)
+})
+
+test('Start twice on one device: back from each step, the first passkey taken up, dropped once forgotten, one passkey at the end', async () => {
+  const p = await phone()
+  const b = p.page
+  const held = async () => ((await p.cdp.session.send('WebAuthn.getCredentials', { authenticatorId: p.cdp.authenticatorId })) as { credentials: unknown[] }).credentials.length
+  await b.goto(APP)
+
+  // Back from the first step: Start, nothing made.
+  await b.getByRole('button', { name: 'Start', exact: true }).click()
+  await b.getByRole('heading', { name: 'Your passkey' }).waitFor()
+  await b.getByRole('button', { name: 'Back' }).click()
+  await b.getByRole('button', { name: 'Sign in' }).waitFor()
+  assert.equal(p.counts.created, 0)
+
+  // The first Start: the passkey made, then back from the face check to Start, the setup kept.
+  await b.getByRole('button', { name: 'Start', exact: true }).click()
+  await b.getByRole('button', { name: 'Open with your face' }).click()
+  await b.getByRole('heading', { name: 'One face check' }).waitFor()
+  if (shots) await b.screenshot({ path: `${shots}/31-face-check-back-light.png` })
+  await b.getByRole('button', { name: 'Back' }).click()
+  await b.getByRole('button', { name: 'Forget this device' }).waitFor()
+  assert.equal('forest.setup' in (await kept(b)).local, true, 'setup kept')
+  if (shots) await b.screenshot({ path: `${shots}/32-start-under-way-light.png` })
+
+  // The second Start: one face, of the passkey the first made; none made; on to its face check.
+  const faces = p.counts.asserted
+  await b.getByRole('button', { name: 'Start', exact: true }).click()
+  await b.getByRole('heading', { name: 'One face check' }).waitFor()
+  assert.equal(p.counts.created, 1, 'one passkey made')
+  assert.equal(p.counts.asserted - faces, 1, 'one face')
+  assert.equal(await held(), 1)
+
+  // The browser's back button goes where the arrow does. Forget this device: the check gave no note, so the passkey it made is dropped.
+  await b.goBack()
+  await b.getByRole('button', { name: 'Forget this device' }).click()
+  await b.getByText('Your setup stops here, and the passkey it made is dropped from your password manager.').waitFor()
+  await b.getByRole('button', { name: 'Forget this device' }).click()
+  await b.getByRole('button', { name: 'Forget this device' }).waitFor({ state: 'detached' })
+  assert.equal(await held(), 0, 'the passkey dropped')
+  assert.deepEqual(Object.keys((await kept(b)).local), ['forest.passkeys'], 'the device forgotten, the ids of the passkeys made here kept')
+
+  // Start again: a new passkey, the dropped one excluded but held by none; the check; the board. One passkey.
+  await b.reload()
+  await b.getByRole('button', { name: 'Start', exact: true }).click()
+  await b.getByRole('button', { name: 'Open with your face' }).click()
+  await b.getByRole('heading', { name: 'One face check' }).waitFor()
+  const tab = p.context.waitForEvent('page')
+  await b.getByRole('button', { name: 'Start', exact: true }).click()
+  await tab
+  await b.getByRole('button', { name: 'New profile' }).waitFor({ timeout: 60_000 })
+  assert.equal(p.counts.created, 2)
+  assert.equal(await held(), 1, 'one passkey')
+  await p.context.close()
+  say('Start twice on one device: back from each step to Start; the second Start took up the passkey the first made, with one face, none made; Forget this device dropped it (no note yet), and Start made one anew; one passkey at the end')
+})
+
+test('a deploy while setup is open: Start reloads once onto the new version, back on the face check, and the check opens; never a blank tab', async () => {
+  const deploy = await serveLikeVercel({ root: outDir, port: deployPort, override: { 'Content-Security-Policy': csp } })
+  const p = await phone()
+  const b = p.page
+  const tabs: Page[] = []
+  p.context.on('page', (t) => void tabs.push(t))
+  const entry = () => b.evaluate(() => document.querySelector<HTMLScriptElement>('script[type=module]')!.src)
+  const flowA = `/assets/${readdirSync(`${outDir}/assets`).find((f) => /^setup-[\w-]+\.js$/.test(f))}`
+
+  // Build A, its service worker in control; setup opened.
+  await b.goto(DEPLOY)
+  await b.waitForFunction(() => navigator.serviceWorker.controller !== null, undefined, { timeout: 30_000 })
+  const a = await entry()
+  await b.getByRole('button', { name: 'Start', exact: true }).click()
+  await b.getByRole('button', { name: 'Open with your face' }).click()
+  await b.getByRole('heading', { name: 'One face check' }).waitFor()
+
+  // Build B in its place, every chunk named anew. The service worker finds it and takes over, A's files gone with the old one.
+  deploy.root = nextDir
+  await b.evaluate(async () => {
+    const took = new Promise((resolve) => navigator.serviceWorker.addEventListener('controllerchange', resolve, { once: true }))
+    await (await navigator.serviceWorker.getRegistration())!.update()
+    await took
+  })
+  // Asked for through the new service worker, which serves it from no cache of its own: the server's 404, not index.html.
+  const gone = await b.evaluate(async (url) => {
+    const res = await fetch(url)
+    return { status: res.status, type: res.headers.get('content-type') }
+  }, flowA)
+  assert.deepEqual(gone, { status: 404, type: 'text/plain; charset=utf-8' }, "A's setup flow: a 404, not index.html")
+
+  // Start: the check's tab opens on the tap; A's flow cannot be loaded; the tab closes and the page reloads once, onto B, back on the face check.
+  const loaded = b.waitForEvent('load')
+  await b.getByRole('button', { name: 'Start', exact: true }).click()
+  await loaded
+  await b.getByRole('heading', { name: 'One face check' }).waitFor()
+  const now = await entry()
+  assert.notEqual(now, a)
+  assert.match(now, /-next-/, 'the new version')
+  assert.equal(await b.evaluate(() => sessionStorage.getItem('forest.reloaded')), a, 'reloaded once, from A')
+  assert.equal(tabs.length, 1, "the check's tab opened on the tap")
+  assert.equal(tabs[0]!.isClosed(), true, 'and closed, not left blank')
+  if (shots) await b.screenshot({ path: `${shots}/33-after-deploy-light.png` })
+
+  // Start again: one face, the seed held from it, and the check's tab, which goes to the check.
+  const sessions = w.issuer.sessions.size
+  const faces = p.counts.asserted
+  const tab = p.context.waitForEvent('page')
+  await b.getByRole('button', { name: 'Start', exact: true }).click()
+  const check = await tab
+  await b.getByRole('button', { name: 'New profile' }).waitFor({ timeout: 60_000 })
+  assert.equal(p.counts.asserted - faces, 1, 'one face')
+  assert.equal(w.issuer.sessions.size, sessions + 1, 'the check opened')
+  assert.equal([...w.issuer.sessions.values()].at(-1), `${DEPLOY}back`, 'and sent the person back to the app')
+  assert.ok(tabs.every((t) => t.isClosed() || t.url() !== 'about:blank'), 'no blank tab')
+  assert.equal(p.counts.created, 1, 'one passkey')
+  say(`deploy while setup was open: build B (every chunk renamed) in place of A, its service worker in control and A's files gone; A's setup flow a 404 (${gone.type}), not index.html; Start: the tab closed, the page reloaded once onto B on the face check; Start again: one face, the check opened (its tab closed itself: ${check.isClosed()}), setup done; no blank tab`)
+  await p.context.close()
+  await deploy.close()
 })
 
 test('the CSP: nothing the app did, through all of it, was refused', () => {

@@ -5,3 +5,4 @@ public/circuits/
 test/browser/dist/
 *.local
 test/browser/app-dist/
+test/browser/app-dist-next/

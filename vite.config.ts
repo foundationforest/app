@@ -2,33 +2,43 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import { defineConfig } from 'vitest/config'
 
+import { PAPER, shell } from './shell.ts'
+
 export default defineConfig({
   plugins: [
     react(),
+    // The icons, made from the mark, and the manifest: emitted here, not by the PWA plugin, which would precache the manifest.
+    shell({
+      name: 'Forest',
+      short_name: 'Forest',
+      lang: 'en',
+      description: 'Your profiles, opened with your passkey.',
+      start_url: '/',
+      scope: '/',
+      display: 'standalone',
+      background_color: PAPER,
+      theme_color: PAPER,
+      icons: [
+        { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+        { src: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+        { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+      ],
+    }),
+    // The service worker. A new one takes over as soon as it is installed, found when the app opens,
+    // and the page it finds open keeps running; the next navigation is the new version's.
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['icon.svg', 'icon-180.png'],
-      manifest: {
-        name: 'Forest',
-        short_name: 'Forest',
-        description: 'Your profiles, opened with your passkey.',
-        start_url: '/',
-        scope: '/',
-        display: 'standalone',
-        background_color: '#EDEAE0',
-        theme_color: '#EDEAE0',
-        icons: [
-          { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
-          { src: '/icon-512.png', sizes: '512x512', type: 'image/png' },
-          { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
-        ],
-      },
+      manifest: false,
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
-        // The proof's worker carries snarkjs; it is precached with the rest.
+        // Precached, and served from there first: the files named by a hash of their content, so a
+        // cached copy is always the right one. The proof's worker carries snarkjs; it is one of them.
+        globPatterns: ['assets/**/*.{js,css,woff2}'],
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
-        navigateFallbackDenylist: [/^\/circuits\//],
+        navigateFallback: null,
         runtimeCaching: [
+          // index.html, the manifest and the icons: from the network first, so each open takes the
+          // newest version deployed; the copy kept here serves only when the network does not answer.
+          { urlPattern: ({ request, url }) => request.mode === 'navigate' || /^\/(manifest\.webmanifest|icon[\w-]*\.(svg|png))$/.test(url.pathname), handler: 'NetworkFirst', options: { cacheName: 'shell' } },
           // Named by their SHA-256 (standard.sh), so a cached copy is always the right one. Fetched
           // the first time a proof is made, not at install: most visits make none.
           { urlPattern: /\/circuits\/[0-9a-f]{64}\.(wasm|zkey)$/, handler: 'CacheFirst', options: { cacheName: 'circuits' } },

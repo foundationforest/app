@@ -1,10 +1,11 @@
-// What every screen draws with: the mark, the icons, setup's progress line, and an action's busy
-// and error state.
+// What every screen draws with: the icons, setup's progress line, and an action's busy and error
+// state. The mark has its own file (mark.tsx).
 
 import { type ReactNode, useState } from 'react'
 
 import { NoPrf } from './seed/passkey.ts'
 import { ServiceError } from './services/http.ts'
+import { Reloading } from './version.ts'
 
 const stroke = { fill: 'none', stroke: 'currentColor', strokeWidth: 1.75, strokeLinecap: 'round', strokeLinejoin: 'round' } as const
 
@@ -12,21 +13,6 @@ function Icon({ size = 24, children }: { size?: number; children: ReactNode }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" {...stroke}>
       {children}
-    </svg>
-  )
-}
-
-/**
- * The mark: three roofs and a trunk, exactly as drawn, never redrawn, in the theme's ink.
- * public/icon.svg holds the same drawing on paper, and the PWA icons are made from it.
- */
-export function Mark({ size = 28 }: { size?: number }) {
-  return (
-    <svg className="mark" width={size} height={size} viewBox="0 0 40 40" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="butt" strokeLinejoin="miter" aria-hidden="true">
-      <polyline points="8,12 20,3 32,12" />
-      <polyline points="8,22 20,13 32,22" />
-      <polyline points="8,32 20,23 32,32" />
-      <line x1="20" y1="24" x2="20" y2="38" />
     </svg>
   )
 }
@@ -122,6 +108,7 @@ export const GIFT_GIVEN = 'Your welcome credits were already given once; write t
 /** An error in the person's words, where the app has them; a service's own code where it has not. */
 export function errorText(err: unknown): string {
   if (err instanceof NoPrf) return err.message
+  if (err instanceof Reloading) return ''
   if (err instanceof DOMException && err.name === 'NotAllowedError') return 'Your face or fingerprint was not given.'
   if (err instanceof DOMException && err.name === 'AbortError') return ''
   if (err instanceof ServiceError) {
@@ -134,7 +121,7 @@ export function errorText(err: unknown): string {
   return err instanceof Error ? err.message : String(err)
 }
 
-/** An action's run, its busy state and its error, in the person's words. */
+/** An action's run, its busy state and its error, in the person's words. Busy still while the page reloads to take a new version. */
 export function useAction<A extends unknown[]>(fn: (...args: A) => Promise<void>) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -144,11 +131,11 @@ export function useAction<A extends unknown[]>(fn: (...args: A) => Promise<void>
     try {
       await fn(...args)
     } catch (err) {
+      if (err instanceof Reloading) return
       console.error(err)
       setError(errorText(err))
-    } finally {
-      setBusy(false)
     }
+    setBusy(false)
   }
   return { run, busy, error }
 }

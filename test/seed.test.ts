@@ -3,13 +3,15 @@
 // with the secret given at once, or only at the get that follows (as Safari's), or none, each with
 // a user id of its own; every action's passkey checked against the fingerprint; a sign in that
 // finds a setup, and one that finds none and goes on to the face check; setup's stages sealed
-// under the seed. The real passkey, in Chromium with a virtual authenticator: test/browser/app.ts.
+// under the seed. One passkey per person: every passkey made here kept by its id and excluded from
+// the next; a setup under way taken up with its own; one given up dropped only while it has no note.
+// The real passkey, in Chromium with a virtual authenticator: test/browser/app.ts.
 
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
 import { vaultKey } from '../standard/keys/src/index.ts'
-import { NoPrf, SALT, createPasskey, fingerprintOf, rpId, seedOf } from '../src/seed/passkey.ts'
-import { beginSetup, endSetup, hasSetup, keepSetup, readSetup, setupMadePasskey, signingIn, withSeed } from '../src/seed/seed.ts'
+import { HasPasskey, NoPrf, SALT, createPasskey, fingerprintOf, rpId, seedOf } from '../src/seed/passkey.ts'
+import { beginSetup, dropSetup, endSetup, hasSetup, keepSetup, readSetup, resumeSetup, setupDropsPasskey, setupMadePasskey, signingIn, withSeed } from '../src/seed/seed.ts'
 
 /** A PRF secret as a passkey gives it: 32 bytes in an ArrayBuffer. */
 const secret = (fill: number) => new Uint8Array(32).fill(fill).buffer
@@ -18,14 +20,19 @@ type Asked = { create: CredentialCreationOptions[]; get: CredentialRequestOption
 
 /**
  * The browser's passkey API, stood in for: `create` gives a passkey whose PRF results are `made`,
- * `get` one whose PRF secret is `given`. What each was asked is kept.
+ * `get` one whose PRF secret is `given`, each with the id `id` gives ([1, 2, 3] unless). What each
+ * was asked is kept. `create` refuses, as a manager does, when `held` is one of the ids it excludes.
  */
-function passkeys({ made, given, capabilities = {} }: { made?: { enabled?: boolean; results?: { first: ArrayBuffer } }; given?: () => ArrayBuffer | undefined; capabilities?: Record<string, boolean> }) {
+function passkeys({ made, given, capabilities = {}, id = () => [1, 2, 3], held }: { made?: { enabled?: boolean; results?: { first: ArrayBuffer } }; given?: () => ArrayBuffer | undefined; capabilities?: Record<string, boolean>; id?: () => number[]; held?: number[] }) {
   const asked: Asked = { create: [], get: [], dropped: [] }
-  const credential = (prf: unknown) => ({ rawId: new Uint8Array([1, 2, 3]).buffer, getClientExtensionResults: () => (prf === undefined ? {} : { prf }) })
+  const credential = (prf: unknown) => ({ rawId: new Uint8Array(id()).buffer, getClientExtensionResults: () => (prf === undefined ? {} : { prf }) })
   vi.stubGlobal('navigator', {
     credentials: {
-      create: async (o: CredentialCreationOptions) => (asked.create.push(o), credential(made)),
+      create: async (o: CredentialCreationOptions) => {
+        asked.create.push(o)
+        if (held && o.publicKey!.excludeCredentials!.some((c) => String([...new Uint8Array(c.id as ArrayBuffer)]) === String(held))) throw new DOMException('The authenticator was previously registered.', 'InvalidStateError')
+        return credential(made)
+      },
       get: async (o: CredentialRequestOptions) => {
         asked.get.push(o)
         const first = given?.()
@@ -165,11 +172,91 @@ describe('the fingerprint check', () => {
     const { seed } = await beginSetup()
     expect(await readSetup(seed)).toBeNull()
     await keepSetup(seed, { note: { noteNumber: '42' }, buy: new Uint8Array([9, 9]) })
-    expect(localStorage.getItem('forest.setup')).not.toContain('42')
+    expect(localStorage.getItem('forest.setup'), 'sealed: none of it readable').not.toContain('noteNumber')
     expect(await readSetup(seed)).toEqual({ note: { noteNumber: '42' }, buy: new Uint8Array([9, 9]) })
     await expect(readSetup(new Uint8Array(32).fill(1))).rejects.toThrow()
     expect(setupMadePasskey()).toBe(true)
     endSetup()
     expect(hasSetup()).toBe(false)
+  })
+})
+
+describe('one passkey per person', () => {
+  const ids = (o: CredentialCreationOptions | CredentialRequestOptions, key: 'excludeCredentials' | 'allowCredentials') =>
+    ((o.publicKey as unknown as Record<string, PublicKeyCredentialDescriptor[] | undefined>)[key] ?? []).map((c) => [...new Uint8Array(c.id as ArrayBuffer)])
+
+  test('every passkey made here is kept by its id and excluded from the next; a manager that holds one makes none', async () => {
+    let n = 0
+    const asked = passkeys({ made: { enabled: true, results: { first: secret(1) } }, id: () => [n] })
+    n = 1
+    ;(await beginSetup()).seed.fill(0)
+    expect(ids(asked.create[0]!, 'excludeCredentials'), 'none made here before').toEqual([])
+    expect(JSON.parse(localStorage.getItem('forest.passkeys')!)).toEqual(['AQ'])
+    endSetup()
+    n = 2
+    ;(await beginSetup()).seed.fill(0)
+    expect(ids(asked.create[1]!, 'excludeCredentials')).toEqual([[1]])
+    expect(JSON.parse(localStorage.getItem('forest.passkeys')!)).toEqual(['AQ', 'Ag'])
+
+    endSetup()
+    const refused = passkeys({ made: { enabled: true, results: { first: secret(1) } }, id: () => [3], held: [2] })
+    await expect(beginSetup()).rejects.toThrow(HasPasskey)
+    expect(ids(refused.create[0]!, 'excludeCredentials')).toEqual([[1], [2]])
+    expect(new HasPasskey().message).toBe('You have a Forest passkey already. Sign in with it.')
+    expect(hasSetup(), 'nothing under way').toBe(false)
+  })
+
+  test("a setup under way is taken up with its own passkey, the only one offered, checked against the fingerprint", async () => {
+    let give = secret(4)
+    const asked = passkeys({ made: { enabled: true, results: { first: secret(4) } }, given: () => give, id: () => [4] })
+    ;(await beginSetup()).seed.fill(0)
+    const passkey = await resumeSetup()
+    expect(passkey.seed).toEqual(new Uint8Array(32).fill(4))
+    expect(ids(asked.get[0]!, 'allowCredentials')).toEqual([[4]])
+    give = secret(5)
+    await expect(resumeSetup()).rejects.toThrow('This passkey belongs to another setup.')
+  })
+
+  test('a setup given up drops the passkey it made while its check has no note; one with a note, or from sign in, is kept', async () => {
+    const asked = passkeys({ made: { enabled: true, results: { first: secret(6) } }, given: () => secret(6), id: () => [6] })
+    let { seed } = await beginSetup()
+    await keepSetup(seed, { buys: [] })
+    expect(setupDropsPasskey()).toBe(true)
+    await dropSetup()
+    expect(asked.dropped).toEqual([{ rpId: 'app.forest.foundation', credentialId: 'Bg' }])
+    expect([hasSetup(), localStorage.getItem('forest.fingerprint')]).toEqual([false, null])
+
+    ;({ seed } = await beginSetup())
+    await keepSetup(seed, { note: { noteNumber: '1' } }, true)
+    await keepSetup(seed, { note: { noteNumber: '1' }, tickets: {} })
+    expect(setupDropsPasskey(), 'the note kept: only this passkey can finish').toBe(false)
+    await dropSetup()
+    expect(asked.dropped, 'not dropped').toHaveLength(1)
+
+    endSetup()
+    localStorage.removeItem('forest.passkeys')
+    expect(await signingIn(async () => false)).toBeDefined()
+    expect(setupDropsPasskey(), 'from sign in, never made here').toBe(false)
+  })
+
+  test('sign in with another passkey replaces a setup under way, dropping the passkey it made; with its own, takes it up, stages kept', async () => {
+    let give = secret(7)
+    let id = [7]
+    const asked = passkeys({ made: { enabled: true, results: { first: secret(7) } }, given: () => give, id: () => id })
+    const { seed } = await beginSetup()
+    await keepSetup(seed, { buys: ['kept'] })
+
+    // Its own passkey, no vault: taken up, nothing lost.
+    const own = await signingIn(async () => false)
+    expect(await readSetup(own!.seed)).toEqual({ buys: ['kept'] })
+    expect([asked.dropped, setupMadePasskey()]).toEqual([[], true])
+
+    // Another passkey, with a vault: this device is set up with it, and the setup under way is dropped.
+    give = secret(8)
+    id = [8]
+    expect(await signingIn(async () => true)).toBeUndefined()
+    expect(asked.dropped).toEqual([{ rpId: 'app.forest.foundation', credentialId: 'Bw' }])
+    expect(hasSetup()).toBe(false)
+    expect(JSON.parse(localStorage.getItem('forest.fingerprint')!)).toBe((await vaultKey(new Uint8Array(32).fill(8))).address)
   })
 })

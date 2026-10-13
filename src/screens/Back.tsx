@@ -3,7 +3,7 @@
 
 import { useEffect } from 'react'
 
-import { Mark } from '../ui.tsx'
+import { Mark } from '../mark.tsx'
 
 export function Back() {
   useEffect(() => window.close(), [])
