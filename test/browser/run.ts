@@ -1,10 +1,11 @@
 // The app's modules in a real browser: headless Chromium, through Playwright, with a virtual passkey
-// authenticator (Chrome's DevTools WebAuthn domain) that has PRF, and one that has not.
+// authenticator (Chrome's DevTools WebAuthn domain) that has PRF.
 //
 //   npm run test:browser
 //
-// 1. The seed: made, locked under the passkey's PRF secret in IndexedDB, opened per action (one
-//    face each), never stored but encrypted; refused, with nothing stored, where PRF is missing.
+// 1. The seed: the passkey's PRF secret, asked for at each action (one face each), checked against
+//    the fingerprint, the only thing of it the device keeps. (The screens, with setup, sign in and
+//    a device whose passkeys give no PRF: test/browser/app.ts.)
 // 2. The proof: made in the worker, off the page's thread, from a note a throwaway issuer key
 //    signed; checked in Node; timed, cold (proving files fetched) and warm.
 // 3. Services from the page, over CORS: records published to and read from records' reference host
@@ -23,7 +24,7 @@ import { PublicKey, VersionedTransaction } from '@solana/web3.js'
 import { type Browser, type BrowserContext, type CDPSession, type Page, chromium } from 'playwright'
 import { build, preview, type PreviewServer } from 'vite'
 
-import { importWords, issuerSecret, mainKey } from '../../standard/keys/src/index.ts'
+import { issuerSecret, mainKey, vaultKey } from '../../standard/keys/src/index.ts'
 import { deliver, readProfile } from '../../standard/records/src/index.ts'
 import { message } from '../../standard/records/src/private.ts'
 import { noteToJson, proofFromBytes, rowAddress, stampOf, verifyPerson } from '../../standard/registry/client/src/index.ts'
@@ -69,7 +70,8 @@ let harness: PreviewServer
 let host: Awaited<ReturnType<typeof startHost>>
 let issuerServer: Awaited<ReturnType<typeof issuerStandIn>>
 let seller: Awaited<ReturnType<typeof pageWith>>
-let words: string
+/** The seed the passkey gave, as the page saw it. */
+let seed: Uint8Array
 
 before(async () => {
   await build({ configFile: `${here}vite.config.ts` })
@@ -88,52 +90,34 @@ after(async () => {
   await issuerServer?.close()
 })
 
-test('the seed: locked under a passkey PRF secret in IndexedDB, opened once per action', async () => {
+test("the seed: the passkey's PRF secret, asked for at each action, checked against the fingerprint", async () => {
   const { page, asserted } = seller
   const made = await page.evaluate(async () => {
-    const f = (globalThis as any).forest
-    const { seed, words } = f.makeSeed()
-    const { persisted } = await f.lockSeed(seed)
+    const { seed } = (await (globalThis as any).forest.beginSetup()) as { seed: Uint8Array }
+    const out = Array.from(seed)
     seed.fill(0)
-    const lock = await f.readLock()
-    return { words, persisted, lock: { keys: Object.keys(lock).sort(), sealed: Array.from(lock.sealed as Uint8Array), credential: lock.credential.length } }
+    return { seed: out, local: { ...localStorage }, databases: (await indexedDB.databases()).map((d) => d.name) }
   })
-  words = made.words
-  const seed = importWords(words)
-  assert.deepEqual(made.lock.keys, ['credential', 'iv', 'salt', 'sealed', 'v'], 'IndexedDB holds the passkey id, the salt, the iv and the sealed seed, nothing else')
-  assert.equal(made.lock.sealed.length, 48, 'the seed sealed: 32 bytes and the tag')
-  assert.ok(!Buffer.from(made.lock.sealed).includes(Buffer.from(seed.subarray(0, 8))), 'and not in the clear')
-  say(`seed locked; persistent storage granted: ${made.persisted}`)
+  seed = new Uint8Array(made.seed)
+  assert.equal(seed.length, 32)
+  assert.deepEqual(Object.keys(made.local).sort(), ['forest.fingerprint', 'forest.setup'])
+  assert.equal(JSON.parse(made.local['forest.fingerprint']!), (await vaultKey(seed)).address, "the fingerprint: the vault key's public half")
+  assert.ok(!JSON.stringify(made.local).includes(Buffer.from(seed).toString('base64url')) && !JSON.stringify(made.local).includes(Buffer.from(seed).toString('hex')), 'and not the seed')
+  assert.deepEqual(made.databases, [], 'nothing in IndexedDB')
 
   const before = asserted()
   const address = () => page.evaluate((label) => (globalThis as any).forest.withSeed(async (s: Uint8Array) => (await (globalThis as any).forest.mainKey(s, label)).address), LABEL)
   const want = (await mainKey(seed, LABEL)).address
-  assert.equal(await address(), want, 'withSeed opens the seed the words give')
+  assert.equal(await address(), want, 'withSeed gives the seed the passkey gave at setup')
   assert.equal(await address(), want)
   assert.equal(asserted() - before, 2, 'one face or fingerprint per action')
-  await assert.rejects(page.evaluate(async () => (globalThis as any).forest.lockSeed(new Uint8Array(32))), /already locked/)
-  say('withSeed: the right main key, one passkey assertion per action')
-})
-
-test('no PRF: refused with a clear message, nothing stored', async () => {
-  const other = await pageWith(browser, `${harness.resolvedUrls!.local[0]}harness.html`, false)
-  const refused = await other.page.evaluate(async () => {
-    const f = (globalThis as any).forest
-    try {
-      await f.lockSeed(f.makeSeed().seed)
-      return null
-    } catch (err) {
-      return { name: (err as Error).name, message: (err as Error).message, stored: await f.hasSeed() }
-    }
-  })
-  assert.equal(refused?.name, 'NoPrf')
-  assert.equal(refused?.stored, false)
-  say(`no PRF: refused, "${refused?.message}"`)
-  await other.context.close()
+  await page.evaluate(() => localStorage.setItem('forest.fingerprint', JSON.stringify('another')))
+  await assert.rejects(address(), /This passkey belongs to another setup/)
+  await page.evaluate((f) => localStorage.setItem('forest.fingerprint', JSON.stringify(f)), JSON.parse(made.local['forest.fingerprint']!))
+  say('the seed: the passkey\'s PRF secret, one passkey assertion per action, checked against the fingerprint the device keeps; nothing else of it stored')
 })
 
 test('the proof: made in the worker, off the page thread, from a throwaway issuer key\'s note', async () => {
-  const seed = importWords(words)
   const issuer = throwawayIssuer()
   const { secret, noteNumber } = await issuerSecret(seed, issuer.name)
   const main = await mainKey(seed, LABEL)
@@ -177,7 +161,6 @@ test('the proof: made in the worker, off the page thread, from a throwaway issue
 })
 
 test('the host from the page: records published and read, the inbox pulled and opened', async () => {
-  const seed = importWords(words)
   const main = await mainKey(seed, LABEL)
   const read = await seller.page.evaluate(
     async ({ label, host }) => {
@@ -227,7 +210,6 @@ test('the host from the page: records published and read, the inbox pulled and o
 })
 
 test('the issuer from the page: a session with a return address, and a note', async () => {
-  const seed = importWords(words)
   const name = issuerServer.issuer.name
   const { noteNumber } = await issuerSecret(seed, name)
   const got = await seller.page.evaluate(

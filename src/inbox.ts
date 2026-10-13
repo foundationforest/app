@@ -1,6 +1,6 @@
-// What each inbox holds, counted at each face: the pulls are signed while the seed is open, one per
-// profile and host, then sent once it is closed, so no main key outlives the action. Each profile's
-// inbox key is mixed in the same opening and held only until its pulls are back: what they find is
+// What each inbox holds, counted at each face: the pulls are signed while the seed is held, one per
+// profile and host, then sent once it is dropped, so no main key outlives the action. Each profile's
+// inbox key is mixed with the same seed and held only until its pulls are back: what they find is
 // opened, so a grant, which is a key and never shown, is not counted, nor is what cannot be opened,
 // nor a profile's copies of what it sent, signed by its own main key. The inbox screen marks what it
 // showed as read. One page a host each time.

@@ -100,9 +100,14 @@ type Options = {
   sponsor?: ReturnType<typeof sponsorKey>
 }
 
-/** An issuer stand-in: /issuer.json, a face check's session (it keeps the return address), and a tier 1 note for any note number, with the gift's tickets once a note number. */
+/**
+ * An issuer stand-in: /issuer.json, a face check's session (it keeps the return address), and a
+ * tier 1 note for any note number, with the gift's tickets once a note number. `faceSeen(true)`
+ * makes it refuse each note as the issuer refuses a face it signed for another note number.
+ */
 export async function issuerStandIn(issuer = throwawayIssuer(), options: Options = {}) {
   const sessions = new Map<string, string | undefined>()
+  let seen = false
   const done = new Set<string>()
   const gifts = new Map<string, string>()
   const server = await serve({
@@ -121,6 +126,7 @@ export async function issuerStandIn(issuer = throwawayIssuer(), options: Options
     'POST /note': (body) => {
       if (!sessions.has(body?.sessionId)) return [403, { error: 'unknown_session' }]
       if (options.didit && !done.has(body.sessionId)) return [403, { error: 'no_liveness' }]
+      if (seen) return [403, { error: 'duplicate_face' }]
       const note = noteToJson(issuer.sign(BigInt(body.noteNumber)))
       if (!body.gift || !options.gift) return [200, { note }]
       const refs = body.gift as Record<string, string>
@@ -131,7 +137,7 @@ export async function issuerStandIn(issuer = throwawayIssuer(), options: Options
       return [200, { note, gift: Object.fromEntries(Object.entries(options.gift).map(([s, g]) => [s, options.sponsor!.ticket(g.origin, refs[s]!, g.credits)])) }]
     },
   })
-  return { ...server, issuer, sessions }
+  return { ...server, issuer, sessions, faceSeen: (on: boolean) => void (seen = on) }
 }
 
 /** A service selling credits: Cloudflare's Privacy Pass issuer for a fresh key, and its directory. */

@@ -1,11 +1,13 @@
 // The app's flows against one of each stand-in (test/stand-ins.ts, `world`), on loopback, in Node:
 // setup's face check with the welcome gift and the first vault, and one taken up again from what it
-// kept; a vault with its credits at the top, as an older app wrote it, moved; a profile made, its
-// proof made as the worker makes it; made again after a stop; restore from the words; the card's own
-// records and what the index says; an access key removed; access keys made, each acting as its
-// scope allows, and the paste; access keys that a host would not take for want of credits, with
-// none left in the vault, taken out again. Offers, reviews, the inbox, requests and grants:
-// test/inbox.test.ts. The screens around them, in a browser: test/browser/app.ts.
+// kept; one done again elsewhere, its gift given before, so no credits; a vault with its credits at
+// the top, as an older app wrote it, moved; the vault's own folder topped up from its credits when
+// a host refuses a vault write for want of them; a profile made, its proof made as the worker makes
+// it; made again after a stop; signing in with the passkey's seed; the card's own records and what
+// the index says; an access key removed; access keys made, each acting as its scope allows, and the
+// paste; access keys that a host would not take for want of credits, with none left in the vault,
+// taken out again. Offers, reviews, the inbox, requests and grants: test/inbox.test.ts. The seed
+// from the passkey: test/seed.test.ts. The screens around them, in a browser: test/browser/app.ts.
 
 import { createPublicKey, randomBytes, verify } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
@@ -13,35 +15,35 @@ import { readFile } from 'node:fs/promises'
 import { VersionedTransaction } from '@solana/web3.js'
 import { afterAll, beforeAll, describe, expect, test } from 'vitest'
 
-import { inboxKey, mainKey } from '../standard/keys/src/index.ts'
+import { inboxKey, mainKey, newSeed } from '../standard/keys/src/index.ts'
 import { accessRecord, b64u, deliver, keyFromPrivate, ownerRecord, permissionsRecord, pull, pullRequest, readProfile } from '../standard/records/src/index.ts'
 import { makePrivate, message, openMessage, openPrivate } from '../standard/records/src/private.ts'
 import { makeAccessKeys, pasteOf, removeAccessKey } from '../src/flows/access.ts'
 import { makeProfile } from '../src/flows/profile.ts'
-import { restore } from '../src/flows/restore.ts'
-import { type Check, type Kept, collectGift, faceCheck } from '../src/flows/setup.ts'
+import { signIn } from '../src/flows/signin.ts'
+import { type Check, type Kept, collectGift, faceCheck, giftGiven } from '../src/flows/setup.ts'
 import { indexed, ownRecords, priceText, roleWord, titleOf, words } from '../src/cards.ts'
 import type { Artifact } from '../src/proof/circuit.ts'
 import { type ProveRequest, prove } from '../src/proof/prove.ts'
-import { pack, unpack } from '../src/seed/locked.ts'
-import { makeSeed } from '../src/seed/seed.ts'
+import { pack, unpack } from '../src/seed/seed.ts'
 import { publishRecords } from '../src/services/host.ts'
 import { saveSettings } from '../src/settings.ts'
-import { type AppVault, creditsOf, openVault, saveVault, vaultKeys } from '../src/vault.ts'
+import { type AppVault, NoVaultWrites, creditsOf, openVault, saveVault, vaultKeys, withCredits } from '../src/vault.ts'
 import { MARKETS, world } from './stand-ins.ts'
 
 const load = async (artifact: Artifact) => new Uint8Array(await readFile(new URL(`../public${artifact.path}`, import.meta.url)))
 const proveHere = (request: ProveRequest) => prove(request, load)
 const LABEL = 'tutoring/seller'
 
-// Settings are kept in localStorage, which Node has not: restore saves the vault's there.
+// Settings are kept in localStorage, which Node has not: signing in saves the vault's there.
 ;(globalThis as { localStorage?: Storage }).localStorage ??= (() => {
   const store = new Map<string, string>()
   return { getItem: (k: string) => store.get(k) ?? null, setItem: (k: string, v: string) => void store.set(k, v), removeItem: (k: string) => void store.delete(k), clear: () => store.clear(), key: () => null, length: 0 } as Storage
 })()
 
 let w: Awaited<ReturnType<typeof world>>
-const { seed } = makeSeed()
+// A passkey's PRF secret, as the app uses it: 32 bytes, the seed as it is.
+const seed = newSeed()
 
 // The vault's host, where a write short of credits is topped up from, is the settings'.
 beforeAll(async () => {
@@ -91,8 +93,8 @@ describe('setup', () => {
   })
 
   test('stopped before the vault: what it kept brings back the gift, with no new face check', async () => {
-    const other = makeSeed().seed
-    // Kept as the locked store keeps it: JSON, its bytes as base64url.
+    const other = newSeed()
+    // Kept as the device keeps it: JSON, its bytes as base64url.
     let kept: Kept = {}
     const keep = async (k: Kept) => void (kept = unpack(pack(k)))
     // The vault's first write is refused: setup stops after the note, its tickets kept.
@@ -108,8 +110,29 @@ describe('setup', () => {
     expect((await openVault([w.settings.host], await vaultKeys(other)))!.vault).toEqual(vault)
   })
 
+  test('done again elsewhere, its first buys lost: the gift given, so no credits; the vault written once its folder can pay for it', async () => {
+    const other = newSeed()
+    const keys = await vaultKeys(other)
+    // The first try stops at the vault, after the note and its tickets, on a device since lost.
+    const stop = w.host.refuse(1)
+    await expect(faceCheck(other, w.settings, {}, (url) => void fetch(url, { redirect: 'manual' }), 'https://app.example/back')).rejects.toThrow()
+    stop()
+    // Again from nothing, as Sign in goes on to it: new buys, so the gift was given; no credits, and the vault's folder holds none.
+    const check: Check = {}
+    await expect(faceCheck(other, w.settings, check, (url) => void fetch(url, { redirect: 'manual' }), 'https://app.example/back')).rejects.toThrow(NoVaultWrites)
+    expect(giftGiven(check)).toBe(true)
+    expect(check.credits).toEqual([])
+    expect(await openVault([w.settings.host], keys)).toBeNull()
+    // A credit put into the vault's folder: taken up again, the vault is written, with no credits in it.
+    w.host.balances.set(keys.key.address, 1)
+    const vault = await faceCheck(other, w.settings, check, () => expect.unreachable(), 'https://app.example/back')
+    expect(creditsOf(vault)).toEqual([])
+    expect(vault.issuerNotes).toEqual([{ issuer: 'issuer.test', note: check.note }])
+    expect((await openVault([w.settings.host], keys))!.vault).toEqual(vault)
+  })
+
   test('a vault with its credits at the top, as an older app wrote it: moved into the settings when read', async () => {
-    const other = makeSeed().seed
+    const other = newSeed()
     const keys = await vaultKeys(other)
     const vault = await faceCheck(other, w.settings, {}, (url) => void fetch(url, { redirect: 'manual' }), 'https://app.example/back')
     const credits = creditsOf(vault)
@@ -118,6 +141,26 @@ describe('setup', () => {
     const moved = (await openVault([w.settings.host], keys))!.vault
     expect('credits' in moved).toBe(false)
     expect(moved.settings).toEqual({ forestApp: { ...w.settings, credits }, other: { kept: true } })
+  })
+})
+
+describe("the vault's own folder", () => {
+  test("spent: one of the vault's host credits goes in, and the vault is written without it; with none left, no writes left", async () => {
+    const other = newSeed()
+    const keys = await vaultKeys(other)
+    await faceCheck(other, w.settings, {}, (url) => void fetch(url, { redirect: 'manual' }), 'https://app.example/back')
+    let read = (await openVault([w.settings.host], keys))!
+    expect(hostCredits(read.vault)).toBe(2)
+    w.host.balances.set(keys.key.address, 0)
+    const written = await saveVault(keys, read.hosts, read.vault, read.time)
+    expect(hostCredits(written)).toBe(1)
+    expect(w.host.balances.get(keys.key.address)).toBeCloseTo(0.99)
+    read = (await openVault([w.settings.host], keys))!
+    expect(read.vault).toEqual(written)
+
+    w.host.balances.set(keys.key.address, 0)
+    const none = withCredits(read.vault, creditsOf(read.vault).filter((c) => c.service !== w.settings.host))
+    await expect(saveVault(keys, read.hosts, none, read.time)).rejects.toThrow('Your vault has no writes left.')
   })
 })
 
@@ -155,15 +198,15 @@ describe('a profile', () => {
     await expect(makeProfile(seed, 'tutoring/buyer', w.settings, proveHere)).rejects.toThrow(/No credits left/)
   }, 120_000)
 
-  test('restored from the words: the vault read, its settings taken; none for words that made no vault', async () => {
+  test("signed in with the passkey's seed: the vault read, its settings taken; none for a seed that made no vault", async () => {
     const main = await mainKey(seed, LABEL)
-    expect(await restore(seed, w.settings)).toEqual([{ label: LABEL, address: main.address, hosts: [w.settings.host] }])
+    expect(await signIn(seed, w.settings)).toEqual([{ label: LABEL, address: main.address, hosts: [w.settings.host] }])
     expect(JSON.parse(localStorage.getItem('forest.settings')!)).toEqual(w.settings)
-    expect(await restore(makeSeed().seed, w.settings)).toBeNull()
+    expect(await signIn(newSeed(), w.settings)).toBeNull()
   })
 
-  test('a host that does not answer is not taken for no vault', async () => {
-    await expect(restore(seed, { ...w.settings, host: 'http://127.0.0.1:9' })).rejects.toThrow()
+  test('a host that does not answer is not taken for no setup', async () => {
+    await expect(signIn(seed, { ...w.settings, host: 'http://127.0.0.1:9' })).rejects.toThrow(/did not answer|fetch/)
   })
 })
 
@@ -220,7 +263,7 @@ describe('a card', () => {
     // The write key writes an offer, as an AI's door does; the message key pulls the inbox, and the read key opens what is in it.
     await publishRecords(p.hosts, [accessRecord(writer, p.address, 'offer/by-key', { direction: 'offer', description: 'Written with a key', createdAt: new Date().toISOString() }, Date.now())])
     expect((await ownRecords(p)).offers.map((o) => o.path)).toContain('offer/by-key')
-    const buyer = await mainKey(makeSeed().seed, 'tutoring/buyer')
+    const buyer = await mainKey(newSeed(), 'tutoring/buyer')
     w.host.rows.add(buyer.address)
     await deliver(p.hosts, [await message(buyer, p.address, { text: 'For the helper too.' }, Date.now(), card)])
     const page = await pull(w.settings.host, pullRequest({ key: messenger, profile: p.address }, 0, Date.now()))

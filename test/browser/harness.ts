@@ -6,8 +6,7 @@ import { inboxKey, issuerSecret, mainKey } from '../../standard/keys/src/index.t
 import { hostsRecord, ownerRecord } from '../../standard/records/src/index.ts'
 import { noteFromJson, rowAddress } from '../../standard/registry/client/src/index.ts'
 import { proveInWorker } from '../../src/proof/worker.ts'
-import { hasSeed, lockSeed, readLock, withSeed } from '../../src/seed/locked.ts'
-import { makeSeed } from '../../src/seed/seed.ts'
+import { beginSetup, withSeed } from '../../src/seed/seed.ts'
 import { publishRecords, pullInbox, readOwn } from '../../src/services/host.ts'
 import { note, readIssuer, session } from '../../src/services/issuer.ts'
 import { REGISTRY_PROGRAM } from '../../src/settings.ts'
@@ -31,11 +30,8 @@ async function longestStall<T>(fn: () => Promise<T>): Promise<{ result: T; stall
 }
 
 const forest = {
-  makeSeed,
-  lockSeed,
+  beginSetup,
   withSeed,
-  hasSeed,
-  readLock,
   mainKey,
   inboxKey,
   issuerSecret,

@@ -1,9 +1,10 @@
-// What this device keeps besides the locked seed, none of it secret: its copy of the person's
-// profiles (each label, its address and its hosts, from the vault at the last face), the profiles
-// hidden from the board, what the last face found in each inbox, how many reviews about each
-// profile the person has seen, the requests they approved or declined (by message id), and the
-// appearance. Forgetting the device removes all of it (`forgetLocal`); the 24 words bring the
-// profiles back from the vault, none of them hidden.
+// What this device keeps, none of it secret: the seed's public fingerprint, its copy of the
+// person's profiles (each label, its address and its hosts, from the vault at the last face), the
+// profiles hidden from the board, what the last face found in each inbox, how many reviews about
+// each profile the person has seen, the requests they approved or declined (by message id), the
+// appearance, the settings (settings.ts), and, while setup is under way, its stages, sealed
+// (seed/seed.ts). Forgetting the device removes all of it (`forgetLocal`); signing in with the
+// passkey brings the profiles back from the vault, none of them hidden.
 
 export type LocalProfile = { label: string; address: string; hosts: string[] }
 
@@ -13,6 +14,7 @@ export type InboxCount = { count: number; after: Record<string, number> }
 export type Appearance = 'device' | 'light' | 'dark'
 
 const PREFIX = 'forest.'
+const FINGERPRINT = `${PREFIX}fingerprint`
 const PROFILES = `${PREFIX}profiles`
 const HIDDEN = `${PREFIX}hidden`
 const INBOX = `${PREFIX}inbox`
@@ -36,6 +38,11 @@ function write(key: string, value: unknown): void {
   localStorage.setItem(key, JSON.stringify(value))
   globalThis.dispatchEvent?.(new Event(CHANGED))
 }
+
+/** The seed's public fingerprint (seed/passkey.ts): null when this device is not set up, or was forgotten. */
+export const fingerprint = (): string | null => read(FINGERPRINT, null)
+export const saveFingerprint = (value: string) => write(FINGERPRINT, value)
+export const forgetFingerprint = () => localStorage.removeItem(FINGERPRINT)
 
 export const localProfiles = (): LocalProfile[] => read(PROFILES, [])
 export const saveProfiles = (profiles: LocalProfile[]) => write(PROFILES, profiles)

@@ -1,16 +1,13 @@
 // The menu, a sheet from the bottom: the person's AI, the profiles hidden from the board (each
-// shown again with a tap), the appearance, their 24 words (after the face), and forgetting this
-// device.
+// shown again with a tap), the appearance, and forgetting this device: what it keeps is cleared,
+// the fingerprint with it, and the passkey stays in the person's password manager.
 
 import { useState } from 'react'
 
-import { exportWords } from '../../standard/keys/src/index.ts'
 import { applyAppearance } from '../appearance.ts'
-import { withFace } from '../face.ts'
 import { type Appearance, appearance, forgetLocal, hiddenProfiles, localProfiles, saveAppearance, showProfile } from '../local.ts'
-import { forgetSeed } from '../seed/locked.ts'
 import { settings } from '../settings.ts'
-import { CheckIcon, CopyIcon, Spinner, Words, useAction } from '../ui.tsx'
+import { CheckIcon, CopyIcon } from '../ui.tsx'
 import { ProfileName } from './Compose.tsx'
 
 const CHOICES: [Appearance, string][] = [
@@ -23,18 +20,15 @@ export function Menu({ onClose, onForget }: { onClose: () => void; onForget: () 
   const { mcp } = settings()
   const [copied, setCopied] = useState(false)
   const [theme, setTheme] = useState(appearance)
-  const [shown, setShown] = useState('')
   const [sure, setSure] = useState(false)
   const [hidden, setHidden] = useState(hiddenProfiles)
   const hiddenOnes = localProfiles().filter((p) => hidden.includes(p.address))
 
-  const reveal = useAction(async () => setShown(await withFace(async (seed) => exportWords(seed))))
-  const forget = useAction(async () => {
-    await forgetSeed()
+  const forget = () => {
     forgetLocal()
     applyAppearance('device')
     onForget()
-  })
+  }
   const copy = async () => {
     await navigator.clipboard.writeText(mcp)
     setCopied(true)
@@ -95,24 +89,11 @@ export function Menu({ onClose, onForget }: { onClose: () => void; onForget: () 
           </div>
         </div>
         <div className="item">
-          {shown ? (
-            <>
-              <h2>Your 24 words</h2>
-              <Words words={shown} />
-            </>
-          ) : (
-            <button className="line" onClick={() => reveal.run()} disabled={reveal.busy}>
-              {reveal.busy ? <Spinner /> : 'Your 24 words'}
-            </button>
-          )}
-          {reveal.error && <p className="error">{reveal.error}</p>}
-        </div>
-        <div className="item">
           {sure ? (
             <>
-              <p>Your 24 words restore everything.</p>
-              <button className="primary" onClick={() => forget.run()} disabled={forget.busy}>
-                {forget.busy ? <Spinner /> : 'Forget this device'}
+              <p>Your passkey stays in your password manager. Sign in with it to come back.</p>
+              <button className="primary" onClick={forget}>
+                Forget this device
               </button>
             </>
           ) : (
@@ -120,7 +101,6 @@ export function Menu({ onClose, onForget }: { onClose: () => void; onForget: () 
               Forget this device
             </button>
           )}
-          {forget.error && <p className="error">{forget.error}</p>}
         </div>
       </div>
     </>

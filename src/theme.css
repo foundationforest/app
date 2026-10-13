@@ -258,10 +258,10 @@ button.icon .badge {
   white-space: nowrap;
 }
 
-/* Setup's three steps. */
+/* Setup's two steps. */
 .progress {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 6px;
   padding-top: 12px;
 }
@@ -274,50 +274,6 @@ button.icon .badge {
 
 .progress span.on {
   background: var(--ink);
-}
-
-.words {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px 8px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.words li {
-  display: flex;
-  gap: 6px;
-  align-items: baseline;
-  min-width: 0;
-}
-
-.words li span:first-child {
-  color: var(--ink-2);
-  font-size: 13px;
-  font-variant-numeric: tabular-nums;
-  min-width: 1.5em;
-  text-align: right;
-}
-
-.words li span:last-child {
-  overflow-wrap: anywhere;
-}
-
-/* A field with its eye at the end. */
-.secret {
-  position: relative;
-}
-
-.secret input.field {
-  padding-right: 52px;
-}
-
-.secret button.icon {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  color: var(--ink-2);
 }
 
 input.field,
@@ -333,16 +289,6 @@ textarea.field {
   height: auto;
   padding: 12px 14px;
   resize: vertical;
-}
-
-/* Kept for the password manager, out of sight. */
-.unseen {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
 }
 
 .error {

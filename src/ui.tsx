@@ -1,5 +1,5 @@
-// What every screen draws with: the mark, the icons, setup's progress line, the words' grid, and an
-// action's busy and error state.
+// What every screen draws with: the mark, the icons, setup's progress line, and an action's busy
+// and error state.
 
 import { type ReactNode, useState } from 'react'
 
@@ -66,20 +66,6 @@ export const CheckIcon = () => (
   </Icon>
 )
 
-export const EyeIcon = () => (
-  <Icon size={22}>
-    <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" />
-    <circle cx="12" cy="12" r="3" />
-  </Icon>
-)
-
-export const EyeOffIcon = () => (
-  <Icon size={22}>
-    <path d="M10 5.7A9 9 0 0 1 12 5.5c6 0 9.5 6.5 9.5 6.5a17 17 0 0 1-2.6 3.4M6.6 6.6C3.9 8.3 2.5 12 2.5 12S6 18.5 12 18.5a9 9 0 0 0 5.4-1.7" />
-    <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2M3 3l18 18" />
-  </Icon>
-)
-
 export const MoreIcon = () => (
   <Icon>
     <circle cx="5" cy="12" r="1" />
@@ -104,27 +90,14 @@ export const StarIcon = () => (
 
 export const Spinner = () => <span className="spinner" role="status" aria-label="Working" />
 
-/** Setup's three steps, the current one and those before it filled. */
-export function Progress({ step }: { step: 1 | 2 | 3 }) {
+/** Setup's two steps, the current one and the one before it filled. */
+export function Progress({ step }: { step: 1 | 2 }) {
   return (
-    <div className="progress" aria-label={`Step ${step} of 3`}>
-      {[1, 2, 3].map((n) => (
+    <div className="progress" aria-label={`Step ${step} of 2`}>
+      {[1, 2].map((n) => (
         <span key={n} className={n <= step ? 'on' : ''} />
       ))}
     </div>
-  )
-}
-
-export function Words({ words }: { words: string }) {
-  return (
-    <ol className="words">
-      {words.split(' ').map((word, i) => (
-        <li key={i}>
-          <span>{i + 1}</span>
-          <span>{word}</span>
-        </li>
-      ))}
-    </ol>
   )
 }
 
@@ -136,14 +109,20 @@ export const Score = ({ value }: { value: number }) => (
   </span>
 )
 
+/** What the face check says when the issuer has this face from another setup: that setup's passkey opens it. */
+export const DUPLICATE_FACE = 'This face already has a setup. Sign in with that passkey.'
+
+/** What setup says when the issuer gave this note number its welcome gift before: no credits come. */
+export const GIFT_GIVEN = 'Your welcome credits were already given once; write to us to get more.'
+
 /** An error in the person's words, where the app has them; a service's own code where it has not. */
 export function errorText(err: unknown): string {
   if (err instanceof NoPrf) return err.message
   if (err instanceof DOMException && err.name === 'NotAllowedError') return 'Your face or fingerprint was not given.'
   if (err instanceof DOMException && err.name === 'AbortError') return ''
   if (err instanceof ServiceError) {
-    if (err.code === 'duplicate_face') return 'This face was checked before, with other 24 words.'
-    if (err.code === 'session_used') return 'This check was used before, with other 24 words.'
+    if (err.code === 'duplicate_face') return DUPLICATE_FACE
+    if (err.code === 'session_used') return 'This check was used before, by another setup.'
     if (err.code === 'try_later') return 'Too many checks from here. Try again later.'
     return `${new URL(err.url).host}: ${err.code}`
   }
