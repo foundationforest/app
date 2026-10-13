@@ -24,7 +24,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
         // The proof's worker carries snarkjs; it is precached with the rest.
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
         navigateFallbackDenylist: [/^\/circuits\//],
@@ -32,7 +32,6 @@ export default defineConfig({
           // Named by their SHA-256 (standard.sh), so a cached copy is always the right one. Fetched
           // the first time a proof is made, not at install: most visits make none.
           { urlPattern: /\/circuits\/[0-9a-f]{64}\.(wasm|zkey)$/, handler: 'CacheFirst', options: { cacheName: 'circuits' } },
-          { urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\//, handler: 'StaleWhileRevalidate', options: { cacheName: 'fonts' } },
         ],
       },
     }),

@@ -1,10 +1,16 @@
 import './buffer.ts'
+// Manrope (SIL Open Font License 1.1), carried in the app's own files: no font server sees who opens it.
+import '@fontsource-variable/manrope'
 import './theme.css'
 
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 
 import { App } from './App.tsx'
+import { applyAppearance } from './appearance.ts'
+import { appearance } from './local.ts'
+
+applyAppearance(appearance())
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
