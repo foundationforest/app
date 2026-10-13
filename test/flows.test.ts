@@ -1,7 +1,9 @@
 // The app's flows against one of each stand-in (test/stand-ins.ts, `world`), on loopback, in Node:
-// setup's face check with the welcome gift and the first vault; a profile made, its proof made as the
-// worker makes it; made again after a stop; restore from the words; the card's own records and what
-// the index says; an access key removed. The screens around them, in a browser: test/browser/app.ts.
+// setup's face check with the welcome gift and the first vault, and one taken up again from what it
+// kept; a vault with its credits at the top, as an older app wrote it, moved; a profile made, its
+// proof made as the worker makes it; made again after a stop; restore from the words; the card's own
+// records and what the index says; an access key removed. Offers, reviews and the inbox:
+// test/inbox.test.ts. The screens around them, in a browser: test/browser/app.ts.
 
 import { createPublicKey, randomBytes, verify } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
@@ -14,13 +16,14 @@ import { keyFromPrivate, ownerRecord, permissionsRecord, readProfile } from '../
 import { removeAccessKey } from '../src/flows/access.ts'
 import { makeProfile } from '../src/flows/profile.ts'
 import { restore } from '../src/flows/restore.ts'
-import { type Check, collectGift, faceCheck } from '../src/flows/setup.ts'
+import { type Check, type Kept, collectGift, faceCheck } from '../src/flows/setup.ts'
 import { indexed, ownRecords, priceText, roleWord, titleOf, words } from '../src/cards.ts'
 import type { Artifact } from '../src/proof/circuit.ts'
 import { type ProveRequest, prove } from '../src/proof/prove.ts'
+import { pack, unpack } from '../src/seed/locked.ts'
 import { makeSeed } from '../src/seed/seed.ts'
 import { publishRecords } from '../src/services/host.ts'
-import { openVault, vaultKeys } from '../src/vault.ts'
+import { type AppVault, creditsOf, openVault, saveVault, vaultKeys } from '../src/vault.ts'
 import { MARKETS, world } from './stand-ins.ts'
 
 const load = async (artifact: Artifact) => new Uint8Array(await readFile(new URL(`../public${artifact.path}`, import.meta.url)))
@@ -39,8 +42,8 @@ const { seed } = makeSeed()
 beforeAll(async () => void (w = await world()))
 afterAll(() => w.close())
 
-const hostCredits = (credits: { service: string }[] | undefined) => (credits ?? []).filter((c) => c.service === w.settings.host).length
-const payerCredits = (credits: { service: string }[] | undefined) => (credits ?? []).filter((c) => c.service === w.settings.registryPayer).length
+const hostCredits = (vault: AppVault) => creditsOf(vault).filter((c) => c.service === w.settings.host).length
+const payerCredits = (vault: AppVault) => creditsOf(vault).filter((c) => c.service === w.settings.registryPayer).length
 
 describe('setup', () => {
   test('the face check: a note once the check is done, the gift collected, the first vault written', async () => {
@@ -53,9 +56,10 @@ describe('setup', () => {
     expect(opened).toHaveLength(1)
     expect(w.issuer.sessions.get(opened[0]!.split('/').pop()!)).toBe('https://app.example/back')
     expect(vault.issuerNotes).toEqual([{ issuer: 'issuer.test', note: check.note }])
-    expect(vault.settings).toEqual({ forestApp: w.settings })
+    expect(vault.settings).toEqual({ forestApp: { ...w.settings, credits: creditsOf(vault) } })
+    expect('credits' in vault).toBe(false)
     // 2 registrations and 3 host credits; one host credit went into the vault's own folder.
-    expect([payerCredits(vault.credits), hostCredits(vault.credits)]).toEqual([2, 2])
+    expect([payerCredits(vault), hostCredits(vault)]).toEqual([2, 2])
 
     const keys = await vaultKeys(seed)
     const read = await openVault([w.settings.host], keys)
@@ -75,7 +79,37 @@ describe('setup', () => {
     const before = (await openVault([w.settings.host], keys))!.vault
     const again = await faceCheck(seed, w.settings, {}, (url) => void fetch(url, { redirect: 'manual' }), 'https://app.example/back')
     expect(again.issuerNotes).toEqual(before.issuerNotes)
-    expect(again.credits).toEqual(before.credits)
+    expect(creditsOf(again)).toEqual(creditsOf(before))
+  })
+
+  test('stopped before the vault: what it kept brings back the gift, with no new face check', async () => {
+    const other = makeSeed().seed
+    // Kept as the locked store keeps it: JSON, its bytes as base64url.
+    let kept: Kept = {}
+    const keep = async (k: Kept) => void (kept = unpack(pack(k)))
+    // The vault's first write is refused: setup stops after the note, its tickets kept.
+    const stop = w.host.refuse(1)
+    await expect(faceCheck(other, w.settings, {}, (url) => void fetch(url, { redirect: 'manual' }), 'https://app.example/back', { keep })).rejects.toThrow()
+    stop()
+    expect(Object.keys(kept.tickets ?? {}).sort()).toEqual(['host', 'registryPayer'])
+    // Taken up again, as the app does after a reload: from what was kept alone.
+    const sessions = w.issuer.sessions.size
+    const vault = await faceCheck(other, w.settings, unpack(pack(kept)), () => expect.unreachable(), 'https://app.example/back', { keep })
+    expect(w.issuer.sessions.size).toBe(sessions)
+    expect([payerCredits(vault), hostCredits(vault)]).toEqual([2, 2])
+    expect((await openVault([w.settings.host], await vaultKeys(other)))!.vault).toEqual(vault)
+  })
+
+  test('a vault with its credits at the top, as an older app wrote it: moved into the settings when read', async () => {
+    const other = makeSeed().seed
+    const keys = await vaultKeys(other)
+    const vault = await faceCheck(other, w.settings, {}, (url) => void fetch(url, { redirect: 'manual' }), 'https://app.example/back')
+    const credits = creditsOf(vault)
+    const read = (await openVault([w.settings.host], keys))!
+    await saveVault(keys, read.hosts, { ...vault, credits, settings: { forestApp: w.settings, other: { kept: true } } }, read.time)
+    const moved = (await openVault([w.settings.host], keys))!.vault
+    expect('credits' in moved).toBe(false)
+    expect(moved.settings).toEqual({ forestApp: { ...w.settings, credits }, other: { kept: true } })
   })
 })
 
@@ -101,14 +135,14 @@ describe('a profile', () => {
 
     const vault = (await openVault([w.settings.host], await vaultKeys(seed)))!.vault
     expect(vault.profiles).toEqual([{ label: LABEL, hosts: [w.settings.host] }])
-    expect([payerCredits(vault.credits), hostCredits(vault.credits)]).toEqual([1, 1])
+    expect([payerCredits(vault), hostCredits(vault)]).toEqual([1, 1])
   }, 120_000)
 
   test('made again after a stop: the row is there already, so no registry credit is spent; the vault lists it once', async () => {
     await makeProfile(seed, LABEL, w.settings, proveHere)
     const vault = (await openVault([w.settings.host], await vaultKeys(seed)))!.vault
     expect(vault.profiles).toHaveLength(1)
-    expect([payerCredits(vault.credits), hostCredits(vault.credits)]).toEqual([1, 0])
+    expect([payerCredits(vault), hostCredits(vault)]).toEqual([1, 0])
     // No host credit left: the next folder's card would be refused, so the app says so first.
     await expect(makeProfile(seed, 'tutoring/buyer', w.settings, proveHere)).rejects.toThrow(/No credits left/)
   }, 120_000)
@@ -141,8 +175,8 @@ describe('a card', () => {
       ownerRecord(main, 'review/one', { subject: w.registryPayer.payer, ratings: { overall: '9' }, text: 'On time.', createdAt: new Date(now).toISOString() }, now + 2),
     ])
     const own = await ownRecords(p)
-    expect(own.offers).toEqual([{ path: 'offer/maths', title: 'Maths, one hour', price: '$25 / hour' }])
-    expect(own.written).toEqual([{ path: 'review/one', subject: w.registryPayer.payer, score: '9', text: 'On time.' }])
+    expect(own.offers).toMatchObject([{ path: 'offer/maths', title: 'Maths, one hour', price: '$25 / hour' }])
+    expect(own.written).toMatchObject([{ path: 'review/one', subject: w.registryPayer.payer, score: '9', text: 'On time.' }])
     expect(own.access.map((e) => e.key)).toEqual([writer.address, reader.recipient])
 
     expect(await indexed(w.settings.index, p.address)).toBeNull()

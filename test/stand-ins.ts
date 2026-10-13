@@ -12,7 +12,7 @@ import type { AddressInfo } from 'node:net'
 import { genericBatched, publicVerif } from '@cloudflare/privacypass-ts'
 import { base58, base64urlnopad as b64u } from '@scure/base'
 
-import { decodeRecord, keyFromPrivate } from '../standard/records/src/index.ts'
+import { decodeRecord, keyFromPrivate, readAll } from '../standard/records/src/index.ts'
 import { Host, type HostOptions } from '../standard/records/src/host.ts'
 import { issuerKeyBytes, noteToJson, signNote } from '../standard/registry/client/src/index.ts'
 import { type Credit, buy, finish, referenceOf, serviceOf } from '../src/services/credits.ts'
@@ -181,13 +181,16 @@ async function sellCredits(routes: Record<string, Route>, origin: string, sponso
  * A host stand-in: records' reference host behind a front that sells its credits, keeps each
  * folder's balance, and refuses a content record from a folder that holds no credit, as the
  * foundation's host does (0.01 credit a write here; hosts and permissions records are free). An
- * inbox for one issuer's people takes a sender the test puts in `rows`.
+ * inbox for one issuer's people takes a sender the test puts in `rows`. A message a message key
+ * signed is taken once the sender's records, read from the host it names, list the key.
  */
 export async function hostStandIn(sponsors: string[], rows = new Set<string>()) {
   // An inbox open to people with a row from an issuer takes senders in `rows`, whatever the issuer.
-  const upstream = await startHost({ rowLookup: async (from) => rows.has(from) })
+  const upstream = await startHost({ rowLookup: async (from) => rows.has(from), readSender: async (url, profile) => (await readAll(url, { profile })).records })
   const balances = new Map<string, number>()
   const credits = await serve({})
+  // Writes still to refuse, every record in them, as a host that stops answering would.
+  let refusing = 0
   const front = createServer(async (req, res) => {
     const path = new URL(req.url ?? '/', 'http://x').pathname
     const raw = await bodyOf(req)
@@ -195,6 +198,10 @@ export async function hostStandIn(sponsors: string[], rows = new Set<string>()) 
     if (req.method === 'POST' && path === '/v1/records') {
       const lines = raw.toString('utf8').split('\n').filter(Boolean)
       const records = lines.map((line) => decodeRecord(line).record)
+      if (refusing > 0) {
+        refusing--
+        return void res.writeHead(200, { ...CORS, 'content-type': 'application/x-ndjson' }).end(records.map((_, i) => JSON.stringify({ i, ok: false, error: 'refused' })).join('\n') + '\n')
+      }
       const cost = new Map<string, number>()
       for (const r of records) if (r.path !== 'hosts' && r.path !== 'permissions') cost.set(r.profile, (cost.get(r.profile) ?? 0) + 0.01)
       if ([...cost].some(([folder, c]) => (balances.get(folder) ?? 0) < c - 1e-9)) {
@@ -223,6 +230,11 @@ export async function hostStandIn(sponsors: string[], rows = new Set<string>()) 
     url: served.url,
     balances,
     rows,
+    /** The next `n` writes refused; the function stops refusing. */
+    refuse: (n: number) => {
+      refusing = n
+      return () => void (refusing = 0)
+    },
     close: async () => {
       await served.close()
       await credits.close()

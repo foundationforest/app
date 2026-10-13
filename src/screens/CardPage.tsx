@@ -1,25 +1,29 @@
 // A profile's page: its market, its role word, its score; its offers, the reviews it wrote and its
-// access keys. The bell opens the reviews about it, from the index. Adding an offer, a review or an
-// access key, and the inbox, come next; their buttons are here, not yet working.
+// access keys. The bell opens the reviews about it, from the index; the inbox icon, its inbox. An
+// offer or a review is added with its sheet, and changed or removed by tapping its row. Adding an
+// access key comes next; its button is here, not yet working.
 
 import { useEffect, useState } from 'react'
 
 import type { Nav } from '../App.tsx'
-import { short, words } from '../cards.ts'
+import { type Offer, type Written, short, words } from '../cards.ts'
 import { withFace } from '../face.ts'
 import { localProfiles, markSeen } from '../local.ts'
 import type { AccessKey } from '../../standard/records/src/index.ts'
 import { BackIcon, BellIcon, InboxIcon, Score, Spinner, useAction } from '../ui.tsx'
 import { useProfile } from './Board.tsx'
+import { OfferSheet, ReviewSheet } from './Sheets.tsx'
 
 const can = (e: AccessKey) => (e.scope === 'write' && e.paths ? `write · ${e.paths.join(', ')}` : e.scope!)
 
-function Section({ title, add, children }: { title: string; add: string; children: React.ReactNode }) {
+function Section({ title, add, onAdd, children }: { title: string; add: string; onAdd?: () => void; children: React.ReactNode }) {
   return (
     <section className="section">
       <div className="section-head">
         <h2>{title}</h2>
-        <button disabled>+ {add}</button>
+        <button onClick={onAdd} disabled={!onAdd}>
+          + {add}
+        </button>
       </div>
       {children}
     </section>
@@ -37,6 +41,9 @@ export function CardPage({ address, nav }: { address: string; nav: Nav }) {
 function Page({ p, nav }: { p: ReturnType<typeof localProfiles>[number]; nav: Nav }) {
   const d = useProfile(p)
   const [reviews, setReviews] = useState(false)
+  // The sheet open: a new offer or review (null), or the one tapped.
+  const [offer, setOffer] = useState<Offer | null>()
+  const [review, setReview] = useState<Written | null>()
   const [removing, setRemoving] = useState('')
   const remove = useAction(async (key: string) => {
     setRemoving(key)
@@ -67,7 +74,7 @@ function Page({ p, nav }: { p: ReturnType<typeof localProfiles>[number]; nav: Na
             <BellIcon />
             {d.newReviews > 0 && <span className="dot" />}
           </button>
-          <button className="icon" aria-label="Inbox" aria-disabled="true">
+          <button className="icon" aria-label="Inbox" onClick={() => nav.go({ name: 'inbox', address: p.address })}>
             <InboxIcon />
             {d.inbox > 0 && <span className="badge">{d.inbox}</span>}
           </button>
@@ -85,30 +92,30 @@ function Page({ p, nav }: { p: ReturnType<typeof localProfiles>[number]; nav: Na
         )}
       </div>
 
-      <Section title="Offers" add="Offer">
+      <Section title="Offers" add="Offer" onAdd={() => setOffer(null)}>
         {!!d.own?.offers.length && (
           <div className="rows">
             {d.own.offers.map((o) => (
-              <div className="tint" key={o.path}>
+              <button className="tint" key={o.path} onClick={() => setOffer(o)}>
                 <span>{o.title}</span>
                 {o.price && <span>{o.price}</span>}
-              </div>
+              </button>
             ))}
           </div>
         )}
       </Section>
 
-      <Section title="Reviews you wrote" add="Review">
+      <Section title="Reviews you wrote" add="Review" onAdd={() => setReview(null)}>
         {!!d.own?.written.length && (
           <div className="rows">
             {d.own.written.map((r) => (
-              <div className="row top" key={r.path}>
+              <button className="row top" key={r.path} onClick={() => setReview(r)}>
                 <span>
                   <strong>{short(r.subject)}</strong>
                   {r.text && <span className="sub" style={{ display: 'block' }}>{r.text}</span>}
                 </span>
                 {r.score && <Score value={Number(r.score)} />}
-              </div>
+              </button>
             ))}
           </div>
         )}
@@ -132,6 +139,9 @@ function Page({ p, nav }: { p: ReturnType<typeof localProfiles>[number]; nav: Na
         )}
         {remove.error && <p className="error">{remove.error}</p>}
       </Section>
+
+      {offer !== undefined && <OfferSheet p={p} offer={offer ?? undefined} onClose={() => setOffer(undefined)} onDone={() => (setOffer(undefined), d.reload())} />}
+      {review !== undefined && <ReviewSheet p={p} review={review ?? undefined} onClose={() => setReview(undefined)} onDone={() => (setReview(undefined), d.reload())} />}
 
       {reviews && (
         <>

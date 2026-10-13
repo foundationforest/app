@@ -1,6 +1,7 @@
 // What each inbox holds, counted at each face: the pulls are signed while the seed is open, one per
 // profile and host, then sent once it is closed, so no main key outlives the action. Messages are
-// counted, not opened; reading them comes with the inbox screen. One page a host each time.
+// counted, not opened: the inbox screen opens them, and marks what it showed as read. A profile's
+// copies of what it sent, signed by its own main key, are not counted. One page a host each time.
 
 import { mainKey } from '../standard/keys/src/index.ts'
 import { type SignedPull, pull, pullRequest } from '../standard/records/src/index.ts'
@@ -26,7 +27,17 @@ export async function sendPulls(pulls: Pull[]): Promise<void> {
     if (!got) continue
     const { p, page } = got
     const was = counts[p.address] ?? { count: 0, after: {} }
-    counts[p.address] = { count: was.count + page.messages.length, after: { ...was.after, [p.host]: Math.max(was.after[p.host] ?? 0, page.cursor) } }
+    const fresh = page.messages.filter(({ message: m }) => !(m.from === p.address && m.key === undefined))
+    counts[p.address] = { count: was.count + fresh.length, after: { ...was.after, [p.host]: Math.max(was.after[p.host] ?? 0, page.cursor) } }
   }
   saveInboxCounts(counts)
+}
+
+/** The profile's inbox read up to these cursors, by host: nothing left to count. */
+export function markRead(address: string, cursors: Record<string, number>): void {
+  const counts = inboxCounts()
+  const was = counts[address]?.after ?? {}
+  const after = { ...was }
+  for (const [host, cursor] of Object.entries(cursors)) after[host] = Math.max(was[host] ?? 0, cursor)
+  saveInboxCounts({ ...counts, [address]: { count: 0, after } })
 }

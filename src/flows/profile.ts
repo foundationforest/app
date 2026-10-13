@@ -16,7 +16,7 @@ import { ServiceError } from '../services/http.ts'
 import { payerOf, register } from '../services/registry-payer.ts'
 import { latestBlockhash } from '../services/solana.ts'
 import { REGISTRY_PROGRAM, type Settings } from '../settings.ts'
-import { type AppVault, NoCredits, openVault, profilesOf, saveVault, spendOne, vaultKeys } from '../vault.ts'
+import { type AppVault, NoCredits, creditsOf, openVault, profilesOf, saveVault, spendOne, vaultKeys, withCredits } from '../vault.ts'
 
 export type Prove = (request: ProveRequest) => Promise<Proved>
 
@@ -30,7 +30,7 @@ export async function makeProfile(seed: Uint8Array, label: string, s: Settings, 
   if (!issued) throw new Error('Your vault holds no note.')
   const note = noteFromJson(issued.note)
   // Both are spent below; none spent when either is missing.
-  for (const service of [s.registryPayer, s.host]) if (!vault.credits?.some((c) => c.service === service)) throw new NoCredits(service)
+  for (const service of [s.registryPayer, s.host]) if (!creditsOf(vault).some((c) => c.service === service)) throw new NoCredits(service)
 
   const main = await mainKey(seed, label)
   const { secret } = await issuerSecret(seed, issued.issuer)
@@ -40,7 +40,7 @@ export async function makeProfile(seed: Uint8Array, label: string, s: Settings, 
   tx.sign([Keypair.fromSeed(main.privateKey)])
 
   // The row. Made already, it is this profile's: the same seed and label give the same main key.
-  let credits = vault.credits ?? []
+  let credits = creditsOf(vault)
   try {
     credits = (await spendOne(credits, s.registryPayer, (credit) => register(s.registryPayer, tx.serialize(), credit))).rest
   } catch (err) {
@@ -61,7 +61,7 @@ export async function makeProfile(seed: Uint8Array, label: string, s: Settings, 
   }
   await publishRecords(hosts, [ownerRecord(main, 'profile', card, now)])
 
-  vault = { ...vault, credits, profiles: [...(vault.profiles ?? []).filter((p) => p.label !== label), { label, hosts }] }
+  vault = withCredits({ ...vault, profiles: [...(vault.profiles ?? []).filter((p) => p.label !== label), { label, hosts }] }, credits)
   await saveVault(keys, read.hosts, vault, read.time)
   return profilesOf(seed, vault)
 }

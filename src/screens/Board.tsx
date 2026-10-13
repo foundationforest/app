@@ -1,5 +1,5 @@
 // The board: the person's profiles, the seller side first, each with its offers and its score; the
-// buyer side after, compact; then a new profile.
+// buyer side after, compact; then a new profile. The message door opens a new message over it.
 
 import { useEffect, useState } from 'react'
 
@@ -8,6 +8,7 @@ import { type Indexed, type Market, type Own, indexed, marketOf, ownRecords, rol
 import { CHANGED, type LocalProfile, inboxCounts, localProfiles, seenReviews } from '../local.ts'
 import { settings } from '../settings.ts'
 import { Mark, MenuIcon, Score } from '../ui.tsx'
+import { Compose } from './Compose.tsx'
 import { Menu } from './Menu.tsx'
 
 /** What this device keeps, read again whenever it changes. */
@@ -74,7 +75,7 @@ function ProfileCard({ p, compact, nav }: { p: LocalProfile; compact: boolean; n
   )
 }
 
-export function Board({ nav, onForget }: { nav: Nav; onForget: () => void }) {
+export function Board({ nav, onForget, compose }: { nav: Nav; onForget: () => void; compose?: string }) {
   const profiles = useLocal(localProfiles)
   const [menu, setMenu] = useState(false)
   // Peers, the one side of a one-sided market, offer as sellers do, so they sit with them.
@@ -111,6 +112,7 @@ export function Board({ nav, onForget }: { nav: Nav; onForget: () => void }) {
         New profile
       </button>
       {menu && <Menu onClose={() => setMenu(false)} onForget={onForget} />}
+      {compose && <Compose to={compose} profiles={profiles} onClose={() => nav.reset({ name: 'board' })} />}
     </main>
   )
 }
