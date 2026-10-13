@@ -4,7 +4,7 @@
 // ends. JavaScript cannot promise the bytes are erased (keys README, Limits): the app zeroes them
 // and holds no other reference.
 
-import { createPasskey, passkeySecret } from './passkey.ts'
+import { createPasskey, dropPasskey, passkeySecret } from './passkey.ts'
 
 /** What IndexedDB holds: the passkey's id, the PRF salt, and the seed encrypted. Nothing here opens it without the passkey. */
 export type Lock = { v: 1; credential: Uint8Array<ArrayBuffer>; salt: Uint8Array<ArrayBuffer>; iv: Uint8Array<ArrayBuffer>; sealed: Uint8Array<ArrayBuffer> }
@@ -99,4 +99,19 @@ export async function withSeed<T>(action: (seed: Uint8Array) => Promise<T>): Pro
   } finally {
     seed.fill(0)
   }
+}
+
+/**
+ * Forgets the seed on this device: the store deleted, and the passkey that opened it offered to the
+ * person's passkey manager to drop. The 24 words are then the only way back.
+ */
+export async function forgetSeed(): Promise<void> {
+  const lock = await readLock().catch(() => undefined)
+  if (lock) await dropPasskey(lock.credential)
+  await new Promise<void>((resolve, reject) => {
+    const req = indexedDB.deleteDatabase(DB)
+    req.onsuccess = () => resolve()
+    req.onblocked = () => resolve()
+    req.onerror = () => reject(req.error)
+  })
 }

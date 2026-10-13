@@ -50,11 +50,16 @@ export async function createPasskey(salt: Uint8Array<ArrayBuffer>): Promise<{ id
   const prf = prfOf(credential)
   if (!prf?.enabled) {
     // A passkey that can never open the seed: ask the person's passkey manager to drop it.
-    await (PublicKeyCredential as WithSignals).signalUnknownCredential?.({ rpId: location.hostname, credentialId: b64u(id) }).catch(() => undefined)
+    await dropPasskey(id)
     throw new NoPrf()
   }
   const first = prf.results?.first
   return { id, secret: first ? new Uint8Array(first as ArrayBuffer) : await passkeySecret(id, salt) }
+}
+
+/** Asks the person's passkey manager to drop a passkey that will never open a seed again. Some managers do; the rest ignore it. */
+export async function dropPasskey(id: Uint8Array): Promise<void> {
+  await (PublicKeyCredential as WithSignals | undefined)?.signalUnknownCredential?.({ rpId: location.hostname, credentialId: b64u(id) }).catch(() => undefined)
 }
 
 /** The passkey's PRF secret for `salt`, after the person's face or fingerprint. */
