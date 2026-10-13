@@ -12,6 +12,7 @@ import { withFace } from '../face.ts'
 import { localProfiles, markSeen } from '../local.ts'
 import type { AccessKey } from '../../standard/records/src/index.ts'
 import { BackIcon, BellIcon, CheckIcon, CopyIcon, InboxIcon, MoreIcon, Score, Spinner, useAction } from '../ui.tsx'
+import { lazy } from '../version.ts'
 import { ProfileMenu, useProfile } from './Board.tsx'
 import { AccessKeySheet, OfferSheet, ReviewSheet } from './Sheets.tsx'
 
@@ -52,7 +53,7 @@ function Page({ p, nav }: { p: ReturnType<typeof localProfiles>[number]; nav: Na
   const remove = useAction(async (key: string) => {
     setRemoving(key)
     try {
-      const { removeAccessKey } = await import('../flows/access.ts')
+      const { removeAccessKey } = await lazy(() => import('../flows/access.ts'))
       await withFace((seed) => removeAccessKey(seed, p, key))
       d.reload()
     } finally {

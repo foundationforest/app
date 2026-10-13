@@ -12,25 +12,33 @@ In the order a person meets it.
 
 1. **Start.** Start, or Sign in with a passkey the person has. Where the browser says it cannot
    ask a passkey for PRF at all, Start says to open Forest on a newer device, and shows neither.
+   With a setup under way on this device, Start takes it up with its own passkey, the only one the
+   system's sheet offers, after one face, and makes none; Sign in with another passkey replaces
+   it; and Forget this device gives it up (One passkey per person, below).
 2. **Open with your face.** One tap makes the passkey, and its PRF secret is the seed (Custody,
    below). The device keeps the seed's fingerprint and nothing else of it. Where the passkey made
    gives no PRF secret, the app asks the person's passkey manager to drop it, keeps nothing, and
    Start says to use a phone with a passkey (the QR code in the passkey sheet) or a newer device.
+   Where the manager holds a passkey this device made before, it makes none, and Start says "You
+   have a Forest passkey already. Sign in with it." The back arrow goes to Start.
 3. **One face check.** The issuer's check opens in a tab of its own, and the app says to finish it
-   there; Didit sends it back to `/back`, which closes. Meanwhile the app buys credits at each
-   service the issuer's welcome gift names, asks for the note until the check passes, collects the
-   gift's credits with the tickets the note came with, and writes the first vault on the host: the
-   note, the credits, the services used. Each stage is kept on the device as it is got, sealed
-   (AES-GCM) under a key mixed from the seed, until the vault is written, so a setup that stops,
-   even with the page closed, is taken up again after one face. The seed the passkey gave at the
-   first step is held for this step, so the check's tab opens on the tap. A face the issuer has
-   from another setup ends this one: the passkey it made, which can never get a note, is offered to
-   the person's passkey manager to drop, and Start says "This face already has a setup. Sign in
-   with that passkey." A note number whose gift was given before (a setup done again, its first
-   buys lost) gets no credits: setup says "Your welcome credits were already given once; write to
-   us to get more." It finishes if the vault's own folder can pay for the vault, which costs a
-   write like any record; if the folder holds nothing, setup waits, nothing lost, and Start tries
-   again (`src/flows/setup.ts`, `src/screens/Setup.tsx`).
+   there; Didit sends it back to `/back`, which closes. The tab is never left blank: whatever fails
+   before the check is in it closes it, and the screen says what failed, with Try again. The back
+   arrow goes to Start and keeps the passkey, so Start takes it up. Meanwhile the app buys credits
+   at each service the issuer's welcome gift names, asks for the note until the check passes,
+   collects the gift's credits with the tickets the note came with, and writes the first vault on
+   the host: the note, the credits, the services used. Each stage is kept on the device as it is
+   got, sealed (AES-GCM) under a key mixed from the seed, until the vault is written, so a setup
+   that stops, even with the page closed, is taken up again after one face. The seed the passkey
+   gave at the first step, or at Start taking a setup up, is held for this step, so the check's tab
+   opens on the tap; the check opened again asks for the face first, and holds the seed from then. A
+   face the issuer has from another setup ends this one: the passkey it made, which can never get a
+   note, is offered to the person's passkey manager to drop, and Start says "This face already has a
+   setup. Sign in with that passkey." A note number whose gift was given before (a setup done again,
+   its first buys lost) gets no credits: setup says "Your welcome credits were already given once;
+   write to us to get more." It finishes if the vault's own folder can pay for the vault, which
+   costs a write like any record; if the folder holds nothing, setup waits, nothing lost, and Try
+   again tries again (`src/flows/setup.ts`, `src/screens/Setup.tsx`).
 4. **The board.** The person's profiles: sellers first, with their offers and scores; buyers after,
    compact. A badge counts the messages each inbox holds, grants left out, counted at every face by
    pulls signed with the same seed (`src/face.ts`, `src/inbox.ts`), and the reviews about it not
@@ -85,13 +93,14 @@ In the order a person meets it.
     the text, one face. With no seed yet, setup comes first; with no profile, a new one; then the
     message (`src/screens/Compose.tsx`).
 11. **The menu.** The AI's door, the hidden profiles, the appearance, and forgetting the device:
-    what it keeps is cleared, the fingerprint with it, and the passkey stays in the person's
-    password manager.
+    what it keeps is cleared, the fingerprint with it, all but the ids of the passkeys made here,
+    and the passkey stays in the person's password manager.
 12. **Sign in.** One face: the passkey's seed reads the vault from the host, the board is kept on
     the device, and so is the fingerprint. When every host answered and none holds a vault for this
     passkey, its setup stopped before the vault was written, on this device or another: the app goes
     on to the face check with it, which gives the same note back to the same face
-    (`src/flows/signin.ts`, `src/seed/seed.ts`).
+    (`src/flows/signin.ts`, `src/seed/seed.ts`). A setup under way here with another passkey is
+    replaced (One passkey per person, below).
 
 ## Custody
 
@@ -130,6 +139,14 @@ In the order a person meets it.
   Firefox, and in Safari from 26.4 with open bugs on some keys; and a phone over the QR code on
   macOS, Windows 11 and Android. Bitwarden gives it only some of the time. Not: Chrome's own
   profile authenticator, Windows before that update, iOS before 18.
+- **One passkey per person.** The device keeps the id of every passkey it made (public), and Open
+  with your face names them all as passkeys not to make again (`excludeCredentials`): a manager
+  that holds one of them makes none. A setup under way is taken up with its own passkey, asked for
+  by its id (`allowCredentials`). A setup this device made and then gave up (Forget this device on
+  Start, or a sign in with another passkey) has its passkey offered to the manager to drop, and so
+  does one the issuer refused as a face with a setup already: `signalUnknownCredential` where the
+  browser has it, nothing where it does not. Never one whose check gave a note: the issuer gives
+  that face no other note, so only that passkey can finish its setup (`src/seed/seed.ts`).
 - **No paper backup in v1.** The passkey is the only way in (Limits).
 
 Underneath:
@@ -152,12 +169,22 @@ Underneath:
   anything is written over it.
 - **On the device** (`src/local.ts`), none of it secret: the seed's fingerprint, the profiles and
   their addresses, the profiles hidden from the board, the inbox counts, the reviews seen, the
-  requests answered, the appearance, the settings, and, while setup is under way, its stages,
-  sealed under a key mixed from the seed. Opened messages live only while the inbox screen is open.
+  requests answered, the appearance, the settings, the ids of the passkeys made here, and, while
+  setup is under way, its passkey's id, whether its check gave a note, and its stages, sealed
+  under a key mixed from the seed. Opened messages live only while the inbox screen is open.
 - **The screens** (`src/screens/`, `src/ui.tsx`, `src/theme.css`): Manrope, carried in the app
   (SIL Open Font License 1.1); four colors and one accent. The mark, three roofs and a trunk, is
-  one drawing never redrawn: in the theme's ink on the screens, and in ink on paper, 8 units
-  around it, in the favicon (`public/icon.svg`) and the PWA icons made from it.
+  one drawing never redrawn, held by one component (`src/mark.tsx`) that the board's header, Start
+  and `/back` all draw, in the theme's ink. The favicon (ink on paper, 8 units around it) and the
+  PWA icons are made from that component at each build (`shell.ts`); no copy is kept by hand.
+- **Versions** (`vite.config.ts`, `src/version.ts`, `vercel.json`): the service worker asks the
+  network first for `index.html`, the manifest and the icons, so each open takes the newest version
+  deployed, and keeps a copy only for when the network does not answer. The files under `assets/`,
+  named by a hash of their content, it serves from its cache first. A new service worker, found when
+  the app opens, takes over at once; the page open keeps its own version, and the next navigation
+  is the new one's. A file of the old version, gone from the server, is a 404 there, never
+  `index.html`: the page reloads once to take the new version, back on the screen it was on. The
+  person never clears anything.
 - **The CSP** (`vercel.json`): every response carries a `Content-Security-Policy` header. Scripts,
   styles, images, fonts, workers and the manifest come from the app's own origin alone, with no
   inline script; WebAssembly may compile (`'wasm-unsafe-eval'`), for the proof; the page connects to
@@ -204,12 +231,15 @@ npm run test:browser   # headless Chromium through Playwright, with a virtual pa
                        # acting, a write topped up from the vault, a profile hidden and shown again,
                        # the menu, forgetting the device and signing in again on a cleared one,
                        # another subdomain refused the passkeys, a stopped setup taken up through
-                       # Sign in with its gift given before, a face with a setup already, and no PRF
-                       # (SHOTS=<dir> keeps a screenshot of each screen)
+                       # Sign in with its gift given before, a face with a setup already, no PRF,
+                       # Start twice on one device ending with one passkey, and a deploy landing
+                       # while setup is open, served as Vercel serves it (SHOTS=<dir> keeps a
+                       # screenshot of each screen)
 ```
 
-On Vercel, `vercel.json` runs `standard.sh` and the build, sends every path to the app, sets the
-CSP on every response, and sends the old address, app.devnet.forest.foundation, on to
+On Vercel, `vercel.json` runs `standard.sh` and the build, sends every path to the app but those
+under `/assets/` and those with a dot, so a file that is not there is a 404, sets the CSP on every
+response, and sends the old address, app.devnet.forest.foundation, on to
 https://app.forest.foundation with a 308, path and query kept. That address must be a domain of
 the Vercel project for the redirect to land.
 
@@ -229,12 +259,23 @@ the Vercel project for the redirect to land.
   authenticator, which gives the PRF secret as the passkey is made: Safari's way, the secret only
   at the get that follows, is checked with a stand-in for the browser's passkey API (Vitest), not
   in Safari. Not tested: Safari, Firefox, a real passkey manager, the QR code to a phone, a passkey
-  moved between managers, and a real Didit check (the test runs it against a stand-in page). The
-  test reaches a fresh device with the same passkey by clearing the app's storage in the same tab,
-  since Chrome's DevTools cannot hand a passkey's PRF secret to another browser context.
-- **Two Forest passkeys look alike.** Each is named Forest, so a person with two (a setup they gave
-  up, say) picks between them in the system's sheet; the wrong one gets "This passkey belongs to
-  another setup." on a device set up with the other.
+  moved between managers, a real Didit check (the test runs it against a stand-in page), and a
+  deploy on a real phone (the test swaps one build for another under Chromium's service worker).
+  The test reaches a fresh device with the same passkey by clearing the app's storage in the same
+  tab, since Chrome's DevTools cannot hand a passkey's PRF secret to another browser context.
+- **Two Forest passkeys can still happen.** A device refuses a second passkey where the manager
+  holds one it made, but another device does not know those ids, and a passkey whose drop the
+  manager ignored stays. Each is named Forest, so a person with two picks between them in the
+  system's sheet; the wrong one gets "This passkey belongs to another setup." on a device set up
+  with the other.
+- **Dropping a passkey is a request.** `signalUnknownCredential` is in Chrome from 132 and Safari
+  from 26 (Chrome's developer docs, Corbado, August 2026, not tested here beyond Chromium's virtual
+  authenticator); Google Password Manager hides the passkey rather than deleting it, and a browser
+  or manager without it keeps the passkey, unused. The app never drops a passkey whose check gave
+  a note, nor one it did not make.
+- **The first open after this version still shows the one before, once.** A phone that has the
+  earlier service worker gets the earlier copy from it at that open, and the new worker takes over
+  meanwhile: the next open is the new version.
 - **Your network address is visible to your host and the index.** The board reads each profile's
   folder from its hosts and its twin from the index, and the inbox pulls each profile's messages,
   all from one network address: whoever runs them can link a person's profiles.
@@ -267,7 +308,8 @@ the Vercel project for the redirect to land.
   are kept. From another device, Sign in goes on to the face check with the same passkey, and the
   gift is given before (above).
 - **Taking up a check that still needs its note opens the check's tab after the face.** A browser
-  that lets a page open a tab only right after a tap may block it; the app then says so.
+  that lets a page open a tab only right after a tap may block it; the app then says "Try again to
+  open the check.", with the seed held from that face, so Try again opens it on the tap.
 - **Decline hides a request on this device only.** A host keeps each message for its keep days (30
   on the reference host); another device shows a request again until then.
 - **Threads last as long as the hosts keep messages.** The app keeps no message on the device; each

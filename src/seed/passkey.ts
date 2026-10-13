@@ -4,7 +4,10 @@
 // the device: the seed is asked for again for every action, and dropped after it (seed.ts). The
 // passkey is made for the app's own address, app.forest.foundation, so no page elsewhere under
 // forest.foundation can ask for it. No server checks these passkeys: the challenge is random and
-// nobody verifies the signature; only the PRF secret is used.
+// nobody verifies the signature; only the PRF secret is used. A new passkey is refused where the
+// person's passkey manager holds one this device made before (seed.ts), so a person has one.
+
+import { base64urlnopad } from '@scure/base'
 
 import { vaultKey } from '../../standard/keys/src/index.ts'
 
@@ -33,6 +36,14 @@ export class NoPrf extends Error {
   }
 }
 
+/** Refused: the person's passkey manager holds a Forest passkey this device made before. That one opens Forest. */
+export class HasPasskey extends Error {
+  constructor() {
+    super('You have a Forest passkey already. Sign in with it.')
+    this.name = 'HasPasskey'
+  }
+}
+
 /** The passkey that answered is not the one this device was set up with. */
 export class OtherSetup extends Error {
   constructor() {
@@ -42,7 +53,10 @@ export class OtherSetup extends Error {
 }
 
 const random = (n: number) => crypto.getRandomValues(new Uint8Array(n))
-const b64u = (bytes: Uint8Array) => btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+
+/** A passkey's id as the device keeps it, and as a passkey manager is told it: base64url, no padding. */
+export const idText = (id: Uint8Array): string => base64urlnopad.encode(id)
+export const idBytes = (text: string): Uint8Array<ArrayBuffer> => new Uint8Array(base64urlnopad.decode(text))
 
 type WithCapabilities = { getClientCapabilities?: () => Promise<Record<string, boolean>> }
 type WithSignals = { signalUnknownCredential?: (o: { rpId: string; credentialId: string }) => Promise<void> }
@@ -76,9 +90,10 @@ function prfOf(credential: Credential | null) {
 /**
  * A new passkey, and its seed. Some passkey managers give the PRF secret as the passkey is made;
  * the others (Safari's) only when it is asked for, so one get follows, naming the new passkey.
- * Where it gives none, the person's passkey manager is asked to drop it, and nothing is kept.
+ * Where it gives none, the person's passkey manager is asked to drop it, and nothing is kept. A
+ * manager that holds one of the passkeys `exclude` names makes none, and the person signs in.
  */
-export async function createPasskey(): Promise<Passkey> {
+export async function createPasskey(exclude: Uint8Array<ArrayBuffer>[] = []): Promise<Passkey> {
   if (await browserLacksPrf()) throw new NoPrf(true)
   const credential = await navigator.credentials.create({
     publicKey: {
@@ -92,9 +107,10 @@ export async function createPasskey(): Promise<Passkey> {
       ],
       // No attachment named, so the passkey sheet offers a phone (the QR code) where this device has no PRF.
       authenticatorSelection: { residentKey: 'required', requireResidentKey: true, userVerification: 'required' },
+      excludeCredentials: exclude.map((id) => ({ type: 'public-key' as const, id })),
       extensions: { prf: { eval: { first: SALT } } },
     },
-  })
+  }).catch((err) => Promise.reject(err instanceof DOMException && err.name === 'InvalidStateError' ? new HasPasskey() : err))
   if (!credential) throw new Error('No passkey was made.')
   const id = new Uint8Array((credential as PublicKeyCredential).rawId)
   const prf = prfOf(credential)
@@ -110,7 +126,7 @@ export async function createPasskey(): Promise<Passkey> {
 
 /** Asks the person's passkey manager to drop a passkey that will never give a seed. Some managers do; the rest ignore it. */
 export async function dropPasskey(id: Uint8Array): Promise<void> {
-  await (PublicKeyCredential as WithSignals | undefined)?.signalUnknownCredential?.({ rpId: rpId(), credentialId: b64u(id) }).catch(() => undefined)
+  await (PublicKeyCredential as WithSignals | undefined)?.signalUnknownCredential?.({ rpId: rpId(), credentialId: idText(id) }).catch(() => undefined)
 }
 
 /** The seed, from the person's passkey after their face or fingerprint: one system prompt. Any Forest passkey they hold may answer, unless `allow` names one. */

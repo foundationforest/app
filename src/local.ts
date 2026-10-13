@@ -2,9 +2,10 @@
 // person's profiles (each label, its address and its hosts, from the vault at the last face), the
 // profiles hidden from the board, what the last face found in each inbox, how many reviews about
 // each profile the person has seen, the requests they approved or declined (by message id), the
-// appearance, the settings (settings.ts), and, while setup is under way, its stages, sealed
-// (seed/seed.ts). Forgetting the device removes all of it (`forgetLocal`); signing in with the
-// passkey brings the profiles back from the vault, none of them hidden.
+// appearance, the settings (settings.ts), the ids of the passkeys this app made here, and, while
+// setup is under way, its stages, sealed (seed/seed.ts). Forgetting the device removes all of it
+// but those ids (`forgetLocal`), so Start still makes no second passkey where one is; signing in
+// with the passkey brings the profiles back from the vault, none of them hidden.
 
 export type LocalProfile = { label: string; address: string; hosts: string[] }
 
@@ -21,6 +22,7 @@ const INBOX = `${PREFIX}inbox`
 const SEEN = `${PREFIX}seen`
 const ANSWERED = `${PREFIX}answered`
 const APPEARANCE = `${PREFIX}appearance`
+const PASSKEYS = `${PREFIX}passkeys`
 
 /** The event a change here sends, so what shows it reads it again. */
 export const CHANGED = 'forest:local'
@@ -66,8 +68,12 @@ export const markAnswered = (id: string, answer: 'approved' | 'declined') => wri
 export const appearance = (): Appearance => read(APPEARANCE, 'device')
 export const saveAppearance = (choice: Appearance) => write(APPEARANCE, choice)
 
-/** Every copy this device keeps, the settings among them. */
+/** The ids of the passkeys this app made on this device (seed/passkey.ts, `idText`), public. A new passkey is refused where one of them is. */
+export const madePasskeys = (): string[] => read(PASSKEYS, [])
+export const keepMadePasskey = (id: string) => write(PASSKEYS, [...new Set([...madePasskeys(), id])])
+
+/** Every copy this device keeps, the settings among them; not the ids of the passkeys made here. */
 export function forgetLocal(): void {
-  for (const key of Object.keys(localStorage)) if (key.startsWith(PREFIX)) localStorage.removeItem(key)
+  for (const key of Object.keys(localStorage)) if (key.startsWith(PREFIX) && key !== PASSKEYS) localStorage.removeItem(key)
   globalThis.dispatchEvent?.(new Event(CHANGED))
 }

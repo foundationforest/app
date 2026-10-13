@@ -10,6 +10,7 @@ import { localProfiles, saveProfiles } from '../local.ts'
 import * as indexes from '../services/indexes.ts'
 import { settings } from '../settings.ts'
 import { BackIcon, Spinner, errorText, useAction } from '../ui.tsx'
+import { lazy } from '../version.ts'
 
 type Folder = { folder: string; markets: { name: string }[] }
 
@@ -47,7 +48,7 @@ export function NewProfile({ nav, onMade }: { nav: Nav; onMade: () => void }) {
 
   const make = useAction(async () => {
     const s = settings()
-    const [{ makeProfile }, { proveInWorker }] = await Promise.all([import('../flows/profile.ts'), import('../proof/worker.ts')])
+    const [{ makeProfile }, { proveInWorker }] = await Promise.all([lazy(() => import('../flows/profile.ts')), lazy(() => import('../proof/worker.ts'))])
     await withFace(async (seed) => saveProfiles(await makeProfile(seed, `${picked}/${role}`, s, proveInWorker)))
     onMade()
   })

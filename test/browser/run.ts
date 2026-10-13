@@ -100,7 +100,7 @@ test("the seed: the passkey's PRF secret, asked for at each action, checked agai
   })
   seed = new Uint8Array(made.seed)
   assert.equal(seed.length, 32)
-  assert.deepEqual(Object.keys(made.local).sort(), ['forest.fingerprint', 'forest.setup'])
+  assert.deepEqual(Object.keys(made.local).sort(), ['forest.fingerprint', 'forest.passkeys', 'forest.setup'])
   assert.equal(JSON.parse(made.local['forest.fingerprint']!), (await vaultKey(seed)).address, "the fingerprint: the vault key's public half")
   assert.ok(!JSON.stringify(made.local).includes(Buffer.from(seed).toString('base64url')) && !JSON.stringify(made.local).includes(Buffer.from(seed).toString('hex')), 'and not the seed')
   assert.deepEqual(made.databases, [], 'nothing in IndexedDB')

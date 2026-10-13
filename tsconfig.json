@@ -15,5 +15,5 @@
     "skipLibCheck": true,
     "noEmit": true
   },
-  "include": ["src", "test", "vite.config.ts", "standard/registry/client/types"]
+  "include": ["src", "test", "vite.config.ts", "shell.ts", "standard/registry/client/types"]
 }
