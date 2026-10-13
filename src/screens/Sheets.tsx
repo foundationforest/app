@@ -1,13 +1,15 @@
 // The sheets that write the profile's own records, from the bottom: an offer (its description,
 // whose first line is its title, and its price in the devnet dollar, per hour, per day or in
 // total) and a review (who, a score from 1 to 10 with one decimal, and text). Opened on a row, the
-// same sheet changes or removes it. Post and Remove each take one face.
+// same sheet changes or removes it. Post and Remove each take one face. And a new access key: what
+// it may do, Make with one face, then the paste for the person's AI, shown once.
 
 import { type ReactNode, useState } from 'react'
 
 import { publicKeyFromAddress } from '../../standard/records/src/index.ts'
 import type { Offer, Written } from '../cards.ts'
 import { withFace } from '../face.ts'
+import type { Choice } from '../flows/access.ts'
 import { type OfferInput, type Per, type ReviewInput, SCORE, amountOk, freshId, writeOffer, writeReview } from '../flows/records.ts'
 import type { LocalProfile } from '../local.ts'
 import { Spinner, useAction } from '../ui.tsx'
@@ -127,6 +129,74 @@ export function ReviewSheet({ p, review, subject = '', onClose, onDone }: { p: L
         <input className="field" inputMode="decimal" placeholder="Score" aria-label="Score" value={score} onChange={(e) => setScore(e.target.value.replace(',', '.'))} />
         <textarea className="field" rows={4} placeholder="Text" aria-label="Text" maxLength={3000} value={text} onChange={(e) => setText(e.target.value)} />
         <Actions post={post} remove={review ? remove : undefined} ok={ok} />
+      </form>
+    </Sheet>
+  )
+}
+
+const CAN: [keyof Choice, string][] = [
+  ['write', 'Post offers and reviews'],
+  ['message', 'Send messages'],
+  ['read', 'Read the inbox'],
+]
+
+/**
+ * A new access key for one AI or app: what it may do, then Make, with one face. The paste that
+ * follows holds the private halves; it shows until Done, which drops it, and only Done closes it.
+ */
+export function AccessKeySheet({ p, market, role, onClose, onMade }: { p: LocalProfile; market: string; role: string; onClose: () => void; onMade: () => void }) {
+  const [choice, setChoice] = useState<Choice>({ write: false, message: false, read: false })
+  const [paste, setPaste] = useState('')
+  const [copied, setCopied] = useState(false)
+  const make = useAction(async () => {
+    const { makeAccessKeys, pasteOf } = await import('../flows/access.ts')
+    const made = await withFace((seed) => makeAccessKeys(seed, p, choice))
+    setPaste(pasteOf(market, role, p.address, made))
+    onMade()
+  })
+  const ok = choice.write || choice.message || choice.read
+
+  if (paste) {
+    const done = () => {
+      setPaste('')
+      onClose()
+    }
+    return (
+      <Sheet label="Access key" busy onClose={done}>
+        <div className="sheet-form">
+          <p>Shown once. Paste it into your AI.</p>
+          <pre className="paste">{paste}</pre>
+          <button className="primary" onClick={() => navigator.clipboard.writeText(paste).then(() => setCopied(true), () => undefined)}>
+            {copied ? 'Copied' : 'Copy'}
+          </button>
+          <button className="quiet wide" onClick={done}>
+            Done
+          </button>
+        </div>
+      </Sheet>
+    )
+  }
+  return (
+    <Sheet label="Access key" busy={make.busy} onClose={onClose}>
+      <form
+        className="sheet-form"
+        onSubmit={(e) => {
+          e.preventDefault()
+          if (ok) void make.run()
+        }}
+      >
+        <div className="checks">
+          {CAN.map(([scope, label]) => (
+            <label key={scope}>
+              <input type="checkbox" checked={choice[scope]} disabled={make.busy} onChange={(e) => setChoice({ ...choice, [scope]: e.target.checked })} />
+              {label}
+            </label>
+          ))}
+        </div>
+        {make.error && <p className="error">{make.error}</p>}
+        <button className="primary" disabled={!ok || make.busy}>
+          {make.busy ? <Spinner /> : 'Make'}
+        </button>
       </form>
     </Sheet>
   )

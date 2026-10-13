@@ -1,5 +1,6 @@
 // The person's vault, as this app keeps it (the standard's records README, The vault): the labels of
-// their profiles and where each lives, their issuers' notes, and the app's own field,
+// their profiles and where each lives, the grants that reached their inboxes (kept, not used yet),
+// their issuers' notes, and the app's own field,
 // `settings.forestApp`: the services the person uses, and `credits`, the credits not yet spent, as
 // credits.ts writes them, since a credit is a bearer one and is as safe as the vault. Read and
 // written with the vault key and its inbox key, both mixed from the seed for the action and dropped
@@ -7,8 +8,8 @@
 // `settings.forestApp` when it is read, and written there at its next write.
 
 import { inboxKey, mainKey, vaultKey } from '../standard/keys/src/index.ts'
-import type { Key } from '../standard/records/src/index.ts'
-import { hostsRecord, readPage } from '../standard/records/src/index.ts'
+import type { Grant, Key } from '../standard/records/src/index.ts'
+import { hostsRecord } from '../standard/records/src/index.ts'
 import { type Vault, readVault, vaultRecord } from '../standard/records/src/private.ts'
 import type { LocalProfile } from './local.ts'
 import type { Credit } from './services/credits.ts'
@@ -58,13 +59,14 @@ function migrated(vault: AppVault): AppVault {
 
 /**
  * The vault as its hosts hold it now, with its hosts and its record's time for the next write; null
- * when they hold none. The first host must answer: a host that does not would look like no vault,
- * and a person sent on as if they had none would have a new vault written over theirs.
+ * when they hold none. Every host must answer: the standard's readVault throws, rather than give
+ * null, when no host had it and one failed, since a person sent on as if they had none would have a
+ * new vault written over theirs; and a host that failed while another had it may hold a newer one.
  */
 export async function openVault(hosts: string[], keys: VaultKeys): Promise<{ vault: AppVault; hosts: string[]; time: number } | null> {
-  await readPage(hosts[0]!, { profile: keys.key.address, post: true })
   const read = await readVault(hosts, { address: keys.key.address, identity: keys.identity }, Date.now(), { post: true })
-  return read && { ...read, vault: migrated(read.vault), hosts: read.hosts.length ? read.hosts : hosts }
+  if (read?.failed.length) throw new Error(`${read.failed.map((f) => new URL(f.host).host).join(', ')} did not answer.`)
+  return read && { vault: migrated(read.vault), hosts: read.hosts.length ? read.hosts : hosts, time: read.time }
 }
 
 /** The vault written to every host its hosts record names, at a time past the one it replaces. */
@@ -125,6 +127,21 @@ export class NoCredits extends Error {
     super(`No credits left at ${new URL(service).host}.`)
     this.name = 'NoCredits'
   }
+}
+
+/**
+ * Grants that reached a profile's inbox, added to the vault's: one it holds already, by its key, is
+ * left as it is, so the vault is written only when one is new. How many were new.
+ */
+export async function keepGrants(seed: Uint8Array, host: string, grants: Grant[]): Promise<number> {
+  if (!grants.length) return 0
+  const keys = await vaultKeys(seed)
+  const read = await openVault([host], keys)
+  if (!read) throw new Error('No vault was found on your host.')
+  const held = read.vault.grants ?? []
+  const fresh = grants.filter((g, i) => !held.some((h) => h.key === g.key) && grants.findIndex((x) => x.key === g.key) === i)
+  if (fresh.length) await saveVault(keys, read.hosts, { ...read.vault, grants: [...held, ...fresh] }, read.time)
+  return fresh.length
 }
 
 /** The vault's profiles as this device keeps them: each with its address, mixed from the seed and its label. */

@@ -2,7 +2,8 @@
 // setup's face check with the welcome gift and the first vault, and one taken up again from what it
 // kept; a vault with its credits at the top, as an older app wrote it, moved; a profile made, its
 // proof made as the worker makes it; made again after a stop; restore from the words; the card's own
-// records and what the index says; an access key removed. Offers, reviews and the inbox:
+// records and what the index says; an access key removed; access keys made, each acting as its
+// scope allows, and the paste. Offers, reviews, the inbox, requests and grants:
 // test/inbox.test.ts. The screens around them, in a browser: test/browser/app.ts.
 
 import { createPublicKey, randomBytes, verify } from 'node:crypto'
@@ -12,8 +13,9 @@ import { VersionedTransaction } from '@solana/web3.js'
 import { afterAll, beforeAll, describe, expect, test } from 'vitest'
 
 import { inboxKey, mainKey } from '../standard/keys/src/index.ts'
-import { keyFromPrivate, ownerRecord, permissionsRecord, readProfile } from '../standard/records/src/index.ts'
-import { removeAccessKey } from '../src/flows/access.ts'
+import { accessRecord, b64u, deliver, keyFromPrivate, ownerRecord, permissionsRecord, pull, pullRequest, readProfile } from '../standard/records/src/index.ts'
+import { makePrivate, message, openMessage, openPrivate } from '../standard/records/src/private.ts'
+import { makeAccessKeys, pasteOf, removeAccessKey } from '../src/flows/access.ts'
 import { makeProfile } from '../src/flows/profile.ts'
 import { restore } from '../src/flows/restore.ts'
 import { type Check, type Kept, collectGift, faceCheck } from '../src/flows/setup.ts'
@@ -189,6 +191,53 @@ describe('a card', () => {
     expect(view.access).toEqual([{ key: writer.address, was: 'write', paths: ['offer', 'review'] }])
     expect((view.current.get('profile')!.record.body!.inbox as { readers?: string[] }).readers).toBeUndefined()
     expect((await ownRecords(p)).access).toEqual([])
+  })
+
+  test('access keys made: listed by their public halves and scopes alone, the read key among the inbox readers; each acts; the paste', async () => {
+    const main = await mainKey(seed, LABEL)
+    const p = { label: LABEL, address: main.address, hosts: [w.settings.host] }
+    const before = (await readProfile(p.hosts, p.address, Date.now())).access
+    const made = await makeAccessKeys(seed, p, { write: true, message: true, read: true })
+    expect(made.write).toMatch(/^[A-Za-z0-9_-]{43}$/)
+    expect(made.message).toMatch(/^[A-Za-z0-9_-]{43}$/)
+    expect(made.read).toMatch(/^AGE-SECRET-KEY-PQ-1/)
+    const writer = keyFromPrivate(b64u.decode(made.write!))
+    const messenger = keyFromPrivate(b64u.decode(made.message!))
+
+    const view = await readProfile(p.hosts, p.address, Date.now())
+    const reader = view.access.at(-1)!.key
+    expect(view.access).toEqual([...before, { key: writer.address, scope: 'write', paths: ['offer', 'review'] }, { key: messenger.address, scope: 'message' }, { key: reader, scope: 'read' }])
+    expect(Object.keys(view.current.get('permissions')!.record.body!)).toEqual(['access'])
+    const card = view.current.get('profile')!.record.body!
+    expect((card.inbox as { readers?: string[] }).readers).toEqual([reader])
+
+    // The write key writes an offer, as an AI's door does; the message key pulls the inbox, and the read key opens what is in it.
+    await publishRecords(p.hosts, [accessRecord(writer, p.address, 'offer/by-key', { direction: 'offer', description: 'Written with a key', createdAt: new Date().toISOString() }, Date.now())])
+    expect((await ownRecords(p)).offers.map((o) => o.path)).toContain('offer/by-key')
+    const buyer = await mainKey(makeSeed().seed, 'tutoring/buyer')
+    w.host.rows.add(buyer.address)
+    await deliver(p.hosts, [await message(buyer, p.address, { text: 'For the helper too.' }, Date.now(), card)])
+    const page = await pull(w.settings.host, pullRequest({ key: messenger, profile: p.address }, 0, Date.now()))
+    const opened = await openMessage(page.messages.at(-1)!.message, made.read!)
+    expect(opened.body).toEqual({ text: 'For the helper too.' })
+    expect(await openPrivate(await makePrivate({ x: 1 }, [reader]), made.read!)).toEqual({ x: 1 })
+
+    expect(pasteOf('Tutoring', 'teacher', p.address, made).split('\n')).toEqual([
+      'Forest, act for my profile (Tutoring, teacher).',
+      `profile: ${p.address}`,
+      `writeKey: ${made.write}`,
+      `messageKey: ${made.message}`,
+      `readKey: ${made.read}`,
+      "Anything else, send me a request and I'll approve it in the app.",
+    ])
+    expect(pasteOf('Tutoring', 'teacher', p.address, { message: made.message }).split('\n')).toHaveLength(4)
+
+    // Removed as before: the read key leaves the readers; the others are made past.
+    for (const key of [writer.address, messenger.address, reader]) await removeAccessKey(seed, p, key)
+    const after = await readProfile(p.hosts, p.address, Date.now())
+    expect(after.access.filter((e) => e.scope)).toEqual([])
+    expect((after.current.get('profile')!.record.body!.inbox as { readers?: string[] }).readers).toBeUndefined()
+    await expect(makeAccessKeys(seed, p, { write: false, message: false, read: false })).rejects.toThrow(/at least one/)
   })
 
   test('words: role names, prices, titles', () => {

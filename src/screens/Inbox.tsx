@@ -2,16 +2,17 @@
 // each is with, the newest first, each named by that card's market and role word with its address
 // under it. A thread shows its messages, oldest first, and a reply field; a reply is sealed to the
 // other card's inbox key, signed by the main key, and copied to this inbox. A request the profile
-// sent itself (by its main key, or an access key it lists) is a card with what it asks, Approve,
-// which does it with the main key after one face, and Decline. What the screen showed is read: the
-// card's count starts again from here. The opened messages live while this screen does.
+// sent itself (by its main key, or an access key it lists) is a card with what it asks, every field
+// of what Approve would sign, Approve, which signs exactly that with the main key after one face,
+// and Decline. A grant is kept in the vault, and shown nowhere yet. What the screen showed is read:
+// the card's count starts again from here. The opened messages live while this screen does.
 
-import { useEffect, useRef, useState } from 'react'
+import { Fragment, useEffect, useRef, useState } from 'react'
 
 import type { Nav } from '../App.tsx'
 import { cardName, marketOf, priceText, short, splitLabel } from '../cards.ts'
 import { withFace } from '../face.ts'
-import { DOES, type Inbox, type Opened, type Request, approve, folderOf, knownHosts, openInbox, requestOf, send, textOf, threadsOf } from '../flows/messages.ts'
+import { DOES, type Inbox, type Opened, type Request, approve, fieldsOf, folderOf, grantsOf, knownHosts, offerTitle, openInbox, requestOf, send, textOf, threadsOf, toSign } from '../flows/messages.ts'
 import { markRead } from '../inbox.ts'
 import { type LocalProfile, answered, localProfiles, markAnswered } from '../local.ts'
 import { settings } from '../settings.ts'
@@ -74,6 +75,9 @@ function Page({ p, thread, nav }: { p: LocalProfile; thread?: string; nav: Nav }
       await act(seed)
       const more = await openInbox(seed, p, inbox?.cursors)
       markRead(p.address, more.cursors)
+      // A grant not kept now is pulled again the next time the inbox opens, and kept then.
+      const grants = grantsOf(more.messages)
+      if (grants.length) await import('../vault.ts').then(({ keepGrants }) => keepGrants(seed, settings().host, grants)).catch((err) => console.error(err))
       return more
     })
     setInbox((was) => {
@@ -238,7 +242,7 @@ function Asked({ r, inbox }: { r: Request; inbox: Inbox }) {
       return (
         <>
           <strong>Remove an offer</strong>
-          <span className="text">{inbox.offers[q.id] ?? q.id}</span>
+          <span className="text">{offerTitle(inbox, q.id)}</span>
         </>
       )
     case 'post-review':
@@ -284,13 +288,25 @@ function Asked({ r, inbox }: { r: Request; inbox: Inbox }) {
 }
 
 function RequestCard({ p, m, r, inbox, face, known }: { p: LocalProfile; m: Opened; r: Request; inbox: Inbox; face: (act?: (seed: Uint8Array) => Promise<void>) => Promise<void>; known: () => string[] }) {
+  // What Approve signs, fixed when the card first shows, so what the person sees is what is signed.
+  const [shown] = useState(() => toSign(r, inbox.own))
   const yes = useAction(async () => {
-    await face((seed) => approve(seed, p, r, known()))
+    await face((seed) => approve(seed, p, r, known(), shown ?? undefined))
     markAnswered(r.id, 'approved')
   })
   return (
     <div className="request" role="group" aria-label="Request">
       <Asked r={r} inbox={inbox} />
+      {shown && (
+        <dl className="fields" aria-label="What is signed">
+          {fieldsOf(shown).map(([name, value], i) => (
+            <Fragment key={i}>
+              <dt>{name}</dt>
+              <dd>{value}</dd>
+            </Fragment>
+          ))}
+        </dl>
+      )}
       {m.key && <span className="sub by">Access key {short(m.key)}</span>}
       <span className="sub when">{when(m.time)}</span>
       {yes.error && <p className="error">{yes.error}</p>}

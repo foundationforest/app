@@ -8,8 +8,8 @@
 // 2. The proof: made in the worker, off the page's thread, from a note a throwaway issuer key
 //    signed; checked in Node; timed, cold (proving files fetched) and warm.
 // 3. Services from the page, over CORS: records published to and read from records' reference host
-//    on loopback, the inbox pulled and opened, an issuer stand-in's session and note. And the same
-//    read without the app's Buffer shim, to show what the standard's libraries need.
+//    on loopback, the inbox pulled and opened, an issuer stand-in's session and note; with no
+//    global Buffer on the page, which the standard's libraries no longer need.
 // 4. The app's own build: its manifest, its service worker, and Chrome's word that it is installable.
 
 import assert from 'node:assert/strict'
@@ -211,27 +211,19 @@ test('the host from the page: records published and read, the inbox pulled and o
   assert.deepEqual(inbox, [[buyer.address, 'Is Tuesday at six free?']])
   say('host from the page over CORS: records published and read by POST, the inbox pulled and opened')
 
+  // The standard's records and registry clients need no Buffer since the commit the app pins: the page has none.
   const bare = await seller.page.evaluate(
     async ({ host, address }) => {
       const f = (globalThis as any).forest
-      const caught = async (fn: () => unknown) => {
-        try {
-          return `gave ${await f.withoutBuffer(fn)}`
-        } catch (err) {
-          return `threw "${(err as Error).message}"`
-        }
-      }
-      const read = async () => {
-        const view = await f.readOwn([host], address)
-        return `a view with ${view.current.size} records and hosts [${view.hosts}]`
-      }
-      return { read: await caught(read), row: await caught(() => f.rowAddress(1n)), shimmed: await read() }
+      const view = await f.readOwn([host], address)
+      return { buffer: typeof (globalThis as any).Buffer, records: view.current.size, row: f.rowAddress(1n).toBase58() }
     },
     { host: host.url, address: main.address },
   )
-  say(`without the app's Buffer shim: records' readOwn ${bare.read} (with it: ${bare.shimmed}); registry's rowAddress ${bare.row}`)
-  assert.notEqual(bare.read, `gave ${bare.shimmed}`)
-  assert.match(bare.row, /Buffer is not defined/)
+  assert.equal(bare.buffer, 'undefined', 'no global Buffer on the page')
+  assert.equal(bare.records, 2)
+  assert.equal(bare.row, rowAddress(1n).toBase58())
+  say(`no global Buffer on the page: records' readOwn read ${bare.records} records, registry's rowAddress gave ${bare.row.slice(0, 8)}…`)
 })
 
 test('the issuer from the page: a session with a return address, and a note', async () => {

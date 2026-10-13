@@ -1,4 +1,3 @@
-import './buffer.ts'
 // Manrope (SIL Open Font License 1.1), carried in the app's own files: no font server sees who opens it.
 import '@fontsource-variable/manrope'
 import './theme.css'

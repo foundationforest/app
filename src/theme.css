@@ -661,6 +661,39 @@ button.dashed {
   font-weight: 700;
 }
 
+/* A new access key: what it may do, then the paste, shown once. */
+.checks {
+  display: grid;
+}
+
+.checks label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  border-bottom: 1px solid var(--paper-2);
+  cursor: pointer;
+}
+
+.checks input {
+  width: 22px;
+  height: 22px;
+  min-height: 0;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.paste {
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--paper-2);
+  border-radius: var(--radius-control);
+  font: inherit;
+  font-size: 14px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 /* The inbox: threads, then a thread's messages and requests, and the reply. */
 .row.thread {
   align-items: center;
@@ -739,6 +772,28 @@ button.dashed {
 
 .price-tag {
   font-weight: 700;
+}
+
+/* Every field of what Approve would sign, name and value. */
+.fields {
+  justify-self: stretch;
+  display: grid;
+  grid-template-columns: minmax(0, max-content) minmax(0, 1fr);
+  gap: 2px 12px;
+  margin: 4px 0 0;
+  padding-top: 8px;
+  border-top: 1px solid var(--paper-2);
+  font-size: 13px;
+}
+
+.fields dt {
+  color: var(--ink-2);
+}
+
+.fields dd {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .reply {

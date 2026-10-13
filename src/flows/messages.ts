@@ -5,10 +5,12 @@
 // to the profile's own inbox, which a message to itself reaches whatever its rules, so a thread
 // survives a new device. Requests: a message the profile sent itself, by its main key or by a
 // message key its permissions record lists now, asking for one of the standard's kinds with
-// parameters that fit; the app does it with the main key only when the person approves.
+// parameters that fit; the app shows every field of what it would sign, and signs that with the
+// main key only when the person approves. Grants: a message whose body hands this profile an access
+// key; the app keeps it in the vault (vault.ts, keepGrants) and does nothing else with it yet.
 
 import { type MainKey, inboxKey, mainKey } from '../../standard/keys/src/index.ts'
-import { type Body, type View, liveContent, pull, pullRequest, publicKeyFromAddress, readProfile } from '../../standard/records/src/index.ts'
+import { type Body, type Grant, type View, checkGrant, liveContent, pull, pullRequest, publicKeyFromAddress, readProfile } from '../../standard/records/src/index.ts'
 import { titleOf } from '../cards.ts'
 import { message, openMessage } from '../../standard/records/src/private.ts'
 import type { LocalProfile } from '../local.ts'
@@ -23,8 +25,8 @@ export type Inbox = {
   cursors: Record<string, number>
   /** The message keys the profile's permissions record lists now. */
   listed: string[]
-  /** The profile's offers' titles, by id, for a request that changes or removes one. */
-  offers: Record<string, string>
+  /** The profile's own records now, body by path, for what a request would sign over them. */
+  own: Record<string, Body>
 }
 
 /** Every page of the inbox after `after`, on each host, opened. A host that fails leaves what the others hold; none answering throws. */
@@ -54,14 +56,17 @@ async function pullAll(main: MainKey, hosts: string[], after: Record<string, num
   return { messages: [...found.values()].sort((a, b) => a.time - b.time), cursors }
 }
 
-/** The profile's inbox after `after`, opened; the message keys it lists now, and its offers' titles. */
+/** The profile's inbox after `after`, opened; the message keys it lists now, and its own records. */
 export async function openInbox(seed: Uint8Array, p: LocalProfile, after: Record<string, number> = {}): Promise<Inbox> {
   const main = await mainKey(seed, p.label)
   const view = await readOwn(p.hosts, p.address)
   const pulled = await pullAll(main, view.hosts.length ? view.hosts : p.hosts, after)
-  const offers = [...liveContent(view)].filter(([path]) => path.startsWith('offer/')).map(([path, c]) => [path.slice('offer/'.length), titleOf(c.record.body?.description)])
-  return { ...pulled, listed: view.access.filter((e) => e.scope === 'message').map((e) => e.key), offers: Object.fromEntries(offers) }
+  const own = [...liveContent(view)].map(([path, c]) => [path, c.record.body as Body])
+  return { ...pulled, listed: view.access.filter((e) => e.scope === 'message').map((e) => e.key), own: Object.fromEntries(own) }
 }
+
+/** An offer's title, from the profile's own records; its id when it has none there. */
+export const offerTitle = (inbox: Inbox, id: string) => titleOf(inbox.own[`offer/${id}`]?.description) || id
 
 /** The hosts the app knows: the person's own, and the host in its settings. Another profile's hosts record there names the rest. */
 export const knownHosts = (host: string, profiles: LocalProfile[]) => [...new Set([host, ...profiles.flatMap((p) => p.hosts)])]
@@ -153,24 +158,71 @@ export function requestOf(m: Opened, me: string, listed: string[]): Request | nu
   return { id: m.id, kind: kind as string, params }
 }
 
+/** What approving a request signs with the main key: a record, its path and body (null removes it); or a message, to whom and its body. */
+export type Signed = { path: string; body: Body | null } | { to: string; body: Body }
+
 /**
- * What the request asks, done with the main key. A new offer or review with no id of its own takes
- * the request's, so approving it twice writes one record, not two.
+ * What approving `r` would sign, over the profile's own records now (`own`, body by path), at
+ * `now`; null for a kind the app does not do. A new offer or review with no id of its own takes the
+ * request's, so approving it twice writes one record, not two. One with no `createdAt` keeps the
+ * record's, or is dated `now`.
  */
-export async function approve(seed: Uint8Array, p: LocalProfile, r: Request, known: string[]): Promise<void> {
+export function toSign(r: Request, own: Record<string, Body | null | undefined>, now = Date.now()): Signed | null {
   const id = (r.params.id as string | undefined) ?? r.id.slice(0, 16)
-  const dated = (body: Body, before: Body | null): Body => ({ ...body, createdAt: typeof body.createdAt === 'string' ? body.createdAt : typeof before?.createdAt === 'string' ? before.createdAt : new Date().toISOString() })
+  const dated = (path: string, body: Body): Signed => {
+    const before = own[path]?.createdAt
+    return { path, body: { ...body, createdAt: typeof body.createdAt === 'string' ? body.createdAt : typeof before === 'string' ? before : new Date(now).toISOString() } }
+  }
   switch (r.kind) {
     case 'post-offer':
     case 'update-offer':
-      return writeOwn(seed, p, `offer/${id}`, (before) => dated(r.params.offer, before))
+      return dated(`offer/${id}`, r.params.offer)
     case 'remove-offer':
-      return writeOwn(seed, p, `offer/${id}`, () => null)
+      return { path: `offer/${id}`, body: null }
     case 'post-review':
-      return writeOwn(seed, p, `review/${id}`, (before) => dated(r.params.review, before))
+      return dated(`review/${id}`, r.params.review)
     case 'send':
-      return send(seed, p, r.params.to, r.params.text !== undefined ? { text: r.params.text } : r.params.body, known)
+      return { to: r.params.to, body: r.params.text !== undefined ? { text: r.params.text } : r.params.body }
     default:
-      throw new Error(`${r.kind}: not in this app yet.`)
+      return null
   }
+}
+
+/** Every field of what would be signed, as the person reads it: the path or the recipient, then the body's fields, nested ones by their dotted names. */
+export function fieldsOf(signed: Signed): [name: string, value: string][] {
+  const out: [string, string][] = 'to' in signed ? [['to', signed.to]] : [['path', signed.path]]
+  const add = (name: string, v: unknown) => {
+    if (v !== null && typeof v === 'object' && !Array.isArray(v) && Object.keys(v).length) for (const [k, x] of Object.entries(v)) add(name ? `${name}.${k}` : k, x)
+    else out.push([name, typeof v === 'string' ? v : JSON.stringify(v)])
+  }
+  if (signed.body === null) out.push(['body', 'none: the record is removed'])
+  else add('', signed.body)
+  return out
+}
+
+/**
+ * The request done with the main key: `shown`, what its card showed, signed as it is; with none,
+ * what it asks over the record there now. Sent, a message is copied to the profile's own inbox.
+ */
+export async function approve(seed: Uint8Array, p: LocalProfile, r: Request, known: string[], shown?: Signed): Promise<void> {
+  const signed = shown ?? toSign(r, {})
+  if (!signed) throw new Error(`${r.kind}: not in this app yet.`)
+  if ('to' in signed) return send(seed, p, signed.to, signed.body, known)
+  return writeOwn(seed, p, signed.path, (before) => (shown ? signed.body : toSign(r, { [signed.path]: before })!.body))
+}
+
+// ---------------------------------------------------------------------------------------------
+// Grants
+
+/** The grants among the messages: each body `{ grant }` of a grant's shape, handed over by the profile that sent it. */
+export function grantsOf(messages: Opened[]): Grant[] {
+  return messages.flatMap((m) => {
+    const g: unknown = m.body.grant
+    try {
+      checkGrant(g)
+    } catch {
+      return []
+    }
+    return g.from === m.from ? [g] : []
+  })
 }

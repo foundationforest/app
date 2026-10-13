@@ -34,9 +34,15 @@ export async function deliverMessages(hosts: string[], messages: SignedMessage[]
   return outcomes
 }
 
-/** One of the person's own profiles, read by POST, so its address stays out of URLs and logs. */
-export function readOwn(hosts: string[], address: string, now = Date.now()): Promise<View> {
-  return readProfile(hosts, address, now, { post: true })
+/**
+ * One of the person's own profiles, read by POST, so its address stays out of URLs and logs. Every
+ * host must answer: what the app writes next is built on this view, and a host left out may hold a
+ * newer permissions record or card than the others.
+ */
+export async function readOwn(hosts: string[], address: string, now = Date.now()): Promise<View> {
+  const view = await readProfile(hosts, address, now, { post: true })
+  if (view.failed.length) throw new Error(`${view.failed.map((f) => new URL(f.host).host).join(', ')} did not answer.`)
+  return view
 }
 
 /** What arrived in the profile's inbox at `host` after the cursor `after`, each message opened with its inbox key. */
