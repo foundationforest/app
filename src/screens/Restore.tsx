@@ -1,6 +1,6 @@
 // Back from the 24 words: the vault read from the host, the board rebuilt from it, then the seed
 // locked on this device. With no vault for these words, setup had stopped before its face check
-// ended, so the person goes on to it with this seed.
+// ended: the seed is locked with setup marked under way, and the person goes on to the check.
 
 import { useRef, useState } from 'react'
 
@@ -33,7 +33,10 @@ export function Restore({ nav, onLocked, onNoVault }: { nav: Nav; onLocked: () =
       const seed = readWords(typed)
       const { restore } = await import('../flows/restore.ts')
       const profiles = await restore(seed, settings())
-      if (!profiles) return onNoVault(seed, typed.trim().toLowerCase().split(/\s+/).join(' '))
+      if (!profiles) {
+        await lockSeed(seed, { setup: true })
+        return onNoVault(seed, typed.trim().toLowerCase().split(/\s+/).join(' '))
+      }
       saveProfiles(profiles)
       read.current = { seed, profiles }
     }

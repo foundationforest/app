@@ -1,8 +1,11 @@
 // Setup's face check, in stages the app can come back to: a buy at each service the issuer's
 // welcome gift names; the note, asked for until the check passes, with the buys' references; the
 // gift's credits collected with the tickets the note came with; then the first vault. The seed is
-// in memory throughout, as it is from the moment its words are shown; it is locked on the device
-// after, by the caller.
+// locked on the device before it starts; `keep` puts each stage in the locked store as it is got
+// (the buys before the note is asked for, the note and its tickets once they come), so a setup
+// that stops before the vault is written comes back to where it was, on this device, after one
+// face. The issuer gives the same tickets for the same buys, and a service the same credits for
+// the same ticket, so nothing is lost.
 
 import { issuerSecret } from '../../standard/keys/src/index.ts'
 import type { NoteJson } from '../../standard/registry/client/src/person.ts'
@@ -17,6 +20,11 @@ export type GiftBuy = { service: string; at: Service; buy: Uint8Array; reference
 
 /** Where the check has got to: each stage is kept, so trying again starts where it stopped. */
 export type Check = { issuer?: Issuer; buys?: GiftBuy[]; note?: NoteJson; tickets?: Record<string, string>; credits?: Credit[]; vault?: AppVault }
+
+/** What the locked store keeps of a check: what cannot be got again. The credits come again from the tickets. */
+export type Kept = Pick<Check, 'issuer' | 'buys' | 'note' | 'tickets'>
+
+export const keptOf = ({ issuer, buys, note, tickets }: Check): Kept => ({ issuer, buys, note, tickets })
 
 /** One buy at each service the gift names, for exactly the credits a ticket there gives. */
 export async function giftBuys(issuer: Issuer): Promise<GiftBuy[]> {
@@ -63,9 +71,17 @@ export async function collectGift(buys: GiftBuy[], tickets: Record<string, strin
 
 /**
  * The face check from where `check` stopped. `open` is called with the check's page, a session at
- * the issuer that sends the person back to `returnUrl`, only when a note is still needed.
+ * the issuer that sends the person back to `returnUrl`, only when a note is still needed. `keep` is
+ * given what to keep each time a stage is got that cannot be got again.
  */
-export async function faceCheck(seed: Uint8Array, s: Settings, check: Check, open: (url: string) => void, returnUrl: string, signal?: AbortSignal): Promise<AppVault> {
+export async function faceCheck(
+  seed: Uint8Array,
+  s: Settings,
+  check: Check,
+  open: (url: string) => void,
+  returnUrl: string,
+  { signal, keep = async () => undefined }: { signal?: AbortSignal; keep?: (kept: Kept) => Promise<void> } = {},
+): Promise<AppVault> {
   if (!check.note) {
     check.issuer ??= await readIssuer(s.issuer)
     // An issuer sends people back only to the apps it lists; from anywhere else, the check's tab stays open.
@@ -73,17 +89,20 @@ export async function faceCheck(seed: Uint8Array, s: Settings, check: Check, ope
       err instanceof ServiceError && err.code === 'bad_return_url' ? session(check.issuer!) : Promise.reject(err),
     )
     open(url)
-    check.buys ??= await giftBuys(check.issuer)
+    if (!check.buys) {
+      check.buys = await giftBuys(check.issuer)
+      await keep(keptOf(check))
+    }
     const { noteNumber } = await issuerSecret(seed, check.issuer.name)
     const got = await waitForNote(check.issuer, sessionId, noteNumber, check.buys, { signal })
     check.note = got.json
     check.tickets = got.gift
+    await keep(keptOf(check))
   }
   check.credits ??= await collectGift(check.buys ?? [], check.tickets)
   check.vault ??= await firstVault(await vaultKeys(seed), s.host, {
     issuerNotes: [{ issuer: check.issuer!.name, note: check.note }],
-    credits: check.credits,
-    settings: { forestApp: s },
+    settings: { forestApp: { ...s, credits: check.credits } },
   })
   return check.vault
 }

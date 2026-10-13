@@ -41,6 +41,9 @@ export const rolesOf = (market: Market) => (market.sides === 'two' ? ['seller', 
 /** A slug as words: `music-lessons` is "Music lessons". */
 export const words = (slug: string) => (slug.charAt(0).toUpperCase() + slug.slice(1)).replace(/-/g, ' ')
 
+/** The dollar an offer's price is written in: the index's devnet dollar, the classic test dollar devnet's services are paid in. */
+export const DOLLAR = 'J2QBACfPPb1ys2UyGx3ecXHgCr4hWuHFT3C2Nr6TSVSa'
+
 /** The dollars the foundation's index shows as dollars (its config/currencies.json): mainnet and devnet USDC, and devnet's two test dollars. */
 const DOLLARS = new Set([
   'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
@@ -60,8 +63,9 @@ export function priceText(price: Price | undefined): string | null {
 /** An offer's title: the first line of its description. */
 export const titleOf = (description: unknown) => (typeof description === 'string' ? description.split('\n')[0]!.trim().slice(0, 80) : '')
 
-export type Offer = { path: string; title: string; price: string | null }
-export type Written = { path: string; subject: string; score: string | null; text: string | null }
+/** An offer as a row shows it, and its body, for the sheet that changes it. */
+export type Offer = { path: string; title: string; price: string | null; body: Record<string, any> }
+export type Written = { path: string; subject: string; score: string | null; text: string | null; body: Record<string, any> }
 export type Own = { offers: Offer[]; written: Written[]; access: AccessKey[] }
 
 /** The profile's own records, newest first: its offers, the reviews it wrote, and the access keys that can act now. */
@@ -70,10 +74,16 @@ export async function ownRecords(p: LocalProfile): Promise<Own> {
   const live = [...liveContent(view)].sort(([, a], [, b]) => b.record.time - a.record.time)
   const body = (c: (typeof live)[number][1]) => c.record.body as Record<string, any>
   return {
-    offers: live.filter(([path]) => path.startsWith('offer/')).map(([path, c]) => ({ path, title: titleOf(body(c).description), price: priceText(body(c).price) })),
+    offers: live.filter(([path]) => path.startsWith('offer/')).map(([path, c]) => ({ path, title: titleOf(body(c).description), price: priceText(body(c).price), body: body(c) })),
     written: live
       .filter(([path]) => path.startsWith('review/'))
-      .map(([path, c]) => ({ path, subject: String(body(c).subject ?? ''), score: typeof body(c).ratings?.overall === 'string' ? body(c).ratings.overall : null, text: typeof body(c).text === 'string' ? body(c).text : null })),
+      .map(([path, c]) => ({
+        path,
+        subject: String(body(c).subject ?? ''),
+        score: typeof body(c).ratings?.overall === 'string' ? body(c).ratings.overall : null,
+        text: typeof body(c).text === 'string' ? body(c).text : null,
+        body: body(c),
+      })),
     access: view.access.filter((e) => e.scope),
   }
 }
@@ -96,6 +106,9 @@ export async function indexed(index: string, address: string): Promise<Indexed |
     received: (twin?.reviews?.received ?? []).map((r: any) => ({ uri: String(r.uri), reviewer: String(r.reviewer), score: typeof r.overall === 'number' ? r.overall : null, text: r.text ?? null })),
   }
 }
+
+/** A card's name for a thread or a sender: its market and its role's word, as the index names it. */
+export const cardName = (market: string, role: string, file: Market | null | undefined) => `${words(market)} ${roleWord(role, file)}`
 
 /** An address, short: its first and last four. */
 export const short = (address: string) => (address.length > 12 ? `${address.slice(0, 4)}…${address.slice(-4)}` : address)

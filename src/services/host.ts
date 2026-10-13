@@ -4,7 +4,7 @@
 // inbox, fundFolder). The records library does the work; this only gathers what the app needs.
 
 import { inboxKey, type MainKey } from '../../standard/keys/src/index.ts'
-import { type PublishOutcome, type SignedRecord, type View, publish, pull, pullRequest, readProfile } from '../../standard/records/src/index.ts'
+import { type PublishOutcome, type SignedMessage, type SignedRecord, type View, deliver, publish, pull, pullRequest, readProfile } from '../../standard/records/src/index.ts'
 import { openMessage } from '../../standard/records/src/private.ts'
 import { type Credit, creditList } from './credits.ts'
 import { getJson, postJson } from './http.ts'
@@ -23,6 +23,14 @@ export class Refused extends Error {
 export async function publishRecords(hosts: string[], records: SignedRecord[]): Promise<PublishOutcome[]> {
   const outcomes = await publish(hosts, records)
   if (outcomes.some((o) => o.error || o.results.some((r) => !r.ok))) throw new Refused(outcomes)
+  return outcomes
+}
+
+/** Messages to every host the recipient names. Throws unless some host took each, or had it already. */
+export async function deliverMessages(hosts: string[], messages: SignedMessage[]): Promise<PublishOutcome[]> {
+  const outcomes = await deliver(hosts, messages)
+  const taken = (i: number) => outcomes.some((o) => o.results[i]?.ok || o.results[i]?.error === 'duplicate')
+  if (messages.some((_, i) => !taken(i))) throw new Refused(outcomes)
   return outcomes
 }
 

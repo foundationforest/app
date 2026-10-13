@@ -1,7 +1,7 @@
 // What this device keeps besides the locked seed, none of it secret: its copy of the person's
 // profiles (each label, its address and its hosts, from the vault at the last face), what the last
-// face found in each inbox, how many reviews about each profile the person has seen, and the
-// appearance. Forgetting the device removes all of it (`forgetLocal`); the 24 words bring the
+// face found in each inbox, how many reviews about each profile the person has seen, the requests
+// they approved or declined (by message id), and the appearance. Forgetting the device removes all of it (`forgetLocal`); the 24 words bring the
 // profiles back from the vault.
 
 export type LocalProfile = { label: string; address: string; hosts: string[] }
@@ -15,6 +15,7 @@ const PREFIX = 'forest.'
 const PROFILES = `${PREFIX}profiles`
 const INBOX = `${PREFIX}inbox`
 const SEEN = `${PREFIX}seen`
+const ANSWERED = `${PREFIX}answered`
 const APPEARANCE = `${PREFIX}appearance`
 
 /** The event a change here sends, so what shows it reads it again. */
@@ -43,6 +44,10 @@ export const saveInboxCounts = (counts: Record<string, InboxCount>) => write(INB
 /** How many reviews about the profile the person has seen. */
 export const seenReviews = (address: string): number => read<Record<string, number>>(SEEN, {})[address] ?? 0
 export const markSeen = (address: string, n: number) => write(SEEN, { ...read<Record<string, number>>(SEEN, {}), [address]: n })
+
+/** The requests the person approved or declined, by message id. A host cannot delete a message, so the app leaves these out. */
+export const answered = (): Record<string, 'approved' | 'declined'> => read(ANSWERED, {})
+export const markAnswered = (id: string, answer: 'approved' | 'declined') => write(ANSWERED, { ...answered(), [id]: answer })
 
 export const appearance = (): Appearance => read(APPEARANCE, 'device')
 export const saveAppearance = (choice: Appearance) => write(APPEARANCE, choice)

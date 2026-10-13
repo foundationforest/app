@@ -15,7 +15,7 @@ type Folder = { folder: string; markets: { name: string }[] }
 
 const MARKETS_REPO = 'https://github.com/foundationforest/markets'
 
-export function NewProfile({ nav }: { nav: Nav }) {
+export function NewProfile({ nav, onMade }: { nav: Nav; onMade: () => void }) {
   const [folders, setFolders] = useState<Folder[]>()
   const [failed, setFailed] = useState('')
   const [q, setQ] = useState('')
@@ -49,7 +49,7 @@ export function NewProfile({ nav }: { nav: Nav }) {
     const s = settings()
     const [{ makeProfile }, { proveInWorker }] = await Promise.all([import('../flows/profile.ts'), import('../proof/worker.ts')])
     await withFace(async (seed) => saveProfiles(await makeProfile(seed, `${picked}/${role}`, s, proveInWorker)))
-    nav.back()
+    onMade()
   })
 
   const needle = q.trim().toLowerCase()

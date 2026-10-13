@@ -4,12 +4,20 @@
 //
 //   npm run test:browser
 //
-// 1. Setup: the words, saved and checked; the face check in a tab of its own (the stand-in's Didit
-//    page sends it back to /back); the gift collected, the vault written, the seed locked.
+// 1. Setup: the words, saved and checked, and the seed locked; the face check in a tab of its own
+//    (the stand-in's Didit page sends it back to /back); the gift collected; the vault's first
+//    write refused, so setup stops there; after a reload, taken up again with one face, and the
+//    vault written.
 // 2. A new profile, made with one face: the proof in the worker, the row, the folder, the vault.
 // 3. The board and the card page: offers, the score and the reviews about it from the index, an
 //    access key removed with one face, the inbox counted at the face.
-// 4. The menu: the 24 words after a face; forgetting the device; the words bring everything back.
+// 4. An offer posted from its sheet, then changed, one face each.
+// 5. A second person, in a browser of their own, through the message door with no seed yet:
+//    setup, a new profile, then the message, sent with one face.
+// 6. The inbox, after one face: the thread with the second person, a reply, and a review posted
+//    from the thread; the reply in the second person's inbox.
+// 7. Requests an access key sent: one approved, done with the main key after one face; one declined.
+// 8. The menu: the 24 words after a face; forgetting the device; the words bring everything back.
 //
 // SHOTS=<dir> keeps a screenshot of each screen there, in light and dark.
 
@@ -26,7 +34,7 @@ import { importWords, mainKey } from '../../standard/keys/src/index.ts'
 import { deliver, keyFromPrivate, ownerRecord, permissionsRecord, readProfile } from '../../standard/records/src/index.ts'
 import { message } from '../../standard/records/src/private.ts'
 import { publishRecords } from '../../src/services/host.ts'
-import { openVault, vaultKeys } from '../../src/vault.ts'
+import { creditsOf, openVault, vaultKeys } from '../../src/vault.ts'
 import { world } from '../stand-ins.ts'
 
 const app = fileURLToPath(new URL('../..', import.meta.url))
@@ -52,8 +60,8 @@ let server: PreviewServer
 let w: Awaited<ReturnType<typeof world>>
 let context: BrowserContext
 let page: Page
-let created = 0
-let asserted = 0
+/** The first browser's passkeys made and asserted. */
+let counts: { created: number; asserted: number }
 let words: string
 let address: string
 
@@ -69,23 +77,30 @@ async function shot(name: string) {
 
 const card = (title: string) => page.locator('button.card', { hasText: title })
 
-before(async () => {
-  await build({ root: app, configFile: `${app}vite.config.ts`, logLevel: 'warn', build: { outDir, emptyOutDir: true } })
-  server = await preview({ root: app, configFile: `${app}vite.config.ts`, build: { outDir }, preview: { host: 'localhost', port: await freePort(), strictPort: true } })
-  w = await world()
-  browser = await chromium.launch()
-  context = await browser.newContext({ viewport: { width: 390, height: 844 } })
+/** A browser of its own, a phone's size, with the app's settings pointed at the stand-ins and a virtual passkey authenticator with PRF; its passkeys made and asserted, counted. */
+async function phone() {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 } })
   // The app's settings, pointed at the stand-ins, on every page it loads.
   await context.addInitScript((s) => localStorage.setItem('forest.settings', JSON.stringify(s)), w.settings)
-  page = await context.newPage()
+  const page = await context.newPage()
   page.on('pageerror', (err) => console.log(`  page error: ${err.message}`))
   const cdp = await context.newCDPSession(page)
   await cdp.send('WebAuthn.enable', { enableUI: false })
   await cdp.send('WebAuthn.addVirtualAuthenticator', {
     options: { protocol: 'ctap2', ctap2Version: 'ctap2_1', transport: 'internal', hasResidentKey: true, hasUserVerification: true, isUserVerified: true, hasPrf: true, automaticPresenceSimulation: true },
   })
-  cdp.on('WebAuthn.credentialAdded', () => void created++)
-  cdp.on('WebAuthn.credentialAsserted', () => void asserted++)
+  const counts = { created: 0, asserted: 0 }
+  cdp.on('WebAuthn.credentialAdded', () => void counts.created++)
+  cdp.on('WebAuthn.credentialAsserted', () => void counts.asserted++)
+  return { context, page, counts }
+}
+
+before(async () => {
+  await build({ root: app, configFile: `${app}vite.config.ts`, logLevel: 'warn', build: { outDir, emptyOutDir: true } })
+  server = await preview({ root: app, configFile: `${app}vite.config.ts`, build: { outDir }, preview: { host: 'localhost', port: await freePort(), strictPort: true } })
+  w = await world()
+  browser = await chromium.launch()
+  ;({ context, page, counts } = await phone())
   say(`Chromium ${browser.version()}, the app at ${server.resolvedUrls!.local[0]}`)
 })
 
@@ -120,22 +135,48 @@ test('setup: the words saved and checked, the face check in its own tab, the see
   await next.click()
 
   await page.getByRole('heading', { name: 'One face check' }).waitFor()
+  assert.equal(counts.created, 1, 'the seed locked under a passkey before the face check')
   await shot('4-face')
+  // The vault's first write refused: setup stops after the note and the gift, as a closed tab would stop it.
+  const stop = w.host.refuse(1)
+  const sessions = w.issuer.sessions.size
   const tab = context.waitForEvent('page')
   await page.getByRole('button', { name: 'Start', exact: true }).click()
   const didit = await tab
+  await page.locator('.error').waitFor({ timeout: 60_000 })
+  stop()
+  say(`setup: the check's tab went to the stand-in's Didit page and back to /back, closed itself: ${didit.isClosed()}; the vault's first write refused: "${await page.locator('.error').textContent()}"`)
+
+  // Reloaded, the app comes back to the face check, and takes it up again from the locked store with one face.
+  await page.reload()
+  await page.getByRole('heading', { name: 'One face check' }).waitFor()
+  const faces = counts.asserted
+  await page.getByRole('button', { name: 'Start', exact: true }).click()
   await page.getByRole('button', { name: 'New profile' }).waitFor({ timeout: 60_000 })
   await shot('5-board-empty')
-  say(`setup: the check's tab went to the stand-in's Didit page and back to /back, closed itself: ${didit.isClosed()}`)
-  assert.equal(created, 1, 'one passkey made, to lock the seed')
+  assert.equal(counts.asserted - faces, 1, 'one face to take it up again')
+  assert.equal(w.issuer.sessions.size, sessions + 1, 'one face check in all: the note and its tickets came back from the locked store')
+  assert.equal(counts.created, 1, 'one passkey made, to lock the seed')
   assert.deepEqual(await page.evaluate(async () => (await indexedDB.databases()).map((d) => d.name)), ['forest-app'])
+  const stored = await page.evaluate(
+    () =>
+      new Promise<IDBValidKey[]>((resolve) => {
+        const req = indexedDB.open('forest-app')
+        req.onsuccess = () => {
+          const keys = req.result.transaction('lock').objectStore('lock').getAllKeys()
+          keys.onsuccess = () => (resolve(keys.result), req.result.close())
+        }
+      }),
+  )
+  assert.deepEqual(stored, ['seed'], "setup's stages removed from the locked store once the vault was written")
 
   const seed = importWords(words)
   const vault = (await openVault([w.settings.host], await vaultKeys(seed)))!.vault
   assert.equal(vault.issuerNotes?.[0]?.issuer, 'issuer.test')
-  assert.deepEqual(vault.settings, { forestApp: w.settings })
-  assert.equal(vault.credits?.length, 4, 'the gift: 2 registrations and 3 host credits, one spent into the vault folder')
-  say('setup: vault on the host with the note, 4 credits and the settings; seed locked under a passkey')
+  assert.deepEqual(vault.settings, { forestApp: { ...w.settings, credits: creditsOf(vault) } })
+  assert.equal('credits' in vault, false)
+  assert.equal(creditsOf(vault).length, 4, 'the gift: 2 registrations and 3 host credits, one spent into the vault folder')
+  say("setup: stopped at the vault, taken up again after a reload with one face; vault on the host with the note, and 4 credits with the settings in the app's field; seed locked under a passkey")
 })
 
 test('a new profile, made with one face', async () => {
@@ -147,12 +188,12 @@ test('a new profile, made with one face', async () => {
   await page.getByRole('button', { name: 'Tutoring' }).click()
   await page.getByRole('radio', { name: 'Teacher' }).click()
   await shot('7-side')
-  const faces = asserted
+  const faces = counts.asserted
   const started = Date.now()
   await page.getByRole('button', { name: 'Make' }).click()
   await card('Tutoring').waitFor({ timeout: 120_000 })
   say(`new profile: made in ${Date.now() - started} ms, proof in the worker included`)
-  assert.equal(asserted - faces, 1, 'one face for the whole of it')
+  assert.equal(counts.asserted - faces, 1, 'one face for the whole of it')
 
   address = (await mainKey(importWords(words), LABEL)).address
   const view = await readProfile([w.settings.host], address, Date.now())
@@ -195,10 +236,10 @@ test('the board and the card: offers, the score and reviews from the index, an a
   await page.locator('.sheet-back').click({ position: { x: 20, y: 20 } })
   assert.equal(await page.locator('.dot').count(), 0, 'seen')
 
-  const faces = asserted
+  const faces = counts.asserted
   await page.getByRole('button', { name: 'Remove' }).click()
   await page.locator('button.remove').waitFor({ state: 'detached' })
-  assert.equal(asserted - faces, 1)
+  assert.equal(counts.asserted - faces, 1)
   assert.deepEqual((await readProfile([w.settings.host], address, Date.now())).access, [{ key: writer.address, was: 'write', paths: ['offer', 'review'] }])
   say('card: offers and the reviews written from the host; score, review count and the bell from the index; an access key made past with one face')
 
@@ -220,6 +261,158 @@ test('the board and the card: offers, the score and reviews from the index, an a
   say('inbox: the message counted by the pull signed at the last face, shown on the card')
 })
 
+test('the offer sheet: posted, then changed, one face each', async () => {
+  await card('Tutoring').click()
+  await page.getByRole('heading', { name: 'Access keys' }).waitFor()
+  await page.getByRole('button', { name: '+ Offer' }).click()
+  const sheet = page.getByRole('dialog', { name: 'Offer' })
+  await sheet.getByLabel('Description').fill('Physics, one hour\nOnline, any level.')
+  await sheet.getByLabel('Price').fill('30')
+  await sheet.getByRole('radio', { name: 'Hour' }).click()
+  await shot('14-offer-sheet')
+  let faces = counts.asserted
+  await sheet.getByRole('button', { name: 'Post' }).click()
+  await sheet.waitFor({ state: 'detached' })
+  const row = page.locator('button.tint', { hasText: 'Physics, one hour' })
+  await row.getByText('$30 / hour').waitFor()
+  assert.equal(counts.asserted - faces, 1, 'one face to post it')
+
+  await row.click()
+  assert.equal(await sheet.getByLabel('Description').inputValue(), 'Physics, one hour\nOnline, any level.', 'the sheet opens on what is there')
+  await sheet.getByLabel('Price').fill('45')
+  await sheet.getByRole('radio', { name: 'Total' }).click()
+  faces = counts.asserted
+  await sheet.getByRole('button', { name: 'Post' }).click()
+  await page.locator('button.tint', { hasText: 'Physics, one hour' }).getByText('$45', { exact: true }).waitFor()
+  assert.equal(counts.asserted - faces, 1)
+  const offers = [...(await readProfile([w.settings.host], address, Date.now())).current].filter(([path, c]) => path.startsWith('offer/') && c.record.body?.description === 'Physics, one hour\nOnline, any level.')
+  assert.equal(offers.length, 1, 'changed in place')
+  assert.deepEqual(offers[0]![1].record.body!.price, { amount: '45', mint: 'J2QBACfPPb1ys2UyGx3ecXHgCr4hWuHFT3C2Nr6TSVSa', per: 'job' })
+  await shot('15-card-offer')
+  say('offer sheet: posted and changed from the card, one face each, signed by the main key')
+})
+
+let second: Awaited<ReturnType<typeof phone>>
+let secondAddress: string
+
+test('a second person through the message door: setup, a new profile, then the message', async () => {
+  second = await phone()
+  const b = second.page
+  await b.goto(`${server.resolvedUrls!.local[0]}message?to=${address}`)
+  await b.getByRole('button', { name: 'Start', exact: true }).click()
+  assert.equal(await b.evaluate(() => location.pathname), '/', 'the door leaves the address bar')
+  await b.getByRole('heading', { name: 'Your 24 words' }).waitFor()
+  const theirWords = (await b.locator('ol.words li span:last-child').allTextContents()).join(' ')
+  secondAddress = (await mainKey(importWords(theirWords), 'tutoring/buyer')).address
+  // The stand-in host takes a message to an inbox open to the issuer's people from a sender it knows holds a row.
+  w.host.rows.add(secondAddress)
+  w.host.rows.add(address)
+  await b.getByRole('button', { name: 'Save to password manager' }).click()
+  await b.getByLabel('Your 24 words').fill(theirWords)
+  await b.getByRole('button', { name: 'Next' }).click()
+  await b.getByRole('heading', { name: 'One face check' }).waitFor()
+  const tab = second.context.waitForEvent('page')
+  await b.getByRole('button', { name: 'Start', exact: true }).click()
+  await tab
+
+  // No profile yet: a new one first.
+  await b.getByRole('button', { name: 'Tutoring' }).click({ timeout: 60_000 })
+  await b.getByRole('radio', { name: 'Student' }).click()
+  await b.getByRole('button', { name: 'Make' }).click()
+
+  // Then the message, to the first person's card.
+  const sheet = b.getByRole('dialog', { name: 'Message' })
+  await sheet.waitFor({ timeout: 120_000 })
+  await sheet.getByText('Tutoring teacher').waitFor()
+  assert.equal(await sheet.getByRole('radio', { checked: true }).textContent(), 'Tutoring student', 'sent from the profile in the same market')
+  await sheet.getByLabel('Message').fill('Can we do Thursday?')
+  if (shots) await b.screenshot({ path: `${shots}/16-door-light.png` })
+  const faces = second.counts.asserted
+  await sheet.getByRole('button', { name: 'Send' }).click()
+  await sheet.waitFor({ state: 'detached' })
+  assert.equal(second.counts.asserted - faces, 1, 'one face to send it')
+  await b.locator('button.card', { hasText: 'Tutoring' }).waitFor()
+  say('message door: no seed yet, so setup, then a new profile, then the message, sent with one face')
+})
+
+test('the inbox: the thread, a reply, and a review from the thread', async () => {
+  const faces = counts.asserted
+  await page.getByRole('button', { name: 'Inbox' }).click()
+  const thread = page.locator('button.thread', { hasText: 'Tutoring student' })
+  await thread.waitFor()
+  assert.equal(counts.asserted - faces, 1, 'face first')
+  assert.equal(await page.locator('button.thread').first().textContent().then((t) => t?.startsWith('Tutoring student')), true, 'newest first')
+  await shot('17-inbox')
+  await thread.click()
+  await page.getByText('Can we do Thursday?').waitFor()
+  await page.getByLabel('Message').fill('Thursday at five.')
+  await page.getByRole('button', { name: 'Send' }).click()
+  await page.locator('.message.mine', { hasText: 'Thursday at five.' }).waitFor()
+  await shot('18-thread')
+
+  await page.getByRole('button', { name: 'Review' }).click()
+  const sheet = page.getByRole('dialog', { name: 'Review' })
+  assert.equal(await sheet.getByLabel('Address').inputValue(), secondAddress, 'the address filled from the thread')
+  await sheet.getByLabel('Score').fill('9.5')
+  await sheet.getByLabel('Text').fill('Clear about what they wanted.')
+  await sheet.getByRole('button', { name: 'Post' }).click()
+  await sheet.waitFor({ state: 'detached' })
+  const reviews = [...(await readProfile([w.settings.host], address, Date.now())).current].filter(([path, c]) => path.startsWith('review/') && c.record.body?.subject === secondAddress)
+  assert.equal(reviews.length, 1)
+  assert.deepEqual(reviews[0]![1].record.body!.ratings, { overall: '9.5' })
+  const read = await page.evaluate((a) => JSON.parse(localStorage.getItem('forest.inbox')!)[a].count, address)
+  assert.equal(read, 0, 'what the inbox showed is read')
+
+  // The reply, in the second person's inbox.
+  const b = second.page
+  await b.locator('button.card', { hasText: 'Tutoring' }).click()
+  await b.getByRole('button', { name: 'Inbox' }).click()
+  await b.locator('button.thread', { hasText: 'Tutoring teacher' }).click()
+  await b.getByText('Thursday at five.').waitFor()
+  assert.equal(await b.locator('.message.mine', { hasText: 'Can we do Thursday?' }).count(), 1, 'their own message, from the copy in their own inbox')
+  await second.context.close()
+  await page.goto(server.resolvedUrls!.local[0]!)
+  await card('Tutoring').waitFor()
+  say('inbox: one face, the thread named by the card, a reply sealed and copied, a review posted from the thread; the reply read on the other side')
+})
+
+test('requests from an access key: one approved with one face, one declined', async () => {
+  const main = await mainKey(importWords(words), LABEL)
+  const helper = keyFromPrivate(new Uint8Array(32).fill(43))
+  const view = await readProfile([w.settings.host], address, Date.now())
+  await publishRecords([w.settings.host], [permissionsRecord(main, [...view.access, { key: helper.address, scope: 'message' }], Date.now())])
+  const theCard = view.current.get('profile')!.record.body!
+  const asHelper = { key: helper, from: address, host: w.settings.host }
+  const offer = { direction: 'offer', description: 'Chemistry, one hour', price: { amount: '35', mint: 'J2QBACfPPb1ys2UyGx3ecXHgCr4hWuHFT3C2Nr6TSVSa', per: 'hour' } }
+  await deliver([w.settings.host], [await message(asHelper, address, { request: 'post-offer', offer }, Date.now(), theCard)])
+  await deliver([w.settings.host], [await message(asHelper, address, { request: 'pay', offer: `${address}/offer/maths`, units: 2 }, Date.now() + 1, theCard)])
+
+  await card('Tutoring').click()
+  await page.getByRole('button', { name: 'Inbox' }).click()
+  await page.locator('button.thread', { hasText: 'Access key' }).click()
+  const asked = page.getByRole('group', { name: 'Request' })
+  await asked.first().waitFor()
+  assert.equal(await asked.count(), 2)
+  const post = asked.filter({ hasText: 'Post an offer' })
+  await post.getByText('$35 / hour').waitFor()
+  assert.equal(await asked.filter({ hasText: 'Pay' }).getByRole('button', { name: 'Approve' }).count(), 0, 'a payment is not in this app yet: decline only')
+  await shot('19-requests')
+  let faces = counts.asserted
+  await post.getByRole('button', { name: 'Approve' }).click()
+  await post.waitFor({ state: 'detached' })
+  assert.equal(counts.asserted - faces, 1, 'one face to approve it')
+  const posted = [...(await readProfile([w.settings.host], address, Date.now())).current].find(([path]) => path.startsWith('offer/') && path !== 'offer/maths' && path.length === 'offer/'.length + 16)
+  assert.ok(posted, 'the offer, at an id the request gives it')
+  assert.equal(posted![1].record.by, undefined, 'signed by the main key')
+  faces = counts.asserted
+  await asked.filter({ hasText: 'Pay' }).getByRole('button', { name: 'Decline' }).click()
+  await asked.first().waitFor({ state: 'detached' })
+  assert.equal(counts.asserted - faces, 0, 'declining needs no face')
+  await page.goto(server.resolvedUrls!.local[0]!)
+  await card('Tutoring').getByText('Chemistry, one hour').waitFor()
+  say('requests: an access key asked; approved with one face, the offer signed by the main key; a payment declined')
+})
+
 test('the menu: appearance; forget this device; the words bring everything back', async () => {
   await page.getByRole('button', { name: 'Menu' }).click()
   await page.getByRole('radio', { name: 'Dark' }).click()
@@ -238,10 +431,10 @@ test('the menu: appearance; forget this device; the words bring everything back'
   await page.getByRole('button', { name: 'I have my 24 words' }).click()
   await page.getByLabel('Your 24 words').fill(words)
   await shot('13-restore')
-  const made = created
+  const made = counts.created
   await page.getByRole('button', { name: 'Restore' }).click()
   await card('Tutoring').waitFor({ timeout: 30_000 })
-  assert.equal(created - made, 1, 'locked again under a new passkey')
+  assert.equal(counts.created - made, 1, 'locked again under a new passkey')
   await card('Tutoring').getByText('Maths, one hour').waitFor()
   say('forget, then restore: the board back from the vault, the seed locked again')
 })
