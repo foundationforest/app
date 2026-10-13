@@ -110,5 +110,8 @@ export async function indexed(index: string, address: string): Promise<Indexed |
 /** A card's name for a thread or a sender: its market and its role's word, as the index names it. */
 export const cardName = (market: string, role: string, file: Market | null | undefined) => `${words(market)} ${roleWord(role, file)}`
 
+/** A time as the person reads it: their own date and clock. */
+export const localTime = (ms: number) => new Date(ms).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })
+
 /** An address, short: its first and last four. */
 export const short = (address: string) => (address.length > 12 ? `${address.slice(0, 4)}…${address.slice(-4)}` : address)

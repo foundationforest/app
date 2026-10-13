@@ -6,24 +6,30 @@
 //   npm run test:browser
 //
 // 0. The CSP: on every response; an inline script, an inline handler and another origin refused.
-// 1. Setup: the words, saved and checked, and the seed locked; the face check in a tab of its own
-//    (the stand-in's Didit page sends it back to /back); the gift collected; the vault's first
-//    write refused, so setup stops there; after a reload, taken up again with one face, and the
-//    vault written.
+// 1. Setup: the words, saved and checked (the field's eye, a line when they do not match), and the
+//    seed locked; the face check in a tab of its own (the stand-in's Didit page sends it back to
+//    /back), the screen saying so meanwhile; the gift collected; the vault's first write refused,
+//    so setup stops there; after a reload, taken up again with one face, and the vault written.
 // 2. A new profile, made with one face: the proof in the worker, the row, the folder, the vault.
-// 3. The board and the card page: offers, the score and the reviews about it from the index, an
-//    access key removed with one face, the inbox counted at the face.
-// 4. An offer posted from its sheet, then changed, one face each.
+// 3. The board and the card page: offers, the score and the reviews about it from the index, the
+//    address copied, an access key removed with one face, the inbox counted at the face, a grant
+//    not counted.
+// 4. An offer posted from its sheet, then changed, one face each; posted with an empty folder, one
+//    more of the vault's credits goes in, silently; with none left there, no writes left.
 // 5. A second person, in a browser of their own, through the message door with no seed yet:
 //    setup, a new profile, then the message, sent with one face.
 // 6. The inbox, after one face: the thread with the second person, a reply, and a review posted
 //    from the thread; the reply in the second person's inbox.
-// 7. Requests an access key sent: every field of what Approve signs on the card; one approved,
-//    signed as shown with the main key after one face; one declined.
-// 8. Access keys: three made with one face; the paste, shown once, copied; nothing of the private
-//    halves left on the device; each key acts as its scope allows; the read key removed.
-// 9. The menu: the 24 words after a face; forgetting the device; the words bring everything back.
-// 10. Nothing the app did, through all of it, was refused by the CSP.
+// 7. Requests an access key sent: every field of what Approve signs on the card, the dollar by its
+//    name and the time in the person's own clock; one approved, signed as shown with the main key
+//    after one face; one declined.
+// 8. Access keys: three made with one face; the paste, shown once, the MCP door first, copied;
+//    nothing of the private halves left on the device; each key acts as its scope allows; the read
+//    key removed.
+// 9. A profile hidden from the board, held down or from its page's menu, and shown again from the
+//    menu.
+// 10. The menu: the 24 words after a face; forgetting the device; the words bring everything back.
+// 11. Nothing the app did, through all of it, was refused by the CSP.
 //
 // SHOTS=<dir> keeps a screenshot of each screen there, in light and dark.
 
@@ -38,6 +44,7 @@ import { type PreviewServer, build, preview } from 'vite'
 
 import { importWords, mainKey } from '../../standard/keys/src/index.ts'
 import { accessRecord, b64u, deliver, keyFromPrivate, ownerRecord, permissionsRecord, pull, pullRequest, readProfile } from '../../standard/records/src/index.ts'
+import { DOLLAR } from '../../src/cards.ts'
 import { message, openMessage } from '../../standard/records/src/private.ts'
 import { publishRecords } from '../../src/services/host.ts'
 import { creditsOf, openVault, vaultKeys } from '../../src/vault.ts'
@@ -167,6 +174,7 @@ test('setup: the words saved and checked, the face check in its own tab, the see
   await page.getByRole('button', { name: 'Start', exact: true }).click()
 
   await page.getByRole('heading', { name: 'Your 24 words' }).waitFor()
+  await page.getByText('These words are you. Lose them and nothing brings them back.').waitFor()
   words = (await page.locator('ol.words li span:last-child').allTextContents()).join(' ')
   assert.equal(words.split(' ').length, 24)
   const form = await page.locator('form').evaluate((f) => [...new FormData(f as HTMLFormElement)].map(([k, v]) => [k, v]))
@@ -176,16 +184,32 @@ test('setup: the words saved and checked, the face check in its own tab, the see
 
   await page.getByRole('heading', { name: "Check they're saved" }).waitFor()
   const next = page.getByRole('button', { name: 'Next' })
+  const field = page.getByLabel('Your 24 words')
+  const mismatch = page.getByText("These aren't your 24 words.")
   assert.equal(await next.isDisabled(), true)
-  await page.getByLabel('Your 24 words').fill(words.split(' ').slice(0, 23).join(' ') + ' zoo')
+  assert.equal(await field.getAttribute('placeholder'), 'Tap to fill')
+  assert.equal(await mismatch.count(), 0, 'no line while the field is empty')
+  await field.fill(words.split(' ').slice(0, 23).join(' ') + ' zoo')
   assert.equal(await next.isDisabled(), true, 'Next waits for the words themselves')
-  await page.getByLabel('Your 24 words').fill(words.toUpperCase())
+  await mismatch.waitFor()
+  await page.getByRole('button', { name: 'Show the words' }).click()
+  assert.equal(await field.getAttribute('type'), 'text', 'the eye shows them')
+  await page.getByRole('button', { name: 'Hide the words' }).click()
+  assert.equal(await field.getAttribute('type'), 'password')
+  await field.fill(words.toUpperCase())
+  assert.equal(await mismatch.count(), 0)
   await shot('3-check')
   await next.click()
 
   await page.getByRole('heading', { name: 'One face check' }).waitFor()
+  await page.getByText('This ties your words to you: one real person, accountable for them.').waitFor()
   assert.equal(counts.created, 1, 'the seed locked under a passkey before the face check')
   await shot('4-face')
+  // Whether the screen said where the check is while it ran: it shows only until the note is here.
+  await page.evaluate(() => {
+    const seen = ((globalThis as any).away = { said: false })
+    new MutationObserver(() => void (seen.said ||= !!document.body.textContent?.includes('Finish it in the other tab.'))).observe(document.body, { subtree: true, childList: true, characterData: true })
+  })
   // The vault's first write refused: setup stops after the note and the gift, as a closed tab would stop it.
   const stop = w.host.refuse(1)
   const sessions = w.issuer.sessions.size
@@ -194,6 +218,8 @@ test('setup: the words saved and checked, the face check in its own tab, the see
   const didit = await tab
   await page.locator('.error').waitFor({ timeout: 60_000 })
   stop()
+  assert.equal(await page.evaluate(() => (globalThis as any).away.said), true, 'the screen said to finish the check in the other tab')
+  assert.equal(await page.getByText('Finish it in the other tab.').count(), 0, 'and no longer, once the note came')
   say(`setup: the check's tab went to the stand-in's Didit page and back to /back, closed itself: ${didit.isClosed()}; the vault's first write refused: "${await page.locator('.error').textContent()}"`)
 
   // Reloaded, the app comes back to the face check, and takes it up again from the locked store with one face.
@@ -275,6 +301,10 @@ test('the board and the card: offers, the score and reviews from the index, an a
 
   await card('Tutoring').click()
   await page.getByRole('heading', { name: 'Access keys' }).waitFor()
+  await page.getByText(`${address.slice(0, 4)}…${address.slice(-4)}`).waitFor()
+  await page.getByRole('button', { name: 'Copy address' }).click()
+  await page.getByRole('button', { name: 'Copied' }).waitFor()
+  assert.equal(await page.evaluate(() => navigator.clipboard.readText()), address, 'the address under the role word, copied whole')
   await page.getByText('2 reviews').waitFor()
   assert.equal(await page.locator('.dot').count(), 1, 'the bell shows new reviews')
   await page.getByText('On time, clear.').waitFor()
@@ -292,12 +322,13 @@ test('the board and the card: offers, the score and reviews from the index, an a
   assert.deepEqual((await readProfile([w.settings.host], address, Date.now())).access, [{ key: writer.address, was: 'write', paths: ['offer', 'review'] }])
   say('card: offers and the reviews written from the host; score, review count and the bell from the index; an access key made past with one face')
 
-  // A message from someone with a row; the next face counts it.
+  // A message from someone with a row, and a grant: the next face counts the message alone.
   const buyer = await mainKey(new Uint8Array(32).fill(7), 'tutoring/buyer')
   w.host.rows.add(buyer.address)
   const theCard = (await readProfile([w.settings.host], address, Date.now())).current.get('profile')!.record.body!
-  const [taken] = await deliver([w.settings.host], [await message(buyer, address, { text: 'Is Tuesday free?' }, Date.now(), theCard)])
-  assert.equal(taken!.results[0]!.ok, true)
+  const grant = { key: b64u.encode(new Uint8Array(32).fill(9)), folder: buyer.address, scope: 'write', paths: ['offer'], from: buyer.address, since: Date.now() }
+  const [taken] = await deliver([w.settings.host], [await message(buyer, address, { text: 'Is Tuesday free?' }, Date.now(), theCard), await message(buyer, address, { grant }, Date.now() + 1, theCard)])
+  assert.deepEqual(taken!.results.map((r) => r.ok), [true, true])
   await page.getByRole('button', { name: 'Back' }).click()
   await page.getByRole('button', { name: 'Menu' }).click()
   await shot('11-menu')
@@ -307,7 +338,8 @@ test('the board and the card: offers, the score and reviews from the index, an a
   await shot('12-menu-words')
   await page.locator('.sheet-back').click({ position: { x: 20, y: 20 } })
   await card('Tutoring').locator('.badge', { hasText: '1' }).waitFor()
-  say('inbox: the message counted by the pull signed at the last face, shown on the card')
+  assert.equal(await page.evaluate((a) => JSON.parse(localStorage.getItem('forest.inbox')!)[a].count, address), 1, 'the grant not counted')
+  say('inbox: the message counted by the pull signed at the last face, shown on the card; the grant beside it not counted')
 })
 
 test('the offer sheet: posted, then changed, one face each', async () => {
@@ -315,16 +347,24 @@ test('the offer sheet: posted, then changed, one face each', async () => {
   await page.getByRole('heading', { name: 'Access keys' }).waitFor()
   await page.getByRole('button', { name: '+ Offer' }).click()
   const sheet = page.getByRole('dialog', { name: 'Offer' })
+  assert.equal(await sheet.getByLabel('Description').getAttribute('placeholder'), 'Title on the first line')
   await sheet.getByLabel('Description').fill('Physics, one hour\nOnline, any level.')
   await sheet.getByLabel('Price').fill('30')
   await sheet.getByRole('radio', { name: 'Hour' }).click()
   await shot('14-offer-sheet')
+  // The folder's balance spent: the post takes one more of the vault's host credits into it, and nothing shows.
+  const keys = await vaultKeys(importWords(words))
+  const hostCredits = async () => creditsOf((await openVault([w.settings.host], keys))!.vault).filter((c) => c.service === w.settings.host).length
+  assert.equal(await hostCredits(), 1)
+  w.host.balances.set(address, 0)
   let faces = counts.asserted
   await sheet.getByRole('button', { name: 'Post' }).click()
   await sheet.waitFor({ state: 'detached' })
   const row = page.locator('button.tint', { hasText: 'Physics, one hour' })
   await row.getByText('$30 / hour').waitFor()
   assert.equal(counts.asserted - faces, 1, 'one face to post it')
+  assert.equal(await hostCredits(), 0, "one of the vault's credits went into the folder")
+  assert.ok(Math.abs(w.host.balances.get(address)! - 0.99) < 1e-9)
 
   await row.click()
   assert.equal(await sheet.getByLabel('Description').inputValue(), 'Physics, one hour\nOnline, any level.', 'the sheet opens on what is there')
@@ -338,7 +378,18 @@ test('the offer sheet: posted, then changed, one face each', async () => {
   assert.equal(offers.length, 1, 'changed in place')
   assert.deepEqual(offers[0]![1].record.body!.price, { amount: '45', mint: 'J2QBACfPPb1ys2UyGx3ecXHgCr4hWuHFT3C2Nr6TSVSa', per: 'job' })
   await shot('15-card-offer')
-  say('offer sheet: posted and changed from the card, one face each, signed by the main key')
+
+  // Spent again, with none left in the vault: the sheet says so, in plain words.
+  const held = w.host.balances.get(address)!
+  w.host.balances.set(address, 0)
+  await page.locator('button.tint', { hasText: 'Physics, one hour' }).click()
+  await sheet.getByLabel('Price').fill('50')
+  await sheet.getByRole('button', { name: 'Post' }).click()
+  await sheet.getByText('This profile has no writes left.').waitFor()
+  await page.locator('.sheet-back').click({ position: { x: 20, y: 20 } })
+  await sheet.waitFor({ state: 'detached' })
+  w.host.balances.set(address, held)
+  say("offer sheet: posted and changed from the card, one face each, signed by the main key; an empty folder topped up from the vault's credits without a word, and with none left, \"This profile has no writes left.\"")
 })
 
 let second: Awaited<ReturnType<typeof phone>>
@@ -447,6 +498,7 @@ test('requests from an access key: one approved with one face, one declined', as
   const signs = Object.fromEntries((await post.locator('dl.fields').evaluate((dl) => [...dl.querySelectorAll('dt')].map((dt) => [dt.textContent, dt.nextElementSibling!.textContent]))) as [string, string][])
   assert.deepEqual(Object.keys(signs), ['path', 'description', 'direction', 'price.amount', 'price.mint', 'price.per', 'createdAt'], 'every field of what Approve signs')
   assert.match(signs.path!, /^offer\/[0-9a-f]{16}$/)
+  assert.equal(signs['price.mint'], 'devnet dollar', "the index's dollar by its name")
   assert.equal(await asked.filter({ hasText: 'Pay' }).getByRole('button', { name: 'Approve' }).count(), 0, 'a payment is not in this app yet: decline only')
   await shot('19-requests')
   let faces = counts.asserted
@@ -456,14 +508,16 @@ test('requests from an access key: one approved with one face, one declined', as
   const posted = (await readProfile([w.settings.host], address, Date.now())).current.get(signs.path!)
   assert.ok(posted, 'the offer, at the path the card showed')
   assert.equal(posted!.record.by, undefined, 'signed by the main key')
-  assert.deepEqual(posted!.record.body, { description: signs.description, direction: signs.direction, price: { amount: signs['price.amount'], mint: signs['price.mint'], per: signs['price.per'] }, createdAt: signs.createdAt }, 'signed as the card showed it')
+  const createdAt = posted!.record.body!.createdAt as string
+  assert.equal(signs.createdAt, await page.evaluate((t) => new Date(t).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }), createdAt), "the time in the person's own clock")
+  assert.deepEqual(posted!.record.body, { description: signs.description, direction: signs.direction, price: { amount: signs['price.amount'], mint: DOLLAR, per: signs['price.per'] }, createdAt }, 'signed as the card showed it')
   faces = counts.asserted
   await asked.filter({ hasText: 'Pay' }).getByRole('button', { name: 'Decline' }).click()
   await asked.first().waitFor({ state: 'detached' })
   assert.equal(counts.asserted - faces, 0, 'declining needs no face')
   await page.goto(server.resolvedUrls!.local[0]!)
   await card('Tutoring').getByText('Chemistry, one hour').waitFor()
-  say('requests: an access key asked; the card listed every field of what Approve signs; approved with one face, signed as shown by the main key; a payment declined')
+  say("requests: an access key asked; the card listed every field of what Approve signs, the devnet dollar by name and the time in the person's clock; approved with one face, signed as shown by the main key; a payment declined")
 })
 
 test('access keys: three made with one face, the paste shown once, each key acting; the read key removed', async () => {
@@ -483,14 +537,15 @@ test('access keys: three made with one face, the paste shown once, each key acti
   assert.equal(counts.asserted - faces, 1, 'one face to make them')
   const text = (await paste.textContent())!
   const lines = text.split('\n')
-  assert.equal(lines.length, 6)
-  assert.equal(lines[0], 'Forest, act for my profile (Tutoring, teacher).')
-  assert.equal(lines[1], `profile: ${address}`)
-  assert.match(lines[2]!, /^writeKey: [A-Za-z0-9_-]{43}$/)
-  assert.match(lines[3]!, /^messageKey: [A-Za-z0-9_-]{43}$/)
-  assert.match(lines[4]!, /^readKey: AGE-SECRET-KEY-PQ-1[0-9A-Z]+$/)
-  assert.equal(lines[5], "Anything else, send me a request and I'll approve it in the app.")
-  const [writeKey, messageKey, readKey] = lines.slice(2, 5).map((l) => l.split(': ')[1]!)
+  assert.equal(lines.length, 7)
+  assert.equal(lines[0], `MCP: ${w.settings.mcp} (add it to your AI once)`)
+  assert.equal(lines[1], 'Forest, act for my profile (Tutoring, teacher).')
+  assert.equal(lines[2], `profile: ${address}`)
+  assert.match(lines[3]!, /^writeKey: [A-Za-z0-9_-]{43}$/)
+  assert.match(lines[4]!, /^messageKey: [A-Za-z0-9_-]{43}$/)
+  assert.match(lines[5]!, /^readKey: AGE-SECRET-KEY-PQ-1[0-9A-Z]+$/)
+  assert.equal(lines[6], "Anything else, send me a request and I'll approve it in the app.")
+  const [writeKey, messageKey, readKey] = lines.slice(3, 6).map((l) => l.split(': ')[1]!)
   await shot('21-access-paste')
   await sheet.getByRole('button', { name: 'Copy' }).click()
   await sheet.getByRole('button', { name: 'Copied' }).waitFor()
@@ -550,7 +605,44 @@ test('access keys: three made with one face, the paste shown once, each key acti
   assert.equal((after.current.get('profile')!.record.body!.inbox as { readers?: string[] }).readers, undefined)
   await page.getByRole('button', { name: 'Back' }).click()
   await card('Tutoring').waitFor()
-  say('access keys: three made with one face; the paste shown once, copied, closed only by Done, nothing of it left on the device; the write key posted, the message key pulled, the read key opened; the read key removed')
+  say('access keys: three made with one face; the paste shown once, the MCP door first, copied, closed only by Done, nothing of it left on the device; the write key posted, the message key pulled, the read key opened; the read key removed')
+})
+
+test('a profile hidden from the board, held down or from its page, and shown again from the menu', async () => {
+  const hidden = page.locator('.item', { has: page.getByRole('heading', { name: 'Hidden profiles' }) })
+  const showAgain = async () => {
+    await page.getByRole('button', { name: 'Menu' }).click()
+    await hidden.locator('.row', { hasText: 'Tutoring teacher' }).getByRole('button', { name: 'Show' }).click()
+    await hidden.waitFor({ state: 'detached' })
+    await page.locator('.sheet-back').click({ position: { x: 20, y: 20 } })
+    await card('Tutoring').waitFor()
+  }
+
+  // Held down on the board.
+  const box = (await card('Tutoring').boundingBox())!
+  await page.mouse.move(box.x + 24, box.y + 24)
+  await page.mouse.down()
+  await page.getByRole('dialog', { name: 'Profile' }).waitFor()
+  await page.mouse.up()
+  assert.equal(await page.getByRole('heading', { name: 'Access keys' }).count(), 0, 'held, the card does not open')
+  await shot('23-profile-menu')
+  await page.getByRole('dialog', { name: 'Profile' }).getByRole('button', { name: 'Hide' }).click()
+  await card('Tutoring').waitFor({ state: 'detached' })
+  assert.deepEqual(JSON.parse((await page.evaluate(() => localStorage.getItem('forest.profiles')))!).map((p: { address: string }) => p.address), [address], 'nothing deleted')
+  await page.getByRole('button', { name: 'Menu' }).click()
+  await hidden.waitFor()
+  await shot('24-menu-hidden')
+  await page.locator('.sheet-back').click({ position: { x: 20, y: 20 } })
+  await showAgain()
+
+  // From its page's menu.
+  await card('Tutoring').click()
+  await page.getByRole('button', { name: 'Profile menu' }).click()
+  await page.getByRole('dialog', { name: 'Profile' }).getByRole('button', { name: 'Hide' }).click()
+  await page.getByRole('button', { name: 'New profile' }).waitFor()
+  assert.equal(await card('Tutoring').count(), 0)
+  await showAgain()
+  say('hide: a profile held down on the board, or from its page, hidden; the menu shows it again; nothing deleted')
 })
 
 test('the menu: appearance; forget this device; the words bring everything back', async () => {

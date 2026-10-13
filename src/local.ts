@@ -1,8 +1,9 @@
 // What this device keeps besides the locked seed, none of it secret: its copy of the person's
-// profiles (each label, its address and its hosts, from the vault at the last face), what the last
-// face found in each inbox, how many reviews about each profile the person has seen, the requests
-// they approved or declined (by message id), and the appearance. Forgetting the device removes all of it (`forgetLocal`); the 24 words bring the
-// profiles back from the vault.
+// profiles (each label, its address and its hosts, from the vault at the last face), the profiles
+// hidden from the board, what the last face found in each inbox, how many reviews about each
+// profile the person has seen, the requests they approved or declined (by message id), and the
+// appearance. Forgetting the device removes all of it (`forgetLocal`); the 24 words bring the
+// profiles back from the vault, none of them hidden.
 
 export type LocalProfile = { label: string; address: string; hosts: string[] }
 
@@ -13,6 +14,7 @@ export type Appearance = 'device' | 'light' | 'dark'
 
 const PREFIX = 'forest.'
 const PROFILES = `${PREFIX}profiles`
+const HIDDEN = `${PREFIX}hidden`
 const INBOX = `${PREFIX}inbox`
 const SEEN = `${PREFIX}seen`
 const ANSWERED = `${PREFIX}answered`
@@ -37,6 +39,11 @@ function write(key: string, value: unknown): void {
 
 export const localProfiles = (): LocalProfile[] => read(PROFILES, [])
 export const saveProfiles = (profiles: LocalProfile[]) => write(PROFILES, profiles)
+
+/** The profiles hidden from the board, by address. Hiding deletes nothing. */
+export const hiddenProfiles = (): string[] => read(HIDDEN, [])
+export const hideProfile = (address: string) => write(HIDDEN, [...new Set([...hiddenProfiles(), address])])
+export const showProfile = (address: string) => write(HIDDEN, hiddenProfiles().filter((a) => a !== address))
 
 export const inboxCounts = (): Record<string, InboxCount> => read(INBOX, {})
 export const saveInboxCounts = (counts: Record<string, InboxCount>) => write(INBOX, counts)

@@ -1,15 +1,17 @@
-// The menu, a sheet from the bottom: the person's AI, the appearance, their 24 words (after the
-// face), and forgetting this device.
+// The menu, a sheet from the bottom: the person's AI, the profiles hidden from the board (each
+// shown again with a tap), the appearance, their 24 words (after the face), and forgetting this
+// device.
 
 import { useState } from 'react'
 
 import { exportWords } from '../../standard/keys/src/index.ts'
 import { applyAppearance } from '../appearance.ts'
 import { withFace } from '../face.ts'
-import { type Appearance, appearance, forgetLocal, saveAppearance } from '../local.ts'
+import { type Appearance, appearance, forgetLocal, hiddenProfiles, localProfiles, saveAppearance, showProfile } from '../local.ts'
 import { forgetSeed } from '../seed/locked.ts'
 import { settings } from '../settings.ts'
 import { CheckIcon, CopyIcon, Spinner, Words, useAction } from '../ui.tsx'
+import { ProfileName } from './Compose.tsx'
 
 const CHOICES: [Appearance, string][] = [
   ['device', 'Device'],
@@ -23,6 +25,8 @@ export function Menu({ onClose, onForget }: { onClose: () => void; onForget: () 
   const [theme, setTheme] = useState(appearance)
   const [shown, setShown] = useState('')
   const [sure, setSure] = useState(false)
+  const [hidden, setHidden] = useState(hiddenProfiles)
+  const hiddenOnes = localProfiles().filter((p) => hidden.includes(p.address))
 
   const reveal = useAction(async () => setShown(await withFace(async (seed) => exportWords(seed))))
   const forget = useAction(async () => {
@@ -57,6 +61,29 @@ export function Menu({ onClose, onForget }: { onClose: () => void; onForget: () 
           </div>
           <p>Add it to your AI once, then give it an access key from any profile.</p>
         </div>
+        {hiddenOnes.length > 0 && (
+          <div className="item">
+            <h2>Hidden profiles</h2>
+            <div className="rows">
+              {hiddenOnes.map((p) => (
+                <div className="row" key={p.address} style={{ alignItems: 'center' }}>
+                  <span>
+                    <ProfileName p={p} />
+                  </span>
+                  <button
+                    className="remove"
+                    onClick={() => {
+                      showProfile(p.address)
+                      setHidden(hiddenProfiles())
+                    }}
+                  >
+                    Show
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         <div className="item">
           <h2>Appearance</h2>
           <div className="segmented" role="radiogroup" aria-label="Appearance">

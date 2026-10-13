@@ -1,8 +1,8 @@
-// A profile's page: its market, its role word, its score; its offers, the reviews it wrote and its
-// access keys, each from its permissions record, by its public half and scope. The bell opens the
-// reviews about it, from the index; the inbox icon, its inbox. An offer or a review is added with
-// its sheet, and changed or removed by tapping its row; an access key is made with its sheet, and
-// removed from its row.
+// A profile's page: its market, its role word, its address (short, copied whole), its score; its
+// offers, the reviews it wrote and its access keys, each from its permissions record, by its public
+// half and scope. The bell opens the reviews about it, from the index; the inbox icon, its inbox;
+// the menu, Hide. An offer or a review is added with its sheet, and changed or removed by tapping
+// its row; an access key is made with its sheet, and removed from its row.
 
 import { useEffect, useState } from 'react'
 
@@ -11,8 +11,8 @@ import { type Offer, type Written, short, words } from '../cards.ts'
 import { withFace } from '../face.ts'
 import { localProfiles, markSeen } from '../local.ts'
 import type { AccessKey } from '../../standard/records/src/index.ts'
-import { BackIcon, BellIcon, InboxIcon, Score, Spinner, useAction } from '../ui.tsx'
-import { useProfile } from './Board.tsx'
+import { BackIcon, BellIcon, CheckIcon, CopyIcon, InboxIcon, MoreIcon, Score, Spinner, useAction } from '../ui.tsx'
+import { ProfileMenu, useProfile } from './Board.tsx'
 import { AccessKeySheet, OfferSheet, ReviewSheet } from './Sheets.tsx'
 
 const can = (e: AccessKey) => (e.scope === 'write' && e.paths ? `write · ${e.paths.join(', ')}` : e.scope!)
@@ -46,6 +46,8 @@ function Page({ p, nav }: { p: ReturnType<typeof localProfiles>[number]; nav: Na
   const [offer, setOffer] = useState<Offer | null>()
   const [review, setReview] = useState<Written | null>()
   const [access, setAccess] = useState(false)
+  const [menu, setMenu] = useState(false)
+  const [copied, setCopied] = useState(false)
   const [removing, setRemoving] = useState('')
   const remove = useAction(async (key: string) => {
     setRemoving(key)
@@ -57,6 +59,11 @@ function Page({ p, nav }: { p: ReturnType<typeof localProfiles>[number]; nav: Na
       setRemoving('')
     }
   })
+  const copy = async () => {
+    await navigator.clipboard.writeText(p.address)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1500)
+  }
   const received = d.index?.received ?? []
   const openReviews = () => {
     markSeen(p.address, received.length)
@@ -80,12 +87,21 @@ function Page({ p, nav }: { p: ReturnType<typeof localProfiles>[number]; nav: Na
             <InboxIcon />
             {d.inbox > 0 && <span className="badge">{d.inbox}</span>}
           </button>
+          <button className="icon" aria-label="Profile menu" onClick={() => setMenu(true)}>
+            <MoreIcon />
+          </button>
         </div>
       </div>
 
       <div className="stack" style={{ gap: 4 }}>
         <h1>{words(d.name)}</h1>
         <p className="sub">{words(d.word)}</p>
+        <p className="sub address">
+          {short(p.address)}
+          <button className="icon" aria-label={copied ? 'Copied' : 'Copy address'} onClick={copy}>
+            {copied ? <CheckIcon /> : <CopyIcon />}
+          </button>
+        </p>
         {d.index?.rating && (
           <p className="sub" style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
             <Score value={d.index.rating.value} />
@@ -144,6 +160,7 @@ function Page({ p, nav }: { p: ReturnType<typeof localProfiles>[number]; nav: Na
 
       {offer !== undefined && <OfferSheet p={p} offer={offer ?? undefined} onClose={() => setOffer(undefined)} onDone={() => (setOffer(undefined), d.reload())} />}
       {review !== undefined && <ReviewSheet p={p} review={review ?? undefined} onClose={() => setReview(undefined)} onDone={() => (setReview(undefined), d.reload())} />}
+      {menu && <ProfileMenu p={p} onClose={() => setMenu(false)} onHidden={nav.back} />}
       {access && <AccessKeySheet p={p} market={words(d.name)} role={d.word} onClose={() => setAccess(false)} onMade={d.reload} />}
 
       {reviews && (

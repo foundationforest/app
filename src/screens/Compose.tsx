@@ -14,7 +14,7 @@ import { useCardName } from './Inbox.tsx'
 import { Sheet } from './Sheets.tsx'
 
 /** One of the person's profiles, as the board names it: its market, and its role's word. */
-function Own({ p }: { p: LocalProfile }) {
+export function ProfileName({ p }: { p: LocalProfile }) {
   const { market, role } = splitLabel(p.label)
   const [word, setWord] = useState(role)
   useEffect(() => {
@@ -65,7 +65,7 @@ export function Compose({ to, profiles, onClose }: { to: string; profiles: Local
                 setFrom(x.address)
               }}
             >
-              <Own p={x} />
+              <ProfileName p={x} />
             </button>
           ))}
         </div>

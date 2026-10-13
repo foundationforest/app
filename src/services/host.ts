@@ -19,6 +19,15 @@ export class Refused extends Error {
   }
 }
 
+/**
+ * The hosts that refused a write for want of credits in the folder that pays for it. The
+ * foundation's host refuses one as `refused`, in words that name the credits it costs.
+ */
+export function unpaid(err: unknown): string[] {
+  if (!(err instanceof Refused)) return []
+  return err.outcomes.filter((o) => o.results.some((r) => r.error === 'refused' && /\bcredits?\b/.test(r.message ?? ''))).map((o) => o.host)
+}
+
 /** Records to every host the profile names, the hosts and permissions records first (the library orders them). Throws if any host refused any. */
 export async function publishRecords(hosts: string[], records: SignedRecord[]): Promise<PublishOutcome[]> {
   const outcomes = await publish(hosts, records)

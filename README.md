@@ -18,23 +18,25 @@ In the order a person meets it.
    passkey's PRF secret, which the device gives only after the person's face or fingerprint, and
    kept in IndexedDB. Where a device's passkeys give no PRF secret, the app says so and stops:
    there is no password route (`src/seed/`).
-3. **One face check.** The issuer's check opens in a tab of its own; Didit sends it back to
-   `/back`, which closes. Meanwhile the app buys credits at each service the issuer's welcome gift
+3. **One face check.** The issuer's check opens in a tab of its own, and the app says to finish it
+   there; Didit sends it back to `/back`, which closes. Meanwhile the app buys credits at each service the issuer's welcome gift
    names, asks for the note until the check passes, collects the gift's credits with the tickets
    the note came with, and writes the first vault on the host: the note, the credits, the services
    used. Each stage is kept in the locked store as it is got, so a setup that stops, even with the
    page closed, is taken up again after one face (`src/flows/setup.ts`).
 4. **The board.** The person's profiles: sellers first, with their offers and scores; buyers after,
-   compact. A badge counts the messages each inbox holds, counted at every face by pulls signed in
-   the same opening of the seed (`src/face.ts`, `src/inbox.ts`), and the reviews about it not seen
-   yet.
+   compact. A badge counts the messages each inbox holds, grants left out, counted at every face by
+   pulls signed in the same opening of the seed (`src/face.ts`, `src/inbox.ts`), and the reviews
+   about it not seen yet. A card held down, or Hide in the menu on its page, takes it off the board
+   on this device; the menu's Hidden profiles shows it again. Nothing is deleted.
 5. **A new profile.** A market from the index's list, a side in that market's words, then Make,
    with one face: the person proof made in a Web Worker on the device (`src/proof/`); the row
    through the registry payer, paid with a credit; the folder on the host (its hosts record, one
-   host credit into its balance, a card with no name and an inbox open to people holding a row from
-   the same issuer); the vault written again (`src/flows/profile.ts`).
-6. **The card.** The profile's offers, the reviews it wrote and its access keys, read from its
-   hosts; its score and the reviews about it from the index (the bell). An offer is a description,
+   host credit into its balance, a card with no name, which the deployed devnet index accepts, and
+   an inbox open to people holding a row from the same issuer); the vault written again
+   (`src/flows/profile.ts`).
+6. **The card.** The profile's address under its role word, short, with a copy button; its
+   offers, the reviews it wrote and its access keys, read from its hosts; its score and the reviews about it from the index (the bell). An offer is a description,
    its first line the title, and a price in the index's devnet dollar, per hour, per day or in
    total; a review is an address, a score from 1 to 10 and text. Each is posted, changed or removed
    from its sheet, signed with the main key, one face each (`src/flows/records.ts`).
@@ -42,10 +44,12 @@ In the order a person meets it.
    key, writing under `offer` and `review`), Send messages (a message key), Read the inbox (a read
    key, also added to the card's inbox readers, so every message to the profile is sealed to it
    too). Make, with one face, makes each at random and writes the permissions record's public part:
-   each key and its scope, a write key's paths, no names and no dates. The paste follows, shown
-   once:
+   each key and its scope, a write key's paths, no names and no dates. Once every host took those
+   records, the paste follows, shown once; when one did not, the keys are taken out again and the
+   error shows:
 
    ```
+   MCP: https://mcp.devnet.forest.foundation/mcp (add it to your AI once)
    Forest, act for my profile (Tutoring, teacher).
    profile: <address>
    writeKey: <key>
@@ -55,7 +59,7 @@ In the order a person meets it.
    ```
 
    with a line for each key made, Copy, and Done, which drops it: the app keeps no private half
-   anywhere. The menu holds the address of the MCP door to add to the AI once. The card's rows come
+   anywhere. The menu holds the MCP door's address too. The card's rows come
    from the permissions record; Remove makes a write or message key past, so what it wrote still
    counts, or deletes a read key and drops it from the readers (`src/flows/access.ts`).
 8. **The AI acts.** Through services' MCP door, with the keys in the paste: offers and reviews with
@@ -64,16 +68,17 @@ In the order a person meets it.
 9. **The inbox.** One face opens every message on each of the profile's hosts with its inbox key,
    in threads by whom each is with, named by the other card's market and role word. A thread takes
    a reply, sealed to the other card's inbox key and its readers and copied to this inbox, and a
-   review. A request is a card: what it asks, then every field of what Approve would sign; Approve
-   signs exactly that with the main key, one face. The app does offers, reviews and messages; a
+   review. A request is a card: what it asks, then every field of what Approve would sign (the
+   index's dollar as "devnet dollar", times in the person's own clock); Approve signs exactly that
+   with the main key, one face. The app does offers, reviews and messages; a
    payment, private records or the inbox it shows, and the person can only decline. A grant, an
    access key someone hands this profile, is kept in the vault's grants, and shown nowhere yet
    (`src/flows/messages.ts`, `src/screens/Inbox.tsx`).
 10. **The message door.** `/message?to=<address>`, the index's Message link: which profile sends,
     the text, one face. With no seed yet, setup comes first; with no profile, a new one; then the
     message (`src/screens/Compose.tsx`).
-11. **The menu.** The AI's door, the appearance, the 24 words after a face, and forgetting the
-    device.
+11. **The menu.** The AI's door, the hidden profiles, the appearance, the 24 words after a face,
+    and forgetting the device.
 12. **Restore.** The 24 words read the vault from the host and bring the profiles back, and the
     seed is locked under a new passkey. With no vault for those words, the face check is still to
     do, and the app goes on to it (`src/flows/restore.ts`).
@@ -92,11 +97,12 @@ Underneath:
 - **The vault** (`src/vault.ts`): the standard's vault, on the person's host, read and written with
   keys mixed from the seed for the action. It holds the labels of their profiles, their grants,
   their issuer's note, and this app's own field, `settings.forestApp`: the services used, and the
-  credits not yet spent. Every host asked must answer: one that does not is an error, never "no
+  credits not yet spent, from which a profile's folder is topped up when a host refuses its write
+  for want of credits. Every host asked must answer: one that does not is an error, never "no
   vault", so no new vault is written over one. A profile's own folder is read the same way before
   anything is written over it.
 - **On the device** (`src/local.ts`), besides the locked seed: the profiles and their addresses,
-  the inbox counts, the reviews seen, the requests answered, the appearance. Opened messages live
+  the profiles hidden from the board, the inbox counts, the reviews seen, the requests answered, the appearance. Opened messages live
   only while the inbox screen is open.
 - **The screens** (`src/screens/`, `src/ui.tsx`, `src/theme.css`): Manrope, carried in the app
   (SIL Open Font License 1.1); four colors and one accent.
@@ -114,7 +120,7 @@ sets eleven rules for apps that hold keys. Where the app stands on each:
 
 | Rule | Status |
 |---|---|
-| 1. The seed stays on the device, locked by its secure hardware; keys mixed from it are held only for the action that needs them | Followed. The seed is locked under a passkey's PRF secret; `withSeed` opens it for one action and zeroes it after; nothing mixed from it is stored |
+| 1. The seed stays on the device, locked by its secure hardware; keys mixed from it are held only for the action that needs them | Followed. The seed is locked under a passkey's PRF secret; `withSeed` opens it for one action and zeroes it after; nothing mixed from it is stored. Each profile's inbox key, mixed in the same opening, is held after it until that face's count is back, to leave grants out of it |
 | 2. Every signature asks for the face or fingerprint and shows what is signed | Half. Every action that opens the seed asks for the face or fingerprint, once. Shown as signed: an offer, a review and a message, as their sheet shows them, and a request, field by field. Signed without each field shown: setup's records, the vault, the card, the permissions record and the card when an access key is made or removed, and the pulls |
 | 3. Nothing leaves the device but access keys and signatures | Followed. No seed, main key, inbox key or issuer secret is sent anywhere. What goes out is signed records, messages and pulls; a row's transaction, signed, with its proof; the note number an issuer signs; blinded buys and credits spent; and the access keys' private halves, only in the paste the person copies |
 | 4. Each app, server or AI gets its own access key for each folder | Followed. Each Make makes new keys at random, for the profile it is made from; none is ever reused or kept |
@@ -142,7 +148,8 @@ npm run test:browser   # headless Chromium through Playwright, with a virtual pa
                        # stand-ins), through setup (stopped at the vault and taken up again), a new
                        # profile, the card, an offer, a second person through the message door, the
                        # inbox with a reply and a review, requests approved and declined, access
-                       # keys made, pasted and acting, the menu, forgetting the device and restoring
+                       # keys made, pasted and acting, a write topped up from the vault, a profile
+                       # hidden and shown again, the menu, forgetting the device and restoring
                        # (SHOTS=<dir> keeps a screenshot of each screen)
 ```
 
@@ -166,8 +173,12 @@ CSP on every response.
 - **The credits are the gift's.** No screen shows how many are left, and no money moves in v1, so
   none can be bought. Each profile's folder gets one host credit when it is made; every record and
   every message it sends spends from that balance (0.01 a write and 0.001 a kilobyte by default on
-  services' host: about a hundred writes), and when it runs out the host refuses them, with no way
-  in the app yet to add one. A write key's records spend from it too.
+  services' host: about a hundred writes). When the host refuses one of the app's writes for want
+  of credits, the app moves one more of the vault's host credits into that folder and sends it
+  again; with none left in the vault, it says "This profile has no writes left." A write key's
+  records spend from the same balance, and the host refuses them once it is empty: only the app's
+  own writes top it up. The vault's own folder, which every vault write spends from, gets one
+  credit at setup and is never topped up.
 - **The CSP pins the services.** The hosted copy connects only to devnet's issuer, host, registry
   payer, index and RPC. A profile whose hosts record names another host cannot be read or messaged
   from it.
@@ -188,11 +199,13 @@ CSP on every response.
 - **What an AI sends to others with a message key is not in the threads.** Services' MCP door sends
   no copy to the profile's own inbox; the other side's answer shows, the question does not.
 - **A profile on a host the app does not know cannot be messaged from here.** Another card is read
-  from the settings' host and the person's own hosts, and the hosts its hosts record names there.
+  from the settings' host and the person's own hosts, and the hosts its hosts record names there; a
+  message to one whose hosts record names none the app knows stops with "That host isn't reachable
+  from this app yet." A card the app finds on none of the hosts it knows gets "No card for
+  <address>."
 - **An offer's price is in one dollar,** the index's devnet dollar.
-- **The devnet index may not show these cards.** A card here has no name, as the standard allows
-  since commit b30c0b6; services' index takes such cards from the commit it pins on main, but which
-  copy the foundation's devnet index runs is not checked here.
+- **A hidden profile is hidden on this device only.** Another device, or this one after the 24
+  words bring the profiles back, shows it on the board.
 - **The seed is as safe as the code the server sends.** A web app's code arrives from its server on
   each visit; installed, it runs from the copy its service worker keeps until the next update. The
   CSP keeps a page from running code from anywhere else.
