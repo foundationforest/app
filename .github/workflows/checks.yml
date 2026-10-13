@@ -1,0 +1,36 @@
+# The app's checks from a clean install, on every pull request and every push to main: standard at
+# the commit in STANDARD (standard.sh), then the type-check, the tests on loopback (Vitest), the
+# build, and the browser test in Chromium (Playwright).
+
+name: checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  app:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - name: Install
+        run: |
+          npm ci --no-audit --no-fund
+          ./standard.sh keys records registry/client reputation/client
+          npx playwright install --with-deps chromium
+      - name: Type-check
+        run: npm run check
+      - name: Tests on loopback
+        run: npm test
+      - name: Build
+        run: npm run build
+      - name: Browser test
+        run: npm run test:browser

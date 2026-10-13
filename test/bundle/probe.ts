@@ -1,0 +1,20 @@
+// Everything the app's paths import, for test/bundle.test.ts to bundle for the browser: the app's
+// own modules, and the standard's four packages at their browser import paths.
+import '../../src/buffer.ts'
+
+export * as keys from '../../standard/keys/src/index.ts'
+export * as records from '../../standard/records/src/index.ts'
+export * as recordsPrivate from '../../standard/records/src/private.ts'
+export * as registry from '../../standard/registry/client/src/index.ts'
+export * as reputation from '../../standard/reputation/client/src/index.ts'
+
+export * as seed from '../../src/seed/seed.ts'
+export * as locked from '../../src/seed/locked.ts'
+export * as proof from '../../src/proof/worker.ts'
+export * as issuer from '../../src/services/issuer.ts'
+export * as host from '../../src/services/host.ts'
+export * as registryPayer from '../../src/services/registry-payer.ts'
+export * as indexes from '../../src/services/indexes.ts'
+export * as credits from '../../src/services/credits.ts'
+export * as solana from '../../src/services/solana.ts'
+export * as settings from '../../src/settings.ts'
