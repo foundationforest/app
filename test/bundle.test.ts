@@ -3,7 +3,8 @@
 // too, which is Node only, so the check is known to catch one. The app's @solana/web3.js is the
 // registry client's version, since the two share one copy (vite.config.ts, `dedupe`). And the CSP
 // in vercel.json lets the page reach the services in the settings, devnet's, and no other; the
-// browser test (test/browser/app.ts) runs the built app under it.
+// browser test (test/browser/app.ts) runs the built app under it. And the old address,
+// app.devnet.forest.foundation, redirects to the app's own, app.forest.foundation.
 
 import { readFileSync } from 'node:fs'
 import { builtinModules } from 'node:module'
@@ -82,4 +83,12 @@ test("vercel.json's CSP: the page connects to itself and devnet's services alone
   // The MCP door is only shown, for the person to give their AI: the page never asks it anything.
   const { mcp: _, ...services } = DEVNET
   expect(connect.sort()).toEqual(["'self'", ...Object.values(services)].sort())
+  expect(csp).not.toContain('app.devnet.forest.foundation')
+})
+
+test("vercel.json: the old address redirects to the new one, its path kept, with a 308", () => {
+  const vercel = JSON.parse(readFileSync(`${root}vercel.json`, 'utf8'))
+  expect(vercel.redirects).toEqual([
+    { source: '/:path*', has: [{ type: 'host', value: 'app.devnet.forest.foundation' }], destination: 'https://app.forest.foundation/:path*', statusCode: 308 },
+  ])
 })

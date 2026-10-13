@@ -3,6 +3,14 @@
   "installCommand": "npm ci",
   "buildCommand": "./standard.sh keys records registry/client reputation/client && npm run build",
   "outputDirectory": "dist",
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "app.devnet.forest.foundation" }],
+      "destination": "https://app.forest.foundation/:path*",
+      "statusCode": 308
+    }
+  ],
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
   "headers": [
     {

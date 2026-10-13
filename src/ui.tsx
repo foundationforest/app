@@ -16,13 +16,17 @@ function Icon({ size = 24, children }: { size?: number; children: ReactNode }) {
   )
 }
 
-/** The mark: the app's icon, the accent square and the tree. */
+/**
+ * The mark: three roofs and a trunk, exactly as drawn, never redrawn, in the theme's ink.
+ * public/icon.svg holds the same drawing on paper, and the PWA icons are made from it.
+ */
 export function Mark({ size = 28 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 512 512" aria-hidden="true">
-      <rect width="512" height="512" rx="112" fill="var(--accent)" />
-      <path d="M256 112 L348 240 H298 L372 352 H140 L214 240 H164 Z" fill="#edeae0" />
-      <rect x="238" y="352" width="36" height="56" rx="4" fill="#edeae0" />
+    <svg className="mark" width={size} height={size} viewBox="0 0 40 40" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="butt" strokeLinejoin="miter" aria-hidden="true">
+      <polyline points="8,12 20,3 32,12" />
+      <polyline points="8,22 20,13 32,22" />
+      <polyline points="8,32 20,23 32,32" />
+      <line x1="20" y1="24" x2="20" y2="38" />
     </svg>
   )
 }

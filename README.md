@@ -155,7 +155,9 @@ Underneath:
   requests answered, the appearance, the settings, and, while setup is under way, its stages,
   sealed under a key mixed from the seed. Opened messages live only while the inbox screen is open.
 - **The screens** (`src/screens/`, `src/ui.tsx`, `src/theme.css`): Manrope, carried in the app
-  (SIL Open Font License 1.1); four colors and one accent.
+  (SIL Open Font License 1.1); four colors and one accent. The mark, three roofs and a trunk, is
+  one drawing never redrawn: in the theme's ink on the screens, and in ink on paper, 8 units
+  around it, in the favicon (`public/icon.svg`) and the PWA icons made from it.
 - **The CSP** (`vercel.json`): every response carries a `Content-Security-Policy` header. Scripts,
   styles, images, fonts, workers and the manifest come from the app's own origin alone, with no
   inline script; WebAssembly may compile (`'wasm-unsafe-eval'`), for the proof; the page connects to
@@ -206,8 +208,10 @@ npm run test:browser   # headless Chromium through Playwright, with a virtual pa
                        # (SHOTS=<dir> keeps a screenshot of each screen)
 ```
 
-On Vercel, `vercel.json` runs `standard.sh` and the build, sends every path to the app, and sets the
-CSP on every response.
+On Vercel, `vercel.json` runs `standard.sh` and the build, sends every path to the app, sets the
+CSP on every response, and sends the old address, app.devnet.forest.foundation, on to
+https://app.forest.foundation with a 308, path and query kept. That address must be a domain of
+the Vercel project for the redirect to land.
 
 ## Limits
 

@@ -192,6 +192,11 @@ button.wide {
   align-items: center;
 }
 
+/* The mark, in the theme's ink. */
+.mark {
+  color: var(--ink);
+}
+
 .brand {
   display: flex;
   align-items: center;
