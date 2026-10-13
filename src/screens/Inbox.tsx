@@ -10,13 +10,14 @@
 import { Fragment, useEffect, useRef, useState } from 'react'
 
 import type { Nav } from '../App.tsx'
-import { cardName, marketOf, priceText, short, splitLabel } from '../cards.ts'
+import { cardName, localTime, marketOf, priceText, short, splitLabel } from '../cards.ts'
 import { withFace } from '../face.ts'
 import { DOES, type Inbox, type Opened, type Request, approve, fieldsOf, folderOf, grantsOf, knownHosts, offerTitle, openInbox, requestOf, send, textOf, threadsOf, toSign } from '../flows/messages.ts'
 import { markRead } from '../inbox.ts'
 import { type LocalProfile, answered, localProfiles, markAnswered } from '../local.ts'
 import { settings } from '../settings.ts'
 import { BackIcon, Score, Spinner, useAction } from '../ui.tsx'
+import { keepGrants } from '../vault.ts'
 import { useLocal } from './Board.tsx'
 import { ReviewSheet } from './Sheets.tsx'
 
@@ -77,7 +78,7 @@ function Page({ p, thread, nav }: { p: LocalProfile; thread?: string; nav: Nav }
       markRead(p.address, more.cursors)
       // A grant not kept now is pulled again the next time the inbox opens, and kept then.
       const grants = grantsOf(more.messages)
-      if (grants.length) await import('../vault.ts').then(({ keepGrants }) => keepGrants(seed, settings().host, grants)).catch((err) => console.error(err))
+      if (grants.length) await keepGrants(seed, settings().host, grants).catch((err) => console.error(err))
       return more
     })
     setInbox((was) => {
@@ -161,8 +162,6 @@ function ThreadRow({ with: w, keyed, asks, onOpen }: { with: string; keyed: bool
   )
 }
 
-const when = (time: number) => new Date(time).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })
-
 function ThreadView(props: { p: LocalProfile; messages: Opened[]; with: string; keyed: boolean; inbox: Inbox; face: (act?: (seed: Uint8Array) => Promise<void>) => Promise<void>; known: () => string[] }) {
   const { p, messages, with: w, keyed, inbox, face, known } = props
   // A thread with another profile takes a reply and a review; one with an access key, or with this profile, does not.
@@ -220,7 +219,7 @@ function Message({ p, m }: { p: LocalProfile; m: Opened }) {
       <span className="text">{textOf(m.body)}</span>
       {/* Sent by an access key this profile gave out, rather than by its main key. */}
       {mine && m.key && <span className="sub by">Access key {short(m.key)}</span>}
-      <span className="sub when">{when(m.time)}</span>
+      <span className="sub when">{localTime(m.time)}</span>
     </div>
   )
 }
@@ -308,7 +307,7 @@ function RequestCard({ p, m, r, inbox, face, known }: { p: LocalProfile; m: Open
         </dl>
       )}
       {m.key && <span className="sub by">Access key {short(m.key)}</span>}
-      <span className="sub when">{when(m.time)}</span>
+      <span className="sub when">{localTime(m.time)}</span>
       {yes.error && <p className="error">{yes.error}</p>}
       <div className="answer">
         {DOES.has(r.kind) && (

@@ -304,6 +304,22 @@ button.icon .badge {
   overflow-wrap: anywhere;
 }
 
+/* A field with its eye at the end. */
+.secret {
+  position: relative;
+}
+
+.secret input.field {
+  padding-right: 52px;
+}
+
+.secret button.icon {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  color: var(--ink-2);
+}
+
 input.field,
 textarea.field {
   width: 100%;
@@ -366,6 +382,10 @@ button.card {
   background: var(--paper);
   border: 1px solid var(--paper-2);
   border-radius: var(--radius-surface);
+  /* Held down, a card opens its menu: no text selection or callout in the way. */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 
 button.card.compact {
@@ -458,6 +478,16 @@ button.dashed {
 }
 
 /* A card's page. */
+.address {
+  display: flex;
+  align-items: center;
+  margin: -10px 0;
+}
+
+.address button.icon {
+  color: var(--ink-2);
+}
+
 .section {
   display: grid;
   gap: 8px;

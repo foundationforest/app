@@ -1,18 +1,20 @@
 // Offers, reviews and the inbox against one of each stand-in (test/stand-ins.ts, `world`), on
 // loopback, in Node, as the sheets and the inbox screen run them: an offer posted, changed and
 // removed; a review the same; a thread between two people's profiles, there and back, each side's
-// copy in its own inbox, and the count that leaves out a profile's own copies; requests sent by an
-// access key, approved and declined, the bodies that are not requests, and every field of what
-// approving one signs; and a grant kept in the vault.
+// copy in its own inbox, and the count that leaves out a profile's own copies; a message to a
+// profile on a host the app does not reach; requests sent by an access key, approved and declined,
+// the bodies that are not requests, and every field of what approving one signs; a grant kept in
+// the vault, and not counted; and a write short of credits, topped up from the vault once, until
+// the vault has none.
 
 import { readFile } from 'node:fs/promises'
 
 import { afterAll, beforeAll, describe, expect, test } from 'vitest'
 
-import { mainKey } from '../standard/keys/src/index.ts'
-import { type Body, b64u, deliver, keyFromPrivate, permissionsRecord, readProfile } from '../standard/records/src/index.ts'
+import { inboxKey, mainKey } from '../standard/keys/src/index.ts'
+import { type Body, b64u, deliver, hostsRecord, keyFromPrivate, ownerRecord, permissionsRecord, readProfile } from '../standard/records/src/index.ts'
 import { message } from '../standard/records/src/private.ts'
-import { DOLLAR, ownRecords } from '../src/cards.ts'
+import { DOLLAR, localTime, ownRecords } from '../src/cards.ts'
 import { type Opened, approve, fieldsOf, grantsOf, knownHosts, openInbox, requestOf, send, threadsOf, toSign, withOf } from '../src/flows/messages.ts'
 import { makeProfile } from '../src/flows/profile.ts'
 import { freshId, offerBody, writeOffer, writeReview } from '../src/flows/records.ts'
@@ -24,7 +26,8 @@ import type { Artifact } from '../src/proof/circuit.ts'
 import { type ProveRequest, prove } from '../src/proof/prove.ts'
 import { makeSeed } from '../src/seed/seed.ts'
 import { publishRecords } from '../src/services/host.ts'
-import { keepGrants, openVault, vaultKeys } from '../src/vault.ts'
+import { saveSettings } from '../src/settings.ts'
+import { creditsOf, keepGrants, openVault, saveVault, vaultKeys, withCredits } from '../src/vault.ts'
 import { world } from './stand-ins.ts'
 
 const load = async (artifact: Artifact) => new Uint8Array(await readFile(new URL(`../public${artifact.path}`, import.meta.url)))
@@ -53,6 +56,8 @@ async function person(label: string): Promise<Person> {
 
 beforeAll(async () => {
   w = await world()
+  // The vault's host, where a write short of credits is topped up from, is the settings'.
+  saveSettings(w.settings)
   seller = await person('tutoring/seller')
   buyer = await person('tutoring/buyer')
 }, 240_000)
@@ -136,6 +141,17 @@ describe('a thread', () => {
   })
 })
 
+describe('a profile on another host', () => {
+  test("a card whose hosts record names only hosts the app does not reach: the message is not sent", async () => {
+    const far = await mainKey(makeSeed().seed, 'tutoring/seller')
+    w.host.balances.set(far.address, 1)
+    const now = Date.now()
+    const card = { market: 'tutoring', role: 'seller', inboxKey: (await inboxKey(far.privateKey)).recipient, inbox: { senders: { issuer: w.issuer.issuer.key } }, createdAt: new Date(now).toISOString() }
+    await publishRecords([w.settings.host], [hostsRecord(far, ['http://127.0.0.1:9'], now), ownerRecord(far, 'profile', card, now)])
+    await expect(send(buyer.seed, buyer.p, far.address, { text: 'Hello?' }, known())).rejects.toThrow("That host isn't reachable from this app yet.")
+  })
+})
+
 describe('requests', () => {
   test('sent by an access key the profile lists: approved with the main key, once; the rest plain messages', async () => {
     const main = await mainKey(seller.seed, seller.p.label)
@@ -216,9 +232,17 @@ describe('what a request signs', () => {
       ['description', 'Biology, one hour'],
       ['direction', 'offer'],
       ['price.amount', '28'],
-      ['price.mint', DOLLAR],
+      ['price.mint', 'devnet dollar'],
       ['price.per', 'hour'],
-      ['createdAt', '2026-10-13T12:00:00.000Z'],
+      ['createdAt', localTime(now)],
+    ])
+    // Another dollar by its mint; text that is not a time, as it is.
+    expect(fieldsOf({ path: 'offer/x', body: { description: '2026-10-13', price: { amount: '1', mint: 'So11111111111111111111111111111111111111112', per: 'job' } } })).toEqual([
+      ['path', 'offer/x'],
+      ['description', '2026-10-13'],
+      ['price.amount', '1'],
+      ['price.mint', 'So11111111111111111111111111111111111111112'],
+      ['price.per', 'job'],
     ])
     expect(fieldsOf(remove!)).toEqual([['path', 'offer/bio'], ['body', 'none: the record is removed']])
     expect(fieldsOf(sendIt!)).toEqual([['to', buyer.p.address], ['text', 'See you at six.']])
@@ -237,13 +261,18 @@ describe('what a request signs', () => {
 })
 
 describe('grants', () => {
-  test('a grant that reaches an inbox is kept in the vault, once, and shown in no thread', async () => {
+  test('a grant that reaches an inbox is kept in the vault, once, shown in no thread, and not counted', async () => {
     const giver = await mainKey(buyer.seed, buyer.p.label)
     const card = (await readProfile(seller.p.hosts, seller.p.address, Date.now())).current.get('profile')!.record.body!
     const grant = { key: b64u.encode(crypto.getRandomValues(new Uint8Array(32))), folder: buyer.p.address, scope: 'write' as const, paths: ['offer'], from: buyer.p.address, since: Date.now(), note: 'For your AI' }
     // One that says another profile handed it over is not taken as a grant.
     const claimed = { ...grant, key: b64u.encode(crypto.getRandomValues(new Uint8Array(32))), from: seller.p.address }
+    await sendPulls(await signPulls(seller.seed, [seller.p]))
+    const counted = inboxCounts()[seller.p.address]!.count
     await deliver(seller.p.hosts, [await message(giver, seller.p.address, { grant }, Date.now(), card), await message(giver, seller.p.address, { grant: claimed }, Date.now() + 1, card)])
+    await deliver(seller.p.hosts, [await message(giver, seller.p.address, { text: 'And a word.' }, Date.now() + 2, card)])
+    await sendPulls(await signPulls(seller.seed, [seller.p]))
+    expect(inboxCounts()[seller.p.address]!.count).toBe(counted + 1)
 
     const inbox = await openInbox(seller.seed, seller.p)
     expect(grantsOf(inbox.messages)).toEqual([grant])
@@ -255,5 +284,27 @@ describe('grants', () => {
     expect(await keepGrants(seller.seed, w.settings.host, grantsOf(inbox.messages))).toBe(0)
     const vault = (await openVault([w.settings.host], keys))!.vault
     expect(vault).toEqual({ ...before, grants: [grant] })
+  })
+})
+
+describe('credits', () => {
+  test('a write its folder cannot pay for: one more of the vault\'s credits goes in, silently; with none left, no writes left', async () => {
+    const keys = await vaultKeys(seller.seed)
+    const hostCredits = async () => creditsOf((await openVault([w.settings.host], keys))!.vault).filter((c) => c.service === w.settings.host).length
+    const before = await hostCredits()
+    expect(before).toBeGreaterThan(0)
+    w.host.balances.set(seller.p.address, 0)
+    await writeOffer(seller.seed, seller.p, 'paid', { description: 'Paid for from the vault' })
+    expect((await ownRecords(seller.p)).offers.map((o) => o.path)).toContain('offer/paid')
+    expect(await hostCredits()).toBe(before - 1)
+    expect(w.host.balances.get(seller.p.address)).toBeCloseTo(0.99)
+
+    // The vault with no host credit left: the write is refused, in plain words.
+    const read = (await openVault([w.settings.host], keys))!
+    await saveVault(keys, read.hosts, withCredits(read.vault, creditsOf(read.vault).filter((c) => c.service !== w.settings.host)), read.time)
+    w.host.balances.set(seller.p.address, 0)
+    await expect(writeOffer(seller.seed, seller.p, 'unpaid', { description: 'Not paid for' })).rejects.toThrow('This profile has no writes left.')
+    expect((await ownRecords(seller.p)).offers.map((o) => o.path)).not.toContain('offer/unpaid')
+    w.host.balances.set(seller.p.address, 1)
   })
 })

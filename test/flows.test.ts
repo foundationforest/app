@@ -3,7 +3,8 @@
 // kept; a vault with its credits at the top, as an older app wrote it, moved; a profile made, its
 // proof made as the worker makes it; made again after a stop; restore from the words; the card's own
 // records and what the index says; an access key removed; access keys made, each acting as its
-// scope allows, and the paste. Offers, reviews, the inbox, requests and grants:
+// scope allows, and the paste; access keys that a host would not take for want of credits, with
+// none left in the vault, taken out again. Offers, reviews, the inbox, requests and grants:
 // test/inbox.test.ts. The screens around them, in a browser: test/browser/app.ts.
 
 import { createPublicKey, randomBytes, verify } from 'node:crypto'
@@ -25,6 +26,7 @@ import { type ProveRequest, prove } from '../src/proof/prove.ts'
 import { pack, unpack } from '../src/seed/locked.ts'
 import { makeSeed } from '../src/seed/seed.ts'
 import { publishRecords } from '../src/services/host.ts'
+import { saveSettings } from '../src/settings.ts'
 import { type AppVault, creditsOf, openVault, saveVault, vaultKeys } from '../src/vault.ts'
 import { MARKETS, world } from './stand-ins.ts'
 
@@ -41,7 +43,11 @@ const LABEL = 'tutoring/seller'
 let w: Awaited<ReturnType<typeof world>>
 const { seed } = makeSeed()
 
-beforeAll(async () => void (w = await world()))
+// The vault's host, where a write short of credits is topped up from, is the settings'.
+beforeAll(async () => {
+  w = await world()
+  saveSettings(w.settings)
+})
 afterAll(() => w.close())
 
 const hostCredits = (vault: AppVault) => creditsOf(vault).filter((c) => c.service === w.settings.host).length
@@ -222,7 +228,8 @@ describe('a card', () => {
     expect(opened.body).toEqual({ text: 'For the helper too.' })
     expect(await openPrivate(await makePrivate({ x: 1 }, [reader]), made.read!)).toEqual({ x: 1 })
 
-    expect(pasteOf('Tutoring', 'teacher', p.address, made).split('\n')).toEqual([
+    expect(pasteOf('https://mcp.example/mcp', 'Tutoring', 'teacher', p.address, made).split('\n')).toEqual([
+      'MCP: https://mcp.example/mcp (add it to your AI once)',
       'Forest, act for my profile (Tutoring, teacher).',
       `profile: ${p.address}`,
       `writeKey: ${made.write}`,
@@ -230,7 +237,7 @@ describe('a card', () => {
       `readKey: ${made.read}`,
       "Anything else, send me a request and I'll approve it in the app.",
     ])
-    expect(pasteOf('Tutoring', 'teacher', p.address, { message: made.message }).split('\n')).toHaveLength(4)
+    expect(pasteOf('https://mcp.example/mcp', 'Tutoring', 'teacher', p.address, { message: made.message }).split('\n')).toHaveLength(5)
 
     // Removed as before: the read key leaves the readers; the others are made past.
     for (const key of [writer.address, messenger.address, reader]) await removeAccessKey(seed, p, key)
@@ -238,6 +245,21 @@ describe('a card', () => {
     expect(after.access.filter((e) => e.scope)).toEqual([])
     expect((after.current.get('profile')!.record.body!.inbox as { readers?: string[] }).readers).toBeUndefined()
     await expect(makeAccessKeys(seed, p, { write: false, message: false, read: false })).rejects.toThrow(/at least one/)
+  })
+
+  test('access keys a host will not take for want of credits, with none left in the vault: no writes left, and the keys taken out again', async () => {
+    const main = await mainKey(seed, LABEL)
+    const p = { label: LABEL, address: main.address, hosts: [w.settings.host] }
+    expect(hostCredits((await openVault([w.settings.host], await vaultKeys(seed)))!.vault)).toBe(0)
+    const before = await readProfile(p.hosts, p.address, Date.now())
+    const held = w.host.balances.get(p.address)
+    w.host.balances.set(p.address, 0)
+    // The permissions record, which is free, is taken; the card, with the read key among its readers, is not.
+    await expect(makeAccessKeys(seed, p, { write: true, message: false, read: true })).rejects.toThrow('This profile has no writes left.')
+    const after = await readProfile(p.hosts, p.address, Date.now())
+    expect(after.access).toEqual(before.access)
+    expect(after.current.get('profile')!.record.body).toEqual(before.current.get('profile')!.record.body)
+    w.host.balances.set(p.address, held!)
   })
 
   test('words: role names, prices, titles', () => {

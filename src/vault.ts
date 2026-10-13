@@ -2,7 +2,9 @@
 // their profiles and where each lives, the grants that reached their inboxes (kept, not used yet),
 // their issuers' notes, and the app's own field,
 // `settings.forestApp`: the services the person uses, and `credits`, the credits not yet spent, as
-// credits.ts writes them, since a credit is a bearer one and is as safe as the vault. Read and
+// credits.ts writes them, since a credit is a bearer one and is as safe as the vault. A profile's
+// write that a host refuses for want of credits takes one more of them into its folder there, and
+// is sent once more (`paying`). Read and
 // written with the vault key and its inbox key, both mixed from the seed for the action and dropped
 // with it. A vault an older copy of this app wrote keeps its credits at the top; they are moved into
 // `settings.forestApp` when it is read, and written there at its next write.
@@ -13,7 +15,7 @@ import { hostsRecord } from '../standard/records/src/index.ts'
 import { type Vault, readVault, vaultRecord } from '../standard/records/src/private.ts'
 import type { LocalProfile } from './local.ts'
 import type { Credit } from './services/credits.ts'
-import { publishRecords, spend } from './services/host.ts'
+import { publishRecords, spend, unpaid } from './services/host.ts'
 import { ServiceError } from './services/http.ts'
 import type { Settings } from './settings.ts'
 
@@ -126,6 +128,33 @@ export class NoCredits extends Error {
   constructor(service: string) {
     super(`No credits left at ${new URL(service).host}.`)
     this.name = 'NoCredits'
+  }
+}
+
+/**
+ * `write`, a write paid for from the profile's folder at `folder`. When a host refuses it for want
+ * of credits, one more of the vault's credits for that host goes into the folder there, the vault
+ * (on `vaultHost`) is written without it, and `write` is sent once more, as it was. With none left
+ * for that host, the profile has no writes left.
+ */
+export async function paying<T>(seed: Uint8Array, vaultHost: string, folder: string, write: () => Promise<T>): Promise<T> {
+  try {
+    return await write()
+  } catch (err) {
+    const short = unpaid(err)
+    if (!short.length) throw err
+    const keys = await vaultKeys(seed)
+    const read = await openVault([vaultHost], keys)
+    let credits = read ? creditsOf(read.vault) : []
+    for (const host of short) {
+      try {
+        credits = (await spendOne(credits, host, (credit) => spend(host, folder, [credit]))).rest
+      } catch (spent) {
+        throw spent instanceof NoCredits ? new Error('This profile has no writes left.') : spent
+      }
+    }
+    await saveVault(keys, read!.hosts, withCredits(read!.vault, credits), read!.time)
+    return write()
   }
 }
 

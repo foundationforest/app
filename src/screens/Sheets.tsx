@@ -2,7 +2,8 @@
 // whose first line is its title, and its price in the devnet dollar, per hour, per day or in
 // total) and a review (who, a score from 1 to 10 with one decimal, and text). Opened on a row, the
 // same sheet changes or removes it. Post and Remove each take one face. And a new access key: what
-// it may do, Make with one face, then the paste for the person's AI, shown once.
+// it may do, Make with one face, then the paste for the person's AI, shown once, after every host
+// took the keys' records.
 
 import { type ReactNode, useState } from 'react'
 
@@ -12,6 +13,7 @@ import { withFace } from '../face.ts'
 import type { Choice } from '../flows/access.ts'
 import { type OfferInput, type Per, type ReviewInput, SCORE, amountOk, freshId, writeOffer, writeReview } from '../flows/records.ts'
 import type { LocalProfile } from '../local.ts'
+import { settings } from '../settings.ts'
 import { Spinner, useAction } from '../ui.tsx'
 
 const PERS: [Per, string][] = [
@@ -81,7 +83,7 @@ export function OfferSheet({ p, offer, onClose, onDone }: { p: LocalProfile; off
           if (ok) void post.run()
         }}
       >
-        <textarea className="field" rows={5} placeholder="Description" aria-label="Description" maxLength={3000} value={description} onChange={(e) => setDescription(e.target.value)} />
+        <textarea className="field" rows={5} placeholder="Title on the first line" aria-label="Description" maxLength={3000} value={description} onChange={(e) => setDescription(e.target.value)} />
         <div className="price">
           <label className="money">
             <span>$</span>
@@ -151,7 +153,7 @@ export function AccessKeySheet({ p, market, role, onClose, onMade }: { p: LocalP
   const make = useAction(async () => {
     const { makeAccessKeys, pasteOf } = await import('../flows/access.ts')
     const made = await withFace((seed) => makeAccessKeys(seed, p, choice))
-    setPaste(pasteOf(market, role, p.address, made))
+    setPaste(pasteOf(settings().mcp, market, role, p.address, made))
     onMade()
   })
   const ok = choice.write || choice.message || choice.read

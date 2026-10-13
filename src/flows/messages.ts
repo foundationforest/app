@@ -1,9 +1,10 @@
 // The inbox, as the app reads and writes it (the standard's records README, Inbox). Read: every page
 // of the profile's inbox on each of its hosts, pulled with a pull its main key signs, each message
 // opened with its inbox key; a message on two hosts once. Sent: sealed to the other card's inbox key
-// and its readers, signed by the main key, delivered to the other's hosts; and a copy, `{ text, to }`,
-// to the profile's own inbox, which a message to itself reaches whatever its rules, so a thread
-// survives a new device. Requests: a message the profile sent itself, by its main key or by a
+// and its readers, signed by the main key, delivered to the other's hosts, when the app can reach
+// one of them; and a copy, `{ text, to }`, to the profile's own inbox, which a message to itself
+// reaches whatever its rules, so a thread survives a new device. Each is paid for from the
+// profile's folder there, topped up from the vault when a host says it holds too little. Requests: a message the profile sent itself, by its main key or by a
 // message key its permissions record lists now, asking for one of the standard's kinds with
 // parameters that fit; the app shows every field of what it would sign, and signs that with the
 // main key only when the person approves. Grants: a message whose body hands this profile an access
@@ -11,10 +12,12 @@
 
 import { type MainKey, inboxKey, mainKey } from '../../standard/keys/src/index.ts'
 import { type Body, type Grant, type View, checkGrant, liveContent, pull, pullRequest, publicKeyFromAddress, readProfile } from '../../standard/records/src/index.ts'
-import { titleOf } from '../cards.ts'
+import { DOLLAR, localTime, titleOf } from '../cards.ts'
 import { message, openMessage } from '../../standard/records/src/private.ts'
 import type { LocalProfile } from '../local.ts'
 import { deliverMessages, readOwn } from '../services/host.ts'
+import { settings } from '../settings.ts'
+import { paying } from '../vault.ts'
 import { ID, offerFits, reviewFits, writeOwn } from './records.ts'
 
 export type Opened = { id: string; from: string; to: string; time: number; key?: string; body: Body }
@@ -79,11 +82,16 @@ export async function send(seed: Uint8Array, p: LocalProfile, to: string, body: 
   const main = await mainKey(seed, p.label)
   const [theirs, mine] = await Promise.all([folderOf(to, known), readOwn(p.hosts, p.address)])
   const card = theirs.current.get('profile')?.record.body
+  // The app reaches the hosts it knows, and its CSP lets it reach no other.
+  if (theirs.hosts.length && !theirs.hosts.some((h) => known.includes(h))) throw new Error("That host isn't reachable from this app yet.")
   if (!card || !theirs.hosts.length) throw new Error(`No card for ${to}.`)
   const now = Date.now()
-  await deliverMessages(theirs.hosts, [await message(main, to, body, now, card)])
+  const sent = await message(main, to, body, now, card)
+  await paying(seed, settings().host, p.address, () => deliverMessages(theirs.hosts, [sent]))
   const own = mine.current.get('profile')?.record.body
-  if (to !== p.address && own) await deliverMessages(mine.hosts.length ? mine.hosts : p.hosts, [await message(main, p.address, { ...body, to }, now, own)])
+  if (to === p.address || !own) return
+  const copy = await message(main, p.address, { ...body, to }, now, own)
+  await paying(seed, settings().host, p.address, () => deliverMessages(mine.hosts.length ? mine.hosts : p.hosts, [copy]))
 }
 
 /** Who a message is with: who sent it; for one the profile sent itself, whom it is a copy for, else the access key that signed it, else the profile itself. */
@@ -188,12 +196,23 @@ export function toSign(r: Request, own: Record<string, Body | null | undefined>,
   }
 }
 
+/** A time as a record writes it: RFC 3339, in UTC or with its offset. */
+const TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/
+
+/** A field's value as the person reads it: the index's dollar by its name, a time in their own clock, other text as it is. */
+function valueText(name: string, v: unknown): string {
+  if (typeof v !== 'string') return JSON.stringify(v)
+  if ((name === 'mint' || name.endsWith('.mint')) && v === DOLLAR) return 'devnet dollar'
+  if (TIME.test(v) && !Number.isNaN(Date.parse(v))) return localTime(Date.parse(v))
+  return v
+}
+
 /** Every field of what would be signed, as the person reads it: the path or the recipient, then the body's fields, nested ones by their dotted names. */
 export function fieldsOf(signed: Signed): [name: string, value: string][] {
   const out: [string, string][] = 'to' in signed ? [['to', signed.to]] : [['path', signed.path]]
   const add = (name: string, v: unknown) => {
     if (v !== null && typeof v === 'object' && !Array.isArray(v) && Object.keys(v).length) for (const [k, x] of Object.entries(v)) add(name ? `${name}.${k}` : k, x)
-    else out.push([name, typeof v === 'string' ? v : JSON.stringify(v)])
+    else out.push([name, valueText(name, v)])
   }
   if (signed.body === null) out.push(['body', 'none: the record is removed'])
   else add('', signed.body)

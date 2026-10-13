@@ -1,6 +1,7 @@
 // The profile's own offers and reviews, written with its main key to every host its hosts record
 // names: a new one at a fresh id, a new version at its path (the fields the sheet does not show
-// kept as they were), or removed, with a null body. The shapes are the standard's
+// kept as they were), or removed, with a null body; paid for from its folder, topped up from the
+// vault when a host says it holds too little (vault.ts, `paying`). The shapes are the standard's
 // (records/schemas/offer.json and review.json); a price is in the index's devnet dollar.
 
 import { mainKey } from '../../standard/keys/src/index.ts'
@@ -8,6 +9,8 @@ import { type Body, hex, nextTime, ownerRecord, publicKeyFromAddress } from '../
 import { DOLLAR } from '../cards.ts'
 import type { LocalProfile } from '../local.ts'
 import { publishRecords, readOwn } from '../services/host.ts'
+import { settings } from '../settings.ts'
+import { paying } from '../vault.ts'
 
 /** What one amount buys, as the standard names it: `job` is the whole of it. */
 export const PER = ['hour', 'day', 'job'] as const
@@ -34,7 +37,8 @@ export async function writeOwn(seed: Uint8Array, p: LocalProfile, path: string, 
   const main = await mainKey(seed, p.label)
   const view = await readOwn(p.hosts, p.address)
   const before = view.current.get(path)?.record.body ?? null
-  await publishRecords(view.hosts.length ? view.hosts : p.hosts, [ownerRecord(main, path, body(before), nextTime(Date.now(), view, path))])
+  const record = ownerRecord(main, path, body(before), nextTime(Date.now(), view, path))
+  await paying(seed, settings().host, p.address, () => publishRecords(view.hosts.length ? view.hosts : p.hosts, [record]))
 }
 
 export type OfferInput = { description: string; price?: { amount: string; per: Per } }

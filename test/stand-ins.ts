@@ -179,10 +179,11 @@ async function sellCredits(routes: Record<string, Route>, origin: string, sponso
 
 /**
  * A host stand-in: records' reference host behind a front that sells its credits, keeps each
- * folder's balance, and refuses a content record from a folder that holds no credit, as the
- * foundation's host does (0.01 credit a write here; hosts and permissions records are free). An
- * inbox for one issuer's people takes a sender the test puts in `rows`. A message a message key
- * signed is taken once the sender's records, read from the host it names, list the key.
+ * folder's balance, and refuses each content record its folder cannot pay for, in the words the
+ * foundation's host uses, while the rest go through (0.01 credit a write here; hosts and
+ * permissions records are free). An inbox for one issuer's people takes a sender the test puts in
+ * `rows`. A message a message key signed is taken once the sender's records, read from the host it
+ * names, list the key.
  */
 export async function hostStandIn(sponsors: string[], rows = new Set<string>()) {
   // An inbox open to people with a row from an issuer takes senders in `rows`, whatever the issuer.
@@ -198,16 +199,31 @@ export async function hostStandIn(sponsors: string[], rows = new Set<string>()) 
     if (req.method === 'POST' && path === '/v1/records') {
       const lines = raw.toString('utf8').split('\n').filter(Boolean)
       const records = lines.map((line) => decodeRecord(line).record)
+      const ndjson = (results: object[]) => void res.writeHead(200, { ...CORS, 'content-type': 'application/x-ndjson' }).end(results.map((r) => JSON.stringify(r)).join('\n') + '\n')
       if (refusing > 0) {
         refusing--
-        return void res.writeHead(200, { ...CORS, 'content-type': 'application/x-ndjson' }).end(records.map((_, i) => JSON.stringify({ i, ok: false, error: 'refused' })).join('\n') + '\n')
+        return ndjson(records.map((_, i) => ({ i, ok: false, error: 'refused' })))
       }
-      const cost = new Map<string, number>()
-      for (const r of records) if (r.path !== 'hosts' && r.path !== 'permissions') cost.set(r.profile, (cost.get(r.profile) ?? 0) + 0.01)
-      if ([...cost].some(([folder, c]) => (balances.get(folder) ?? 0) < c - 1e-9)) {
-        return void res.writeHead(200, { ...CORS, 'content-type': 'application/x-ndjson' }).end(records.map((_, i) => JSON.stringify({ i, ok: false, error: 'refused' })).join('\n') + '\n')
+      // Each content record paid for from its folder in turn; one the folder cannot pay for refused as the foundation's host refuses it.
+      const results: { i: number; [field: string]: unknown }[] = []
+      const paid: number[] = []
+      records.forEach((r, i) => {
+        if (r.path === 'hosts' || r.path === 'permissions') return void paid.push(i)
+        const held = balances.get(r.profile) ?? 0
+        if (held < 0.01 - 1e-9) return void results.push({ i, ok: false, error: 'refused', message: `this write costs 0.01 credits, and the folder holds ${held.toFixed(2)} here; credits are sold at /.well-known/private-token-issuer-directory` })
+        balances.set(r.profile, held - 0.01)
+        paid.push(i)
+      })
+      if (results.length) {
+        if (paid.length) {
+          const answer = await fetch(upstream.url + req.url, { method: 'POST', headers: { 'content-type': 'application/x-ndjson' }, body: paid.map((i) => lines[i]).join('\n') + '\n' })
+          for (const line of (await answer.text()).split('\n').filter(Boolean)) {
+            const r = JSON.parse(line) as { i: number }
+            results.push({ ...r, i: paid[r.i]! })
+          }
+        }
+        return ndjson(results.sort((a, b) => a.i - b.i))
       }
-      for (const [folder, c] of cost) balances.set(folder, (balances.get(folder) ?? 0) - c)
     }
     const headers = Object.fromEntries(Object.entries(req.headers).filter(([k]) => !['host', 'connection', 'content-length'].includes(k))) as Record<string, string>
     const answer = await fetch(to + req.url, { method: req.method, headers, body: req.method === 'GET' || req.method === 'HEAD' ? undefined : new Uint8Array(raw) })

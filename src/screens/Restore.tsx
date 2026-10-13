@@ -11,7 +11,7 @@ import { lockSeed } from '../seed/locked.ts'
 import { seedFromWords } from '../seed/seed.ts'
 import { settings } from '../settings.ts'
 import { BackIcon, Spinner, useAction } from '../ui.tsx'
-import { Username } from './Setup.tsx'
+import { Username, WordsField } from './Setup.tsx'
 
 function readWords(typed: string): Uint8Array {
   const count = typed.trim().split(/\s+/).filter(Boolean).length
@@ -67,7 +67,7 @@ export function Restore({ nav, onLocked, onNoVault }: { nav: Nav; onLocked: () =
         }}
       >
         <Username />
-        <input className="field" type="password" name="password" autoComplete="current-password" aria-label="Your 24 words" value={typed} onChange={(e) => setTyped(e.target.value)} />
+        <WordsField value={typed} onChange={setTyped} />
         <div className="fill" />
         {go.error && <p className="error">{go.error}</p>}
         <button className="primary" disabled={go.busy || !typed.trim()}>

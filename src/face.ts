@@ -1,6 +1,6 @@
 // One face, one action: the seed opened by `withSeed` for the action, and, in the same opening, the
 // pulls that count each inbox (inbox.ts), signed after the action so they cover a profile it made.
-// The pulls go out once the seed is closed.
+// The pulls go out once the seed is closed, with the inbox keys that open what they find.
 
 import { sendPulls, signPulls, type Pull } from './inbox.ts'
 import { withSeed } from './seed/locked.ts'

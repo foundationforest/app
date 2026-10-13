@@ -2,15 +2,18 @@
 // random, for one AI or app; listed in the permissions record by its public half and its scope, a
 // write key with the paths it writes under, and nothing else (no names, no dates); a read key also
 // added to the card's inbox readers, so every message sent to the profile is sealed to it too. The
-// private halves are given back once, written as a grant writes them, for the person to paste; the
-// app keeps none of them. Removed (Removing a key): a write or message key made past, its scope
-// kept as `was`, so what it wrote still counts; a read key deleted, and dropped from the card's
-// inbox readers, so messages are no longer sealed to it.
+// private halves are given back once, written as a grant writes them, for the person to paste,
+// and only once every host took the records; when one did not, the keys made are taken out again,
+// since no one will hold them. The app keeps none of them. Removed (Removing a key): a write or
+// message key made past, its scope kept as `was`, so what it wrote still counts; a read key
+// deleted, and dropped from the card's inbox readers, so messages are no longer sealed to it.
 
-import { inboxKey, mainKey } from '../../standard/keys/src/index.ts'
-import { type AccessKey, b64u, keyFromPrivate, nextTime, ownerRecord, permissionsRecord } from '../../standard/records/src/index.ts'
+import { type MainKey, inboxKey, mainKey } from '../../standard/keys/src/index.ts'
+import { type AccessKey, type SignedRecord, type View, b64u, keyFromPrivate, nextTime, ownerRecord, permissionsRecord } from '../../standard/records/src/index.ts'
 import type { LocalProfile } from '../local.ts'
 import { publishRecords, readOwn } from '../services/host.ts'
+import { settings } from '../settings.ts'
+import { paying } from '../vault.ts'
 
 /** The keys to make: a write key for offers and reviews, a message key, a read key for the inbox. */
 export type Choice = { write: boolean; message: boolean; read: boolean }
@@ -58,13 +61,22 @@ export async function makeAccessKeys(seed: Uint8Array, profile: LocalProfile, ch
   if (reader && card?.inbox) {
     records.push(ownerRecord(main, 'profile', { ...card, inbox: { ...card.inbox, readers: [...(card.inbox.readers ?? []), reader] } }, nextTime(now, view, 'profile')))
   }
-  await publishRecords(hosts, records)
+  try {
+    await paying(seed, settings().host, profile.address, () => publishRecords(hosts, records))
+  } catch (err) {
+    // What a host took of them is taken out again; the permissions record costs nothing to write.
+    const after = await readOwn(profile.hosts, profile.address).catch(() => null)
+    const undo = after ? without(main, after, added.map((e) => e.key), false) : []
+    if (undo.length) await publishRecords(hosts, undo).catch((e) => console.error(e))
+    throw err
+  }
   return made
 }
 
-/** What the person pastes into their AI: the profile, by its market and role in words and its address, and a line for each key made. */
-export function pasteOf(market: string, role: string, address: string, made: Made): string {
+/** What the person pastes into their AI: the MCP door to add once, the profile, by its market and role in words and its address, and a line for each key made. */
+export function pasteOf(mcp: string, market: string, role: string, address: string, made: Made): string {
   return [
+    `MCP: ${mcp} (add it to your AI once)`,
     `Forest, act for my profile (${market}, ${role}).`,
     `profile: ${address}`,
     ...(made.write ? [`writeKey: ${made.write}`] : []),
@@ -77,20 +89,30 @@ export function pasteOf(market: string, role: string, address: string, made: Mad
 export async function removeAccessKey(seed: Uint8Array, profile: LocalProfile, key: string): Promise<void> {
   const main = await mainKey(seed, profile.label)
   const view = await readOwn(profile.hosts, profile.address)
-  const hosts = view.hosts.length ? view.hosts : profile.hosts
+  const records = without(main, view, [key], true)
+  if (records.length) await paying(seed, settings().host, profile.address, () => publishRecords(view.hosts.length ? view.hosts : profile.hosts, records))
+}
+
+/**
+ * The permissions record without `keys`, and the card when they are among its inbox readers; none
+ * when it lists none of them. A write or message key is made past when `past`, so what it wrote
+ * still counts; else, as a read key always is, it is deleted.
+ */
+function without(main: MainKey, view: View, keys: string[], past: boolean): SignedRecord[] {
+  const card = view.current.get('profile')?.record.body as Card | null | undefined
+  if (!view.access.some((e) => keys.includes(e.key) && e.scope) && !card?.inbox?.readers?.some((r) => keys.includes(r))) return []
   const access = view.access.flatMap((e): AccessKey[] => {
-    if (e.key !== key || !e.scope) return [e]
-    if (e.scope === 'read') return []
+    if (!keys.includes(e.key) || !e.scope) return [e]
+    if (!past || e.scope === 'read') return []
     return [{ key: e.key, was: e.scope, ...(e.paths && { paths: e.paths }) }]
   })
   const now = Date.now()
   const notes = view.current.get('permissions')?.record.body?.notes
   const records = [permissionsRecord(main, access, nextTime(now, view, 'permissions'), typeof notes === 'string' ? notes : undefined)]
-  const card = view.current.get('profile')?.record.body as Card | null | undefined
-  if (card?.inbox?.readers?.includes(key)) {
-    const readers = card.inbox.readers.filter((r) => r !== key)
+  if (card?.inbox?.readers?.some((r) => keys.includes(r))) {
+    const readers = card.inbox.readers.filter((r) => !keys.includes(r))
     const { readers: _, ...inbox } = card.inbox
     records.push(ownerRecord(main, 'profile', { ...card, inbox: readers.length ? { ...inbox, readers } : inbox }, nextTime(now, view, 'profile')))
   }
-  await publishRecords(hosts, records)
+  return records
 }
