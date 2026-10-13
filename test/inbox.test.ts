@@ -1,18 +1,19 @@
 // Offers, reviews and the inbox against one of each stand-in (test/stand-ins.ts, `world`), on
 // loopback, in Node, as the sheets and the inbox screen run them: an offer posted, changed and
 // removed; a review the same; a thread between two people's profiles, there and back, each side's
-// copy in its own inbox, and the count that leaves out a profile's own copies; and requests sent by
-// an access key, approved and declined, and the bodies that are not requests.
+// copy in its own inbox, and the count that leaves out a profile's own copies; requests sent by an
+// access key, approved and declined, the bodies that are not requests, and every field of what
+// approving one signs; and a grant kept in the vault.
 
 import { readFile } from 'node:fs/promises'
 
 import { afterAll, beforeAll, describe, expect, test } from 'vitest'
 
 import { mainKey } from '../standard/keys/src/index.ts'
-import { type Body, deliver, keyFromPrivate, permissionsRecord, readProfile } from '../standard/records/src/index.ts'
+import { type Body, b64u, deliver, keyFromPrivate, permissionsRecord, readProfile } from '../standard/records/src/index.ts'
 import { message } from '../standard/records/src/private.ts'
 import { DOLLAR, ownRecords } from '../src/cards.ts'
-import { type Opened, approve, knownHosts, openInbox, requestOf, send, threadsOf, withOf } from '../src/flows/messages.ts'
+import { type Opened, approve, fieldsOf, grantsOf, knownHosts, openInbox, requestOf, send, threadsOf, toSign, withOf } from '../src/flows/messages.ts'
 import { makeProfile } from '../src/flows/profile.ts'
 import { freshId, offerBody, writeOffer, writeReview } from '../src/flows/records.ts'
 import { faceCheck } from '../src/flows/setup.ts'
@@ -23,6 +24,7 @@ import type { Artifact } from '../src/proof/circuit.ts'
 import { type ProveRequest, prove } from '../src/proof/prove.ts'
 import { makeSeed } from '../src/seed/seed.ts'
 import { publishRecords } from '../src/services/host.ts'
+import { keepGrants, openVault, vaultKeys } from '../src/vault.ts'
 import { world } from './stand-ins.ts'
 
 const load = async (artifact: Artifact) => new Uint8Array(await readFile(new URL(`../public${artifact.path}`, import.meta.url)))
@@ -184,5 +186,74 @@ describe('requests', () => {
     expect(buyerSees.key).toBeUndefined()
 
     await expect(approve(seller.seed, seller.p, requestOf(helpers[2]!, seller.p.address, inbox.listed)!, known())).rejects.toThrow(/not in this app/)
+  })
+})
+
+describe('what a request signs', () => {
+  test('every field, the path or recipient first; Approve signs what the card showed', async () => {
+    const main = await mainKey(seller.seed, seller.p.label)
+    const helper = keyFromPrivate(crypto.getRandomValues(new Uint8Array(32)))
+    const view = await readProfile(seller.p.hosts, seller.p.address, Date.now())
+    await publishRecords(seller.p.hosts, [permissionsRecord(main, [...view.access, { key: helper.address, scope: 'message' }], Date.now())])
+    const card = view.current.get('profile')!.record.body!
+    const asHelper = { key: helper, from: seller.p.address, host: seller.p.hosts[0]! }
+    const offer = { direction: 'offer', description: 'Biology, one hour', price: { amount: '28', mint: DOLLAR, per: 'hour' } }
+    const at = Date.now()
+    const bodies: Body[] = [
+      { request: 'post-offer', offer, id: 'bio' },
+      { request: 'remove-offer', id: 'bio' },
+      { request: 'send', to: buyer.p.address, text: 'See you at six.' },
+    ]
+    for (const [i, body] of bodies.entries()) {
+      await deliver(seller.p.hosts, [await message(asHelper, seller.p.address, body, at + i, card)])
+    }
+    const inbox = await openInbox(seller.seed, seller.p)
+    const asked = inbox.messages.filter((m) => m.key === helper.address).map((m) => requestOf(m, seller.p.address, inbox.listed)!)
+    const now = Date.parse('2026-10-13T12:00:00.000Z')
+    const [post, remove, sendIt] = asked.map((r) => toSign(r, inbox.own, now)!)
+    expect(fieldsOf(post!)).toEqual([
+      ['path', 'offer/bio'],
+      ['description', 'Biology, one hour'],
+      ['direction', 'offer'],
+      ['price.amount', '28'],
+      ['price.mint', DOLLAR],
+      ['price.per', 'hour'],
+      ['createdAt', '2026-10-13T12:00:00.000Z'],
+    ])
+    expect(fieldsOf(remove!)).toEqual([['path', 'offer/bio'], ['body', 'none: the record is removed']])
+    expect(fieldsOf(sendIt!)).toEqual([['to', buyer.p.address], ['text', 'See you at six.']])
+
+    await approve(seller.seed, seller.p, asked[0]!, known(), post)
+    const written = (await readProfile(seller.p.hosts, seller.p.address, Date.now())).current.get('offer/bio')!.record.body
+    expect(written).toEqual(post!.body)
+    // Over the record there now, a request with no createdAt keeps the record's.
+    const again = (await openInbox(seller.seed, seller.p)).own
+    expect((toSign(asked[0]!, again, now + 60_000) as { body: Body }).body.createdAt).toBe('2026-10-13T12:00:00.000Z')
+    // An empty object is a field too.
+    expect(fieldsOf({ path: 'review/x', body: { subject: buyer.p.address, ratings: {} } })).toEqual([['path', 'review/x'], ['subject', buyer.p.address], ['ratings', '{}']])
+    // A kind the app does not do signs nothing.
+    expect(toSign({ id: 'x', kind: 'pay', params: { offer: 'a/offer/b' } }, {})).toBeNull()
+  })
+})
+
+describe('grants', () => {
+  test('a grant that reaches an inbox is kept in the vault, once, and shown in no thread', async () => {
+    const giver = await mainKey(buyer.seed, buyer.p.label)
+    const card = (await readProfile(seller.p.hosts, seller.p.address, Date.now())).current.get('profile')!.record.body!
+    const grant = { key: b64u.encode(crypto.getRandomValues(new Uint8Array(32))), folder: buyer.p.address, scope: 'write' as const, paths: ['offer'], from: buyer.p.address, since: Date.now(), note: 'For your AI' }
+    // One that says another profile handed it over is not taken as a grant.
+    const claimed = { ...grant, key: b64u.encode(crypto.getRandomValues(new Uint8Array(32))), from: seller.p.address }
+    await deliver(seller.p.hosts, [await message(giver, seller.p.address, { grant }, Date.now(), card), await message(giver, seller.p.address, { grant: claimed }, Date.now() + 1, card)])
+
+    const inbox = await openInbox(seller.seed, seller.p)
+    expect(grantsOf(inbox.messages)).toEqual([grant])
+    expect(threadsOf(inbox.messages, seller.p.address).flatMap((t) => t.messages).some((m) => 'grant' in m.body)).toBe(false)
+
+    const keys = await vaultKeys(seller.seed)
+    const before = (await openVault([w.settings.host], keys))!.vault
+    expect(await keepGrants(seller.seed, w.settings.host, grantsOf(inbox.messages))).toBe(1)
+    expect(await keepGrants(seller.seed, w.settings.host, grantsOf(inbox.messages))).toBe(0)
+    const vault = (await openVault([w.settings.host], keys))!.vault
+    expect(vault).toEqual({ ...before, grants: [grant] })
   })
 })

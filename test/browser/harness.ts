@@ -1,5 +1,4 @@
 // The app's modules on a page, for test/browser/run.ts to drive. Not part of the app.
-import '../../src/buffer.ts'
 
 import { Keypair, VersionedTransaction } from '@solana/web3.js'
 
@@ -12,18 +11,6 @@ import { makeSeed } from '../../src/seed/seed.ts'
 import { publishRecords, pullInbox, readOwn } from '../../src/services/host.ts'
 import { note, readIssuer, session } from '../../src/services/issuer.ts'
 import { REGISTRY_PROGRAM } from '../../src/settings.ts'
-
-/** Runs `fn` with the page's global Buffer gone, as a browser without the app's shim has it. */
-async function withoutBuffer<T>(fn: () => Promise<T> | T): Promise<T> {
-  const scope = globalThis as { Buffer?: unknown }
-  const kept = scope.Buffer
-  delete scope.Buffer
-  try {
-    return await fn()
-  } finally {
-    scope.Buffer = kept
-  }
-}
 
 /** Runs `fn` and the longest the page's thread went without running a 10 ms timer meanwhile. */
 async function longestStall<T>(fn: () => Promise<T>): Promise<{ result: T; stallMs: number; ms: number }> {
@@ -66,7 +53,6 @@ const forest = {
   REGISTRY_PROGRAM,
   Keypair,
   VersionedTransaction,
-  withoutBuffer,
   longestStall,
 }
 

@@ -1,6 +1,5 @@
 // Everything the app's paths import, for test/bundle.test.ts to bundle for the browser: the app's
 // own modules, and the standard's four packages at their browser import paths.
-import '../../src/buffer.ts'
 
 export * as keys from '../../standard/keys/src/index.ts'
 export * as records from '../../standard/records/src/index.ts'

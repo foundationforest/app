@@ -1,9 +1,11 @@
 // The app's screens in headless Chromium, through Playwright, with a virtual passkey authenticator
 // that has PRF, against one of each stand-in on loopback (test/stand-ins.ts, `world`): the app's own
-// build, its settings pointed at the stand-ins.
+// build, its settings pointed at the stand-ins, served as Vercel serves it, under vercel.json's CSP
+// (its connect-src naming the stand-ins in place of devnet's services).
 //
 //   npm run test:browser
 //
+// 0. The CSP: on every response; an inline script, an inline handler and another origin refused.
 // 1. Setup: the words, saved and checked, and the seed locked; the face check in a tab of its own
 //    (the stand-in's Didit page sends it back to /back); the gift collected; the vault's first
 //    write refused, so setup stops there; after a reload, taken up again with one face, and the
@@ -16,13 +18,17 @@
 //    setup, a new profile, then the message, sent with one face.
 // 6. The inbox, after one face: the thread with the second person, a reply, and a review posted
 //    from the thread; the reply in the second person's inbox.
-// 7. Requests an access key sent: one approved, done with the main key after one face; one declined.
-// 8. The menu: the 24 words after a face; forgetting the device; the words bring everything back.
+// 7. Requests an access key sent: every field of what Approve signs on the card; one approved,
+//    signed as shown with the main key after one face; one declined.
+// 8. Access keys: three made with one face; the paste, shown once, copied; nothing of the private
+//    halves left on the device; each key acts as its scope allows; the read key removed.
+// 9. The menu: the 24 words after a face; forgetting the device; the words bring everything back.
+// 10. Nothing the app did, through all of it, was refused by the CSP.
 //
 // SHOTS=<dir> keeps a screenshot of each screen there, in light and dark.
 
 import assert from 'node:assert/strict'
-import { mkdirSync } from 'node:fs'
+import { mkdirSync, readFileSync } from 'node:fs'
 import { createServer } from 'node:net'
 import { after, before, test } from 'node:test'
 import { fileURLToPath } from 'node:url'
@@ -31,8 +37,8 @@ import { type Browser, type BrowserContext, type Page, chromium } from 'playwrig
 import { type PreviewServer, build, preview } from 'vite'
 
 import { importWords, mainKey } from '../../standard/keys/src/index.ts'
-import { deliver, keyFromPrivate, ownerRecord, permissionsRecord, readProfile } from '../../standard/records/src/index.ts'
-import { message } from '../../standard/records/src/private.ts'
+import { accessRecord, b64u, deliver, keyFromPrivate, ownerRecord, permissionsRecord, pull, pullRequest, readProfile } from '../../standard/records/src/index.ts'
+import { message, openMessage } from '../../standard/records/src/private.ts'
 import { publishRecords } from '../../src/services/host.ts'
 import { creditsOf, openVault, vaultKeys } from '../../src/vault.ts'
 import { world } from '../stand-ins.ts'
@@ -64,6 +70,9 @@ let page: Page
 let counts: { created: number; asserted: number }
 let words: string
 let address: string
+/** The CSP the app is served with, and what it refused on any page, as `<directive> <blocked>`. */
+let csp: string
+const refused: string[] = []
 
 async function shot(name: string) {
   if (!shots) return
@@ -79,9 +88,13 @@ const card = (title: string) => page.locator('button.card', { hasText: title })
 
 /** A browser of its own, a phone's size, with the app's settings pointed at the stand-ins and a virtual passkey authenticator with PRF; its passkeys made and asserted, counted. */
 async function phone() {
-  const context = await browser.newContext({ viewport: { width: 390, height: 844 } })
-  // The app's settings, pointed at the stand-ins, on every page it loads.
-  await context.addInitScript((s) => localStorage.setItem('forest.settings', JSON.stringify(s)), w.settings)
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, permissions: ['clipboard-read', 'clipboard-write'] })
+  // The app's settings, pointed at the stand-ins, on every page it loads; and what the CSP refuses there, reported.
+  await context.exposeFunction('cspRefused', (what: string) => void refused.push(what))
+  await context.addInitScript((s) => {
+    localStorage.setItem('forest.settings', JSON.stringify(s))
+    addEventListener('securitypolicyviolation', (e) => (globalThis as any).cspRefused(`${e.violatedDirective} ${e.blockedURI}`))
+  }, w.settings)
   const page = await context.newPage()
   page.on('pageerror', (err) => console.log(`  page error: ${err.message}`))
   const cdp = await context.newCDPSession(page)
@@ -96,9 +109,17 @@ async function phone() {
 }
 
 before(async () => {
-  await build({ root: app, configFile: `${app}vite.config.ts`, logLevel: 'warn', build: { outDir, emptyOutDir: true } })
-  server = await preview({ root: app, configFile: `${app}vite.config.ts`, build: { outDir }, preview: { host: 'localhost', port: await freePort(), strictPort: true } })
   w = await world()
+  // vercel.json's CSP, its connect-src naming the stand-ins in place of devnet's services (test/bundle.test.ts checks it names those).
+  const vercel = JSON.parse(readFileSync(`${app}vercel.json`, 'utf8'))
+  const real: string = vercel.headers.find((h: any) => h.source === '/(.*)').headers.find((h: any) => h.key === 'Content-Security-Policy').value
+  const { mcp: _, ...services } = w.settings
+  csp = real
+    .split('; ')
+    .map((d) => (d.startsWith('connect-src ') ? `connect-src 'self' ${Object.values(services).join(' ')}` : d))
+    .join('; ')
+  await build({ root: app, configFile: `${app}vite.config.ts`, logLevel: 'warn', build: { outDir, emptyOutDir: true } })
+  server = await preview({ root: app, configFile: `${app}vite.config.ts`, build: { outDir }, preview: { host: 'localhost', port: await freePort(), strictPort: true, headers: { 'Content-Security-Policy': csp } } })
   browser = await chromium.launch()
   ;({ context, page, counts } = await phone())
   say(`Chromium ${browser.version()}, the app at ${server.resolvedUrls!.local[0]}`)
@@ -109,6 +130,34 @@ after(async () => {
   await server?.close()
   await w?.close()
   console.log('\nApp report:\n' + report.map((l) => `- ${l}`).join('\n'))
+})
+
+test('the CSP: on every response; an inline script, an inline handler and another origin refused', async () => {
+  const res = await page.goto(server.resolvedUrls!.local[0]!)
+  assert.equal(res!.headers()['content-security-policy'], csp)
+  // What runs here is the test's own, which DevTools exempts from the CSP; what it adds to the page is not.
+  const tried = await page.evaluate(async () => {
+    const script = document.createElement('script')
+    script.textContent = 'globalThis.inline = true'
+    document.head.append(script)
+    const button = document.createElement('button')
+    button.setAttribute('onclick', 'globalThis.handler = true')
+    document.body.append(button)
+    button.click()
+    button.remove()
+    let fetched = 'fetched'
+    try {
+      await fetch('https://example.com/')
+    } catch (err) {
+      fetched = (err as Error).name
+    }
+    return { inline: (globalThis as any).inline ?? false, handler: (globalThis as any).handler ?? false, fetched }
+  })
+  assert.deepEqual(tried, { inline: false, handler: false, fetched: 'TypeError' })
+  for (let i = 0; i < 100 && refused.length < 3; i++) await new Promise((r) => setTimeout(r, 20))
+  assert.deepEqual(refused.map((r) => r.split(' ')[0]).sort(), ['connect-src', 'script-src-attr', 'script-src-elem'])
+  say(`CSP on every response: "${csp.replace(/connect-src [^;]+/, "connect-src 'self' <the stand-ins>")}"; an inline script, an inline handler and another origin refused`)
+  refused.length = 0
 })
 
 test('setup: the words saved and checked, the face check in its own tab, the seed locked', async () => {
@@ -395,22 +444,113 @@ test('requests from an access key: one approved with one face, one declined', as
   assert.equal(await asked.count(), 2)
   const post = asked.filter({ hasText: 'Post an offer' })
   await post.getByText('$35 / hour').waitFor()
+  const signs = Object.fromEntries((await post.locator('dl.fields').evaluate((dl) => [...dl.querySelectorAll('dt')].map((dt) => [dt.textContent, dt.nextElementSibling!.textContent]))) as [string, string][])
+  assert.deepEqual(Object.keys(signs), ['path', 'description', 'direction', 'price.amount', 'price.mint', 'price.per', 'createdAt'], 'every field of what Approve signs')
+  assert.match(signs.path!, /^offer\/[0-9a-f]{16}$/)
   assert.equal(await asked.filter({ hasText: 'Pay' }).getByRole('button', { name: 'Approve' }).count(), 0, 'a payment is not in this app yet: decline only')
   await shot('19-requests')
   let faces = counts.asserted
   await post.getByRole('button', { name: 'Approve' }).click()
   await post.waitFor({ state: 'detached' })
   assert.equal(counts.asserted - faces, 1, 'one face to approve it')
-  const posted = [...(await readProfile([w.settings.host], address, Date.now())).current].find(([path]) => path.startsWith('offer/') && path !== 'offer/maths' && path.length === 'offer/'.length + 16)
-  assert.ok(posted, 'the offer, at an id the request gives it')
-  assert.equal(posted![1].record.by, undefined, 'signed by the main key')
+  const posted = (await readProfile([w.settings.host], address, Date.now())).current.get(signs.path!)
+  assert.ok(posted, 'the offer, at the path the card showed')
+  assert.equal(posted!.record.by, undefined, 'signed by the main key')
+  assert.deepEqual(posted!.record.body, { description: signs.description, direction: signs.direction, price: { amount: signs['price.amount'], mint: signs['price.mint'], per: signs['price.per'] }, createdAt: signs.createdAt }, 'signed as the card showed it')
   faces = counts.asserted
   await asked.filter({ hasText: 'Pay' }).getByRole('button', { name: 'Decline' }).click()
   await asked.first().waitFor({ state: 'detached' })
   assert.equal(counts.asserted - faces, 0, 'declining needs no face')
   await page.goto(server.resolvedUrls!.local[0]!)
   await card('Tutoring').getByText('Chemistry, one hour').waitFor()
-  say('requests: an access key asked; approved with one face, the offer signed by the main key; a payment declined')
+  say('requests: an access key asked; the card listed every field of what Approve signs; approved with one face, signed as shown by the main key; a payment declined')
+})
+
+test('access keys: three made with one face, the paste shown once, each key acting; the read key removed', async () => {
+  await card('Tutoring').click()
+  await page.getByRole('heading', { name: 'Access keys' }).waitFor()
+  const before = (await readProfile([w.settings.host], address, Date.now())).access
+  await page.getByRole('button', { name: '+ Access key' }).click()
+  const sheet = page.getByRole('dialog', { name: 'Access key' })
+  const make = sheet.getByRole('button', { name: 'Make' })
+  assert.equal(await make.isDisabled(), true, 'Make waits for a choice')
+  for (const name of ['Post offers and reviews', 'Send messages', 'Read the inbox']) await sheet.getByLabel(name).check()
+  await shot('20-access-key')
+  const faces = counts.asserted
+  await make.click()
+  const paste = sheet.locator('pre.paste')
+  await paste.waitFor()
+  assert.equal(counts.asserted - faces, 1, 'one face to make them')
+  const text = (await paste.textContent())!
+  const lines = text.split('\n')
+  assert.equal(lines.length, 6)
+  assert.equal(lines[0], 'Forest, act for my profile (Tutoring, teacher).')
+  assert.equal(lines[1], `profile: ${address}`)
+  assert.match(lines[2]!, /^writeKey: [A-Za-z0-9_-]{43}$/)
+  assert.match(lines[3]!, /^messageKey: [A-Za-z0-9_-]{43}$/)
+  assert.match(lines[4]!, /^readKey: AGE-SECRET-KEY-PQ-1[0-9A-Z]+$/)
+  assert.equal(lines[5], "Anything else, send me a request and I'll approve it in the app.")
+  const [writeKey, messageKey, readKey] = lines.slice(2, 5).map((l) => l.split(': ')[1]!)
+  await shot('21-access-paste')
+  await sheet.getByRole('button', { name: 'Copy' }).click()
+  await sheet.getByRole('button', { name: 'Copied' }).waitFor()
+  assert.equal(await page.evaluate(() => navigator.clipboard.readText()), text, 'copied as shown')
+  await page.locator('.sheet-back').click({ position: { x: 20, y: 20 } })
+  assert.equal(await paste.count(), 1, 'the backdrop does not close the paste: only Done does')
+  await sheet.getByRole('button', { name: 'Done' }).click()
+  await sheet.waitFor({ state: 'detached' })
+
+  // Nothing of the private halves on the device: not in its storage, not on the page.
+  const device = await page.evaluate(async () => {
+    const db = await new Promise<IDBDatabase>((resolve) => {
+      const req = indexedDB.open('forest-app')
+      req.onsuccess = () => resolve(req.result)
+    })
+    const keys = await new Promise<IDBValidKey[]>((resolve) => {
+      const req = db.transaction('lock').objectStore('lock').getAllKeys()
+      req.onsuccess = () => resolve(req.result)
+    })
+    db.close()
+    return { storage: JSON.stringify({ local: { ...localStorage }, session: { ...sessionStorage } }), html: document.documentElement.outerHTML, keys }
+  })
+  for (const key of [writeKey!, messageKey!, readKey!]) assert.ok(!device.storage.includes(key) && !device.html.includes(key), 'no private half kept')
+  assert.deepEqual(device.keys, ['seed'])
+
+  // On the host: the permissions record's public part, the card's readers; on the card, a row for each.
+  const view = await readProfile([w.settings.host], address, Date.now())
+  const writer = keyFromPrivate(b64u.decode(writeKey!))
+  const messenger = keyFromPrivate(b64u.decode(messageKey!))
+  const reader = view.access.at(-1)!.key
+  assert.deepEqual(view.access, [...before, { key: writer.address, scope: 'write', paths: ['offer', 'review'] }, { key: messenger.address, scope: 'message' }, { key: reader, scope: 'read' }])
+  const theCard = view.current.get('profile')!.record.body!
+  assert.deepEqual((theCard.inbox as { readers?: string[] }).readers, [reader])
+  await page.locator('div.row', { hasText: 'write · offer, review' }).waitFor()
+  assert.equal(await page.locator('button.remove').count(), view.access.filter((e) => e.scope).length, "a row for each key the permissions record lists")
+  await shot('22-access-rows')
+
+  // Each acts: the write key posts an offer, as an AI's door does; the message key pulls the inbox and the read key opens what is in it.
+  await publishRecords([w.settings.host], [accessRecord(writer, address, 'offer/from-my-ai', { direction: 'offer', description: 'Posted by my AI', createdAt: new Date().toISOString() }, Date.now())])
+  const stranger = await mainKey(new Uint8Array(32).fill(8), 'tutoring/buyer')
+  w.host.rows.add(stranger.address)
+  await deliver([w.settings.host], [await message(stranger, address, { text: 'Are you free on Monday?' }, Date.now(), theCard)])
+  const page1 = await pull(w.settings.host, pullRequest({ key: messenger, profile: address }, 0, Date.now()))
+  assert.deepEqual((await openMessage(page1.messages.at(-1)!.message, readKey!)).body, { text: 'Are you free on Monday?' })
+  await page.reload()
+  await card('Tutoring').getByText('Posted by my AI').waitFor()
+  await card('Tutoring').click()
+  await page.getByRole('heading', { name: 'Access keys' }).waitFor()
+
+  // The read key removed from its row: deleted from the permissions record and from the card's readers.
+  const faces2 = counts.asserted
+  await page.locator('div.row').filter({ has: page.locator('.sub', { hasText: /^read$/ }) }).getByRole('button', { name: 'Remove' }).click()
+  await page.locator('div.row').filter({ has: page.locator('.sub', { hasText: /^read$/ }) }).waitFor({ state: 'detached' })
+  assert.equal(counts.asserted - faces2, 1)
+  const after = await readProfile([w.settings.host], address, Date.now())
+  assert.equal(after.access.some((e) => e.key === reader), false)
+  assert.equal((after.current.get('profile')!.record.body!.inbox as { readers?: string[] }).readers, undefined)
+  await page.getByRole('button', { name: 'Back' }).click()
+  await card('Tutoring').waitFor()
+  say('access keys: three made with one face; the paste shown once, copied, closed only by Done, nothing of it left on the device; the write key posted, the message key pulled, the read key opened; the read key removed')
 })
 
 test('the menu: appearance; forget this device; the words bring everything back', async () => {
@@ -437,4 +577,9 @@ test('the menu: appearance; forget this device; the words bring everything back'
   assert.equal(counts.created - made, 1, 'locked again under a new passkey')
   await card('Tutoring').getByText('Maths, one hour').waitFor()
   say('forget, then restore: the board back from the vault, the seed locked again')
+})
+
+test('the CSP: nothing the app did, through all of it, was refused', () => {
+  assert.deepEqual(refused, [])
+  say('CSP: nothing refused through the whole flow, the proof in its worker included')
 })

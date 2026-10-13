@@ -1,7 +1,8 @@
 // A profile's page: its market, its role word, its score; its offers, the reviews it wrote and its
-// access keys. The bell opens the reviews about it, from the index; the inbox icon, its inbox. An
-// offer or a review is added with its sheet, and changed or removed by tapping its row. Adding an
-// access key comes next; its button is here, not yet working.
+// access keys, each from its permissions record, by its public half and scope. The bell opens the
+// reviews about it, from the index; the inbox icon, its inbox. An offer or a review is added with
+// its sheet, and changed or removed by tapping its row; an access key is made with its sheet, and
+// removed from its row.
 
 import { useEffect, useState } from 'react'
 
@@ -12,7 +13,7 @@ import { localProfiles, markSeen } from '../local.ts'
 import type { AccessKey } from '../../standard/records/src/index.ts'
 import { BackIcon, BellIcon, InboxIcon, Score, Spinner, useAction } from '../ui.tsx'
 import { useProfile } from './Board.tsx'
-import { OfferSheet, ReviewSheet } from './Sheets.tsx'
+import { AccessKeySheet, OfferSheet, ReviewSheet } from './Sheets.tsx'
 
 const can = (e: AccessKey) => (e.scope === 'write' && e.paths ? `write · ${e.paths.join(', ')}` : e.scope!)
 
@@ -44,6 +45,7 @@ function Page({ p, nav }: { p: ReturnType<typeof localProfiles>[number]; nav: Na
   // The sheet open: a new offer or review (null), or the one tapped.
   const [offer, setOffer] = useState<Offer | null>()
   const [review, setReview] = useState<Written | null>()
+  const [access, setAccess] = useState(false)
   const [removing, setRemoving] = useState('')
   const remove = useAction(async (key: string) => {
     setRemoving(key)
@@ -121,7 +123,7 @@ function Page({ p, nav }: { p: ReturnType<typeof localProfiles>[number]; nav: Na
         )}
       </Section>
 
-      <Section title="Access keys" add="Access key">
+      <Section title="Access keys" add="Access key" onAdd={() => setAccess(true)}>
         {!!d.own?.access.length && (
           <div className="rows">
             {d.own.access.map((e) => (
@@ -142,6 +144,7 @@ function Page({ p, nav }: { p: ReturnType<typeof localProfiles>[number]; nav: Na
 
       {offer !== undefined && <OfferSheet p={p} offer={offer ?? undefined} onClose={() => setOffer(undefined)} onDone={() => (setOffer(undefined), d.reload())} />}
       {review !== undefined && <ReviewSheet p={p} review={review ?? undefined} onClose={() => setReview(undefined)} onDone={() => (setReview(undefined), d.reload())} />}
+      {access && <AccessKeySheet p={p} market={words(d.name)} role={d.word} onClose={() => setAccess(false)} onMade={d.reload} />}
 
       {reviews && (
         <>
