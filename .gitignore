@@ -1,0 +1,6 @@
+node_modules/
+dist/
+standard/
+public/circuits/
+test/browser/dist/
+*.local
