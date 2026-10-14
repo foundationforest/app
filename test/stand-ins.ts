@@ -290,13 +290,49 @@ export async function registryPayerStandIn(sponsors: string[]) {
   return { ...server, payer, sent }
 }
 
-/** The markets the index stand-in uses: two folders, a two-sided market with role names, one without, and a one-sided one. */
+/**
+ * The markets the index stand-in uses: two folders, a two-sided market with role names, one without,
+ * and a one-sided one; their offer fields and rating names as the foundation's markets give them.
+ */
 export const MARKETS = {
-  tutoring: { name: 'tutoring', folder: 'education', description: 'Lessons in any subject.', sides: 'two', roleNames: { seller: 'teacher', buyer: 'student' } },
-  'music-lessons': { name: 'music-lessons', folder: 'education', description: 'Lessons in an instrument.', sides: 'two', roleNames: { seller: 'teacher', buyer: 'student' } },
-  cleaning: { name: 'cleaning', folder: 'home', description: 'Cleaning a home.', sides: 'two' },
-  tennis: { name: 'tennis', folder: 'sports', description: 'Tennis partners.', sides: 'one' },
+  tutoring: {
+    name: 'tutoring',
+    folder: 'education',
+    description: 'Lessons in any subject.',
+    sides: 'two',
+    roleNames: { seller: 'teacher', buyer: 'student' },
+    offerFields: {
+      properties: {
+        subjects: { type: 'array', description: 'What is taught or sought.', items: { type: 'string', maxLength: 64 }, maxLength: 10, minLength: 1 },
+        languages: { type: 'array', description: 'Languages it is offered in, as BCP 47 tags such as en or es.', items: { type: 'string', format: 'language' }, maxLength: 10 },
+      },
+    },
+    ratings: ['overall', 'clarity'],
+  },
+  'music-lessons': { name: 'music-lessons', folder: 'education', description: 'Lessons in an instrument.', sides: 'two', roleNames: { seller: 'teacher', buyer: 'student' }, offerFields: {}, ratings: ['overall', 'clarity'] },
+  cleaning: {
+    name: 'cleaning',
+    folder: 'home',
+    description: 'Cleaning a home.',
+    sides: 'two',
+    offerFields: { properties: { appointmentWindowHours: { type: 'integer', description: 'How wide the arrival window is, in hours.', minimum: 0 } } },
+    ratings: ['overall', 'punctuality', 'thoroughness'],
+  },
+  tennis: {
+    name: 'tennis',
+    folder: 'sports',
+    description: 'Tennis partners.',
+    sides: 'one',
+    offerFields: { properties: { level: { type: 'string', description: 'The level played or sought.', knownValues: ['beginner', 'intermediate', 'advanced'], maxLength: 64 } } },
+    ratings: ['overall', 'punctuality'],
+  },
 } as const
+
+/** A profile's twin as the index gives it, so far as the app reads it: its market, its role, and the registry row the index counts under that label. */
+export const profileTwin = (address: string, label: string, more: object = {}) => {
+  const [market, role] = label.split('/')
+  return { address, profile: { market, role }, stamps: [{ label, market, role, counted: true, why: null }], ...more }
+}
 
 /** An index stand-in: its home's twin, each market's, and a profile's when the test sets one (`profiles`). */
 export async function indexStandIn() {

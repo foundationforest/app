@@ -6,8 +6,9 @@
 // it; made again after a stop; signing in with the passkey's seed; the card's own records and what
 // the index says; an access key removed; access keys made, each acting as its scope allows, and the
 // paste; access keys that a host would not take for want of credits, with none left in the vault,
-// taken out again. Offers, reviews, the inbox, requests and grants: test/inbox.test.ts. The seed
-// from the passkey: test/seed.test.ts. The screens around them, in a browser: test/browser/app.ts.
+// taken out again; the MCP door's address, and the one before it moved. Offers, reviews, the inbox,
+// requests and grants: test/inbox.test.ts. The seed from the passkey: test/seed.test.ts. The
+// screens around them, in a browser: test/browser/app.ts.
 
 import { createPublicKey, randomBytes, verify } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
@@ -27,7 +28,7 @@ import type { Artifact } from '../src/proof/circuit.ts'
 import { type ProveRequest, prove } from '../src/proof/prove.ts'
 import { pack, unpack } from '../src/seed/seed.ts'
 import { publishRecords } from '../src/services/host.ts'
-import { saveSettings } from '../src/settings.ts'
+import { DEVNET, saveSettings, settings } from '../src/settings.ts'
 import { type AppVault, NoVaultWrites, creditsOf, openVault, saveVault, vaultKeys, withCredits } from '../src/vault.ts'
 import { MARKETS, world } from './stand-ins.ts'
 
@@ -312,5 +313,14 @@ describe('a card', () => {
     expect(priceText({ amount: '40', mint: 'So11111111111111111111111111111111111111112', per: 'job' })).toBe('40')
     expect(priceText(undefined)).toBeNull()
     expect(titleOf('  A line\nand more')).toBe('A line')
+  })
+
+  test("the MCP door: https://mcp.forest.foundation/mcp; the address before it moved, kept by a device or a vault, reads as today's", () => {
+    expect(DEVNET.mcp).toBe('https://mcp.forest.foundation/mcp')
+    saveSettings({ mcp: 'https://mcp.devnet.forest.foundation/mcp' })
+    expect(settings().mcp).toBe('https://mcp.forest.foundation/mcp')
+    saveSettings({ mcp: 'https://mcp.example/mcp' })
+    expect(settings().mcp, "a door of the person's own choosing stays").toBe('https://mcp.example/mcp')
+    saveSettings(w.settings)
   })
 })

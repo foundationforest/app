@@ -664,6 +664,93 @@ button.dashed {
   accent-color: var(--accent);
 }
 
+/* An offer's fields from its market's file, each with the market's words for it under; a list's
+   items as chips. What does not fit the field is drawn dashed. */
+.extra {
+  display: grid;
+  gap: 4px;
+}
+
+.hint {
+  font-size: 13px;
+  padding: 0 2px;
+}
+
+[aria-invalid='true'],
+.chips:has(input[aria-invalid='true']) {
+  border-style: dashed;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-height: 52px;
+  padding: 6px 8px;
+  border: 1px solid var(--ink-2);
+  border-radius: var(--radius-control);
+}
+
+.chips input {
+  flex: 1;
+  min-width: 8rem;
+  border: none;
+  background: transparent;
+  padding: 0 6px;
+}
+
+button.chip {
+  min-width: 0;
+  min-height: 36px;
+  padding: 0 12px;
+  border: none;
+  border-radius: 18px;
+  background: var(--tint);
+  font-weight: 700;
+}
+
+label.check {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  cursor: pointer;
+}
+
+label.check input {
+  width: 22px;
+  height: 22px;
+  min-height: 0;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+/* A review's scores: ten for each rating name, the one picked filled with the accent. */
+.rating {
+  display: grid;
+  gap: 4px;
+}
+
+.rating > span {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.segmented.tens {
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+}
+
+.segmented.tens button {
+  min-width: 0;
+  padding: 0;
+}
+
+.segmented.tens button.on {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
 .paste {
   margin: 0;
   padding: 12px;

@@ -5,7 +5,9 @@
 // passkey is made for the app's own address, app.forest.foundation, so no page elsewhere under
 // forest.foundation can ask for it. No server checks these passkeys: the challenge is random and
 // nobody verifies the signature; only the PRF secret is used. A new passkey is refused where the
-// person's passkey manager holds one this device made before (seed.ts), so a person has one.
+// person's passkey manager holds one this device knows (seed.ts), so a person has one. One saved
+// where no PRF secret can be had, as it is made or at the get that follows, is dropped, and the
+// person is told to save it in another manager: Passwords, on an Apple device.
 
 import { base64urlnopad } from '@scure/base'
 
@@ -22,24 +24,33 @@ export const SALT = new TextEncoder().encode('forest-seed-v1')
  */
 export const rpId = (hostname = location.hostname): string => hostname
 
-/** Refused: no PRF secret. `browser` when this browser cannot ask a passkey for one at all, so no passkey here can give it. */
+/** Whether this is an Apple device, where Passwords (iCloud Keychain) gives the PRF secret. */
+const apple = () => /iPhone|iPad|iPod|Macintosh/.test(globalThis.navigator?.userAgent ?? '')
+
+/**
+ * Refused: no PRF secret. `browser`: this browser cannot ask a passkey for one at all. `saved`: the
+ * passkey just made was saved in a manager that gives none, at its making or at the get after.
+ * `passkey`: a passkey asked for later gave none.
+ */
 export class NoPrf extends Error {
   readonly browser: boolean
-  constructor(browser = false) {
+  constructor(where: 'browser' | 'saved' | 'passkey' = 'passkey') {
     super(
-      browser
+      where === 'browser'
         ? "This browser can't open Forest: it can't ask a passkey for the secret Forest opens with. Open Forest on a newer device."
-        : "This device's passkeys can't open Forest. Use a phone with a passkey instead: choose the QR code in the passkey sheet. Or use a newer device.",
+        : where === 'saved'
+          ? `This password manager can't open Forest. Save it in ${apple() ? 'Passwords' : 'another password manager'} instead.`
+          : "This device's passkeys can't open Forest. Use a phone with a passkey instead: choose the QR code in the passkey sheet. Or use a newer device.",
     )
     this.name = 'NoPrf'
-    this.browser = browser
+    this.browser = where === 'browser'
   }
 }
 
-/** Refused: the person's passkey manager holds a Forest passkey this device made before. That one opens Forest. */
+/** Refused: the person's passkey manager holds a Forest passkey this device knows. That one opens Forest, through Sign in. */
 export class HasPasskey extends Error {
   constructor() {
-    super('You have a Forest passkey already. Sign in with it.')
+    super('You already have a Forest passkey. Sign in with it.')
     this.name = 'HasPasskey'
   }
 }
@@ -90,11 +101,12 @@ function prfOf(credential: Credential | null) {
 /**
  * A new passkey, and its seed. Some passkey managers give the PRF secret as the passkey is made;
  * the others (Safari's) only when it is asked for, so one get follows, naming the new passkey.
- * Where it gives none, the person's passkey manager is asked to drop it, and nothing is kept. A
- * manager that holds one of the passkeys `exclude` names makes none, and the person signs in.
+ * Where neither gives it, the person's passkey manager is asked to drop it, nothing is kept, and
+ * the person is told to save it in another manager. A manager that holds one of the passkeys
+ * `exclude` names makes none, and the person signs in.
  */
 export async function createPasskey(exclude: Uint8Array<ArrayBuffer>[] = []): Promise<Passkey> {
-  if (await browserLacksPrf()) throw new NoPrf(true)
+  if (await browserLacksPrf()) throw new NoPrf('browser')
   const credential = await navigator.credentials.create({
     publicKey: {
       rp: { id: rpId(), name: 'Forest' },
@@ -113,14 +125,14 @@ export async function createPasskey(exclude: Uint8Array<ArrayBuffer>[] = []): Pr
   }).catch((err) => Promise.reject(err instanceof DOMException && err.name === 'InvalidStateError' ? new HasPasskey() : err))
   if (!credential) throw new Error('No passkey was made.')
   const id = new Uint8Array((credential as PublicKeyCredential).rawId)
-  const prf = prfOf(credential)
+  const first = prfOf(credential)?.results?.first
+  if (first) return { seed: seedOf(first), id }
   try {
-    if (prf?.results?.first) return { seed: seedOf(prf.results.first), id }
-    if (!prf?.enabled) throw new NoPrf()
     return await askSeed([id])
   } catch (err) {
-    if (err instanceof NoPrf) await dropPasskey(id)
-    throw err
+    if (!(err instanceof NoPrf)) throw err
+    await dropPasskey(id)
+    throw new NoPrf('saved')
   }
 }
 
@@ -131,7 +143,7 @@ export async function dropPasskey(id: Uint8Array): Promise<void> {
 
 /** The seed, from the person's passkey after their face or fingerprint: one system prompt. Any Forest passkey they hold may answer, unless `allow` names one. */
 export async function askSeed(allow?: Uint8Array<ArrayBuffer>[]): Promise<Passkey> {
-  if (typeof PublicKeyCredential === 'undefined' || !navigator.credentials) throw new NoPrf(true)
+  if (typeof PublicKeyCredential === 'undefined' || !navigator.credentials) throw new NoPrf('browser')
   const credential = await navigator.credentials.get({
     publicKey: {
       rpId: rpId(),

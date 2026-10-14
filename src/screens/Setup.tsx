@@ -1,16 +1,17 @@
 // Setup, two steps, each with a way back to Start: Open with your face, one tap, which makes the
 // passkey and asks it for the seed, the device keeping only the seed's fingerprint; and the face
 // check, each of its stages kept on the device as it is got, sealed under a key mixed from the seed,
-// finished in a tab of its own. Back from the face check keeps the passkey, and Start takes it up
-// again. The seed the passkey gave is held from the first step to the check, so the check's tab
-// opens on the tap; a face check opened again asks for the face first, the seed held from then, and
-// takes it up from where it stopped. The tab is never left blank: whatever fails before the check
-// is in it closes it, and the screen says what failed, with Try again. The passkey may also come
-// from Sign in, one whose setup stopped before its vault. A face the issuer has from another setup
-// sends the person back to Start, to sign in with that one, and the passkey this setup made, which
-// can never get a note, is offered to the manager to drop. A note number whose gift was given
-// before gets no credits: setup ends anyway if the vault's folder can pay for the vault, and says
-// so; if it cannot, setup waits, nothing lost, and says so too.
+// finished in a tab of its own. Where the person's manager holds a Forest passkey this device knows,
+// none is made, and Start signs in with it at once. Back from the face check keeps the passkey:
+// Start is refused it then, so Sign in takes it up. The seed the passkey gave is held from the first
+// step to the check, so the check's tab opens on the tap; a face check opened again asks for the
+// face first, the seed held from then, and takes it up from where it stopped. The tab is never left
+// blank: whatever fails before the check is in it closes it, and the screen says what failed, with
+// Try again. The passkey may also come from Sign in, one whose setup stopped before its vault. A
+// face the issuer has from another setup sends the person back to Start, to sign in with that one,
+// and the passkey this setup made, which can never get a note, is offered to the manager to drop. A
+// note number whose gift was given before gets no credits: setup ends anyway if the vault's folder
+// can pay for the vault, and says so; if it cannot, setup waits, nothing lost, and says so too.
 
 import { useEffect, useRef, useState } from 'react'
 
@@ -29,8 +30,8 @@ type Props = {
   draft: Passkey | null
   /** The passkey is made, or asked for again: it and its seed, held for the check. */
   onOpened: (passkey: Passkey) => void
-  /** Back to Start, which says why: no PRF from the passkey, one made before, or a face with a setup already. */
-  onStopped: (why: string) => void
+  /** Back to Start, which says why: no PRF from the passkey, or a face with a setup already; or a passkey this device knows in the manager, and Start signs in at once. */
+  onStopped: (why: string, signIn?: boolean) => void
   onDone: () => void
   /** Back to Start, setup kept as it is. */
   onBack: () => void
@@ -61,7 +62,8 @@ function Open({ onOpened, onStopped, onBack }: Pick<Props, 'onOpened' | 'onStopp
     try {
       onOpened(await beginSetup())
     } catch (err) {
-      if (err instanceof NoPrf || err instanceof HasPasskey) return onStopped(err.message)
+      if (err instanceof HasPasskey) return onStopped(err.message, true)
+      if (err instanceof NoPrf) return onStopped(err.message)
       throw err
     }
   })

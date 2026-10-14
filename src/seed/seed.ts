@@ -6,10 +6,11 @@
 // Limits): the app zeroes them and holds no other reference.
 //
 // One passkey per person: the device keeps the id of every passkey it made (local.ts), and a new
-// one is refused where the manager holds one of them. A setup under way is taken up with its own
-// passkey, the only one offered. One given up (forgotten, or replaced by a sign in with another
-// passkey) has its passkey offered to the manager to drop, when this device made it and its check
-// never gave a note: once the issuer has given that face a note, only that passkey can finish.
+// one is refused where the manager holds one of them, or the passkey of the setup under way; the
+// person signs in with it instead, which takes that setup up. Making a passkey never asks for one.
+// A setup given up (replaced by a new passkey, or by a sign in with another) has its passkey offered
+// to the manager to drop, when this device made it and its check never gave a note: once the
+// issuer has given that face a note, only that passkey can finish.
 
 import { base64urlnopad as b64u } from '@scure/base'
 
@@ -80,13 +81,17 @@ const readKept = (): SetupKept | undefined => {
 
 /**
  * Setup's first step: a new passkey and its seed, made only where the person's manager holds none
- * of the passkeys this device made, and its id kept with them. Setup is marked under way with it,
- * so the app comes back to the face check rather than to the board. The caller holds the seed for
- * the face check that follows, and zeroes it after.
+ * of the passkeys this device knows (those it made, and the setup under way's), and its id kept
+ * with them. A setup under way here is replaced: its passkey is not in the manager, or none would
+ * have been made. Setup is marked under way with the new one, so the app comes back to the face
+ * check rather than to the board. The caller holds the seed for the face check that follows, and
+ * zeroes it after.
  */
 export async function beginSetup(): Promise<Passkey> {
-  const passkey = await createPasskey(madePasskeys().map(idBytes))
+  const kept = readKept()?.id
+  const passkey = await createPasskey([...new Set([...madePasskeys(), ...(kept ? [idText(kept)] : [])])].map(idBytes))
   try {
+    if (hasSetup()) await dropSetup()
     keepMadePasskey(idText(passkey.id))
     await underWay(passkey, true)
   } catch (err) {
@@ -97,9 +102,9 @@ export async function beginSetup(): Promise<Passkey> {
 }
 
 /**
- * The setup under way, taken up: the seed of its own passkey, the only one the system's sheet
- * offers, after the face, checked against the fingerprint. The caller holds the seed for the face
- * check, and zeroes it after.
+ * The setup under way, taken up from its face check, opened again: the seed of its own passkey, the
+ * only one the system's sheet offers, after the face, checked against the fingerprint. The caller
+ * holds the seed for the face check, and zeroes it after. Start never asks for it this way.
  */
 export async function resumeSetup(): Promise<Passkey> {
   const want = fingerprint()
