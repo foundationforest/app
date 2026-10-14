@@ -43,9 +43,10 @@ In the order a person meets it.
    costs a write like any record; if the folder holds nothing, setup waits, nothing lost, and Try
    again tries again (`src/flows/setup.ts`, `src/screens/Setup.tsx`).
 4. **The board.** The person's profiles: sellers first, with their offers and scores; buyers after,
-   compact. A badge counts the messages each inbox holds, grants left out, counted at every face by
-   pulls signed with the same seed (`src/face.ts`, `src/inbox.ts`), and the reviews about it not
-   seen yet. A card held down, or Hide in the menu on its page, takes it off the board
+   compact. A badge counts the messages someone else sent to each inbox, and the requests its AI
+   sent, counted at every face by pulls signed with the same seed (`src/face.ts`, `src/inbox.ts`),
+   and the reviews about it not seen yet. A copy of what the profile sent, through the app or
+   through an access key, never counts, nor does a grant. What a card fails to read shows in red. A card held down, or Hide in the menu on its page, takes it off the board
    on this device; the menu's Hidden profiles shows it again. Nothing is deleted.
 5. **A new profile.** A market from the index's list, a side in that market's words, then Make,
    with one face: the person proof made in a Web Worker on the device (`src/proof/`); the row
@@ -55,58 +56,68 @@ In the order a person meets it.
    (`src/flows/profile.ts`).
 6. **The card.** The profile's address under its role word, short, with a copy button; its
    offers, the reviews it wrote and its access keys, read from its hosts; its score and the reviews
-   about it from the index (the bell). An offer is a description, its first line the title, a price
-   in the index's devnet dollar, per hour, per day or in total, and under them the fields its
-   market's file suggests, read from the index, all optional: text (its known values offered),
-   whole numbers, yes or no, and lists as chips, a language's as BCP 47 tags (`pt-br` written
-   `pt-BR`, a language's name refused). A review is an address, a row of ten scores, 1 to 10, for
-   each rating name the market lists, overall first and the only one needed, and text, optional.
-   Its address must be a profile the index has registered on the other side of this one's market
-   (the same market when it is one-sided): checked against the index's profile JSON before the
-   face, and "Reviews go to the other side of your market." when it is not. Each is posted,
-   changed or removed from its sheet, signed with the main key, one face each
-   (`src/flows/records.ts`, `src/screens/Sheets.tsx`).
-7. **An access key for the AI.** "+ Access key" offers three: Post offers and reviews (a write
-   key, writing under `offer` and `review`), Send messages (a message key), Read the inbox (a read
-   key, also added to the card's inbox readers, so every message to the profile is sealed to it
-   too). Make, with one face, makes each at random and writes the permissions record's public part:
-   each key and its scope, a write key's paths, no names and no dates. Once every host took those
-   records, the paste follows, shown once; when one did not, the keys are taken out again and the
-   error shows:
+   about it from the index (the bell). A buyer's profile asks for things, so its offers are
+   Requests: the section, "+ Request" and the sheet say so; the seller's side says Offers. An offer
+   is a description, its first line the title, a price in the index's devnet dollar, per hour, per
+   day or in total, and under them the fields its market's file suggests, read from the index, all
+   optional: text (its known values offered), whole numbers, yes or no, and lists as chips, a
+   language's as BCP 47 tags (`pt-br` written `pt-BR`, a language's name refused). A review is an
+   address, one score, required, on a slider from 1 to 10 in half points, its value large above
+   it and none until it moves, and text, optional, at most 500 characters, counted under it. Its
+   address must be a profile the index has registered on the other side of this one's market (the
+   same market when it is one-sided): checked against the index's profile JSON as soon as it is an
+   address and again before the face, and "This address doesn't belong to a Tutoring teacher." (the
+   market and the other side's word) in red when it is not. Each is posted, changed or removed from
+   its sheet, signed with the main key, one face each (`src/flows/records.ts`,
+   `src/screens/Sheets.tsx`). On every screen, what went wrong shows in red, and where something is
+   not open, one line under it says why: red when what was given is wrong, quiet when something is
+   still to give (`Line`, `src/ui.tsx`).
+7. **An access key for the AI.** "+ Access key" offers two kinds, one or both: a Writing key (a
+   write key, writing under `offer` and `review`: it posts and edits offers and reviews) and an
+   Inbox key (a message key and a read key made together: it reads the inbox, sends messages and
+   asks the person for things; the read key is also added to the card's inbox readers, so every
+   message to the profile is sealed to it too). Make, with one face, makes each key at random and
+   writes the permissions record's public part: each key and its scope, a write key's paths, no
+   names and no dates, an inbox key's read key right after its message key. Once every host took
+   those records, the paste follows, shown once; when one did not, the keys are taken out again
+   and the error shows:
 
    ```
-   MCP: https://mcp.forest.foundation/mcp (add it to your AI once)
-   Forest, act for my profile (Tutoring, teacher).
-   profile: <address>
-   writeKey: <key>
-   messageKey: <key>
-   readKey: <key>
-   Anything else, send me a request and I'll approve it in the app.
+   Forest profile: <address> (Tutoring, teacher)
+   writingKey: <key>
+   inboxKey: <message key>.<read key>
    ```
 
-   with a line for each key made, Copy, and Done, which drops it: the app keeps no private half
-   anywhere. The menu holds the MCP door's address too; a device or a vault that kept the one
-   before it moved, https://mcp.devnet.forest.foundation/mcp, reads today's. The card's rows come
-   from the permissions record; Remove makes a write or message key past, so what it wrote still
-   counts, or deletes a read key and drops it from the readers (`src/flows/access.ts`).
+   with a line for each kind made, Copy, and Done, which drops it: the app keeps no private half
+   anywhere. The card shows a row for each, by its kind, with Remove: a write key is a Writing
+   key, and a message key with the read key right after it is an Inbox key. Remove makes a write
+   or message key past, so what it wrote still counts, and deletes a read key and drops it from the
+   readers; an Inbox key's two go in one write (`src/flows/access.ts`). The menu holds the MCP
+   door's address, https://mcp.forest.foundation; a device or a vault that kept one before it,
+   https://mcp.devnet.forest.foundation/mcp or https://mcp.forest.foundation/mcp, reads today's.
 8. **The AI acts.** Through services' MCP door, with the keys in the paste: offers and reviews with
-   the write key, messages sent and the inbox pulled with the message key, opened with the read
-   key. For anything else it sends a request to the profile's own inbox.
+   the writing key, messages sent and the inbox pulled with the inbox key's message key, opened
+   with its read key. For anything else it sends a request to the profile's own inbox.
 9. **The inbox.** One face opens every message on each of the profile's hosts with its inbox key,
    in threads by whom each is with, named by the other card's market and role word. A thread takes
    a reply, sealed to the other card's inbox key and its readers and copied to this inbox, and a
    review. A request is a card: what it asks, then every field of what Approve would sign (the
    index's dollar as "devnet dollar", times in the person's own clock); Approve signs exactly that
    with the main key, one face. The app does offers, reviews and messages; a
-   payment, private records or the inbox it shows, and the person can only decline. A grant, an
+   payment, private records or the inbox it shows, says it cannot do yet, and the person can only
+   decline. The copy the MCP door leaves of a text the AI sent shows in the thread with whom it
+   went to, marked with its access key. A grant, an
    access key someone hands this profile, is kept in the vault's grants, and shown nowhere yet
    (`src/flows/messages.ts`, `src/screens/Inbox.tsx`).
 10. **The message door.** `/message?to=<address>`, the index's Message link: which profile sends,
     the text, one face. With no seed yet, setup comes first; with no profile, a new one; then the
     message (`src/screens/Compose.tsx`).
-11. **The menu.** The AI's door, the hidden profiles, the appearance, and forgetting the device:
-    what it keeps is cleared, the fingerprint with it, all but the ids of the passkeys made here,
-    and the passkey stays in the person's password manager.
+11. **The menu.** The AI's door; Your face check: one face, then the note's facts from the vault
+    (issuer, date, tier, model, and "face numbers: 128", how many numbers the embedding holds) and
+    Copy, the numbers as JSON, under "These stay in your vault; copy them only to test." (the
+    numbers live only while the menu is open); the hidden profiles; the appearance; and forgetting
+    the device: what it keeps is cleared, the fingerprint with it, all but the ids of the passkeys
+    made here, and the passkey stays in the person's password manager.
 12. **Sign in.** One face: the passkey's seed reads the vault from the host, the board is kept on
     the device, and so is the fingerprint. When every host answered and none holds a vault for this
     passkey, its setup stopped before the vault was written, on this device or another: the app goes
@@ -187,7 +198,7 @@ Underneath:
   setup is under way, its passkey's id, whether its check gave a note, and its stages, sealed
   under a key mixed from the seed. Opened messages live only while the inbox screen is open.
 - **The screens** (`src/screens/`, `src/ui.tsx`, `src/theme.css`): Manrope, carried in the app
-  (SIL Open Font License 1.1); four colors and one accent. The mark, three roofs and a trunk, is
+  (SIL Open Font License 1.1); four colors and one accent, and red for what went wrong. The mark, three roofs and a trunk, is
   one drawing never redrawn, held by one component (`src/mark.tsx`) that the board's header, Start
   and `/back` all draw, in the theme's ink. The favicon (ink on paper, 8 units around it) and the
   PWA icons are made from that component at each build (`shell.ts`); no copy is kept by hand.
@@ -215,11 +226,11 @@ sets eleven rules for apps that hold keys. Where the app stands on each:
 |---|---|
 | 1. The seed stays on the device, locked by its secure hardware; keys mixed from it are held only for the action that needs them | Half. Nothing of the seed is stored: it is the passkey's PRF secret, which `withSeed` asks for at each action, after the face or fingerprint, and zeroes after; the device keeps its fingerprint alone, and nothing mixed from it is stored. Each profile's inbox key, mixed in the same action, is held after it until that face's count is back, to leave grants out of it. But the secret behind the seed is the passkey's, which the person's password manager keeps and syncs between their devices: it is locked by that manager, and by secure hardware where the manager uses it, not by one device's hardware |
 | 2. Every signature asks for the face or fingerprint and shows what is signed | Half. Every action that asks for the seed asks for the face or fingerprint, once. Shown as signed: an offer, a review and a message, as their sheet shows them, and a request, field by field. Signed without each field shown: setup's records, the vault, the card, the permissions record and the card when an access key is made or removed, and the pulls |
-| 3. Nothing leaves the device but access keys and signatures | Followed. No seed, main key, inbox key or issuer secret is sent anywhere. What goes out is signed records, messages and pulls; a row's transaction, signed, with its proof; the note number an issuer signs; blinded buys and credits spent; and the access keys' private halves, only in the paste the person copies |
+| 3. Nothing leaves the device but access keys and signatures | Followed. No seed, main key, inbox key or issuer secret is sent anywhere. What goes out is signed records, messages and pulls; a row's transaction, signed, with its proof; the note number an issuer signs; blinded buys and credits spent; the access keys' private halves, only in the paste the person copies; and the note's face numbers, only if the person copies them from the menu |
 | 4. Each app, server or AI gets its own access key for each folder | Followed. Each Make makes new keys at random, for the profile it is made from; none is ever reused or kept |
 | 5. Proofs are made in the app, never delegated | Followed. The person proof is made in a Web Worker on the device |
 | 6. The app works with any host, and its host with any app | Half. In the code, every service is a setting, kept in the vault. The hosted copy's CSP lets the page reach devnet's services alone, so another host takes a copy of the app with its own `vercel.json`; and no screen changes the settings yet |
-| 7. A server that acts for you holds access keys with write, message or read scope | Followed. The app makes exactly those three, and the paste is how a server or an AI gets them |
+| 7. A server that acts for you holds access keys with write, message or read scope | Followed. The app makes exactly those three, as a writing key (write) and an inbox key (message and read, together), and the paste is how a server or an AI gets them |
 | 8. The app that holds the seed is open source | Followed: this repo, Apache 2.0 |
 | 9. Keep a copy of every record signed | Not yet for records. Each message sent is copied to the sending profile's own inbox |
 | 10. Keep each grant in the vault | Kept, not used. A grant that reaches a profile's inbox is added to the vault's grants when the inbox opens; the app does nothing else with it yet |
@@ -242,9 +253,10 @@ npm run test:browser   # headless Chromium through Playwright, with a virtual pa
                        # (stopped at the vault and taken up again), a new profile, the card, an
                        # offer with its market's fields, a second person through the message door,
                        # the inbox with a reply and a review, refused first about a profile in
-                       # another market, requests approved and declined, access keys made, pasted
-                       # and acting, a write topped up from the vault, a profile hidden and shown
-                       # again, the menu, forgetting the device, Start refused into Sign in, and
+                       # another market, requests approved and declined, a writing key and an inbox
+                       # key made, pasted and acting, a write topped up from the vault, a profile
+                       # hidden and shown again, the menu and its face check, forgetting the device,
+                       # Start refused into Sign in, and
                        # signing in again on a cleared one, another subdomain refused the passkeys,
                        # a stopped setup taken up through Sign in with its gift given before, a face
                        # with a setup already, no PRF, Start twice on one device ending with one
@@ -318,8 +330,25 @@ the Vercel project for the redirect to land.
   two seconds, against one, in the browser test on four cores; once per profile.
 - **An access key's paste stays in the clipboard** after Copy; the app cannot clear it without
   clearing what the person may be about to paste. Keys made and never pasted still act until
-  removed. The card's rows say what each key may do, not who holds it: the permissions record's
-  public part has no names. Each read key adds about 2 KB to every message sealed to the profile.
+  removed. The card's rows say each key's kind, not who holds it: the permissions record's
+  public part has no names. Each inbox key's read key adds about 2 KB to every message sealed to
+  the profile.
+- **The paste's names are not the MCP door's yet.** The door's tools take `writeKey`,
+  `messageKey` and `readKey`; the paste gives `writingKey`, and `inboxKey` as the message key and
+  the read key joined by a dot, with no instructions. Until the door takes those names, an AI that
+  does not split the inbox key at its dot cannot use it.
+- **An inbox key is two keys side by side.** The permissions record has no names, so the card
+  takes a message key and the read key listed right after it as one inbox key, as this app writes
+  them. A message key or a read key made before the two kinds shows alone, as a Message key or a
+  Read key, unless the one was listed right after the other, which shows as one Inbox key.
+- **The face check's date is the vault's.** The note the issuer signs carries no date, and the
+  vault's entry for it can hold none (the standard refuses any other field there), so the date in
+  the menu is the day the vault's folder was made: setup writes it once, right after the note comes,
+  or, for a setup that stopped at the vault, when it is taken up. The face numbers are the
+  embedding read as 32-bit floats, as the issuer's model gives them.
+- **A review's other ratings are an older review's.** The sheet writes overall alone; one written
+  before keeps the other ratings it gave when changed, and its text past 500 characters must be
+  cut before it can be posted again.
 - **A setup that stopped is taken up best on the device it began on,** where its buys and tickets
   are kept. From another device, Sign in goes on to the face check with the same passkey, and the
   gift is given before (above).
@@ -344,8 +373,8 @@ the Vercel project for the redirect to land.
   on the reference host); another device shows a request again until then.
 - **Threads last as long as the hosts keep messages.** The app keeps no message on the device; each
   time the inbox opens, it pulls every page from the start.
-- **What an AI sends to others with a message key is not in the threads.** Services' MCP door sends
-  no copy to the profile's own inbox; the other side's answer shows, the question does not.
+- **What an AI sends as a body, not text, is not in the threads.** Services' MCP door leaves a copy
+  in the profile's own inbox of text alone; the other side's answer shows, the question does not.
 - **A profile on a host the app does not know cannot be messaged from here.** Another card is read
   from the settings' host and the person's own hosts, and the hosts its hosts record names there; a
   message to one whose hosts record names none the app knows stops with "That host isn't reachable

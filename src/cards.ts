@@ -34,8 +34,6 @@ export type Market = {
   roleNames?: Record<Side, string>
   /** The fields its offers may carry, all of them suggestions. */
   offerFields?: { properties?: Record<string, Field> }
-  /** The rating names its reviews usually give, overall among them. */
-  ratings?: string[]
 }
 
 const markets = new Map<string, Promise<Market | null>>()
@@ -92,7 +90,26 @@ export const titleOf = (description: unknown) => (typeof description === 'string
 /** An offer as a row shows it, and its body, for the sheet that changes it. */
 export type Offer = { path: string; title: string; price: string | null; body: Record<string, any> }
 export type Written = { path: string; subject: string; score: string | null; text: string | null; body: Record<string, any> }
-export type Own = { offers: Offer[]; written: Written[]; access: AccessKey[] }
+export type Own = { offers: Offer[]; written: Written[]; access: AccessRow[] }
+
+/**
+ * An access key as the card shows it, one row for each: a writing key; an inbox key, its message
+ * key and the read key listed right after it, made together; or, made before the two kinds, a
+ * message key or a read key alone. `keys` are what Remove takes out, in one write.
+ */
+export type AccessRow = { kind: 'writing' | 'inbox' | 'message' | 'read'; keys: string[] }
+
+/** The rows for the access keys that can act now, in the permissions record's order: a message key with the read key right after it there is an inbox key. */
+export function accessRows(access: AccessKey[]): AccessRow[] {
+  const rows: AccessRow[] = []
+  for (let i = 0; i < access.length; i++) {
+    const e = access[i]!
+    if (!e.scope) continue
+    if (e.scope === 'message' && access[i + 1]?.scope === 'read') rows.push({ kind: 'inbox', keys: [e.key, access[++i]!.key] })
+    else rows.push({ kind: e.scope === 'write' ? 'writing' : e.scope === 'message' ? 'message' : 'read', keys: [e.key] })
+  }
+  return rows
+}
 
 /** The profile's own records, newest first: its offers, the reviews it wrote, and the access keys that can act now. */
 export async function ownRecords(p: LocalProfile): Promise<Own> {
@@ -110,7 +127,7 @@ export async function ownRecords(p: LocalProfile): Promise<Own> {
         text: typeof body(c).text === 'string' ? body(c).text : null,
         body: body(c),
       })),
-    access: view.access.filter((e) => e.scope),
+    access: accessRows(view.access),
   }
 }
 

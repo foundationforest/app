@@ -16,7 +16,7 @@ import { DOES, type Inbox, type Opened, type Request, approve, fieldsOf, folderO
 import { markRead } from '../inbox.ts'
 import { type LocalProfile, answered, localProfiles, markAnswered } from '../local.ts'
 import { settings } from '../settings.ts'
-import { BackIcon, Score, Spinner, useAction } from '../ui.tsx'
+import { BackIcon, Line, Score, Spinner, useAction } from '../ui.tsx'
 import { keepGrants } from '../vault.ts'
 import { useLocal } from './Board.tsx'
 import { ReviewSheet } from './Sheets.tsx'
@@ -115,7 +115,7 @@ function Page({ p, thread, nav }: { p: LocalProfile; thread?: string; nav: Nav }
         <>
           <h1>Inbox</h1>
           {open.busy && <Spinner />}
-          {open.error && <p className="error">{open.error}</p>}
+          <Line error={open.error} />
           {!open.busy && (
             <>
               <div className="fill" />
@@ -200,8 +200,8 @@ function ThreadView(props: { p: LocalProfile; messages: Opened[]; with: string; 
             if (text.trim()) void reply.run()
           }}
         >
-          {reply.error && <p className="error">{reply.error}</p>}
           <textarea className="field" rows={2} placeholder="Message" aria-label="Message" value={text} onChange={(e) => setText(e.target.value)} />
+          <Line error={reply.error} why={text.trim() ? null : { text: 'Write a message.' }} />
           <button className="primary" disabled={!text.trim() || reply.busy}>
             {reply.busy ? <Spinner /> : 'Send'}
           </button>
@@ -308,7 +308,7 @@ function RequestCard({ p, m, r, inbox, face, known }: { p: LocalProfile; m: Open
       )}
       {m.key && <span className="sub by">Access key {short(m.key)}</span>}
       <span className="sub when">{localTime(m.time)}</span>
-      {yes.error && <p className="error">{yes.error}</p>}
+      <Line error={yes.error} why={DOES.has(r.kind) ? null : { text: "This app can't do this yet: you can only decline it." }} />
       <div className="answer">
         {DOES.has(r.kind) && (
           <button className="primary" onClick={() => yes.run()} disabled={yes.busy}>

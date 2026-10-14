@@ -1,5 +1,6 @@
 // A new profile: a market from the index's list, grouped by the directory's folders and filtered as
-// the person types; then its side, in the market's own words; then Make, with the face.
+// the person types; then its side, in the market's own words, a side the person holds already not
+// open, and the screen saying so; then Make, with the face.
 
 import { useEffect, useState } from 'react'
 
@@ -9,7 +10,7 @@ import { withFace } from '../face.ts'
 import { localProfiles, saveProfiles } from '../local.ts'
 import * as indexes from '../services/indexes.ts'
 import { settings } from '../settings.ts'
-import { BackIcon, Spinner, errorText, useAction } from '../ui.tsx'
+import { BackIcon, Line, Spinner, type Why, errorText, useAction } from '../ui.tsx'
 import { lazy } from '../version.ts'
 
 type Folder = { folder: string; markets: { name: string }[] }
@@ -52,6 +53,16 @@ export function NewProfile({ nav, onMade }: { nav: Nav; onMade: () => void }) {
     await withFace(async (seed) => saveProfiles(await makeProfile(seed, `${picked}/${role}`, s, proveInWorker)))
     onMade()
   })
+
+  const sides = market ? rolesOf(market) : []
+  const had = sides.filter((r) => held.has(`${picked}/${r}`))
+  const why: Why = !market
+    ? null
+    : had.length === sides.length
+      ? { text: sides.length === 1 ? 'You have this profile already.' : 'You have every side of this market already.' }
+      : !role
+        ? { text: had.length ? `You have the ${roleWord(had[0]!, market)} side already. Pick the other.` : 'Pick a side.' }
+        : null
 
   const needle = q.trim().toLowerCase()
   const shown = (folders ?? [])
@@ -108,7 +119,7 @@ export function NewProfile({ nav, onMade }: { nav: Nav; onMade: () => void }) {
             </div>
           )}
           <div className="fill" />
-          {(make.error || failed) && <p className="error">{make.error || failed}</p>}
+          <Line error={make.error || failed} why={why} />
           <button className="primary" disabled={!role || make.busy} onClick={() => make.run()}>
             {make.busy ? <Spinner /> : 'Make'}
           </button>

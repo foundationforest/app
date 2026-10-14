@@ -3,13 +3,13 @@
 // kept as they were), or removed, with a null body; paid for from its folder, topped up from the
 // vault when a host says it holds too little (vault.ts, `paying`). The shapes are the standard's
 // (records/schemas/offer.json and review.json); a price is in the index's devnet dollar. An offer
-// also carries the fields its market's file suggests, each optional; a review, a score for each
-// rating name the market lists, and goes only to a profile the index has registered on the other
-// side of the reviewer's market (the same market, when it is one-sided).
+// also carries the fields its market's file suggests, each optional; a review, one score, overall,
+// and text of at most 500 characters, and goes only to a profile the index has registered on the
+// other side of the reviewer's market (the same market, when it is one-sided).
 
 import { mainKey } from '../../standard/keys/src/index.ts'
 import { type Body, type Json, hex, nextTime, ownerRecord, publicKeyFromAddress } from '../../standard/records/src/index.ts'
-import { DOLLAR, type Field, type Market, splitLabel } from '../cards.ts'
+import { DOLLAR, type Field, type Market, splitLabel, words } from '../cards.ts'
 import type { LocalProfile } from '../local.ts'
 import { publishRecords, readOwn } from '../services/host.ts'
 import { ServiceError } from '../services/http.ts'
@@ -128,24 +128,19 @@ export function offerBody(input: OfferInput, role: string, before: Body | null):
   return body
 }
 
-/** The ratings a review sheet scores: each name the market lists, overall first; overall alone until the market is known. */
-export const ratingNames = (market: Market | null | undefined) => ['overall', ...(market?.ratings ?? []).filter((n) => n !== 'overall')]
+/** The most text a review written here holds, in characters; the standard takes up to 3000. */
+export const REVIEW_TEXT = 500
 
-/** `ratings`: a score for each rating name the sheet shows, or '' to leave it out. */
-export type ReviewInput = { subject: string; ratings: Record<string, string>; text: string }
+/** A review as the sheet gives it: who it is about, its one score (overall), and its text. */
+export type ReviewInput = { subject: string; score: string; text: string }
 
-/** A review as the sheet writes it: who, its scores, the text, over what was there. */
+/** A review as the sheet writes it: who, its overall score, the text, over what was there; another rating it held is kept. */
 export function reviewBody(input: ReviewInput, before: Body | null): Body {
   const { text: _, ratings: was, ...kept } = before ?? {}
-  const ratings: Record<string, Json> = isObject(was) ? { ...was } : {}
-  for (const [name, score] of Object.entries(input.ratings)) {
-    if (score) ratings[name] = score
-    else delete ratings[name]
-  }
   return {
     ...kept,
     subject: input.subject,
-    ...(Object.keys(ratings).length > 0 && { ratings }),
+    ratings: { ...(isObject(was) ? was : {}), overall: input.score },
     ...(input.text.trim() && { text: input.text.trim() }),
     createdAt: typeof before?.createdAt === 'string' ? before.createdAt : now(),
   }
@@ -156,8 +151,11 @@ export const writeOffer = (seed: Uint8Array, p: LocalProfile, id: string, input:
 
 export const writeReview = (seed: Uint8Array, p: LocalProfile, id: string, input: ReviewInput | null) => writeOwn(seed, p, `review/${id}`, (before) => input && reviewBody(input, before))
 
-/** Refused: the profile is not on the other side of the reviewer's market, as the index has it. */
-export const OTHER_SIDE = 'Reviews go to the other side of your market.'
+/** Refused: who a review is about is not, as the index has it, a `word` (the other side's word) in `market`. */
+export function notOtherSide(market: string, word: string): string {
+  const name = `${words(market)} ${word}`
+  return `This address doesn't belong to ${/^[aeiou]/i.test(name) ? 'an' : 'a'} ${name}.`
+}
 
 /** The role a profile reviews: a buyer for a seller, a seller for a buyer, a peer for a peer. */
 export const otherRole = (role: string) => (role === 'seller' ? 'buyer' : role === 'buyer' ? 'seller' : role)
