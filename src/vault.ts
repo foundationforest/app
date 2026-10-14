@@ -1,6 +1,6 @@
 // The person's vault, as this app keeps it (the standard's records README, The vault): the labels of
 // their profiles and where each lives, the grants that reached their inboxes (kept, not used yet),
-// their issuers' notes, and the app's own field,
+// their issuers' notes (shown in the menu, `faceCheckOf`), and the app's own field,
 // `settings.forestApp`: the services the person uses, and `credits`, the credits not yet spent, as
 // credits.ts writes them, since a credit is a bearer one and is as safe as the vault. A profile's
 // write that a host refuses for want of credits takes one more of them into its folder there, and
@@ -11,11 +11,11 @@
 
 import { inboxKey, mainKey, vaultKey } from '../standard/keys/src/index.ts'
 import type { Grant, Key } from '../standard/records/src/index.ts'
-import { hostsRecord } from '../standard/records/src/index.ts'
+import { b64u, hostsRecord } from '../standard/records/src/index.ts'
 import { type Vault, readVault, vaultRecord } from '../standard/records/src/private.ts'
 import type { LocalProfile } from './local.ts'
 import type { Credit } from './services/credits.ts'
-import { publishRecords, spend, unpaid } from './services/host.ts'
+import { publishRecords, readOwn, spend, unpaid } from './services/host.ts'
 import { ServiceError } from './services/http.ts'
 import type { Settings } from './settings.ts'
 
@@ -207,4 +207,31 @@ export async function keepGrants(seed: Uint8Array, host: string, grants: Grant[]
 /** The vault's profiles as this device keeps them: each with its address, mixed from the seed and its label. */
 export async function profilesOf(seed: Uint8Array, vault: AppVault): Promise<LocalProfile[]> {
   return Promise.all((vault.profiles ?? []).map(async ({ label, hosts }) => ({ label, hosts, address: (await mainKey(seed, label)).address })))
+}
+
+/** The person's face check, as their vault keeps it (`faceCheckOf`). */
+export type FaceCheck = { issuer: string; date: number | null; tier: string; model: string; numbers: number[] }
+
+/**
+ * The face check the vault keeps: the issuer's name, the note's tier and model, and its face numbers,
+ * the embedding read as 32-bit floats, little-endian, as the issuer's model gives them. The note
+ * carries no date, and the vault's entry for it can hold none, so the date is the day the vault was
+ * made: its folder's hosts record, which setup writes once, right after the note comes. Null when
+ * the vault holds no note.
+ */
+export async function faceCheckOf(seed: Uint8Array, host: string): Promise<FaceCheck | null> {
+  const keys = await vaultKeys(seed)
+  const read = await openVault([host], keys)
+  const kept = read?.vault.issuerNotes?.[0]
+  if (!read || !kept) return null
+  const folder = await readOwn(read.hosts, keys.key.address)
+  const bytes = b64u.decode(String(kept.note.embedding))
+  const floats = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength)
+  return {
+    issuer: kept.issuer,
+    date: folder.current.get('hosts')?.record.time ?? null,
+    tier: String(kept.note.tier),
+    model: String(kept.note.model),
+    numbers: Array.from({ length: bytes.length >> 2 }, (_, i) => floats.getFloat32(i * 4, true)),
+  }
 }

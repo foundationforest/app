@@ -4,9 +4,10 @@
 // the top, as an older app wrote it, moved; the vault's own folder topped up from its credits when
 // a host refuses a vault write for want of them; a profile made, its proof made as the worker makes
 // it; made again after a stop; signing in with the passkey's seed; the card's own records and what
-// the index says; an access key removed; access keys made, each acting as its scope allows, and the
-// paste; access keys that a host would not take for want of credits, with none left in the vault,
-// taken out again; the MCP door's address, and the one before it moved. Offers, reviews, the inbox,
+// the index says; an access key removed; a writing key and an inbox key made, each acting as its
+// keys allow, the card's rows for them, and the paste; access keys that a host would not take for
+// want of credits, with none left in the vault, taken out again; the MCP door's address, and the
+// ones before it. Offers, reviews, the inbox,
 // requests and grants: test/inbox.test.ts. The seed from the passkey: test/seed.test.ts. The
 // screens around them, in a browser: test/browser/app.ts.
 
@@ -23,7 +24,7 @@ import { makeAccessKeys, pasteOf, removeAccessKey } from '../src/flows/access.ts
 import { makeProfile } from '../src/flows/profile.ts'
 import { signIn } from '../src/flows/signin.ts'
 import { type Check, type Kept, collectGift, faceCheck, giftGiven } from '../src/flows/setup.ts'
-import { indexed, ownRecords, priceText, roleWord, titleOf, words } from '../src/cards.ts'
+import { accessRows, indexed, ownRecords, priceText, roleWord, titleOf, words } from '../src/cards.ts'
 import type { Artifact } from '../src/proof/circuit.ts'
 import { type ProveRequest, prove } from '../src/proof/prove.ts'
 import { pack, unpack } from '../src/seed/seed.ts'
@@ -229,30 +230,31 @@ describe('a card', () => {
     const own = await ownRecords(p)
     expect(own.offers).toMatchObject([{ path: 'offer/maths', title: 'Maths, one hour', price: '$25 / hour' }])
     expect(own.written).toMatchObject([{ path: 'review/one', subject: w.registryPayer.payer, score: '9', text: 'On time.' }])
-    expect(own.access.map((e) => e.key)).toEqual([writer.address, reader.recipient])
+    expect(own.access, 'a read key alone, made before the two kinds').toEqual([{ kind: 'writing', keys: [writer.address] }, { kind: 'read', keys: [reader.recipient] }])
 
     expect(await indexed(w.settings.index, p.address)).toBeNull()
     w.index.profiles.set(p.address, { scores: { rating: { value: 8.5, details: { reviews: 2 } } }, reviews: { received: [{ uri: 'u', reviewer: w.registryPayer.payer, overall: 8, text: 'Good.' }] } })
     expect(await indexed(w.settings.index, p.address)).toEqual({ rating: { value: 8.5, reviews: 2 }, received: [{ uri: 'u', reviewer: w.registryPayer.payer, score: 8, text: 'Good.' }] })
 
-    await removeAccessKey(seed, p, writer.address)
-    await removeAccessKey(seed, p, reader.recipient)
+    await removeAccessKey(seed, p, [writer.address])
+    await removeAccessKey(seed, p, [reader.recipient])
     const view = await readProfile(p.hosts, p.address, Date.now())
     expect(view.access).toEqual([{ key: writer.address, was: 'write', paths: ['offer', 'review'] }])
     expect((view.current.get('profile')!.record.body!.inbox as { readers?: string[] }).readers).toBeUndefined()
     expect((await ownRecords(p)).access).toEqual([])
   })
 
-  test('access keys made: listed by their public halves and scopes alone, the read key among the inbox readers; each acts; the paste', async () => {
+  test('a writing key and an inbox key made: listed by their public halves and scopes alone, the read key among the inbox readers; each acts; one row each; the paste', async () => {
     const main = await mainKey(seed, LABEL)
     const p = { label: LABEL, address: main.address, hosts: [w.settings.host] }
     const before = (await readProfile(p.hosts, p.address, Date.now())).access
-    const made = await makeAccessKeys(seed, p, { write: true, message: true, read: true })
-    expect(made.write).toMatch(/^[A-Za-z0-9_-]{43}$/)
-    expect(made.message).toMatch(/^[A-Za-z0-9_-]{43}$/)
-    expect(made.read).toMatch(/^AGE-SECRET-KEY-PQ-1/)
-    const writer = keyFromPrivate(b64u.decode(made.write!))
-    const messenger = keyFromPrivate(b64u.decode(made.message!))
+    const made = await makeAccessKeys(seed, p, { writing: true, inbox: true })
+    expect(made.writing).toMatch(/^[A-Za-z0-9_-]{43}$/)
+    // An inbox key: its message key, a dot, its read key.
+    expect(made.inbox).toMatch(/^[A-Za-z0-9_-]{43}\.AGE-SECRET-KEY-PQ-1[0-9A-Z]+$/)
+    const [messageKey, readKey] = made.inbox!.split('.') as [string, string]
+    const writer = keyFromPrivate(b64u.decode(made.writing!))
+    const messenger = keyFromPrivate(b64u.decode(messageKey))
 
     const view = await readProfile(p.hosts, p.address, Date.now())
     const reader = view.access.at(-1)!.key
@@ -260,35 +262,39 @@ describe('a card', () => {
     expect(Object.keys(view.current.get('permissions')!.record.body!)).toEqual(['access'])
     const card = view.current.get('profile')!.record.body!
     expect((card.inbox as { readers?: string[] }).readers).toEqual([reader])
+    expect((await ownRecords(p)).access, 'one row for each kind').toEqual([{ kind: 'writing', keys: [writer.address] }, { kind: 'inbox', keys: [messenger.address, reader] }])
 
-    // The write key writes an offer, as an AI's door does; the message key pulls the inbox, and the read key opens what is in it.
+    // The writing key writes an offer, as an AI's door does; the inbox key's message key pulls the inbox, and its read key opens what is in it.
     await publishRecords(p.hosts, [accessRecord(writer, p.address, 'offer/by-key', { direction: 'offer', description: 'Written with a key', createdAt: new Date().toISOString() }, Date.now())])
     expect((await ownRecords(p)).offers.map((o) => o.path)).toContain('offer/by-key')
     const buyer = await mainKey(newSeed(), 'tutoring/buyer')
     w.host.rows.add(buyer.address)
     await deliver(p.hosts, [await message(buyer, p.address, { text: 'For the helper too.' }, Date.now(), card)])
     const page = await pull(w.settings.host, pullRequest({ key: messenger, profile: p.address }, 0, Date.now()))
-    const opened = await openMessage(page.messages.at(-1)!.message, made.read!)
+    const opened = await openMessage(page.messages.at(-1)!.message, readKey)
     expect(opened.body).toEqual({ text: 'For the helper too.' })
-    expect(await openPrivate(await makePrivate({ x: 1 }, [reader]), made.read!)).toEqual({ x: 1 })
+    expect(await openPrivate(await makePrivate({ x: 1 }, [reader]), readKey)).toEqual({ x: 1 })
 
-    expect(pasteOf('https://mcp.example/mcp', 'Tutoring', 'teacher', p.address, made).split('\n')).toEqual([
-      'MCP: https://mcp.example/mcp (add it to your AI once)',
-      'Forest, act for my profile (Tutoring, teacher).',
-      `profile: ${p.address}`,
-      `writeKey: ${made.write}`,
-      `messageKey: ${made.message}`,
-      `readKey: ${made.read}`,
-      "Anything else, send me a request and I'll approve it in the app.",
-    ])
-    expect(pasteOf('https://mcp.example/mcp', 'Tutoring', 'teacher', p.address, { message: made.message }).split('\n')).toHaveLength(5)
+    // The paste: the profile, then a line for each kind made; no MCP door, no instructions.
+    expect(pasteOf('Tutoring', 'teacher', p.address, made).split('\n')).toEqual([`Forest profile: ${p.address} (Tutoring, teacher)`, `writingKey: ${made.writing}`, `inboxKey: ${made.inbox}`])
+    expect(pasteOf('Tutoring', 'teacher', p.address, { inbox: made.inbox })).toBe(`Forest profile: ${p.address} (Tutoring, teacher)\ninboxKey: ${made.inbox}`)
 
-    // Removed as before: the read key leaves the readers; the others are made past.
-    for (const key of [writer.address, messenger.address, reader]) await removeAccessKey(seed, p, key)
+    // Removed as before, the inbox key's two in one write: its read key leaves the readers; the others are made past.
+    await removeAccessKey(seed, p, [writer.address])
+    await removeAccessKey(seed, p, [messenger.address, reader])
     const after = await readProfile(p.hosts, p.address, Date.now())
     expect(after.access.filter((e) => e.scope)).toEqual([])
+    expect(after.access.slice(-2)).toEqual([{ key: writer.address, was: 'write', paths: ['offer', 'review'] }, { key: messenger.address, was: 'message' }])
     expect((after.current.get('profile')!.record.body!.inbox as { readers?: string[] }).readers).toBeUndefined()
-    await expect(makeAccessKeys(seed, p, { write: false, message: false, read: false })).rejects.toThrow(/at least one/)
+    await expect(makeAccessKeys(seed, p, { writing: false, inbox: false })).rejects.toThrow(/at least one/)
+  })
+
+  test("the card's rows: a message key with the read key right after it in the permissions record is an inbox key; past keys and keys alone, as they are", () => {
+    const [m, r, x, wr] = ['m', 'r', 'x', 'w']
+    expect(accessRows([{ key: wr, scope: 'write' }, { key: m, scope: 'message' }, { key: r, scope: 'read' }])).toEqual([{ kind: 'writing', keys: [wr] }, { kind: 'inbox', keys: [m, r] }])
+    expect(accessRows([{ key: m, scope: 'message' }, { key: x, was: 'write' }, { key: r, scope: 'read' }]), 'not made together').toEqual([{ kind: 'message', keys: [m] }, { kind: 'read', keys: [r] }])
+    expect(accessRows([{ key: r, scope: 'read' }, { key: m, scope: 'message' }])).toEqual([{ kind: 'read', keys: [r] }, { kind: 'message', keys: [m] }])
+    expect(accessRows([{ key: m, was: 'message' }, { key: r, scope: 'read' }])).toEqual([{ kind: 'read', keys: [r] }])
   })
 
   test('access keys a host will not take for want of credits, with none left in the vault: no writes left, and the keys taken out again', async () => {
@@ -299,7 +305,7 @@ describe('a card', () => {
     const held = w.host.balances.get(p.address)
     w.host.balances.set(p.address, 0)
     // The permissions record, which is free, is taken; the card, with the read key among its readers, is not.
-    await expect(makeAccessKeys(seed, p, { write: true, message: false, read: true })).rejects.toThrow('This profile has no writes left.')
+    await expect(makeAccessKeys(seed, p, { writing: true, inbox: true })).rejects.toThrow('This profile has no writes left.')
     const after = await readProfile(p.hosts, p.address, Date.now())
     expect(after.access).toEqual(before.access)
     expect(after.current.get('profile')!.record.body).toEqual(before.current.get('profile')!.record.body)
@@ -315,10 +321,12 @@ describe('a card', () => {
     expect(titleOf('  A line\nand more')).toBe('A line')
   })
 
-  test("the MCP door: https://mcp.forest.foundation/mcp; the address before it moved, kept by a device or a vault, reads as today's", () => {
-    expect(DEVNET.mcp).toBe('https://mcp.forest.foundation/mcp')
-    saveSettings({ mcp: 'https://mcp.devnet.forest.foundation/mcp' })
-    expect(settings().mcp).toBe('https://mcp.forest.foundation/mcp')
+  test("the MCP door: https://mcp.forest.foundation; the addresses before it, kept by a device or a vault, read as today's", () => {
+    expect(DEVNET.mcp).toBe('https://mcp.forest.foundation')
+    for (const before of ['https://mcp.devnet.forest.foundation/mcp', 'https://mcp.forest.foundation/mcp']) {
+      saveSettings({ mcp: before })
+      expect(settings().mcp).toBe('https://mcp.forest.foundation')
+    }
     saveSettings({ mcp: 'https://mcp.example/mcp' })
     expect(settings().mcp, "a door of the person's own choosing stays").toBe('https://mcp.example/mcp')
     saveSettings(w.settings)

@@ -9,7 +9,7 @@ import { withFace } from '../face.ts'
 import { knownHosts, send } from '../flows/messages.ts'
 import type { LocalProfile } from '../local.ts'
 import { settings } from '../settings.ts'
-import { Spinner, useAction } from '../ui.tsx'
+import { Line, Spinner, type Why, useAction } from '../ui.tsx'
 import { useCardName } from './Inbox.tsx'
 import { Sheet } from './Sheets.tsx'
 
@@ -38,6 +38,7 @@ export function Compose({ to, profiles, onClose }: { to: string; profiles: Local
     await withFace((seed) => send(seed, p!, to, { text: text.trim() }, knownHosts(settings().host, profiles)))
     onClose()
   })
+  const why: Why = !p ? { text: 'Pick a profile to send it from.' } : !text.trim() ? { text: 'Write a message.' } : null
 
   return (
     <Sheet label="Message" busy={go.busy} onClose={onClose}>
@@ -45,7 +46,7 @@ export function Compose({ to, profiles, onClose }: { to: string; profiles: Local
         className="sheet-form"
         onSubmit={(e) => {
           e.preventDefault()
-          if (p && text.trim()) void go.run()
+          if (!why) void go.run()
         }}
       >
         <span>
@@ -70,8 +71,8 @@ export function Compose({ to, profiles, onClose }: { to: string; profiles: Local
           ))}
         </div>
         <textarea className="field" rows={5} placeholder="Message" aria-label="Message" value={text} onChange={(e) => setText(e.target.value)} />
-        {go.error && <p className="error">{go.error}</p>}
-        <button className="primary" disabled={!p || !text.trim() || go.busy}>
+        <Line error={go.error} why={why} />
+        <button className="primary" disabled={!!why || go.busy}>
           {go.busy ? <Spinner /> : 'Send'}
         </button>
       </form>

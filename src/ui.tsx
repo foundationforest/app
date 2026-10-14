@@ -1,5 +1,6 @@
-// What every screen draws with: the icons, setup's progress line, and an action's busy and error
-// state. The mark has its own file (mark.tsx).
+// What every screen draws with: the icons, setup's progress line, an action's busy and error state,
+// the one line under an action that says why it failed or why it is not open, and copying. The
+// mark has its own file (mark.tsx).
 
 import { type ReactNode, useState } from 'react'
 
@@ -138,4 +139,31 @@ export function useAction<A extends unknown[]>(fn: (...args: A) => Promise<void>
     setBusy(false)
   }
   return { run, busy, error }
+}
+
+/** Why an action is not open: what is wrong with what was given (`wrong`, red), or what is still to give. Null when it is open. */
+export type Why = { text: string; wrong?: boolean } | null
+
+/** The one line under an action: its error, in red; else why it is not open. */
+export function Line({ error, why }: { error?: string; why?: Why }) {
+  if (error) return <p className="error">{error}</p>
+  if (why) return <p className={why.wrong ? 'error' : 'why'}>{why.text}</p>
+  return null
+}
+
+/** Text copied, "Copied" for a moment after; an error when the browser does not let the page copy. */
+export function useCopy() {
+  const [copied, setCopied] = useState(false)
+  const [error, setError] = useState('')
+  const copy = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text)
+    } catch {
+      return setError("This browser didn't let Forest copy.")
+    }
+    setError('')
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1500)
+  }
+  return { copy, copied, error }
 }

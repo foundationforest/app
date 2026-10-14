@@ -9,7 +9,7 @@ import { type Indexed, type Market, type Own, indexed, marketOf, ownRecords, rol
 import { CHANGED, type LocalProfile, hiddenProfiles, hideProfile, inboxCounts, localProfiles, seenReviews } from '../local.ts'
 import { settings } from '../settings.ts'
 import { Mark } from '../mark.tsx'
-import { MenuIcon, Score } from '../ui.tsx'
+import { MenuIcon, Score, errorText } from '../ui.tsx'
 import { Compose } from './Compose.tsx'
 import { Menu } from './Menu.tsx'
 import { Sheet } from './Sheets.tsx'
@@ -25,20 +25,26 @@ export function useLocal<T>(read: () => T): T {
   return value
 }
 
-/** A profile as its card shows it: its market's file, its own records from its hosts, and what the index says of it. */
+/**
+ * A profile as its card shows it: its market's file, its own records from its hosts, and what the
+ * index says of it; `error`, what failed of the last two to read, in the person's words.
+ */
 export function useProfile(p: LocalProfile) {
   const { market: name, role } = splitLabel(p.label)
   const [market, setMarket] = useState<Market | null>()
   const [own, setOwn] = useState<Own>()
   const [index, setIndex] = useState<Indexed | null>()
+  const [error, setError] = useState('')
   const [reads, setReads] = useState(0)
   useEffect(() => {
     let live = true
     const { index: origin } = settings()
     const keep = (set: (v: any) => void) => (v: unknown) => live && set(v)
+    const failed = (err: unknown) => live && setError(errorText(err))
+    setError('')
     marketOf(origin, name).then(keep(setMarket), () => undefined)
-    ownRecords(p).then(keep(setOwn), () => undefined)
-    indexed(origin, p.address).then(keep(setIndex), () => undefined)
+    ownRecords(p).then(keep(setOwn), failed)
+    indexed(origin, p.address).then(keep(setIndex), failed)
     return () => {
       live = false
     }
@@ -46,7 +52,7 @@ export function useProfile(p: LocalProfile) {
   const inbox = useLocal(() => inboxCounts()[p.address]?.count ?? 0)
   const seen = useLocal(() => seenReviews(p.address))
   const newReviews = Math.max(0, (index?.received.length ?? 0) - seen)
-  return { name, role, word: roleWord(role, market), market, own, index, inbox, newReviews, reload: () => setReads((n) => n + 1) }
+  return { name, role, word: roleWord(role, market), market, own, index, error, inbox, newReviews, reload: () => setReads((n) => n + 1) }
 }
 
 /** A profile's own menu: Hide, which takes it off the board and deletes nothing. */
@@ -109,6 +115,7 @@ function ProfileCard({ p, compact, nav }: { p: LocalProfile; compact: boolean; n
             {fresh > 0 && <span className="badge">{fresh}</span>}
           </span>
         </span>
+        {d.error && <span className="error">{d.error}</span>}
         {!compact && !!d.own?.offers.length && (
           <span className="rows">
             {d.own.offers.map((o) => (

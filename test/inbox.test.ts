@@ -1,9 +1,10 @@
 // Offers, reviews and the inbox against one of each stand-in (test/stand-ins.ts, `world`), on
 // loopback, in Node, as the sheets and the inbox screen run them: an offer posted, changed and
-// removed, with its market's fields; a review the same, with a score for each of its market's
-// rating names, and only about a profile the index has on the other side of the reviewer's market;
-// a thread between two people's profiles, there and back, each side's
-// copy in its own inbox, and the count that leaves out a profile's own copies; a message to a
+// removed, with its market's fields; a review the same, with its one score, and only about a
+// profile the index has on the other side of the reviewer's market, refused in words that name it;
+// a thread between two people's profiles, there and back, each side's copy in its own inbox; the
+// count, which takes what someone else sent and a request, never a copy of what the profile sent,
+// through the app or through an access key; a message to a
 // profile on a host the app does not reach; requests sent by an access key, approved and declined,
 // the bodies that are not requests, and every field of what approving one signs; a grant kept in
 // the vault, and not counted; and a write short of credits, topped up from the vault once, until
@@ -19,7 +20,7 @@ import { message } from '../standard/records/src/private.ts'
 import { DOLLAR, type Field, localTime, ownRecords } from '../src/cards.ts'
 import { type Opened, approve, fieldsOf, grantsOf, knownHosts, openInbox, requestOf, send, threadsOf, toSign, withOf } from '../src/flows/messages.ts'
 import { makeProfile } from '../src/flows/profile.ts'
-import { OTHER_SIDE, fieldValue, freshId, itemOf, languageTag, offerBody, offerFieldsOf, ratingNames, registeredAs, reviewBody, reviewable, shownValue, writeOffer, writeReview } from '../src/flows/records.ts'
+import { fieldValue, freshId, itemOf, languageTag, notOtherSide, offerBody, offerFieldsOf, registeredAs, reviewBody, reviewable, shownValue, writeOffer, writeReview } from '../src/flows/records.ts'
 import { faceCheck } from '../src/flows/setup.ts'
 import { markRead, sendPulls, signPulls } from '../src/inbox.ts'
 import type { LocalProfile } from '../src/local.ts'
@@ -123,23 +124,19 @@ describe('the offer sheet', () => {
 })
 
 describe('the review sheet', () => {
-  test('posted, changed and removed, with the main key, a score for each rating name', async () => {
-    expect(ratingNames(MARKETS.tutoring as never)).toEqual(['overall', 'clarity'])
-    expect(ratingNames({ ratings: ['punctuality', 'overall'] } as never), 'overall first').toEqual(['overall', 'punctuality'])
-    expect(ratingNames(null), 'overall alone until the market is known').toEqual(['overall'])
-
-    await writeReview(seller.seed, seller.p, 'one', { subject: buyer.p.address, ratings: { overall: '8', clarity: '9' }, text: ' On time. ' })
+  test('posted, changed and removed, with the main key, its one score', async () => {
+    await writeReview(seller.seed, seller.p, 'one', { subject: buyer.p.address, score: '8.5', text: ' On time. ' })
     const [posted] = (await ownRecords(seller.p)).written
-    expect(posted).toMatchObject({ path: 'review/one', subject: buyer.p.address, score: '8', text: 'On time.' })
-    expect(posted!.body.ratings).toEqual({ overall: '8', clarity: '9' })
-    await writeReview(seller.seed, seller.p, 'one', { subject: buyer.p.address, ratings: { overall: '10', clarity: '' }, text: '' })
+    expect(posted).toMatchObject({ path: 'review/one', subject: buyer.p.address, score: '8.5', text: 'On time.' })
+    expect(posted!.body.ratings).toEqual({ overall: '8.5' })
+    await writeReview(seller.seed, seller.p, 'one', { subject: buyer.p.address, score: '10', text: '' })
     const [changed] = (await ownRecords(seller.p)).written
     expect(changed).toMatchObject({ score: '10', text: null })
-    expect(changed!.body.ratings, 'a score left out is taken out').toEqual({ overall: '10' })
+    expect(changed!.body.ratings).toEqual({ overall: '10' })
     expect('text' in changed!.body).toBe(false)
     await writeReview(seller.seed, seller.p, 'one', null)
     expect((await ownRecords(seller.p)).written).toEqual([])
-    expect(reviewBody({ subject: buyer.p.address, ratings: { overall: '7' }, text: '' }, { subject: 'x', ratings: { overall: '9.5', care: '6' }, createdAt: 'then' }).ratings, 'a rating the sheet does not show kept').toEqual({ overall: '7', care: '6' })
+    expect(reviewBody({ subject: buyer.p.address, score: '7', text: '' }, { subject: 'x', ratings: { overall: '9.5', care: '6' }, createdAt: 'then' }).ratings, 'a rating an older review gave kept').toEqual({ overall: '7', care: '6' })
   })
 
   test('only about a profile the index has registered on the other side of the market', async () => {
@@ -159,7 +156,9 @@ describe('the review sheet', () => {
     // A one-sided market: a peer reviews a peer.
     w.index.profiles.set(buyer.p.address, profileTwin(buyer.p.address, 'tennis/peer'))
     expect(await reviewable(index, { ...seller.p, label: 'tennis/peer' }, buyer.p.address)).toBe(true)
-    expect(OTHER_SIDE).toBe('Reviews go to the other side of your market.')
+    // Refused in words that name the other side, by the market's own word for it.
+    expect(notOtherSide('tutoring', 'teacher')).toBe("This address doesn't belong to a Tutoring teacher.")
+    expect(notOtherSide('elder-care', 'buyer')).toBe("This address doesn't belong to an Elder care buyer.")
     w.index.profiles.clear()
   })
 })
@@ -198,6 +197,29 @@ describe('a thread', () => {
 
     // Pulled again after its cursors: only what is new.
     expect((await openInbox(seller.seed, seller.p, inbox.cursors)).messages).toEqual([])
+  })
+})
+
+describe('the count', () => {
+  test('what someone else sent, and a request; never a copy of what the profile sent, through the app or an access key', async () => {
+    const main = await mainKey(seller.seed, seller.p.label)
+    const helper = keyFromPrivate(crypto.getRandomValues(new Uint8Array(32)))
+    const view = await readProfile(seller.p.hosts, seller.p.address, Date.now())
+    await publishRecords(seller.p.hosts, [permissionsRecord(main, [...view.access, { key: helper.address, scope: 'message' }], Date.now())])
+    const card = view.current.get('profile')!.record.body!
+    const asHelper = { key: helper, from: seller.p.address, host: seller.p.hosts[0]! }
+    await sendPulls(await signPulls(seller.seed, [seller.p]))
+    const before = inboxCounts()[seller.p.address]!.count
+    const at = Date.now()
+    // The copy the MCP door leaves of what the AI sent with its key, and a request the AI sends; the app's own copy of a message; one from someone else.
+    await deliver(seller.p.hosts, [await message(asHelper, seller.p.address, { text: 'Sent by my AI.', to: buyer.p.address }, at, card), await message(asHelper, seller.p.address, { request: 'remove-offer', id: 'gone' }, at + 1, card)])
+    await send(seller.seed, seller.p, buyer.p.address, { text: 'Sent from the app.' }, known())
+    await send(buyer.seed, buyer.p, seller.p.address, { text: 'From someone else.' }, known())
+    await sendPulls(await signPulls(seller.seed, [seller.p]))
+    expect(inboxCounts()[seller.p.address]!.count).toBe(before + 2)
+    // The AI's copy sits in the thread with whom it went to.
+    const threads = threadsOf((await openInbox(seller.seed, seller.p)).messages, seller.p.address)
+    expect(threads.find((t) => t.with === buyer.p.address)!.messages.map((m) => m.body.text)).toContain('Sent by my AI.')
   })
 })
 
