@@ -12,19 +12,22 @@ In the order a person meets it.
 
 1. **Start.** Start, or Sign in with a passkey the person has. Where the browser says it cannot
    ask a passkey for PRF at all, Start says to open Forest on a newer device, and shows neither.
-   With a setup under way on this device, Start takes it up with its own passkey, the only one the
-   system's sheet offers, after one face, and makes none; Sign in with another passkey replaces
-   it; and Forget this device gives it up (One passkey per person, below).
+   Start always goes on to make a passkey and never asks for one, so it cannot go round in a
+   loop; Forget this device is in the board's menu alone.
 2. **Open with your face.** One tap makes the passkey, and its PRF secret is the seed (Custody,
    below). The device keeps the seed's fingerprint and nothing else of it. Where the passkey made
-   gives no PRF secret, the app asks the person's passkey manager to drop it, keeps nothing, and
-   Start says to use a phone with a passkey (the QR code in the passkey sheet) or a newer device.
-   Where the manager holds a passkey this device made before, it makes none, and Start says "You
-   have a Forest passkey already. Sign in with it." The back arrow goes to Start.
+   gives no PRF secret, as it is made or at the get that follows, the app asks the person's
+   passkey manager to drop it, keeps nothing, and Start says "This password manager can't open
+   Forest. Save it in Passwords instead." on an Apple device, "in another password manager"
+   elsewhere. Where the manager holds a Forest passkey this device knows (One passkey per person,
+   below), it makes none: Start says "You already have a Forest passkey. Sign in with it." and
+   Sign in is under way at once, its sheet open, which goes on with that passkey as Sign in does
+   (12, below). The back arrow goes to Start.
 3. **One face check.** The issuer's check opens in a tab of its own, and the app says to finish it
-   there; Didit sends it back to `/back`, which closes. The tab is never left blank: whatever fails
-   before the check is in it closes it, and the screen says what failed, with Try again. The back
-   arrow goes to Start and keeps the passkey, so Start takes it up. Meanwhile the app buys credits
+   there; Didit sends it back to `/back`, which closes (where the issuer lists the app's address,
+   Limits). The tab is never left blank: whatever fails before the check is in it closes it, and
+   the screen says what failed, with Try again. The back arrow goes to Start and keeps the
+   passkey: Start is refused it then, and Sign in takes the setup up. Meanwhile the app buys credits
    at each service the issuer's welcome gift names, asks for the note until the check passes,
    collects the gift's credits with the tickets the note came with, and writes the first vault on
    the host: the note, the credits, the services used. Each stage is kept on the device as it is
@@ -51,10 +54,18 @@ In the order a person meets it.
    an inbox open to people holding a row from the same issuer); the vault written again
    (`src/flows/profile.ts`).
 6. **The card.** The profile's address under its role word, short, with a copy button; its
-   offers, the reviews it wrote and its access keys, read from its hosts; its score and the reviews about it from the index (the bell). An offer is a description,
-   its first line the title, and a price in the index's devnet dollar, per hour, per day or in
-   total; a review is an address, a score from 1 to 10 and text. Each is posted, changed or removed
-   from its sheet, signed with the main key, one face each (`src/flows/records.ts`).
+   offers, the reviews it wrote and its access keys, read from its hosts; its score and the reviews
+   about it from the index (the bell). An offer is a description, its first line the title, a price
+   in the index's devnet dollar, per hour, per day or in total, and under them the fields its
+   market's file suggests, read from the index, all optional: text (its known values offered),
+   whole numbers, yes or no, and lists as chips, a language's as BCP 47 tags (`pt-br` written
+   `pt-BR`, a language's name refused). A review is an address, a row of ten scores, 1 to 10, for
+   each rating name the market lists, overall first and the only one needed, and text, optional.
+   Its address must be a profile the index has registered on the other side of this one's market
+   (the same market when it is one-sided): checked against the index's profile JSON before the
+   face, and "Reviews go to the other side of your market." when it is not. Each is posted,
+   changed or removed from its sheet, signed with the main key, one face each
+   (`src/flows/records.ts`, `src/screens/Sheets.tsx`).
 7. **An access key for the AI.** "+ Access key" offers three: Post offers and reviews (a write
    key, writing under `offer` and `review`), Send messages (a message key), Read the inbox (a read
    key, also added to the card's inbox readers, so every message to the profile is sealed to it
@@ -64,7 +75,7 @@ In the order a person meets it.
    error shows:
 
    ```
-   MCP: https://mcp.devnet.forest.foundation/mcp (add it to your AI once)
+   MCP: https://mcp.forest.foundation/mcp (add it to your AI once)
    Forest, act for my profile (Tutoring, teacher).
    profile: <address>
    writeKey: <key>
@@ -74,7 +85,8 @@ In the order a person meets it.
    ```
 
    with a line for each key made, Copy, and Done, which drops it: the app keeps no private half
-   anywhere. The menu holds the MCP door's address too. The card's rows come
+   anywhere. The menu holds the MCP door's address too; a device or a vault that kept the one
+   before it moved, https://mcp.devnet.forest.foundation/mcp, reads today's. The card's rows come
    from the permissions record; Remove makes a write or message key past, so what it wrote still
    counts, or deletes a read key and drops it from the readers (`src/flows/access.ts`).
 8. **The AI acts.** Through services' MCP door, with the keys in the paste: offers and reviews with
@@ -99,8 +111,8 @@ In the order a person meets it.
     the device, and so is the fingerprint. When every host answered and none holds a vault for this
     passkey, its setup stopped before the vault was written, on this device or another: the app goes
     on to the face check with it, which gives the same note back to the same face
-    (`src/flows/signin.ts`, `src/seed/seed.ts`). A setup under way here with another passkey is
-    replaced (One passkey per person, below).
+    (`src/flows/signin.ts`, `src/seed/seed.ts`). With a setup under way here, the same passkey
+    takes it up where it stopped; another replaces it (One passkey per person, below).
 
 ## Custody
 
@@ -140,13 +152,15 @@ In the order a person meets it.
   macOS, Windows 11 and Android. Bitwarden gives it only some of the time. Not: Chrome's own
   profile authenticator, Windows before that update, iOS before 18.
 - **One passkey per person.** The device keeps the id of every passkey it made (public), and Open
-  with your face names them all as passkeys not to make again (`excludeCredentials`): a manager
-  that holds one of them makes none. A setup under way is taken up with its own passkey, asked for
-  by its id (`allowCredentials`). A setup this device made and then gave up (Forget this device on
-  Start, or a sign in with another passkey) has its passkey offered to the manager to drop, and so
-  does one the issuer refused as a face with a setup already: `signalUnknownCredential` where the
-  browser has it, nothing where it does not. Never one whose check gave a note: the issuer gives
-  that face no other note, so only that passkey can finish its setup (`src/seed/seed.ts`).
+  with your face names them all, and the passkey of a setup under way here, as passkeys not to
+  make again (`excludeCredentials`): a manager that holds one of them makes none, and Sign in
+  follows at once. Start never asks for a passkey by its id; the face check opened again does,
+  its own (`allowCredentials`). A setup this device made and then gave up (a new passkey made in
+  its place, the manager holding the old one no longer, or a sign in with another passkey) has
+  its passkey offered to the manager to drop, and so does one the issuer refused as a face with a
+  setup already, and one that gave no PRF secret: `signalUnknownCredential` where the browser has
+  it, nothing where it does not. Never one whose check gave a note: the issuer gives that face no
+  other note, so only that passkey can finish its setup (`src/seed/seed.ts`).
 - **No paper backup in v1.** The passkey is the only way in (Limits).
 
 Underneath:
@@ -226,13 +240,15 @@ npm run test:browser   # headless Chromium through Playwright, with a virtual pa
                        # then the app's build under vercel.json's CSP (its connect-src naming the
                        # stand-ins), at app.forest.foundation mapped to loopback, through setup
                        # (stopped at the vault and taken up again), a new profile, the card, an
-                       # offer, a second person through the message door, the inbox with a reply
-                       # and a review, requests approved and declined, access keys made, pasted and
-                       # acting, a write topped up from the vault, a profile hidden and shown again,
-                       # the menu, forgetting the device and signing in again on a cleared one,
-                       # another subdomain refused the passkeys, a stopped setup taken up through
-                       # Sign in with its gift given before, a face with a setup already, no PRF,
-                       # Start twice on one device ending with one passkey, and a deploy landing
+                       # offer with its market's fields, a second person through the message door,
+                       # the inbox with a reply and a review, refused first about a profile in
+                       # another market, requests approved and declined, access keys made, pasted
+                       # and acting, a write topped up from the vault, a profile hidden and shown
+                       # again, the menu, forgetting the device, Start refused into Sign in, and
+                       # signing in again on a cleared one, another subdomain refused the passkeys,
+                       # a stopped setup taken up through Sign in with its gift given before, a face
+                       # with a setup already, no PRF, Start twice on one device ending with one
+                       # passkey, and a deploy landing
                        # while setup is open, served as Vercel serves it (SHOTS=<dir> keeps a
                        # screenshot of each screen)
 ```
@@ -264,7 +280,7 @@ the Vercel project for the redirect to land.
   The test reaches a fresh device with the same passkey by clearing the app's storage in the same
   tab, since Chrome's DevTools cannot hand a passkey's PRF secret to another browser context.
 - **Two Forest passkeys can still happen.** A device refuses a second passkey where the manager
-  holds one it made, but another device does not know those ids, and a passkey whose drop the
+  holds one it knows, but another device does not know those ids, and a passkey whose drop the
   manager ignored stays. Each is named Forest, so a person with two picks between them in the
   system's sheet; the wrong one gets "This passkey belongs to another setup." on a device set up
   with the other.
@@ -307,6 +323,20 @@ the Vercel project for the redirect to land.
 - **A setup that stopped is taken up best on the device it began on,** where its buys and tickets
   are kept. From another device, Sign in goes on to the face check with the same passkey, and the
   gift is given before (above).
+- **Sign in opened at once may wait for a tap.** When Start is refused a passkey the manager holds,
+  Sign in starts with no tap of its own. A browser that lets a page ask for a passkey only right
+  after a tap may refuse it, or the person may close the sheet: Start then shows "You already have
+  a Forest passkey. Sign in with it." with Sign in under it, and asks nothing more.
+- **The check sends the person back only to an app its issuer lists.** The issuer takes a return
+  address on an origin in its `APP_ORIGINS` alone; on any other, the app opens the check with
+  none, Didit's page stays open when it is done, and the app finishes on its own once the note
+  comes.
+- **A review goes only to a profile the index holds.** The other side is checked with the index's
+  profile JSON, so a profile the index has not stored yet, or has stored under another label,
+  cannot be reviewed from here, though the standard takes a review of any address.
+- **Offer fields of the four plain kinds.** The sheet shows a market's text, whole number, yes or
+  no and list-of-text fields; a field of any other kind is left as the offer holds it. A language
+  tag is checked for its form, not against the registry of languages.
 - **Taking up a check that still needs its note opens the check's tab after the face.** A browser
   that lets a page open a tab only right after a tap may block it; the app then says "Try again to
   open the check.", with the seed held from that face, so Try again opens it on the tap.

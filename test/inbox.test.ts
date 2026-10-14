@@ -1,6 +1,8 @@
 // Offers, reviews and the inbox against one of each stand-in (test/stand-ins.ts, `world`), on
 // loopback, in Node, as the sheets and the inbox screen run them: an offer posted, changed and
-// removed; a review the same; a thread between two people's profiles, there and back, each side's
+// removed, with its market's fields; a review the same, with a score for each of its market's
+// rating names, and only about a profile the index has on the other side of the reviewer's market;
+// a thread between two people's profiles, there and back, each side's
 // copy in its own inbox, and the count that leaves out a profile's own copies; a message to a
 // profile on a host the app does not reach; requests sent by an access key, approved and declined,
 // the bodies that are not requests, and every field of what approving one signs; a grant kept in
@@ -14,10 +16,10 @@ import { afterAll, beforeAll, describe, expect, test } from 'vitest'
 import { inboxKey, mainKey, newSeed } from '../standard/keys/src/index.ts'
 import { type Body, b64u, deliver, hostsRecord, keyFromPrivate, ownerRecord, permissionsRecord, readProfile } from '../standard/records/src/index.ts'
 import { message } from '../standard/records/src/private.ts'
-import { DOLLAR, localTime, ownRecords } from '../src/cards.ts'
+import { DOLLAR, type Field, localTime, ownRecords } from '../src/cards.ts'
 import { type Opened, approve, fieldsOf, grantsOf, knownHosts, openInbox, requestOf, send, threadsOf, toSign, withOf } from '../src/flows/messages.ts'
 import { makeProfile } from '../src/flows/profile.ts'
-import { freshId, offerBody, writeOffer, writeReview } from '../src/flows/records.ts'
+import { OTHER_SIDE, fieldValue, freshId, itemOf, languageTag, offerBody, offerFieldsOf, ratingNames, registeredAs, reviewBody, reviewable, shownValue, writeOffer, writeReview } from '../src/flows/records.ts'
 import { faceCheck } from '../src/flows/setup.ts'
 import { markRead, sendPulls, signPulls } from '../src/inbox.ts'
 import type { LocalProfile } from '../src/local.ts'
@@ -27,7 +29,7 @@ import { type ProveRequest, prove } from '../src/proof/prove.ts'
 import { publishRecords } from '../src/services/host.ts'
 import { saveSettings } from '../src/settings.ts'
 import { creditsOf, keepGrants, openVault, saveVault, vaultKeys, withCredits } from '../src/vault.ts'
-import { world } from './stand-ins.ts'
+import { MARKETS, profileTwin, world } from './stand-ins.ts'
 
 const load = async (artifact: Artifact) => new Uint8Array(await readFile(new URL(`../public${artifact.path}`, import.meta.url)))
 const proveHere = (request: ProveRequest) => prove(request, load)
@@ -88,18 +90,77 @@ describe('the offer sheet', () => {
     const before = { direction: 'offer', description: 'Old', remote: true, price: { amount: '1', mint: DOLLAR, per: 'day' }, createdAt: '2026-01-01T00:00:00.000Z' }
     expect(offerBody({ description: 'New' }, 'seller', before)).toEqual({ direction: 'offer', description: 'New', remote: true, createdAt: '2026-01-01T00:00:00.000Z' })
   })
+
+  test("its market's fields: each optional, written as the market's file asks, a list's items and a language's tags checked", async () => {
+    const tutoring = offerFieldsOf(MARKETS.tutoring as never)
+    expect(tutoring.map(([name]) => name)).toEqual(['subjects', 'languages'])
+    const [[, subjects], [, languages]] = tutoring as [[string, Field], [string, Field]]
+    expect(offerFieldsOf({ offerFields: { properties: { price: { type: 'string' }, photo: { type: 'blob' }, level: { type: 'string' } } } } as never).map(([n]) => n), "the offer's own fields and types the sheet has no input for left alone").toEqual(['level'])
+
+    // A language as BCP 47 spells it; a name, or what is not a tag, refused.
+    expect(['en', 'PT-br', 'zh-hant-tw', 'english', 'x', ''].map(languageTag)).toEqual(['en', 'pt-BR', 'zh-Hant-TW', null, null, null])
+    expect(itemOf(languages, ' es ')).toBe('es')
+    expect(itemOf(subjects, 'm'.repeat(65)), 'an item past its maxLength').toBeNull()
+    // Empty is left out; a list's maxLength counts its items.
+    expect(fieldValue(subjects, [])).toBeUndefined()
+    expect(fieldValue(subjects, Array.from({ length: 11 }, (_, i) => `s${i}`))).toBeNull()
+    expect(fieldValue(languages, ['en', 'english'])).toBeNull()
+    const [[, hours]] = offerFieldsOf(MARKETS.cleaning as never) as [[string, Field]]
+    expect(['', '3', '-1', '2.5', 'two'].map((v) => fieldValue(hours, v))).toEqual([undefined, 3, null, null, null])
+    const [[, level]] = offerFieldsOf(MARKETS.tennis as never) as [[string, Field]]
+    expect([fieldValue(level, ' advanced '), fieldValue(level, 'x'.repeat(65))]).toEqual(['advanced', null])
+    expect([fieldValue({ type: 'boolean' }, true), fieldValue({ type: 'boolean' }, false)]).toEqual([true, undefined])
+    expect([shownValue(hours, 3), shownValue(subjects, ['a', 1]), shownValue({ type: 'boolean' }, true)]).toEqual(['3', ['a'], true])
+
+    // Posted with two of them, then one cleared: it is left out, and what the sheet does not show is kept.
+    const id = freshId()
+    await writeOffer(seller.seed, seller.p, id, { description: 'Physics', fields: { subjects: ['Physics', 'Maths'], languages: ['en', 'pt-BR'] } })
+    expect((await ownRecords(seller.p)).offers.find((o) => o.path === `offer/${id}`)!.body).toMatchObject({ subjects: ['Physics', 'Maths'], languages: ['en', 'pt-BR'] })
+    const before = { direction: 'offer', description: 'Old', remote: true, subjects: ['Old'], languages: ['en'], createdAt: '2026-01-01T00:00:00.000Z' }
+    expect(offerBody({ description: 'New', fields: { subjects: ['New'], languages: undefined } }, 'seller', before)).toEqual({ direction: 'offer', description: 'New', remote: true, subjects: ['New'], createdAt: '2026-01-01T00:00:00.000Z' })
+    await writeOffer(seller.seed, seller.p, id, null)
+  })
 })
 
 describe('the review sheet', () => {
-  test('posted, changed and removed, with the main key', async () => {
-    await writeReview(seller.seed, seller.p, 'one', { subject: buyer.p.address, score: '8.5', text: ' On time. ' })
-    expect((await ownRecords(seller.p)).written).toMatchObject([{ path: 'review/one', subject: buyer.p.address, score: '8.5', text: 'On time.' }])
-    await writeReview(seller.seed, seller.p, 'one', { subject: buyer.p.address, score: '10', text: '' })
+  test('posted, changed and removed, with the main key, a score for each rating name', async () => {
+    expect(ratingNames(MARKETS.tutoring as never)).toEqual(['overall', 'clarity'])
+    expect(ratingNames({ ratings: ['punctuality', 'overall'] } as never), 'overall first').toEqual(['overall', 'punctuality'])
+    expect(ratingNames(null), 'overall alone until the market is known').toEqual(['overall'])
+
+    await writeReview(seller.seed, seller.p, 'one', { subject: buyer.p.address, ratings: { overall: '8', clarity: '9' }, text: ' On time. ' })
+    const [posted] = (await ownRecords(seller.p)).written
+    expect(posted).toMatchObject({ path: 'review/one', subject: buyer.p.address, score: '8', text: 'On time.' })
+    expect(posted!.body.ratings).toEqual({ overall: '8', clarity: '9' })
+    await writeReview(seller.seed, seller.p, 'one', { subject: buyer.p.address, ratings: { overall: '10', clarity: '' }, text: '' })
     const [changed] = (await ownRecords(seller.p)).written
     expect(changed).toMatchObject({ score: '10', text: null })
+    expect(changed!.body.ratings, 'a score left out is taken out').toEqual({ overall: '10' })
     expect('text' in changed!.body).toBe(false)
     await writeReview(seller.seed, seller.p, 'one', null)
     expect((await ownRecords(seller.p)).written).toEqual([])
+    expect(reviewBody({ subject: buyer.p.address, ratings: { overall: '7' }, text: '' }, { subject: 'x', ratings: { overall: '9.5', care: '6' }, createdAt: 'then' }).ratings, 'a rating the sheet does not show kept').toEqual({ overall: '7', care: '6' })
+  })
+
+  test('only about a profile the index has registered on the other side of the market', async () => {
+    const index = w.settings.index
+    expect(registeredAs(profileTwin(buyer.p.address, 'tutoring/buyer'), 'tutoring', 'buyer')).toBe(true)
+    expect(registeredAs(profileTwin(buyer.p.address, 'tutoring/buyer', { stamps: [{ label: 'tutoring/buyer', counted: false }] }), 'tutoring', 'buyer'), 'a row the index does not count').toBe(false)
+
+    // Not in the index at all; then on the other side; on the same side; in another market.
+    expect(await reviewable(index, seller.p, buyer.p.address)).toBe(false)
+    w.index.profiles.set(buyer.p.address, profileTwin(buyer.p.address, 'tutoring/buyer'))
+    expect(await reviewable(index, seller.p, buyer.p.address)).toBe(true)
+    expect(await reviewable(index, buyer.p, buyer.p.address)).toBe(false)
+    w.index.profiles.set(seller.p.address, profileTwin(seller.p.address, 'tutoring/seller'))
+    expect(await reviewable(index, buyer.p, seller.p.address)).toBe(true)
+    w.index.profiles.set(buyer.p.address, profileTwin(buyer.p.address, 'cleaning/buyer'))
+    expect(await reviewable(index, seller.p, buyer.p.address)).toBe(false)
+    // A one-sided market: a peer reviews a peer.
+    w.index.profiles.set(buyer.p.address, profileTwin(buyer.p.address, 'tennis/peer'))
+    expect(await reviewable(index, { ...seller.p, label: 'tennis/peer' }, buyer.p.address)).toBe(true)
+    expect(OTHER_SIDE).toBe('Reviews go to the other side of your market.')
+    w.index.profiles.clear()
   })
 })
 

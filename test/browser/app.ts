@@ -17,12 +17,15 @@
 // 3. The board and the card page: offers, the score and the reviews about it from the index, the
 //    address copied, an access key removed with one face, the inbox counted at that face, a grant
 //    not counted.
-// 4. An offer posted from its sheet, then changed, one face each; posted with an empty folder, one
-//    more of the vault's credits goes in, silently; with none left there, no writes left.
+// 4. An offer posted from its sheet with its market's fields (subjects as chips, languages as BCP 47
+//    tags, a name refused), then changed, one face each; posted with an empty folder, one more of
+//    the vault's credits goes in, silently; with none left there, no writes left.
 // 5. A second person, in a browser of their own, through the message door with no seed yet:
 //    setup, a new profile, then the message, sent with one face.
-// 6. The inbox, after one face: the thread with the second person, a reply, and a review posted
-//    from the thread; the reply in the second person's inbox.
+// 6. The inbox, after one face: the thread with the second person, a reply, and a review from the
+//    thread: refused, before any face, about a profile in another market; then posted about the
+//    second person, a score tapped for each of the market's rating names; the reply in the second
+//    person's inbox.
 // 7. Requests an access key sent: every field of what Approve signs on the card, the dollar by its
 //    name and the time in the person's own clock; one approved, signed as shown with the main key
 //    after one face; one declined.
@@ -31,18 +34,19 @@
 //    key removed.
 // 9. A profile hidden from the board, held down or from its page's menu, and shown again from the
 //    menu.
-// 10. The menu: forgetting the device; another subdomain refused the app's passkeys; then, every
-//     bit of the app's storage cleared as on a new device, the same passkey (the same tab), Sign
-//     in: one face, everything back, and an action after it.
+// 10. The menu: forgetting the device; then Start, refused the passkey the manager holds, straight
+//     into Sign in, which brings everything back with one face; another subdomain refused the app's
+//     passkeys; then, every bit of the app's storage cleared as on a new device, the same passkey
+//     (the same tab), Sign in: one face, everything back, and an action after it.
 // 11. A setup that stopped after its note, on a device since lost: Sign in goes on to its face
 //     check; the gift given before, so no credits, and setup waits, saying so; once the vault's
 //     folder can pay, it finishes, saying so. A face the issuer has from another setup: the passkey
-//     this setup made dropped, and Start says to sign in. A device whose passkeys give no PRF, and a
-//     browser that cannot ask for it: Start says so, and nothing is kept.
-// 12. Start twice on one device: back from each step of setup; the second Start takes up the
-//     passkey the first made, and none is made; Forget this device drops it, its check having no
-//     note, and Start makes one anew; one passkey at the end. A passkey kept after forgetting the
-//     device refuses the next: "You have a Forest passkey already."
+//     this setup made dropped, and Start says to sign in. A passkey saved where no PRF secret can be
+//     had, as it is made or at the get after: dropped, and Start says to save it in another password
+//     manager. A browser that cannot ask for PRF: Start says so. Nothing kept, either way.
+// 12. Start twice on one device: back from each step of setup, Start holding no Forget; the second
+//     Start refused the passkey the first made, straight into Sign in, which takes up its setup at
+//     the face check with one face, and asks no more when Start shows again; one passkey at the end.
 // 13. A deploy while setup is open: build A served, its service worker in control, setup opened;
 //     build B, every chunk named anew, put in its place, its service worker taking over and A's
 //     files gone; Start: A's flow is a 404, the check's tab closes, the page reloads once onto B,
@@ -66,7 +70,7 @@ import { DOLLAR } from '../../src/cards.ts'
 import { message, openMessage } from '../../standard/records/src/private.ts'
 import { publishRecords } from '../../src/services/host.ts'
 import { creditsOf, openVault, vaultKeys } from '../../src/vault.ts'
-import { world } from '../stand-ins.ts'
+import { profileTwin, world } from '../stand-ins.ts'
 import { serveLikeVercel } from './vercel.ts'
 
 const app = fileURLToPath(new URL('../..', import.meta.url))
@@ -388,6 +392,21 @@ test('the offer sheet: posted, then changed, one face each', async () => {
   await sheet.getByLabel('Description').fill('Physics, one hour\nOnline, any level.')
   await sheet.getByLabel('Price').fill('30')
   await sheet.getByRole('radio', { name: 'Hour' }).click()
+  // The market's fields, under them: subjects as chips; languages as BCP 47 tags, a name refused.
+  await sheet.getByText('Languages it is offered in, as BCP 47 tags such as en or es.').waitFor()
+  await sheet.getByLabel('Subjects').fill('Physics')
+  await sheet.getByLabel('Subjects').press('Enter')
+  await sheet.getByLabel('Subjects').fill('Maths')
+  await sheet.getByLabel('Languages').fill('english')
+  assert.equal(await sheet.getByRole('button', { name: 'Remove Maths' }).count(), 1, 'what was typed becomes a chip on leaving the field')
+  await sheet.getByLabel('Languages').press('Enter')
+  assert.equal(await sheet.getByLabel('Languages').getAttribute('aria-invalid'), 'true', "a language's name is not a tag")
+  assert.equal(await sheet.getByLabel('Languages').inputValue(), 'english', 'and is not taken')
+  await sheet.getByLabel('Languages').fill('en')
+  await sheet.getByLabel('Languages').press('Enter')
+  await sheet.getByLabel('Languages').fill('PT-br')
+  await sheet.getByLabel('Languages').press('Enter')
+  await sheet.getByRole('button', { name: 'Remove pt-BR' }).waitFor()
   await shot('14-offer-sheet')
   // The folder's balance spent: the post takes one more of the vault's host credits into it, and nothing shows.
   const keys = await vaultKeys(seed)
@@ -403,8 +422,15 @@ test('the offer sheet: posted, then changed, one face each', async () => {
   assert.equal(await hostCredits(), 0, "one of the vault's credits went into the folder")
   assert.ok(Math.abs(w.host.balances.get(address)! - 0.99) < 1e-9)
 
+  const fields = async () => {
+    const body = [...(await readProfile([w.settings.host], address, Date.now())).current].find(([path, c]) => path.startsWith('offer/') && c.record.body?.description === 'Physics, one hour\nOnline, any level.')![1].record.body!
+    return { subjects: body.subjects, languages: body.languages }
+  }
+  assert.deepEqual(await fields(), { subjects: ['Physics', 'Maths'], languages: ['en', 'pt-BR'] }, "the market's fields, as its file asks")
+
   await row.click()
   assert.equal(await sheet.getByLabel('Description').inputValue(), 'Physics, one hour\nOnline, any level.', 'the sheet opens on what is there')
+  await sheet.getByRole('button', { name: 'Remove Maths' }).click()
   await sheet.getByLabel('Price').fill('45')
   await sheet.getByRole('radio', { name: 'Total' }).click()
   faces = counts.asserted
@@ -414,6 +440,7 @@ test('the offer sheet: posted, then changed, one face each', async () => {
   const offers = [...(await readProfile([w.settings.host], address, Date.now())).current].filter(([path, c]) => path.startsWith('offer/') && c.record.body?.description === 'Physics, one hour\nOnline, any level.')
   assert.equal(offers.length, 1, 'changed in place')
   assert.deepEqual(offers[0]![1].record.body!.price, { amount: '45', mint: 'J2QBACfPPb1ys2UyGx3ecXHgCr4hWuHFT3C2Nr6TSVSa', per: 'job' })
+  assert.deepEqual(await fields(), { subjects: ['Physics'], languages: ['en', 'pt-BR'] }, 'a chip removed')
   await shot('15-card-offer')
 
   // Spent again, with none left in the vault: the sheet says so, in plain words.
@@ -426,7 +453,7 @@ test('the offer sheet: posted, then changed, one face each', async () => {
   await page.locator('.sheet-back').click({ position: { x: 20, y: 20 } })
   await sheet.waitFor({ state: 'detached' })
   w.host.balances.set(address, held)
-  say("offer sheet: posted and changed from the card, one face each, signed by the main key; an empty folder topped up from the vault's credits without a word, and with none left, \"This profile has no writes left.\"")
+  say("offer sheet: posted and changed from the card, one face each, signed by the main key, with the market's fields (subjects as chips, languages as BCP 47 tags, \"english\" refused, \"PT-br\" written pt-BR); an empty folder topped up from the vault's credits without a word, and with none left, \"This profile has no writes left.\"")
 })
 
 let second: Awaited<ReturnType<typeof phone>>
@@ -468,8 +495,8 @@ test('a second person through the message door: setup, a new profile, then the m
   say('message door: not set up yet, so setup, then a new profile, then the message, sent with one face')
 })
 
-test('the inbox: the thread, a reply, and a review from the thread', async () => {
-  const faces = counts.asserted
+test('the inbox: the thread, a reply, and a review from the thread, refused about another market first', async () => {
+  let faces = counts.asserted
   await page.getByRole('button', { name: 'Inbox' }).click()
   const thread = page.locator('button.thread', { hasText: 'Tutoring student' })
   await thread.waitFor()
@@ -486,13 +513,37 @@ test('the inbox: the thread, a reply, and a review from the thread', async () =>
   await page.getByRole('button', { name: 'Review' }).click()
   const sheet = page.getByRole('dialog', { name: 'Review' })
   assert.equal(await sheet.getByLabel('Address').inputValue(), secondAddress, 'the address filled from the thread')
-  await sheet.getByLabel('Score').fill('9.5')
+  // A score for each of the market's rating names, overall first, ten each.
+  const rows = sheet.getByRole('radiogroup')
+  await rows.nth(1).waitFor()
+  assert.deepEqual(await rows.evaluateAll((gs) => gs.map((g) => [g.getAttribute('aria-label'), g.querySelectorAll('[role=radio]').length])), [['Overall', 10], ['Clarity', 10]])
+  const score = (name: string, n: number) => sheet.getByRole('radiogroup', { name }).getByRole('radio', { name: String(n), exact: true })
+  const post = sheet.getByRole('button', { name: 'Post' })
+  assert.equal(await post.isDisabled(), true, 'overall first')
+  await score('Overall', 9).click()
+  await score('Clarity', 8).click()
   await sheet.getByLabel('Text').fill('Clear about what they wanted.')
-  await sheet.getByRole('button', { name: 'Post' }).click()
+
+  // About a profile the index has in another market: refused before any face, in plain words.
+  const elsewhere = keyFromPrivate(new Uint8Array(32).fill(44)).address
+  w.index.profiles.set(elsewhere, profileTwin(elsewhere, 'cleaning/buyer'))
+  w.index.profiles.set(secondAddress, profileTwin(secondAddress, 'tutoring/buyer'))
+  await sheet.getByLabel('Address').fill(elsewhere)
+  faces = counts.asserted
+  await post.click()
+  await sheet.getByText('Reviews go to the other side of your market.').waitFor()
+  assert.equal(counts.asserted - faces, 0, 'no face asked')
+  await shot('18b-review-other-market')
+
+  // About the second person, a student in the same market: posted with one face.
+  await sheet.getByLabel('Address').fill(secondAddress)
+  faces = counts.asserted
+  await post.click()
   await sheet.waitFor({ state: 'detached' })
+  assert.equal(counts.asserted - faces, 1)
   const reviews = [...(await readProfile([w.settings.host], address, Date.now())).current].filter(([path, c]) => path.startsWith('review/') && c.record.body?.subject === secondAddress)
   assert.equal(reviews.length, 1)
-  assert.deepEqual(reviews[0]![1].record.body!.ratings, { overall: '9.5' })
+  assert.deepEqual(reviews[0]![1].record.body!.ratings, { overall: '9', clarity: '8' })
   const read = await page.evaluate((a) => JSON.parse(localStorage.getItem('forest.inbox')!)[a].count, address)
   assert.equal(read, 0, 'what the inbox showed is read')
 
@@ -506,7 +557,7 @@ test('the inbox: the thread, a reply, and a review from the thread', async () =>
   await second.context.close()
   await page.goto(APP)
   await card('Tutoring').waitFor()
-  say('inbox: one face, the thread named by the card, a reply sealed and copied, a review posted from the thread; the reply read on the other side')
+  say('inbox: one face, the thread named by the card, a reply sealed and copied; a review from the thread refused before any face about a profile the index has in another market ("Reviews go to the other side of your market."), then posted about the student, a score tapped for Overall and for Clarity; the reply read on the other side')
 })
 
 test('requests from an access key: one approved with one face, one declined', async () => {
@@ -671,7 +722,7 @@ test('a profile hidden from the board, held down or from its page, and shown aga
   say('hide: a profile held down on the board, or from its page, hidden; the menu shows it again; nothing deleted')
 })
 
-test('the menu: forget this device; then Sign in with the same passkey on a cleared device: everything back; another subdomain refused', async () => {
+test('the menu: forget this device; Start refused the passkey held, into Sign in; then Sign in on a cleared device: everything back; another subdomain refused', async () => {
   await page.getByRole('button', { name: 'Menu' }).click()
   await page.getByRole('radio', { name: 'Dark' }).click()
   assert.equal(await page.evaluate(() => document.documentElement.dataset.theme), 'dark')
@@ -689,15 +740,27 @@ test('the menu: forget this device; then Sign in with the same passkey on a clea
   const { credentials } = (await cdp.session.send('WebAuthn.getCredentials', { authenticatorId: cdp.authenticatorId })) as { credentials: unknown[] }
   assert.equal(credentials.length, 1, 'the passkey kept')
 
-  // Start again here: the manager holds the passkey this device made, so it makes no second one, and Start says to sign in.
-  const before = counts.created
+  // Start again here: the manager holds the passkey this device made, so it makes no second one, and
+  // Start goes straight into Sign in, saying why, its sheet open: one face, and the board is back.
+  // Reloaded first, so the settings the test puts on every page point at the stand-ins again.
+  await page.reload()
+  const before = { created: counts.created, asserted: counts.asserted }
   await page.getByRole('button', { name: 'Start', exact: true }).click()
+  await page.getByRole('heading', { name: 'Your passkey' }).waitFor()
+  await page.evaluate(() => {
+    const seen = ((globalThis as any).hasPasskey = { said: false, signingIn: false })
+    new MutationObserver(() => {
+      seen.said ||= !!document.body.textContent?.includes('You already have a Forest passkey. Sign in with it.')
+      seen.signingIn ||= seen.said && !!document.querySelector('[role=status]')
+    }).observe(document.body, { subtree: true, childList: true, characterData: true })
+  })
   await page.getByRole('button', { name: 'Open with your face' }).click()
-  await page.getByText('You have a Forest passkey already. Sign in with it.').waitFor()
-  await page.getByRole('button', { name: 'Sign in' }).waitFor()
-  assert.equal(counts.created - before, 0, 'no passkey made')
+  await card('Tutoring').getByText('Maths, one hour').waitFor({ timeout: 30_000 })
+  assert.deepEqual(await page.evaluate(() => (globalThis as any).hasPasskey), { said: true, signingIn: true }, 'Start said why, and signed in at once')
+  assert.equal(counts.created - before.created, 0, 'no passkey made')
+  assert.equal(counts.asserted - before.asserted, 1, 'one face, the sign in')
   assert.equal(((await cdp.session.send('WebAuthn.getCredentials', { authenticatorId: cdp.authenticatorId })) as { credentials: unknown[] }).credentials.length, 1)
-  if (shots) await page.screenshot({ path: `${shots}/30-has-passkey-light.png` })
+  assert.equal(JSON.parse((await page.evaluate(() => localStorage.getItem('forest.fingerprint')))!), (await vaultKey(seed)).address, 'signed in as before')
 
   // Back on the app, every bit of its storage cleared, as a new device has it: its service worker,
   // its caches, its local and session storage. The same tab, so the same virtual passkey: Chrome's
@@ -743,7 +806,7 @@ test('the menu: forget this device; then Sign in with the same passkey on a clea
   })
   assert.equal(there, 'SecurityError', `${new URL(OTHER).host} may not ask for app.forest.foundation's passkeys`)
 
-  say(`forget: the ids of the passkeys made here kept, so Start then made none ("You have a Forest passkey already. Sign in with it."); the app's storage cleared, then Sign in with the same passkey: one face, the board back from the vault, the fingerprint kept; the inbox opened with one face; ${new URL(OTHER).host} refused app.forest.foundation's passkeys (SecurityError)`)
+  say(`forget: the ids of the passkeys made here kept, so Start then made none: "You already have a Forest passkey. Sign in with it.", the sign in under way at once, the board back with one face; the app's storage cleared, then Sign in with the same passkey: one face, the board back from the vault, the fingerprint kept; the inbox opened with one face; ${new URL(OTHER).host} refused app.forest.foundation's passkeys (SecurityError)`)
 })
 
 test('a setup that stopped after its note, on a device since lost: Sign in goes on to its face check; no credits, then finished', async () => {
@@ -819,14 +882,15 @@ test('a face the issuer has from another setup: the passkey made dropped, and St
 })
 
 test('no PRF: Start says so, and nothing is kept', async () => {
-  // This device's passkeys give no PRF secret: the passkey made, refused, and offered to be dropped.
+  // A passkey saved where no PRF secret can be had, as it is made or at the get after: refused, and offered to be dropped.
   const none = await phone({ prf: false })
   await none.page.goto(APP)
   await none.page.getByRole('button', { name: 'Start', exact: true }).click()
   await none.page.getByRole('button', { name: 'Open with your face' }).click()
-  const said = "This device's passkeys can't open Forest. Use a phone with a passkey instead: choose the QR code in the passkey sheet. Or use a newer device."
+  const said = "This password manager can't open Forest. Save it in another password manager instead."
   await none.page.getByText(said).waitFor()
-  assert.equal(await none.page.getByRole('button', { name: 'Sign in' }).count(), 1, 'back on Start, to try again with a phone')
+  assert.deepEqual([none.counts.created, none.counts.asserted], [1, 1], 'one passkey made, and one get after it, which gave no secret either')
+  assert.equal(await none.page.getByRole('button', { name: 'Sign in' }).count(), 1, 'back on Start, to try again in another manager')
   assert.deepEqual(Object.keys((await kept(none.page)).local), ['forest.settings'], 'nothing kept')
   if (shots) await none.page.screenshot({ path: `${shots}/25-no-prf-light.png` })
   const left = ((await none.cdp.session.send('WebAuthn.getCredentials', { authenticatorId: none.cdp.authenticatorId })) as { credentials: unknown[] }).credentials.length
@@ -840,10 +904,10 @@ test('no PRF: Start says so, and nothing is kept', async () => {
   assert.equal(old.counts.created, 0, 'no passkey made')
   if (shots) await old.page.screenshot({ path: `${shots}/26-no-prf-browser-light.png` })
   await old.context.close()
-  say(`no PRF: the device's passkey refused, Start says "${said}", nothing kept (the drop signal ${left === 0 ? 'took the passkey off the virtual authenticator' : `left ${left} passkey on the virtual authenticator`}); a browser without PRF: Start says so, with no buttons`)
+  say(`no PRF: the passkey saved where none can be had refused after the get that follows, Start says "${said}" (Passwords in its place on an Apple device), nothing kept (the drop signal ${left === 0 ? 'took the passkey off the virtual authenticator' : `left ${left} passkey on the virtual authenticator`}); a browser without PRF: Start says so, with no buttons`)
 })
 
-test('Start twice on one device: back from each step, the first passkey taken up, dropped once forgotten, one passkey at the end', async () => {
+test('Start twice on one device: back from each step; the second Start refused the first passkey, into Sign in, which takes its setup up; one passkey', async () => {
   const p = await phone()
   const b = p.page
   const held = async () => ((await p.cdp.session.send('WebAuthn.getCredentials', { authenticatorId: p.cdp.authenticatorId })) as { credentials: unknown[] }).credentials.length
@@ -856,46 +920,45 @@ test('Start twice on one device: back from each step, the first passkey taken up
   await b.getByRole('button', { name: 'Sign in' }).waitFor()
   assert.equal(p.counts.created, 0)
 
-  // The first Start: the passkey made, then back from the face check to Start, the setup kept.
+  // The first Start: the passkey made, then back from the face check to Start, the setup kept; Start holds no Forget.
   await b.getByRole('button', { name: 'Start', exact: true }).click()
   await b.getByRole('button', { name: 'Open with your face' }).click()
   await b.getByRole('heading', { name: 'One face check' }).waitFor()
   if (shots) await b.screenshot({ path: `${shots}/31-face-check-back-light.png` })
   await b.getByRole('button', { name: 'Back' }).click()
-  await b.getByRole('button', { name: 'Forget this device' }).waitFor()
+  await b.getByRole('button', { name: 'Sign in' }).waitFor()
   assert.equal('forest.setup' in (await kept(b)).local, true, 'setup kept')
+  assert.equal(await b.getByRole('button', { name: 'Forget this device' }).count(), 0, 'no Forget on Start')
   if (shots) await b.screenshot({ path: `${shots}/32-start-under-way-light.png` })
 
-  // The second Start: one face, of the passkey the first made; none made; on to its face check.
+  // The second Start: it makes a passkey, never asks for one; the manager holds the first, so none is
+  // made, and Sign in follows at once: one face, the first passkey's, and its setup at the face check.
   const faces = p.counts.asserted
   await b.getByRole('button', { name: 'Start', exact: true }).click()
+  await b.getByRole('button', { name: 'Open with your face' }).click()
   await b.getByRole('heading', { name: 'One face check' }).waitFor()
   assert.equal(p.counts.created, 1, 'one passkey made')
   assert.equal(p.counts.asserted - faces, 1, 'one face')
   assert.equal(await held(), 1)
 
-  // The browser's back button goes where the arrow does. Forget this device: the check gave no note, so the passkey it made is dropped.
+  // Back on Start, it says why it signed in, and asks no more.
   await b.goBack()
-  await b.getByRole('button', { name: 'Forget this device' }).click()
-  await b.getByText('Your setup stops here, and the passkey it made is dropped from your password manager.').waitFor()
-  await b.getByRole('button', { name: 'Forget this device' }).click()
-  await b.getByRole('button', { name: 'Forget this device' }).waitFor({ state: 'detached' })
-  assert.equal(await held(), 0, 'the passkey dropped')
-  assert.deepEqual(Object.keys((await kept(b)).local), ['forest.passkeys'], 'the device forgotten, the ids of the passkeys made here kept')
+  await b.getByText('You already have a Forest passkey. Sign in with it.').waitFor()
+  await b.waitForTimeout(500)
+  assert.equal(p.counts.asserted - faces, 1, 'no second sheet')
+  if (shots) await b.screenshot({ path: `${shots}/30-has-passkey-light.png` })
 
-  // Start again: a new passkey, the dropped one excluded but held by none; the check; the board. One passkey.
-  await b.reload()
-  await b.getByRole('button', { name: 'Start', exact: true }).click()
-  await b.getByRole('button', { name: 'Open with your face' }).click()
+  // Sign in again takes the setup up; the check; the board. One passkey.
+  await b.getByRole('button', { name: 'Sign in' }).click()
   await b.getByRole('heading', { name: 'One face check' }).waitFor()
   const tab = p.context.waitForEvent('page')
   await b.getByRole('button', { name: 'Start', exact: true }).click()
   await tab
   await b.getByRole('button', { name: 'New profile' }).waitFor({ timeout: 60_000 })
-  assert.equal(p.counts.created, 2)
+  assert.equal(p.counts.created, 1)
   assert.equal(await held(), 1, 'one passkey')
   await p.context.close()
-  say('Start twice on one device: back from each step to Start; the second Start took up the passkey the first made, with one face, none made; Forget this device dropped it (no note yet), and Start made one anew; one passkey at the end')
+  say('Start twice on one device: back from each step to Start, which holds no Forget; the second Start, refused the passkey the first made, went straight into Sign in: one face, that setup taken up at its face check, none made, no second sheet when Start showed again; the check, the board; one passkey at the end')
 })
 
 test('a deploy while setup is open: Start reloads once onto the new version, back on the face check, and the check opens; never a blank tab', async () => {

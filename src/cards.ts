@@ -10,7 +10,33 @@ import { ServiceError } from './services/http.ts'
 import * as indexes from './services/indexes.ts'
 
 export type Side = 'seller' | 'buyer'
-export type Market = { name: string; folder: string; sides: 'one' | 'two'; roleNames?: Record<Side, string> }
+
+/**
+ * A field a market's file adds to its offers, in lexicon syntax, as the index reads it: text (its
+ * `knownValues` suggestions, its `maxLength` in bytes), an integer, a boolean, or an array of text
+ * (its `maxLength` and `minLength` counting items; a language's `format` is `language`, a BCP 47 tag).
+ */
+export type Field = {
+  type: string
+  description?: string
+  knownValues?: string[]
+  maxLength?: number
+  minLength?: number
+  minimum?: number
+  maximum?: number
+  items?: { type?: string; format?: string; maxLength?: number; minLength?: number }
+}
+
+export type Market = {
+  name: string
+  folder: string
+  sides: 'one' | 'two'
+  roleNames?: Record<Side, string>
+  /** The fields its offers may carry, all of them suggestions. */
+  offerFields?: { properties?: Record<string, Field> }
+  /** The rating names its reviews usually give, overall among them. */
+  ratings?: string[]
+}
 
 const markets = new Map<string, Promise<Market | null>>()
 

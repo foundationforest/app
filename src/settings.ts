@@ -21,8 +21,11 @@ export const DEVNET: Settings = {
   registryPayer: 'https://registry-payer.devnet.forest.foundation',
   index: 'https://index.devnet.forest.foundation',
   rpc: 'https://api.devnet.solana.com',
-  mcp: 'https://mcp.devnet.forest.foundation/mcp',
+  mcp: 'https://mcp.forest.foundation/mcp',
 }
+
+/** The MCP door's address before it moved: a device or a vault that kept it reads today's. */
+const MOVED_MCP = 'https://mcp.devnet.forest.foundation/mcp'
 
 /** The registry's program on devnet, from the pinned standard: part of the standard, not a setting. */
 export const REGISTRY_PROGRAM = registryDevnet.registry.programId
@@ -32,7 +35,7 @@ const KEY = 'forest.settings'
 export function settings(): Settings {
   try {
     const saved = JSON.parse(localStorage.getItem(KEY) ?? '{}') as Partial<Settings>
-    return { ...DEVNET, ...saved }
+    return { ...DEVNET, ...saved, ...(saved.mcp === MOVED_MCP && { mcp: DEVNET.mcp }) }
   } catch {
     return { ...DEVNET }
   }

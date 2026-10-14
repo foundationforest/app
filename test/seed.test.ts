@@ -1,16 +1,18 @@
 // The seed from a passkey, with the browser's passkey API stood in for: a given PRF secret is the
 // seed as it is; the fingerprint the device keeps is the vault key's public half; a passkey made
-// with the secret given at once, or only at the get that follows (as Safari's), or none, each with
-// a user id of its own; every action's passkey checked against the fingerprint; a sign in that
-// finds a setup, and one that finds none and goes on to the face check; setup's stages sealed
-// under the seed. One passkey per person: every passkey made here kept by its id and excluded from
-// the next; a setup under way taken up with its own; one given up dropped only while it has no note.
+// with the secret given at once, or only at the get that follows (as Safari's), or at neither, so
+// dropped, the person told to save it elsewhere (Passwords, on an Apple device), each with a user id
+// of its own; every action's passkey checked against the fingerprint; a sign in that finds a setup,
+// and one that finds none and goes on to the face check; setup's stages sealed under the seed. One
+// passkey per person: every passkey made here, and the setup under way's, excluded from the next; a
+// setup under way taken up with its own; one given up dropped only while it has no note.
 // The real passkey, in Chromium with a virtual authenticator: test/browser/app.ts.
 
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
 import { vaultKey } from '../standard/keys/src/index.ts'
 import { HasPasskey, NoPrf, SALT, createPasskey, fingerprintOf, rpId, seedOf } from '../src/seed/passkey.ts'
+import { madePasskeys } from '../src/local.ts'
 import { beginSetup, dropSetup, endSetup, hasSetup, keepSetup, readSetup, resumeSetup, setupDropsPasskey, setupMadePasskey, signingIn, withSeed } from '../src/seed/seed.ts'
 
 /** A PRF secret as a passkey gives it: 32 bytes in an ArrayBuffer. */
@@ -23,7 +25,7 @@ type Asked = { create: CredentialCreationOptions[]; get: CredentialRequestOption
  * `get` one whose PRF secret is `given`, each with the id `id` gives ([1, 2, 3] unless). What each
  * was asked is kept. `create` refuses, as a manager does, when `held` is one of the ids it excludes.
  */
-function passkeys({ made, given, capabilities = {}, id = () => [1, 2, 3], held }: { made?: { enabled?: boolean; results?: { first: ArrayBuffer } }; given?: () => ArrayBuffer | undefined; capabilities?: Record<string, boolean>; id?: () => number[]; held?: number[] }) {
+function passkeys({ made, given, capabilities = {}, id = () => [1, 2, 3], held, userAgent = 'Mozilla/5.0 (X11; Linux x86_64)' }: { made?: { enabled?: boolean; results?: { first: ArrayBuffer } }; given?: () => ArrayBuffer | undefined; capabilities?: Record<string, boolean>; id?: () => number[]; held?: number[]; userAgent?: string }) {
   const asked: Asked = { create: [], get: [], dropped: [] }
   const credential = (prf: unknown) => ({ rawId: new Uint8Array(id()).buffer, getClientExtensionResults: () => (prf === undefined ? {} : { prf }) })
   vi.stubGlobal('navigator', {
@@ -40,6 +42,7 @@ function passkeys({ made, given, capabilities = {}, id = () => [1, 2, 3], held }
       },
     },
     storage: { persist: async () => true },
+    userAgent,
   })
   vi.stubGlobal(
     'PublicKeyCredential',
@@ -104,11 +107,20 @@ describe('the derive path', () => {
     expect(publicKey!.extensions!.prf!.eval!.first).toEqual(SALT)
   })
 
-  test('no PRF from the passkey made: refused, the passkey offered to be dropped, nothing kept', async () => {
-    const asked = passkeys({ made: { enabled: false } })
-    await expect(beginSetup()).rejects.toThrow(NoPrf)
-    expect(asked.dropped).toEqual([{ rpId: 'app.forest.foundation', credentialId: 'AQID' }])
-    expect(localStorage.length).toBe(0)
+  test('no PRF as the passkey is made, nor at the get after: refused, the passkey offered to be dropped, nothing kept, another manager named', async () => {
+    for (const made of [{ enabled: false }, { enabled: true }, undefined]) {
+      const asked = passkeys({ made })
+      const refused = await beginSetup().catch((err) => err)
+      expect(refused).toBeInstanceOf(NoPrf)
+      expect(refused.message).toBe("This password manager can't open Forest. Save it in another password manager instead.")
+      expect(asked.get.map((o) => [...new Uint8Array(o.publicKey!.allowCredentials![0]!.id as ArrayBuffer)]), 'one get after, naming the passkey made').toEqual([[1, 2, 3]])
+      expect(asked.dropped).toEqual([{ rpId: 'app.forest.foundation', credentialId: 'AQID' }])
+      expect(localStorage.length).toBe(0)
+    }
+    for (const userAgent of ['Mozilla/5.0 (iPhone; CPU iPhone OS 26_6_2 like Mac OS X) AppleWebKit/605.1.15 CriOS/155.0', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Safari/605.1.15']) {
+      passkeys({ made: { enabled: true }, userAgent })
+      await expect(beginSetup()).rejects.toThrow("This password manager can't open Forest. Save it in Passwords instead.")
+    }
   })
 
   test('a browser that says it cannot ask for PRF: refused before any passkey is made', async () => {
@@ -202,8 +214,29 @@ describe('one passkey per person', () => {
     const refused = passkeys({ made: { enabled: true, results: { first: secret(1) } }, id: () => [3], held: [2] })
     await expect(beginSetup()).rejects.toThrow(HasPasskey)
     expect(ids(refused.create[0]!, 'excludeCredentials')).toEqual([[1], [2]])
-    expect(new HasPasskey().message).toBe('You have a Forest passkey already. Sign in with it.')
+    expect(new HasPasskey().message).toBe('You already have a Forest passkey. Sign in with it.')
     expect(hasSetup(), 'nothing under way').toBe(false)
+  })
+
+  test("the setup under way's passkey is excluded too: held, none is made and the setup stays; not held, a new one replaces it", async () => {
+    const ids = (o: CredentialCreationOptions) => o.publicKey!.excludeCredentials!.map((c) => [...new Uint8Array(c.id as ArrayBuffer)])
+    // Under way from a sign in: a passkey this device did not make.
+    passkeys({ given: () => secret(9), id: () => [9] })
+    const signed = await signingIn(async () => false)
+    await keepSetup(signed!.seed, { buys: ['kept'] })
+    expect(madePasskeys()).toEqual([])
+
+    const held = passkeys({ made: { enabled: true, results: { first: secret(10) } }, id: () => [10], held: [9] })
+    await expect(beginSetup()).rejects.toThrow(HasPasskey)
+    expect(ids(held.create[0]!)).toEqual([[9]])
+    expect(await readSetup(signed!.seed), 'the setup under way kept, for Sign in to take up').toEqual({ buys: ['kept'] })
+
+    const fresh = passkeys({ made: { enabled: true, results: { first: secret(10) } }, id: () => [10] })
+    const made = await beginSetup()
+    expect(ids(fresh.create[0]!)).toEqual([[9]])
+    expect(JSON.parse(localStorage.getItem('forest.fingerprint')!)).toBe(await fingerprintOf(made.seed))
+    expect([setupMadePasskey(), await readSetup(made.seed)], 'replaced: a setup of its own, nothing in it yet').toEqual([true, null])
+    expect(fresh.dropped, 'the replaced passkey was not made here, so it is not dropped').toEqual([])
   })
 
   test("a setup under way is taken up with its own passkey, the only one offered, checked against the fingerprint", async () => {

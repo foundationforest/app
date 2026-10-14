@@ -1,16 +1,17 @@
 // The app's screens and the way between them, in the browser's history so its back button works. A
 // device set up (it keeps the seed's fingerprint) opens on the board; one whose setup stopped before
 // its vault was written opens on setup's face check, which takes it up again, with Start under it.
-// The passkey that gave the seed, at setup's first step, at Start taking a setup up, or at a sign in
-// that found no vault, is the draft: kept here for the face check while setup's screens are open,
-// its seed zeroed once they are left. A page reloaded to take a new version (version.ts) opens on
-// the screen it was on. The message door, /message?to=<address>, the link an index gives for a
-// profile, opens a new message to it; a person not set up yet, or with no profile yet, goes through
-// setup or a new profile first, and comes back to it.
+// Start always goes on to make a passkey; where the person's manager holds one this device knows,
+// setup sends them back to Start with Sign in under way. The passkey that gave the seed, at setup's
+// first step or at a sign in that found no vault, is the draft: kept here for the face check while
+// setup's screens are open, its seed zeroed once they are left. A page reloaded to take a new
+// version (version.ts) opens on the screen it was on. The message door, /message?to=<address>, the
+// link an index gives for a profile, opens a new message to it; a person not set up yet, or with no
+// profile yet, goes through setup or a new profile first, and comes back to it.
 
 import { useEffect, useRef, useState } from 'react'
 
-import { fingerprint, forgetFingerprint, localProfiles } from './local.ts'
+import { fingerprint, localProfiles } from './local.ts'
 import { Back } from './screens/Back.tsx'
 import { Board } from './screens/Board.tsx'
 import { CardPage } from './screens/CardPage.tsx'
@@ -19,7 +20,7 @@ import { NewProfile } from './screens/NewProfile.tsx'
 import { Setup } from './screens/Setup.tsx'
 import { Start } from './screens/Start.tsx'
 import type { Passkey } from './seed/passkey.ts'
-import { endSetup, hasSetup } from './seed/seed.ts'
+import { hasSetup } from './seed/seed.ts'
 import { resuming } from './version.ts'
 
 export type Screen =
@@ -56,8 +57,8 @@ function Screens() {
   const [screen, setScreen] = useState<Screen | null>(null)
   const stage = useRef<Stage>('none')
   const draft = useRef<Passkey | null>(null)
-  /** What Start says when a step sent the person back to it. */
-  const [said, setSaid] = useState<string>()
+  /** What Start says when a step sent the person back to it, and whether it signs in at once; `n` opens Start afresh each time. */
+  const [said, setSaid] = useState<{ text: string; signIn: boolean; n: number }>()
 
   /** What the history asks for, unless it is no longer there to show. */
   const show = (to: Screen) => {
@@ -65,7 +66,7 @@ function Screens() {
       draft.current.seed.fill(0)
       draft.current = null
     }
-    if (stage.current === 'setup' && to.name !== 'start' && !(to.name === 'setup' && to.step === 2)) return reset({ name: 'setup', step: 2 })
+    if (stage.current === 'setup' && to.name !== 'start' && to.name !== 'setup') return reset({ name: 'setup', step: 2 })
     if (stage.current === 'in' && (to.name === 'setup' || to.name === 'start')) return home()
     if (stage.current === 'none' && to.name !== 'start' && !(to.name === 'setup' && to.step === 1)) return reset({ name: 'start' })
     setScreen(to)
@@ -117,14 +118,13 @@ function Screens() {
     draft.current = passkey
     ;(fromStart ? nav.go : reset)({ name: 'setup', step: 2 })
   }
-  /** Setup given up (or never begun): back to Start, which says why. */
-  const stopped = (why: string) => {
-    if (stage.current === 'setup') {
-      endSetup()
-      forgetFingerprint()
-    }
-    stage.current = 'none'
-    setSaid(why)
+  /**
+   * Back to Start, which says why, signing in at once when `signIn`. A setup under way stays, unless
+   * the step gave it up: a passkey made and refused takes nothing from it.
+   */
+  const stopped = (why: string, signIn = false) => {
+    stage.current = hasSetup() ? 'setup' : 'none'
+    setSaid((was) => ({ text: why, signIn, n: (was?.n ?? 0) + 1 }))
     reset({ name: 'start' })
   }
   const signedIn = () => {
@@ -144,13 +144,13 @@ function Screens() {
     case 'start':
       return (
         <Start
-          key={said}
-          said={said}
-          underWay={stage.current === 'setup'}
+          key={said?.n}
+          said={said?.text}
+          signInNow={said?.signIn}
+          onSigningIn={() => setSaid((was) => was && { ...was, signIn: false })}
           onStart={() => nav.go({ name: 'setup', step: 1 })}
           onSignedIn={signedIn}
           onNoSetup={(passkey) => opened(passkey, true)}
-          onForgotten={forgotten}
         />
       )
     case 'setup':
