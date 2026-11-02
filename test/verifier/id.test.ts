@@ -1,5 +1,5 @@
 // The ID check, against services' own verifier and host in this process, with the verifier's own
-// stand-ins for Didit and for Stripe (world.ts, `services`): paid on Stripe's page, the payment's id
+// stand-ins for Didit and for Stripe (services.ts): paid on Stripe's page, the payment's id
 // kept on the device from the moment it is made; the check in its session, each one of the
 // payment's three tries; its stamp and its gift; then every profile showing it, in one unlock. And
 // every way it stops: not paid, declined, expired, its tries used up, not for sale, an ID already
@@ -11,16 +11,17 @@ import { proofsOf, readFolder, verificationCheck } from '@foundationforest/folde
 import { newSeed } from '@foundationforest/keys'
 import { checkVerification, stampFromJson } from '@foundationforest/proofs'
 
-import { App } from '../services/mcp/test/app.ts'
-import { doc, passed, passedId } from '../services/verifier/test/fakes.ts'
-import * as device from '../src/device.ts'
-import { readCard } from '../src/flows/cards.ts'
-import { makeProfile } from '../src/flows/profile.ts'
-import { walletKey } from '../src/flows/profiles.ts'
-import { NotPassed, advance, ask, finish, open, pay, resume, stampNumberAt, stepOf } from '../src/flows/verify.ts'
-import { Refused } from '../src/services/http.ts'
-import { Said } from '../src/words.ts'
-import { ID_CREDITS, type ServicesWorld, freshDevice, proveHere, services } from './world.ts'
+import { App } from '../../services/mcp/test/app.ts'
+import { doc, passed, passedId } from '../../services/verifier/test/fakes.ts'
+import * as device from '../../src/device.ts'
+import { readCard } from '../../src/flows/cards.ts'
+import { makeProfile } from '../../src/flows/profile.ts'
+import { walletKey } from '../../src/flows/profiles.ts'
+import { NotPassed, advance, ask, finish, open, pay, resume, stampNumberAt, stepOf } from '../../src/flows/verify.ts'
+import { Refused } from '../../src/services/http.ts'
+import { Said } from '../../src/words.ts'
+import { freshDevice, proveHere } from '../world.ts'
+import { ID_CREDITS, type ServicesWorld, services } from './services.ts'
 
 let w: ServicesWorld
 beforeAll(async () => void (w = await services()))
