@@ -1,7 +1,8 @@
-// The mark, never redrawn: the drawing as it was given, and the same shapes and strokes in the
-// app's one component (in the theme's ink), and in the icons made from that component at each build
-// (shell.ts): the favicon, ink on paper, 8 units around it, a 56-unit box, and the PNGs from it. No
-// copy of it is kept by hand: public/ holds no icon.
+// The mark, never redrawn: the drawing as it was given, which is the one services' mcp draws its
+// icon from (mcp/src/icon.ts); the same shapes and strokes in the app's one component (in the
+// theme's ink), and in the icons made from that component at each build (build/shell.ts): the
+// favicon, ink on paper, 8 units around it, a 56-unit box, and the PNGs from it. No copy of it is
+// kept by hand.
 
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 
@@ -9,10 +10,11 @@ import { Resvg } from '@resvg/resvg-js'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { expect, test } from 'vitest'
 
-import { PNG_SIZES, iconPng, iconSvg } from '../shell.ts'
+import { SVG as MCP_ICON } from '../services/mcp/src/icon.ts'
+import { PNG_SIZES, iconPng, iconSvg } from '../build/shell.ts'
 import { Mark } from '../src/mark.tsx'
 
-/** The drawing, exactly as it was given. */
+/** The drawing, exactly as it was given: chevrons 8,12 20,3 32,12 / 8,22 20,13 32,22 / 8,32 20,23 32,32, trunk 20,24 to 20,38, stroke 4. */
 const GIVEN =
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="butt" stroke-linejoin="miter"><polyline points="8,12 20,3 32,12"/><polyline points="8,22 20,13 32,22"/><polyline points="8,32 20,23 32,32"/><line x1="20" y1="24" x2="20" y2="38"/></svg>'
 
@@ -21,7 +23,12 @@ const shapes = (svg: string) => [...svg.matchAll(/<(polyline|line)\s([^>]*?)\s*\
 /** The value of an attribute on the first element that has it. */
 const attr = (svg: string, name: string) => new RegExp(`\\s${name}="([^"]*)"`).exec(svg)?.[1]
 
-test('the app draws the mark as given, in the theme\'s ink', () => {
+test("the drawing is the one services' mcp draws its icon from", () => {
+  expect(shapes(MCP_ICON)).toEqual(shapes(GIVEN))
+  expect(attr(MCP_ICON.slice(MCP_ICON.indexOf('<g')), 'stroke-width')).toBe('4')
+})
+
+test("the app draws the mark as given, in the theme's ink", () => {
   const drawn = renderToStaticMarkup(Mark({ size: 28 }))
   expect(shapes(drawn)).toEqual(shapes(GIVEN))
   for (const name of ['viewBox', 'fill', 'stroke', 'stroke-width', 'stroke-linecap', 'stroke-linejoin']) expect(attr(drawn, name), name).toBe(attr(GIVEN, name))

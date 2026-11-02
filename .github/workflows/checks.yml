@@ -1,6 +1,7 @@
-# The app's checks from a clean install, on every pull request and every push to main: standard at
-# the commit in STANDARD (standard.sh), then the type-check, the tests on loopback (Vitest), the
-# build, and the browser test in Chromium (Playwright).
+# The app's checks from a clean install, on every pull request and every push to main: the standard,
+# the markets and services at their pins (standard.sh, with services' verifier and host readied to
+# run), then the type-check, the tests (Vitest), the build, and the browser test in Chromium
+# (Playwright). A test that does not run fails its run.
 
 name: checks
 
@@ -15,7 +16,7 @@ permissions:
 jobs:
   app:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -24,11 +25,11 @@ jobs:
       - name: Install
         run: |
           npm ci --no-audit --no-fund
-          ./standard.sh keys records registry/client reputation/client
+          ./standard.sh services
           npx playwright install --with-deps chromium
       - name: Type-check
         run: npm run check
-      - name: Tests on loopback
+      - name: Tests
         run: npm test
       - name: Build
         run: npm run build

@@ -1,8 +1,7 @@
 node_modules/
-dist/
-standard/
-public/circuits/
-test/browser/dist/
+/dist/
+/standard/
+/markets/
+/services/
+/test/browser/out/
 *.local
-test/browser/app-dist/
-test/browser/app-dist-next/

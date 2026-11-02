@@ -1,67 +1,54 @@
-// A new profile, made in one face: its main key mixed from the seed and its label; the person proof
-// made in the worker from the vault's note; its row written through the registry payer with one of
-// the vault's credits; its folder on the host (the hosts record, which is free, one host credit
-// into its balance, then a card with no name, its inbox open to people holding a row from the same
-// issuer); and the vault written again with the profile and without the credits spent.
+// A new profile, `<market>/<role>`, as the reference app makes it (services' mcp/test/app.ts,
+// `addProfile`), its folder funded first (its `fund`): one credit from the wallet into the new
+// folder, since a folder's first entry costs a write; the profile entry, with its market and role,
+// its host, its main key's open key (so it takes messages), both pay addresses, and a verification
+// for each stamp the Profiles folder holds, made on the device; then its label in the Profiles
+// folder. When the host refuses a write for its price, one more credit goes in and it is written
+// again. The device keeps its label and address.
 
-import { Keypair, VersionedTransaction } from '@solana/web3.js'
+import { type Body, entry, nextTime } from '@foundationforest/folders'
+import { mainKey, openingHalf, payAddresses } from '@foundationforest/keys'
 
-import { inboxKey, issuerSecret, mainKey } from '../../standard/keys/src/index.ts'
-import { hostsRecord, ownerRecord } from '../../standard/records/src/index.ts'
-import { noteFromJson } from '../../standard/registry/client/src/person.ts'
-import type { LocalProfile } from '../local.ts'
-import type { ProveRequest, Proved } from '../proof/prove.ts'
-import { publishRecords, spend } from '../services/host.ts'
-import { ServiceError } from '../services/http.ts'
-import { payerOf, register } from '../services/registry-payer.ts'
-import { latestBlockhash } from '../services/solana.ts'
-import { REGISTRY_PROGRAM, type Settings } from '../settings.ts'
-import { type AppVault, NoCredits, creditsOf, openVault, profilesOf, saveVault, spendOne, vaultKeys, withCredits } from '../vault.ts'
+import type { Services } from '../config.ts'
+import { type Profile, addProfile } from '../device.ts'
+import { NoCredits, fund } from '../services/credits.ts'
+import { NotWritten, readView, writeAll } from '../services/host.ts'
+import { addTo, openProfiles } from './profiles.ts'
 
-export type Prove = (request: ProveRequest) => Promise<Proved>
+/** A verification of `stamp` (the Profiles folder's JSON text of it) for `label`, made from the seed: the fields the profile entry carries beside `circuit`. */
+export type Prove = (seed: Uint8Array, stamp: string, label: string) => Promise<{ verifier: string; verifierName: string; label: string; proof: string }>
 
-/** Makes the profile at `label`, `market/role`; the person's profiles after, as the vault now lists them. */
-export async function makeProfile(seed: Uint8Array, label: string, s: Settings, prove: Prove): Promise<LocalProfile[]> {
-  const keys = await vaultKeys(seed)
-  const read = await openVault([s.host], keys)
-  if (!read) throw new Error('No vault was found on your host.')
-  let vault: AppVault = read.vault
-  const issued = vault.issuerNotes?.[0]
-  if (!issued) throw new Error('Your vault holds no note.')
-  const note = noteFromJson(issued.note)
-  // Both are spent below; none spent when either is missing.
-  for (const service of [s.registryPayer, s.host]) if (!creditsOf(vault).some((c) => c.service === service)) throw new NoCredits(service)
+/** How many times a write refused for its price is funded with one more credit and sent again. */
+const TOP_UPS = 3
 
-  const main = await mainKey(seed, label)
-  const { secret } = await issuerSecret(seed, issued.issuer)
-  const [payer, recentBlockhash] = await Promise.all([payerOf(s.registryPayer), latestBlockhash(s.rpc)])
-  const proved = await prove({ secret, note, label, profile: main.address, payer, recentBlockhash, programId: REGISTRY_PROGRAM })
-  const tx = VersionedTransaction.deserialize(proved.transaction)
-  tx.sign([Keypair.fromSeed(main.privateKey)])
-
-  // The row. Made already, it is this profile's: the same seed and label give the same main key.
-  let credits = creditsOf(vault)
-  try {
-    credits = (await spendOne(credits, s.registryPayer, (credit) => register(s.registryPayer, tx.serialize(), credit))).rest
-  } catch (err) {
-    if (!(err instanceof ServiceError && err.code === 'row_exists')) throw err
-  }
-
-  const hosts = [s.host]
+export async function makeProfile(s: Services, seed: Uint8Array, label: string, prove: Prove): Promise<Profile> {
   const [market, role] = label.split('/') as [string, string]
-  const now = Date.now()
-  await publishRecords(hosts, [hostsRecord(main, hosts, now)])
-  credits = (await spendOne(credits, s.host, (credit) => spend(s.host, main.address, [credit]))).rest
-  const card = {
+  const folder = await openProfiles(seed, s.host)
+  const main = await mainKey(seed, label)
+  const proofs: Body[] = []
+  for (const stamp of folder.stamps) proofs.push({ circuit: 'verification', ...(await prove(seed, stamp, label)) })
+  const body: Body = {
     market,
     role,
-    inboxKey: (await inboxKey(main.privateKey)).recipient,
-    inbox: { senders: { issuer: issued.note.issuer as string } },
-    createdAt: new Date(now).toISOString(),
+    hosts: [s.host],
+    openKey: (await openingHalf(main.secret)).openKey,
+    pay: { ...(await payAddresses(seed, label)) },
+    ...(proofs.length > 0 && { proofs }),
   }
-  await publishRecords(hosts, [ownerRecord(main, 'profile', card, now)])
-
-  vault = withCredits({ ...vault, profiles: [...(vault.profiles ?? []).filter((p) => p.label !== label), { label, hosts }] }, credits)
-  await saveVault(keys, read.hosts, vault, read.time)
-  return profilesOf(seed, vault)
+  const view = await readView(s.host, main.address)
+  if (view.current.size === 0) await fund(s.host, main.address, 1, folder.key)
+  for (let tries = 0; ; tries++) {
+    try {
+      await writeAll(s.host, [entry(main, 'profile', body, nextTime(Date.now(), view, 'profile'))])
+      break
+    } catch (err) {
+      if (!(err instanceof NotWritten && err.code === 'refused') || tries === TOP_UPS) throw err instanceof NotWritten && err.code === 'refused' ? new NoCredits() : err
+      await fund(s.host, main.address, 1, folder.key)
+    }
+  }
+  if (!folder.labels.includes(label)) await addTo(folder, s.host, 'label', { label, time: Date.now() })
+  const made = { label, address: main.address }
+  addProfile(made)
+  return made
 }
+
