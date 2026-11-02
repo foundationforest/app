@@ -1,10 +1,20 @@
-// The markets, from the directory the markets' package gives at build time (build/markets.ts), as
-// the app shows them: each market and role a pair, in the market's own words, "Tutoring · tutor".
+// The markets, from their files as the build hands them over (build/markets.ts), through the markets'
+// browser entry, which takes them as data and runs no eval: the directory, each market file, and
+// checkEntry. As the app shows them: each market and role a pair, in the market's own words,
+// "Tutoring · tutor"; each kind of entry's fields for a role; and the other side of a market.
 
-import directory from 'virtual:markets'
+import { type Field, type Fields, type Kind, type Market, SHARED, loadMarkets } from '@foundationforest/markets/browser'
+import files from 'virtual:markets'
+
+export type { Field, Fields, Kind, Market }
+
+export const markets = loadMarkets(files)
+
+/** The kinds of entry, each at `<kind>/<id>` in a profile's folder: posts, then reviews, vouches and reports. */
+export const KINDS: Kind[] = ['post', 'review', 'vouch', 'report']
 
 /** One market and role: the label a profile of it has, and how the app names it. `offers` when the role's posts are offers. */
-export type Pair = { label: string; market: string; role: string; words: string; offers: boolean }
+export type Pair = { label: string; market: string; role: string; words: string; offers: boolean; posts: 'offers' | 'requests' | 'posts' }
 
 /** A market's name in words: `home-cleaning` is Home cleaning. */
 export const marketWords = (name: string) => {
@@ -13,8 +23,8 @@ export const marketWords = (name: string) => {
 }
 
 /** Every market and role in the directory, in its order. */
-export const pairs: Pair[] = directory.markets.flatMap((m) =>
-  m.roles.map((r) => ({ label: `${m.name}/${r.role}`, market: m.name, role: r.role, words: `${marketWords(m.name)} · ${r.role}`, offers: r.posts === 'offers' })),
+export const pairs: Pair[] = markets.directory.markets.flatMap((m) =>
+  m.roles.map((r) => ({ label: `${m.name}/${r.role}`, market: m.name, role: r.role, words: `${marketWords(m.name)} · ${r.role}`, offers: r.posts === 'offers', posts: r.posts })),
 )
 
 /** The pair a label names; one the directory no longer lists is named from the label itself. */
@@ -22,5 +32,46 @@ export function pairOf(label: string): Pair {
   const found = pairs.find((p) => p.label === label)
   if (found) return found
   const [market = label, role = ''] = label.split('/')
-  return { label, market, role, words: role ? `${marketWords(market)} · ${role}` : marketWords(market), offers: false }
+  return { label, market, role, words: role ? `${marketWords(market)} · ${role}` : marketWords(market), offers: false, posts: 'posts' }
+}
+
+/**
+ * The role on the other side of `role` in `market`: the other role where it has two or more (any
+ * other), the same role where it has one (a match of two players). Undefined when the market or the
+ * role is not in the directory.
+ */
+export function otherSide(market: string, role: string): string[] {
+  const roles = markets.market(market)?.roles.map((r) => r.role) ?? []
+  if (!roles.includes(role)) return []
+  return roles.length === 1 ? roles : roles.filter((r) => r !== role)
+}
+
+/** A role's post, in its market's word for it: an offer, a request or a post. */
+export const POST_WORDS = { offers: 'Offer', requests: 'Request', posts: 'Post' } as const
+
+/** A kind's name on screen, for a profile of `label`. */
+export function kindWords(kind: Kind, label: string): string {
+  if (kind === 'post') return POST_WORDS[pairOf(label).posts]
+  return kind.charAt(0).toUpperCase() + kind.slice(1)
+}
+
+/**
+ * The fields a `kind` entry by a `role` profile holds in `market`: a post's, those of the market's
+ * post fields that are for its role; a review's, the shared ones and the market's own, those for the
+ * role of the profile it is about (`aboutRole`), all of them while that is not known; a vouch's and a
+ * report's, the shared ones.
+ */
+export function fieldsOf(market: Market, kind: Kind, role: string, aboutRole?: string): Fields {
+  const forRole = (fields: Fields, who: string | undefined): Fields =>
+    Object.fromEntries(Object.entries(fields).filter(([, f]) => !f.roles || who === undefined || f.roles.includes(who)))
+  if (kind === 'post') return forRole(market.post, role)
+  if (kind === 'review') return { ...SHARED.review, ...forRole(market.review ?? {}, aboutRole) }
+  return SHARED[kind]
+}
+
+/** The post fields a preview shows first: the market's `preview`, else description, price, then its first place field, of those it has (the markets manual's Preview). */
+export function previewOf(market: Market): string[] {
+  if (market.preview) return market.preview
+  const place = Object.keys(market.post).find((name) => market.post[name]!.type === 'place')
+  return ['description', 'price', place].filter((name): name is string => name !== undefined && name in market.post)
 }

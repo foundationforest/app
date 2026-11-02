@@ -23,6 +23,9 @@ export const standard = [
   { find: /^@foundationforest\/proofs$/, replacement: here('./standard/proofs/dist/index.js') },
 ]
 
+/** The markets' browser entry, from the checkout standard.sh builds (markets/ at MARKETS): it takes the files as data and runs no eval. */
+export const marketsEntry = [{ find: /^@foundationforest\/markets\/browser$/, replacement: here('./markets/build/dist/browser.js') }]
+
 export default defineConfig({
   plugins: [
     react(),
@@ -67,7 +70,7 @@ export default defineConfig({
       },
     }),
   ],
-  resolve: { alias: standard },
+  resolve: { alias: [...standard, ...marketsEntry] },
   define: { __COMMIT__: JSON.stringify(commit()) },
   worker: { format: 'es' },
   // Every asset a file of the app's own, never a data: URI, so the CSP (vercel.json) takes fonts and images from 'self' alone.

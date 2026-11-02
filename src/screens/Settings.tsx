@@ -1,14 +1,15 @@
-// Settings: how the person is verified, the appearance, Forget this device, and About.
+// Settings: how the person is verified, with the ID check when they have only the face check; the
+// appearance; Forget this device; and About.
 
 import { useState } from 'react'
 
-import { type Theme, forget, saveTheme, theme as savedTheme } from '../device.ts'
+import { type Check, type Theme, checks as heldChecks, forget, saveTheme, theme as savedTheme } from '../device.ts'
 import { CHECK_WORDS, useChecks, useProfiles } from '../hooks.ts'
-import type { Check } from '../flows/cards.ts'
+import { letGo } from '../opened.ts'
 import { applyTheme } from '../theme.ts'
 import { type Place, Places, Top } from '../ui.tsx'
 
-type Props = { go: (to: Place) => void; onForgot: () => void }
+type Props = { go: (to: Place) => void; onForgot: () => void; onIdCheck: () => void }
 
 const THEMES: Array<[Theme, string]> = [
   ['device', 'Device'],
@@ -16,12 +17,13 @@ const THEMES: Array<[Theme, string]> = [
   ['dark', 'Dark'],
 ]
 
-export function Settings({ go, onForgot }: Props) {
+export function Settings({ go, onForgot, onIdCheck }: Props) {
   const list = useProfiles()
   const byProfile = useChecks(list)
-  // How the person is verified: what their profiles' entries show. With none yet, the face check,
-  // the one way past Start in this version.
-  const shown = new Set<Check>(Object.values(byProfile).flat())
+  // How the person is verified: the stamps their Profiles folder holds, as this device last saw
+  // them, and what their profiles' entries show. With neither yet, the face check, the way past
+  // Start the earlier version knew.
+  const shown = new Set<Check>([...heldChecks(), ...Object.values(byProfile).flat()])
   const checks: Check[] = shown.size ? (['face', 'id'] as const).filter((c) => shown.has(c)) : ['face']
   const [theme, setTheme] = useState(savedTheme)
   const [forgetting, setForgetting] = useState(false)
@@ -38,6 +40,7 @@ export function Settings({ go, onForgot }: Props) {
       <section className="stack">
         <h2>Verified</h2>
         <p>{checks.map((c) => CHECK_WORDS[c]).join(', ')}</p>
+        {!checks.includes('id') && <button onClick={onIdCheck}>Get the ID check</button>}
       </section>
       <section className="stack">
         <h2>Appearance</h2>
@@ -56,6 +59,7 @@ export function Settings({ go, onForgot }: Props) {
           onClick={() => {
             if (!forgetting) return setForgetting(true)
             forget()
+            letGo()
             applyTheme('device')
             onForgot()
           }}

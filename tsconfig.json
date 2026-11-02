@@ -34,8 +34,8 @@
       "@foundationforest/proofs": [
         "./standard/proofs/dist/index.d.ts"
       ],
-      "@foundationforest/markets": [
-        "./markets/build/dist/index.d.ts"
+      "@foundationforest/markets/browser": [
+        "./markets/build/dist/browser.d.ts"
       ]
     }
   },

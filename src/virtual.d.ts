@@ -1,6 +1,7 @@
 declare module 'virtual:markets' {
-  const directory: import('@foundationforest/markets').Directory
-  export default directory
+  /** The markets' files, as data (build/markets.ts). */
+  const files: import('@foundationforest/markets/browser').Files
+  export default files
 }
 
 /** The commit the build was made from, its first seven characters (build/version.ts). */

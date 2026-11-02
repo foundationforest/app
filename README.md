@@ -22,7 +22,7 @@ Three places: your **Profiles**, your **Messages** and **Settings**.
 
 4. **Posting.** Everything a profile says is a post of some kind, and every kind works the same way: an offer or a request, a review of someone you dealt with, a vouch ("I know they're real and honest") or a report ("this is fake or a scam"). The form comes from the market's own fields. A review, vouch or report is about someone on the other side of the same market, and the app checks that before you unlock. A post may carry a contact (a phone, a handle, an email): the form says it's public, and that the same contact on two posts links them; on a post, it opens with a tap. Post and unlock. Edit and delete work the same way.
 
-5. **Messages.** One inbox for all your profiles: unlock once and every thread opens, each showing which of your profiles it's to and who it's from (their market, their role, and whether they're verified). Reply, or post a review of them, from the thread. A message is locked so only they can read it, and paid in tiny amounts from your profile's credits. A Share link opens the app on a new message to that profile, from one of yours on the other side of their market, or a new one.
+5. **Messages.** One inbox for all your profiles: unlock once and every thread opens, each showing which of your profiles it's to and who it's from (their market, their role, and whether they're verified). Reply, or post a review, vouch or report about them, from the thread. A message is locked so only they can read it, and paid in tiny amounts from your profile's credits; a copy of what you sent stays in your profile's own folder, locked to you, so every device you start on shows it. A Share link opens the app on a new message to that profile, from one of yours on the other side of their market, or a new one.
 
 6. **Your AI.** Add Forest to your AI app (Claude, ChatGPT) as a connector. The first time it acts, it sends you here: you see which AI app is asking, tick the profiles it can act for, unlock, and you're back in your chat. Each profile hands it an access key, never your seed or a main key; your AI app's own settings choose which of its tools it uses. With nothing set up here yet, Start and the verification run first.
 
@@ -33,7 +33,7 @@ Three places: your **Profiles**, your **Messages** and **Settings**.
 - **Your seed** is your passkey's PRF secret: a value the passkey gives only after you unlock, the same 32 bytes on every device it syncs to. The app uses it in memory for one action and drops it. Nothing secret made from it is stored; the device keeps addresses.
 - **The passkey belongs to app.forest.foundation,** so no other site can ask it for your seed, not even another page under forest.foundation.
 - **Credits.** The host charges by the byte, a tiny fraction of a cent per post or message. Each new profile gets a credit from your wallet, your Profiles folder's balance, and when one runs low the app tops it up. The host sees the wallet pay for each top-up but can't tell which profile it went to: it signed the credits blind.
-- **What the device keeps:** your passkey's id, your profiles' labels and addresses, your AI apps' names and their profiles, where you left off in each inbox, and your theme; while a verification is under way, its check and its gift. Never your seed, a key, a stamp or a message.
+- **What the device keeps:** your passkey's id, your profiles' labels and addresses, how you're verified, your AI apps' names and their profiles, where you left off in each inbox, and your theme; while a verification is under way, its check, the ID check's payment, and its gift. Never your seed, a key, a stamp or a message.
 - **Proofs** run in the background on your device, from files the app serves (about 7 MB, downloaded once).
 - **Pay addresses.** Each profile lists its own, for when payments come; the app doesn't show them yet.
 - **Same seed, same Forest.** Everything the app writes follows the standard and the reference app in services (`mcp/test/app.ts`) exactly, so any app with your seed sees the same profiles, stamps and connections.
@@ -64,6 +64,8 @@ On Vercel, at app.forest.foundation. The page talks only to our host, verifier a
 - A web app's code comes from its server each time you open it, so you trust whoever serves it. It's open source, and you can run your own.
 - Your seed can't leave this app yet: the passkey belongs to this address, and there's no export. Lose the passkey and the seed is gone.
 - One host, ours, for everything you make, and only profiles on it can be messaged from here.
+- Anyone can see when one of your profiles keeps a copy of what it sent, though not what it says or whom it's to; someone watching the other person's inbox could match the times.
+- An area in a post comes with your device's location, rounded to the kilometres you pick; without it, a post can only say online.
 - Not yet: photos, payments between people, carrying your reputation from one profile to another, moving to another host.
 - A face Didit has seen before waits for a person at the foundation.
 - A proof takes a few seconds on a phone.

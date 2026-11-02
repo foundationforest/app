@@ -3,7 +3,9 @@
 // (verifier/test/fake-didit.ts, a process of its own) and the stand-in face model, its own name and
 // seed in a directory of its own, its gifts credits at this host; the host taking the verifier's
 // sponsor's tickets. One more setting than the loop's: APP_ORIGINS, the app's address in this test,
-// where the verifier lets Didit send a person back. `./standard.sh services` readies them.
+// where the verifier lets Didit and Stripe send a person back; and Stripe, the verifier's own
+// stand-in (verifier/test/fakes.ts, FakePayments), so the ID check is for sale: the test pays a
+// payment on its page. `./standard.sh services` readies them.
 
 import { type ChildProcess, spawn } from 'node:child_process'
 import { mkdtempSync, rmSync } from 'node:fs'
@@ -14,6 +16,7 @@ import { fileURLToPath } from 'node:url'
 
 import { readConfig as hostConfig, startHost } from '../../services/host/src/host.ts'
 import { readConfig as verifierConfig, startVerifier } from '../../services/verifier/src/service.ts'
+import { FakePayments } from '../../services/verifier/test/fakes.ts'
 
 const services = fileURLToPath(new URL('../../services/', import.meta.url))
 
@@ -41,7 +44,7 @@ async function answers(url: string, child: ChildProcess): Promise<void> {
   }
 }
 
-export type Running = { verifier: string; host: string; faceKey: string; stop(): Promise<void> }
+export type Running = { verifier: string; host: string; faceKey: string; idKey: string; payments: FakePayments; stop(): Promise<void> }
 
 export async function startServices({ appOrigin, say }: { appOrigin: string; say: (line: string) => void }): Promise<Running> {
   const dir = mkdtempSync(join(tmpdir(), 'forest-app-browser-'))
@@ -68,6 +71,7 @@ export async function startServices({ appOrigin, say }: { appOrigin: string; say
     await answers(`http://127.0.0.1:${diditPort}/`, didit)
     const hostPort = await freePort()
     const host = `http://127.0.0.1:${hostPort}`
+    const payments = new FakePayments()
     const verifier = await startVerifier(
       verifierConfig({
         VERIFIER_NAME,
@@ -81,13 +85,13 @@ export async function startServices({ appOrigin, say }: { appOrigin: string; say
         DATABASE_PATH: join(dir, 'verifier', 'verifier.sqlite'),
         PORT: '0',
       }),
-      { log: log('verifier') },
+      { log: log('verifier'), payments },
     )
     closers.push(() => verifier.close())
     if (!verifier.sponsor) throw new Error('the verifier gives no gift')
     const h = await startHost(hostConfig({ DATA_DIR: join(dir, 'host'), PUBLIC_ORIGIN: host, PORT: String(hostPort), SPONSORS: verifier.sponsor }))
     closers.push(() => h.close())
-    return { verifier: verifier.url, host, faceKey: verifier.keys.face, stop }
+    return { verifier: verifier.url, host, faceKey: verifier.keys.face, idKey: verifier.keys.id, payments, stop }
   } catch (err) {
     await stop()
     throw err

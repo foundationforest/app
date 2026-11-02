@@ -15,7 +15,7 @@ import { NotWritten, readView, writeAll } from '../services/host.ts'
 export type Opened = { key: MainKey; view: View; labels: string[]; stamps: string[] }
 
 /** A random id, which names nothing: 16 random bytes, in lowercase hex. */
-const randomId = () => hex.encode(crypto.getRandomValues(new Uint8Array(16)))
+export const randomId = () => hex.encode(crypto.getRandomValues(new Uint8Array(16)))
 
 /** The Profiles folder's main key, the empty label's: its address is the wallet's. */
 export const walletKey = (seed: Uint8Array) => mainKey(seed, '')

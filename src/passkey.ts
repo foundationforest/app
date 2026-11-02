@@ -11,6 +11,8 @@
 
 import { base64urlnopad } from '@scure/base'
 
+import { Said } from './words.ts'
+
 /**
  * The PRF salt. Its bytes never change: the same passkey must give the same seed on every device
  * and at every visit, and the passkeys made with the earlier version of this app give theirs for
@@ -28,7 +30,7 @@ export const rpId = (hostname = globalThis.location?.hostname ?? ''): string => 
 const apple = () => /iPhone|iPad|iPod|Macintosh/.test(globalThis.navigator?.userAgent ?? '')
 
 /** This browser cannot ask a passkey for its PRF secret at all. */
-export class OldBrowser extends Error {
+export class OldBrowser extends Said {
   constructor() {
     super("This browser can't open Forest. Use a newer one.")
     this.name = 'OldBrowser'
@@ -36,15 +38,15 @@ export class OldBrowser extends Error {
 }
 
 /** The passkey's manager gives no PRF secret: the passkey made there was dropped (`made`), or one asked for gave none. */
-export class NoPrf extends Error {
+export class NoPrf extends Said {
   constructor(made: boolean) {
-    super(made ? `This password manager can't keep a Forest passkey. Save it in ${apple() ? 'Passwords' : 'another password manager'} instead.` : `This passkey can't open Forest. Use one saved in ${apple() ? 'Passwords' : 'another password manager'}.`)
+    super(made ? `This password manager can't keep a Forest passkey. Save it in ${apple() ? 'Passwords' : 'another password manager'} instead.` : `This passkey can't open Forest. Use one saved in ${apple() ? 'Passwords' : 'another password manager'}.`, true)
     this.name = 'NoPrf'
   }
 }
 
 /** No passkey answered: none was there, or the person closed the sheet. */
-export class NoAnswer extends Error {
+export class NoAnswer extends Said {
   constructor() {
     super('No Forest passkey answered.')
     this.name = 'NoAnswer'
@@ -52,7 +54,7 @@ export class NoAnswer extends Error {
 }
 
 /** The manager holds one of the passkeys this device knows: none is made. */
-export class HasPasskey extends Error {
+export class HasPasskey extends Said {
   constructor() {
     super('You already have a Forest passkey.')
     this.name = 'HasPasskey'
@@ -88,7 +90,7 @@ export const asksQuietly = async (): Promise<boolean> => (await capabilities()).
 /** The seed from a PRF secret: its 32 bytes, not copied, so zeroing the seed zeroes them. */
 function seedOf(secret: BufferSource): Uint8Array {
   const seed = ArrayBuffer.isView(secret) ? new Uint8Array(secret.buffer, secret.byteOffset, secret.byteLength) : new Uint8Array(secret)
-  if (seed.length !== 32) throw new Error(`The passkey gave a secret of ${seed.length} bytes, not 32.`)
+  if (seed.length !== 32) throw new Said("This passkey can't open Forest.", true)
   return seed
 }
 

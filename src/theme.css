@@ -232,7 +232,7 @@ button.danger {
   position: sticky;
   bottom: 0;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 8px;
   padding-top: 8px;
   background: var(--paper);
@@ -250,6 +250,28 @@ button.danger {
 .places .here {
   color: var(--ink);
   font-weight: 700;
+}
+
+.place-icon {
+  position: relative;
+  display: inline-flex;
+}
+
+/* How many new entries the inboxes hold. */
+.count {
+  position: absolute;
+  top: -6px;
+  left: 14px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
 }
 
 .line .spinner {
@@ -271,4 +293,193 @@ button.danger {
   to {
     transform: rotate(1turn);
   }
+}
+
+.row .aside,
+.card .last {
+  color: var(--ink-2);
+}
+
+.card .last {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.row.chosen {
+  border-color: var(--ink);
+  font-weight: 700;
+}
+
+/* A link that is the step's one button: Stripe's page, in test mode. */
+a.button {
+  min-height: var(--touch);
+  border-radius: var(--radius);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+a.button.primary {
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 700;
+}
+
+.consent {
+  font-size: 14px;
+}
+
+.pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+/* A form, one field under another: its name, then what suits its type. */
+.form,
+.field,
+.place,
+.hours,
+.slot,
+.moment {
+  display: grid;
+  gap: 8px;
+}
+
+.form {
+  gap: 16px;
+}
+
+.field .label {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.hint {
+  font-size: 14px;
+}
+
+input,
+textarea,
+select {
+  font: inherit;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--paper-2);
+  border-radius: var(--radius);
+  min-height: var(--touch);
+  padding: 10px 12px;
+  width: 100%;
+}
+
+textarea {
+  resize: vertical;
+}
+
+input[type='range'] {
+  border: none;
+  padding: 0;
+  accent-color: var(--accent);
+}
+
+input:focus,
+textarea:focus,
+select:focus,
+button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chip {
+  min-height: 40px;
+  border-radius: 999px;
+  padding: 0 14px;
+}
+
+.chip.here {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 700;
+}
+
+.money {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 8px;
+}
+
+.money select {
+  width: auto;
+}
+
+.times {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 8px;
+}
+
+.score {
+  display: grid;
+  grid-template-columns: 1fr 2ch;
+  align-items: center;
+  gap: 12px;
+}
+
+/* What a profile posted, on its card. */
+.posts {
+  display: grid;
+  gap: 8px;
+}
+
+.entry {
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px;
+  border: 1px solid var(--paper-2);
+  border-radius: var(--radius);
+}
+
+.entry .kind {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.who {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+/* A thread: theirs on the left, the person's own on the right, on the accent. */
+.thread {
+  display: grid;
+  gap: 8px;
+}
+
+.said {
+  justify-self: start;
+  max-width: 85%;
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  background: var(--paper-2);
+  color: var(--ink);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.said.mine {
+  justify-self: end;
+  background: var(--accent);
+  color: var(--on-accent);
 }

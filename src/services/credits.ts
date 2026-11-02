@@ -8,6 +8,7 @@ import { b64u } from '@foundationforest/folders'
 import type { MainKey } from '@foundationforest/keys'
 
 import { BUY_TYPE, PAYMENT_HEADER, type Pending, balancePayment, bought, buy, finish, serviceAt, spendInto } from '../../services/host/client/client.ts'
+import { Said } from '../words.ts'
 import { Refused, Unreachable } from './http.ts'
 
 /** The most credits the host takes in one spend. */
@@ -65,7 +66,7 @@ export async function fund(host: string, folder: string, n: number, wallet: Main
 }
 
 /** The wallet cannot pay for what is asked. */
-export class NoCredits extends Error {
+export class NoCredits extends Said {
   constructor() {
     super('No credits left in your wallet.')
     this.name = 'NoCredits'
