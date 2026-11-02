@@ -1,18 +1,29 @@
 // What this device keeps, in localStorage, none of it secret: the id of the passkey in use and of
 // every passkey this device has made or used (so Start never makes a second one where one is), the
-// person's profiles' labels and addresses, their theme, and, while a verification is under way, its
-// check and its gift (flows/verify.ts). Never the seed, a key, a stamp or a message.
+// person's profiles' labels and addresses, how they are verified, where they left off in each
+// profile's inbox, their theme, and, while a verification is under way, its check and session, the
+// ID check's payment and the gift's buy (flows/verify.ts). Never the seed, a key, a stamp or a message.
 //
 // Anything else at this origin is the earlier app's, built on an architecture that is gone, and is
 // cleared at the first start (`cleanOld`): its passkey ids are kept, under the same name and in the
 // same form, so the passkeys made with it count here too.
 
 import type { Pending } from '../services/host/client/client.ts'
+import type { Check } from './services/verifier.ts'
+
+export type { Check }
 
 export type Profile = { label: string; address: string }
 export type Theme = 'device' | 'light' | 'dark'
-/** A verification under way: its passkey, the check's session at the verifier, and the gift's buy, with its ticket once the verifier signs one. */
-export type Under = { passkey: string; session?: string; gift?: { reference: string; pending: Pending; ticket?: string } }
+/**
+ * A verification under way: its passkey; its check (the face check when absent, as the earlier
+ * version of this app kept it); the ID check's payment, a Stripe Checkout Session's id, kept from
+ * the moment it is made, since Stripe sends the person back with none; the check's session at the
+ * verifier and its page, so a tab closed midway opens the same check again; the gift's buy, with its
+ * ticket once the verifier signs one; and `kept`, once the stamp is in the Profiles folder and only
+ * the profiles are left to show it.
+ */
+export type Under = { passkey: string; check?: Check; payment?: string; session?: string; url?: string; gift?: { reference: string; pending: Pending; ticket?: string }; kept?: true }
 
 /** This app's storage, by the version of what it keeps. The earlier app kept none. */
 const VERSION = '2'
@@ -24,6 +35,8 @@ const KEYS = {
   profiles: 'forest.profiles',
   theme: 'forest.theme',
   under: 'forest.setup',
+  checks: 'forest.checks',
+  read: 'forest.read',
 } as const
 
 /** The key this app keeps in sessionStorage, for one tab (version.ts). */
@@ -70,6 +83,20 @@ export const profiles = (): Profile[] => read<Profile[]>(KEYS.profiles, [])
 export const saveProfiles = (list: Profile[]) => write(KEYS.profiles, [...new Map(list.map((p) => [p.label, p])).values()].sort((a, b) => a.label.localeCompare(b.label)))
 export const addProfile = (p: Profile) => saveProfiles([...profiles().filter((q) => q.label !== p.label), p])
 
+/** How the person is verified: the checks whose stamps their Profiles folder holds, as this device last saw it. */
+export const checks = (): Check[] => {
+  const kept = read<unknown[]>(KEYS.checks, [])
+  return (['face', 'id'] as const).filter((c) => kept.includes(c))
+}
+export const saveChecks = (list: Check[]) => write(KEYS.checks, [...new Set(list)].sort())
+
+/** Where the person left off in each profile's inbox, by the profile's address: the host's cursor after the last entry they opened. */
+export const cursors = (): Record<string, number> => {
+  const kept = read<Record<string, unknown>>(KEYS.read, {})
+  return Object.fromEntries(Object.entries(kept).filter((e): e is [string, number] => Number.isSafeInteger(e[1])))
+}
+export const saveCursors = (more: Record<string, number>) => write(KEYS.read, { ...cursors(), ...more })
+
 export const theme = (): Theme => {
   const t = read<string>(KEYS.theme, 'device')
   return t === 'light' || t === 'dark' ? t : 'device'
@@ -80,9 +107,9 @@ export const under = (): Under | null => read<Under | null>(KEYS.under, null)
 export const keepUnder = (u: Under) => write(KEYS.under, u)
 export const endUnder = () => write(KEYS.under, undefined)
 
-/** Forget this device: the profiles, the theme, the passkey in use and any verification under way. The ids of the passkeys it knows stay, so Start asks for them and never makes a second one. */
+/** Forget this device: the profiles, how they are verified, where each inbox was left off, the theme, the passkey in use and any verification under way. The ids of the passkeys it knows stay, so Start asks for them and never makes a second one. */
 export function forget(): void {
-  for (const key of [KEYS.passkey, KEYS.profiles, KEYS.theme, KEYS.under]) store().removeItem(key)
+  for (const key of [KEYS.passkey, KEYS.profiles, KEYS.checks, KEYS.read, KEYS.theme, KEYS.under]) store().removeItem(key)
   globalThis.dispatchEvent?.(new Event(CHANGED))
 }
 

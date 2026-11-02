@@ -4,21 +4,20 @@
 
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 
-import { NotFinished } from './flows/verify.ts'
-import { HasPasskey, NoAnswer, OldBrowser } from './passkey.ts'
-import { NoCredits } from './services/credits.ts'
-import { Unreachable } from './services/http.ts'
+import { useNewCount } from './hooks.ts'
 import { Reloading } from './version.ts'
+import { SOMETHING, Said } from './words.ts'
 
 export type Note = { text: string; red: boolean }
 
 /** Something still missing, said in a quiet line. */
-export class Quiet extends Error {}
+export class Quiet extends Said {}
 
-/** What went wrong, as one line: quiet for what is still missing (a service that did not answer, credits, a newer browser), red for the rest. */
+/** What went wrong, as one line: the app's own words for it (words.ts), or, for anything it has no words for, one quiet line; no code ever reaches the screen. */
 export function noteOf(err: unknown): Note {
-  const quiet = [Quiet, Unreachable, OldBrowser, NoCredits, HasPasskey, NoAnswer, NotFinished].some((kind) => err instanceof kind)
-  return { text: err instanceof Error ? err.message : String(err), red: !quiet }
+  if (err instanceof Said) return { text: err.message, red: err.red }
+  console.error(err)
+  return { text: SOMETHING, red: false }
 }
 
 export function Line({ note }: { note: Note | null }) {
@@ -75,6 +74,11 @@ export const ProfilesIcon = () => (
     <path d="M4 21a8 8 0 0 1 16 0" />
   </Icon>
 )
+export const MessagesIcon = () => (
+  <Icon>
+    <path d="M4 5h16v11H9l-5 4z" />
+  </Icon>
+)
 export const SettingsIcon = () => (
   <Icon>
     <line x1="4" y1="6" x2="20" y2="6" />
@@ -100,20 +104,32 @@ export function Top({ onBack, children }: { onBack?: () => void; children?: Reac
   )
 }
 
-export type Place = 'profiles' | 'settings'
+export type Place = 'profiles' | 'messages' | 'settings'
 
-/** The places, at the bottom: Profiles and Settings. */
+const PLACES: Array<[Place, string, () => ReactNode]> = [
+  ['profiles', 'Profiles', ProfilesIcon],
+  ['messages', 'Messages', MessagesIcon],
+  ['settings', 'Settings', SettingsIcon],
+]
+
+/** The places, at the bottom: Profiles, Messages, with how many new entries every inbox holds, and Settings. */
 export function Places({ at, go }: { at: Place; go: (to: Place) => void }) {
+  const count = useNewCount()
   return (
     <nav className="places">
-      <button className={at === 'profiles' ? 'here' : ''} aria-current={at === 'profiles' ? 'page' : undefined} onClick={() => go('profiles')}>
-        <ProfilesIcon />
-        Profiles
-      </button>
-      <button className={at === 'settings' ? 'here' : ''} aria-current={at === 'settings' ? 'page' : undefined} onClick={() => go('settings')}>
-        <SettingsIcon />
-        Settings
-      </button>
+      {PLACES.map(([place, words, PlaceIcon]) => (
+        <button key={place} className={at === place ? 'here' : ''} aria-current={at === place ? 'page' : undefined} onClick={() => go(place)}>
+          <span className="place-icon">
+            <PlaceIcon />
+            {place === 'messages' && count > 0 && (
+              <span className="count" aria-label={`${count} new`}>
+                {count}
+              </span>
+            )}
+          </span>
+          {words}
+        </button>
+      ))}
     </nav>
   )
 }

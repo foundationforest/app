@@ -1,16 +1,24 @@
 // How the app is built and served: Vercel runs ./standard.sh, then the build; the strict content
 // security policy lets the page reach only its own origin and the services in its one config file;
-// a missing chunk is a 404, never the page, so a page left open across a deploy reloads; and the
-// markets come from the directory, in each market's words.
+// a missing chunk is a 404, never the page, so a page left open across a deploy reloads; the markets
+// come from the directory, in each market's words, through the browser entry; and what the app says
+// is the verifier's consent screen word for word, and its own line for every code a service answers.
 
 import { readFileSync } from 'node:fs'
 
 import { expect, test } from 'vitest'
 
-import { directory } from '../build/markets.ts'
+import { files } from '../build/markets.ts'
 import { proofFiles } from '../build/proofs.ts'
 import { config } from '../src/config.ts'
-import { marketWords, pairOf, pairs } from '../src/markets.ts'
+import { CONSENT } from '../src/consent.ts'
+import { rounded } from '../src/fields/Place.tsx'
+import { rfc3339 } from '../src/fields/Moment.tsx'
+import { kindWords, marketWords, otherSide, pairOf, pairs } from '../src/markets.ts'
+import { contactHref } from '../src/show.ts'
+import { HOST_CODES, SOMETHING, VERIFIER_CODES, entrySays, fieldWords, verifierSays } from '../src/words.ts'
+
+const readme = (path: string) => readFileSync(new URL(path, import.meta.url), 'utf8')
 
 const vercel = JSON.parse(readFileSync(new URL('../vercel.json', import.meta.url), 'utf8'))
 const csp: string = vercel.headers.find((h: any) => h.source === '/(.*)').headers.find((h: any) => h.key === 'Content-Security-Policy').value
@@ -34,7 +42,7 @@ test('the CSP: the page reaches its own origin and its verifier, host and connec
 test('every path but a file is the page; a missing chunk or proving file is a 404', () => {
   const [rule] = vercel.rewrites
   const page = (path: string) => new RegExp(`^(?:${rule.source})$`).test(path)
-  for (const path of ['/', '/back', '/new', '/settings', '/profile', '/message']) expect(page(path), path).toBe(true)
+  for (const path of ['/', '/back', '/new', '/settings', '/profile', '/message', '/messages', '/thread', '/post', '/id']) expect(page(path), path).toBe(true)
   for (const path of ['/assets/index-abc.js', '/assets/x', '/proofs/abc', '/sw.js', '/manifest.webmanifest']) expect(page(path), path).toBe(false)
   expect(vercel.redirects).toBeUndefined()
 })
@@ -46,11 +54,69 @@ test("the proving files: the standard's committed setup, each under the SHA-256 
   expect(total / 1e6, 'about 7 MB').toBeCloseTo(6.7, 0)
 })
 
-test("the markets: every role in the directory, in its market's words, one pick each", async () => {
-  const dir = await directory()
+test("the markets: every role in the directory, in its market's words, one pick each", () => {
+  const dir = files().directory
   expect(pairs.length).toBe(dir.markets.reduce((n, m) => n + m.roles.length, 0))
   expect(pairOf('tutoring/tutor')).toMatchObject({ words: 'Tutoring · tutor', offers: true })
   expect(pairOf('home-cleaning/client')).toMatchObject({ words: 'Home cleaning · client', offers: false })
   expect(marketWords('software-development')).toBe('Software development')
   expect(new Set(pairs.map((p) => p.label)).size).toBe(pairs.length)
+})
+
+test('the markets: each role\'s other side, and its post in its own word', () => {
+  expect(otherSide('tutoring', 'tutor')).toEqual(['student'])
+  expect(otherSide('tennis-matches', 'player'), 'one role: a player plays a player').toEqual(['player'])
+  expect(otherSide('tutoring', 'nobody')).toEqual([])
+  expect([kindWords('post', 'tutoring/tutor'), kindWords('post', 'tutoring/student'), kindWords('post', 'tennis-matches/player'), kindWords('vouch', 'tutoring/tutor')]).toEqual(['Offer', 'Request', 'Post', 'Vouch'])
+})
+
+test("the ID check's consent screen: the verifier's, word for word, at SERVICES", () => {
+  const text = readme('../services/verifier/README.md')
+  const block = text.slice(text.indexOf('**The consent screen.**')).split('\n\n')[1]!
+  expect(CONSENT).toBe(block.split('\n').map((l) => l.replace(/^> /, '')).join(' '))
+})
+
+test('every code the verifier and the host answer has its own plain line, and none reaches the screen', () => {
+  const verifier = readme('../services/verifier/README.md')
+  const errors = verifier.slice(verifier.indexOf('Errors are `{"error": "<code>"}`'), verifier.indexOf('## How we run it'))
+  const listed = [...errors.matchAll(/`(?:\d{3} )?([a-zA-Z_]+)`/g)].map(([, code]) => code!)
+  expect(listed.length, 'the README lists them').toBeGreaterThan(30)
+  for (const code of listed) expect(VERIFIER_CODES, code).toContain(code)
+  const folders = readme('../standard/folders/README.md')
+  const plug = [...folders.matchAll(/\[`[a-z_]+`(?:,\s+`[a-z_]+`)*\]/g)].flatMap((m) => m[0].match(/[a-z_]+/g)!)
+  expect(plug, "the standard's checks, every one").toEqual(expect.arrayContaining(['canonical', 'signature', 'future', 'older', 'no_inbox', 'hash']))
+  const host = readme('../services/host/README.md')
+  const front = [...host.slice(host.indexOf('## Its API'), host.indexOf('## How we run it')).matchAll(/`([a-z_]+)`(?: \(\d{3})?/g)].map(([, c]) => c!).filter((c) => !/^(profile|after|to|folder|credits|ticket|balance|key|signature|id)$/.test(c) || HOST_CODES.includes(c))
+  for (const code of [...plug, ...front]) expect(HOST_CODES, code).toContain(code)
+  for (const code of VERIFIER_CODES) {
+    const said = verifierSays(code, 'id')
+    expect(said.message, code).not.toMatch(/[a-z]+_[a-z]+|\{check\}/)
+  }
+  expect(verifierSays('face_check_unavailable').message).toBe("The face check isn't available right now. Try again in a minute.")
+  expect([verifierSays('duplicate_document').message, verifierSays('duplicate_document').red]).toEqual(['This ID was already used to verify someone else.', true])
+  expect(verifierSays('not_for_sale').message).toBe("The ID check isn't available yet.")
+  expect(verifierSays('a_code_from_tomorrow').message).toBe(SOMETHING)
+})
+
+test("checkEntry's words, as one line naming the field by its name in words", () => {
+  expect(fieldWords('groupSize')).toBe('Group size')
+  expect(entrySays('subjects takes a list, each different, each one of maths, physics', ['subjects']).message).toBe("Subjects doesn't fit.")
+  expect(entrySays('a post in tutoring has no field colour', ['colour']).message).toBe("Colour doesn't fit.")
+  expect(entrySays('tutoring is not a market in the directory', ['description']).message).toBe("This doesn't fit the market.")
+})
+
+test('a contact opens with a tap: a phone, an email, a link; a handle shows as it is', () => {
+  expect(contactHref('+34 600 123 456')).toBe('tel:+34600123456')
+  expect(contactHref('ada@example.com')).toBe('mailto:ada@example.com')
+  expect(contactHref('https://example.com/ada')).toBe('https://example.com/ada')
+  expect(contactHref('@ada')).toBeUndefined()
+})
+
+test('a place: a point rounded to the kilometres picked, as decimal text; a moment with its offset', () => {
+  const near = rounded({ lat: 40.41678, lon: -3.70379 }, 5)
+  const again = rounded({ lat: 40.4201, lon: -3.7012 }, 5)
+  expect(near, 'two points a few hundred metres apart round to one').toEqual(again)
+  expect(near.lat).toMatch(/^-?\d+\.\d{4}$/)
+  expect(rfc3339('2026-11-02T18:00')).toMatch(/^2026-11-02T18:00:00[+-]\d\d:\d\d$/)
+  expect(rfc3339('')).toBeUndefined()
 })

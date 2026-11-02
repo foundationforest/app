@@ -12,7 +12,7 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "check": "tsc --noEmit",
+    "check": "tsc --noEmit && tsc --noEmit -p test/verifier",
     "test": "vitest run",
     "test:browser": "tsc --noEmit -p test/browser && node --disable-warning=ExperimentalWarning --test --test-force-exit --test-concurrency=1 --test-reporter=spec --test-reporter-destination=stdout --test-reporter=./test/browser/no-skips.ts --test-reporter-destination=stderr test/browser/run.ts"
   },

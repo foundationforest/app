@@ -9,25 +9,35 @@
 //
 //  1. Start: one button; with no passkey on this device, no sheet, and Make one; the passkey made
 //     for app.forest.foundation.
-//  2. Get verified: the face check in a tab of its own, opened on the tap, which Didit's page sends
-//     back to /back, where it closes itself; the gift collected into the wallet; the stamp kept in
-//     the Profiles folder; nothing of the seed kept.
+//  2. Get verified: Face, free, or ID, $5; the face check in a tab of its own, opened on the tap,
+//     which Didit's page sends back to /back, where it closes itself; the gift collected into the
+//     wallet; the stamp kept in the Profiles folder; nothing of the seed kept.
 //  3. A new profile: one pick, one unlock, the verification proven in the worker; its profile entry
 //     on the host, its verification checking as any reader checks it; its card, how it is verified,
 //     and Share, which copies its message link.
 //  4. Settings: how the person is verified, the appearance, About.
-//  5. A second browser, with the same passkey, answered from the first, as a phone answers through
+//  5. Two people, each in their own browser with their own passkey: the first posts an offer from
+//     its card (the market's own fields, its contact one tap away) and copies its Share link; the
+//     second opens it with nothing set up, goes through Start and the face check, makes the
+//     profile on the other side, and messages; the first sees it counted with nothing unlocked,
+//     opens every inbox in one unlock, sees who it is from, Verified, and replies; the second reads
+//     the reply beside what they sent, and reviews the tutor from the thread, naming the offer.
+//  6. A second browser, with the same passkey, answered from the first, as a phone answers through
 //     the passkey sheet's QR code: Start finds the profile and the stamp.
-//  6. One passkey per person: after Forget, Start finds the passkey and asks nothing more; with no
+//  7. One passkey per person: after Forget, Start finds the passkey and asks nothing more; with no
 //     passkey answering, Make one is refused the one this device knows.
-//  7. Held for review: Being reviewed, the app asking all the while; approved, Continue, one unlock.
-//  8. A manager that gives no PRF secret: its passkey dropped, the line naming another. A browser
+//  8. Held for review: Being reviewed, the app asking all the while; approved, Continue, one unlock.
+//  9. A manager that gives no PRF secret: its passkey dropped, the line naming another. A browser
 //     that cannot ask for PRF: one quiet line.
-//  9. The passkey belongs to app.forest.foundation: another page under forest.foundation is refused.
-// 10. The build: its manifest, its service worker in control, installable.
-// 11. A deploy while the app is open: the next version takes over and the old proof worker is gone;
+// 10. The passkey belongs to app.forest.foundation: another page under forest.foundation is refused.
+// 11. The build: its manifest, its service worker in control, installable.
+// 12. A deploy while the app is open: the next version takes over and the old proof worker is gone;
 //     the page reloads once, back on New profile, and the profile is made.
-// 12. Nothing the app did, through all of it, was refused by the CSP.
+// 13. The ID check, from Settings: the verifier's consent screen word for word; paid through the
+//     verifier's own stand-in for Stripe (its test card named first), the payment kept on the device
+//     through Stripe's page; the check in its own tab; one unlock; both badges on every profile.
+// 14. A declined check: one red line, and Start again opens a new check that passes.
+// 15. Nothing the app did, through all of it, was refused by the CSP.
 //
 // SHOTS=<dir> keeps a screenshot of each screen there, light and dark.
 
@@ -127,7 +137,7 @@ async function newPerson(p: Phone) {
   await button(p.page, 'Make one').click()
   await p.page.getByRole('heading', { name: 'Get verified' }).waitFor()
   const tab = p.context.waitForEvent('page')
-  await button(p.page, 'Start').click()
+  await button(p.page, /^Face/).click()
   await (await tab).waitForEvent('close')
 }
 
@@ -183,10 +193,11 @@ test('Start: one button; no passkey on this device, so no sheet, and Make one; t
   say('Start: no sheet with no passkey here; Make one made it for app.forest.foundation')
 })
 
-test('Get verified: the face check in its own tab, back through /back; the gift in the wallet, the stamp in the Profiles folder', async () => {
+test('Get verified: Face, free, or ID, $5; the face check in its own tab, back through /back; the gift in the wallet, the stamp in the Profiles folder', async () => {
   const { page, context } = first
+  assert.ok(await button(page, /^ID\s*\$5$/).isVisible(), 'and the ID check beside it')
   const tab = context.waitForEvent('page')
-  await button(page, 'Start').click()
+  await button(page, /^Face\s*Free$/).click()
   const didit = await tab
   await didit.waitForEvent('close')
   say(`the check's tab opened on the tap, went to ${new URL(didit.url()).pathname} and closed itself`)
@@ -206,7 +217,8 @@ test('Get verified: the face check in its own tab, back through /back; the gift 
   const stamp = stampFromJson(JSON.parse((await openLocked(body, identity)).stamp as string))
   assert.equal(stamp.verifier, services.faceKey, "the stamp from the verifier's face key")
   const local = await kept(page)
-  assert.deepEqual(Object.keys(local).sort(), ['forest.passkey', 'forest.passkeys', 'forest.v'])
+  assert.deepEqual(Object.keys(local).sort(), ['forest.checks', 'forest.passkey', 'forest.passkeys', 'forest.v'])
+  assert.deepEqual(JSON.parse(local['forest.checks']!), ['face'], 'how the person is verified')
   for (const secret of [Buffer.from(seed).toString('hex'), Buffer.from(seed).toString('base64url'), String(stamp.signature.S)]) assert.ok(!JSON.stringify(local).includes(secret), 'nothing of the seed or the stamp kept')
   say(`verified: the stamp in the Profiles folder, the wallet at ${left} credits`)
 })
@@ -255,6 +267,112 @@ test('Settings: how the person is verified, the appearance, About', async () => 
   assert.equal(await page.evaluate(() => document.documentElement.dataset.theme), undefined)
   assert.match((await page.getByText(/^Version /).textContent()) ?? '', /^Version ([0-9a-f]{7}|dev)$/)
   await button(page, 'Profiles').click()
+})
+
+const ASK = 'Is Tuesday at six free?'
+const YES = 'Tuesday at six, yes.'
+const OFFER = 'Maths for secondary school, one hour online.'
+
+/** The live entries of a folder under `kind/`, as the host serves it now. */
+const entriesOf = async (address: string, kind: string) => [...liveContent(await readFolder([services.host], address, Date.now()))].filter(([path]) => path.startsWith(`${kind}/`))
+
+test('two people, each with their own passkey: one posts an offer, the other finds it by its address and messages it, the first replies, and the second reviews', async () => {
+  const { page, counts } = first
+  // The offer, from the tutor's card, in the market's own fields.
+  await page.locator('button.card', { hasText: 'Tutoring' }).click()
+  await button(page, 'Post').click()
+  await button(page, 'Offer').click()
+  await page.getByRole('heading', { name: 'Offer' }).waitFor()
+  await page.getByLabel('Description').fill(OFFER)
+  await page.getByLabel('Price').fill('30')
+  await page.getByLabel('Per').fill('hour')
+  await page.getByRole('group', { name: 'Subjects' }).getByRole('button', { name: 'Maths' }).click()
+  await page.getByRole('group', { name: 'Place' }).getByRole('button', { name: 'Online' }).click()
+  await page.getByLabel('Contact').fill('ada@example.com')
+  await page.getByText('Public. The same contact on two posts links them.').waitFor()
+  await shot(page, 'post-offer')
+  let asked = counts.asserted
+  await button(page, 'Post').click()
+  const entry = page.locator('.entry', { hasText: OFFER })
+  await entry.waitFor({ timeout: 60_000 })
+  assert.equal(counts.asserted - asked, 1, 'one unlock')
+  assert.equal(await entry.getByRole('link', { name: 'ada@example.com' }).getAttribute('href'), 'mailto:ada@example.com', 'its contact one tap away')
+  const posts = await entriesOf(tutor, 'post')
+  assert.equal(posts.length, 1)
+  const [offerPath, offer] = posts[0]!
+  assert.match(offerPath, /^post\/[0-9a-f]{32}$/, 'at a random id')
+  assert.deepEqual(offer.entry.body, { description: OFFER, price: { amount: '30', currency: 'USD', per: 'hour' }, subjects: ['maths'], place: { online: true }, contact: 'ada@example.com' })
+  await button(page, 'Share').click()
+  await button(page, 'Copied').waitFor()
+  const link = await page.evaluate(() => navigator.clipboard.readText())
+  await shot(page, 'card-posts')
+
+  // The second person opens the link with nothing set up: Start and the face check first, then the message.
+  const second = await phone()
+  await second.page.goto(link)
+  await button(second.page, 'Start').click()
+  await button(second.page, 'Make one').click()
+  await second.page.getByRole('heading', { name: 'Get verified' }).waitFor()
+  const tab = second.context.waitForEvent('page')
+  await button(second.page, /^Face/).click()
+  await (await tab).waitForEvent('close')
+  await button(second.page, 'New profile: Tutoring · student').click({ timeout: 60_000 })
+  await second.page.getByLabel('Message').waitFor({ timeout: 120_000 })
+  assert.equal(new URL(second.page.url()).search, '', "the profile's address out of the path")
+  await second.page.locator('.who', { hasText: 'Tutoring · tutor' }).getByText('Verified').waitFor()
+  await shot(second.page, 'message')
+  await second.page.getByLabel('Message').fill(ASK)
+  await button(second.page, 'Send').click()
+  await second.page.locator('.said.mine', { hasText: ASK }).waitFor({ timeout: 60_000 })
+  const student = JSON.parse((await kept(second.page))['forest.profiles']!)[0].address as string
+
+  // The first: counted with nothing unlocked; one unlock opens every inbox; who it is from; the reply.
+  await button(page, 'Back').click()
+  await page.locator('.places .count', { hasText: '1' }).waitFor({ timeout: 45_000 })
+  asked = counts.asserted
+  await button(page, /Messages$/).click()
+  await button(page, 'Open').click()
+  const row = page.locator('button.card', { hasText: 'Tutoring · student' })
+  await row.getByText('Verified').waitFor({ timeout: 60_000 })
+  assert.equal(counts.asserted - asked, 1, 'one unlock opens every inbox')
+  await row.getByText('To your Tutoring · tutor').waitFor()
+  await page.locator('.places .count').waitFor({ state: 'detached' })
+  await shot(page, 'messages')
+  await row.click()
+  await page.getByText(ASK).waitFor()
+  await page.getByLabel('Reply').fill(YES)
+  await button(page, 'Send').click()
+  await page.locator('.said.mine', { hasText: YES }).waitFor({ timeout: 60_000 })
+  await shot(page, 'thread')
+  assert.equal((await entriesOf(tutor, 'sent')).length, 1, "the reply's copy, in the tutor's own folder")
+
+  // The second reads the reply beside what they sent, and reviews the tutor from the thread.
+  await button(second.page, 'Back').click()
+  await second.page.locator('.places .count', { hasText: '1' }).waitFor({ timeout: 45_000 })
+  await button(second.page, /Messages$/).click()
+  await button(second.page, 'Open').click()
+  await second.page.locator('button.card', { hasText: 'Tutoring · tutor' }).click()
+  await second.page.locator('.said.mine', { hasText: ASK }).waitFor()
+  await second.page.locator('.said:not(.mine)', { hasText: YES }).waitFor()
+  await button(second.page, 'Post').click()
+  await button(second.page, 'Review').click()
+  await second.page.locator('.who', { hasText: 'Tutoring · tutor' }).waitFor()
+  const score = second.page.getByLabel('Score')
+  await score.focus()
+  for (let i = 0; i < 4; i++) await score.press('ArrowRight')
+  await second.page.locator('.score strong', { hasText: '9' }).waitFor()
+  await second.page.getByLabel('Text').fill('Clear and patient.')
+  await second.page.getByRole('button', { name: OFFER }).click()
+  await shot(second.page, 'post-review')
+  await button(second.page, 'Post').click()
+  await second.page.getByLabel('Reply').waitFor({ timeout: 60_000 })
+  const reviews = await entriesOf(student, 'review')
+  assert.equal(reviews.length, 1)
+  const [, review] = reviews[0]!
+  assert.deepEqual(review.entry.body, { subject: tutor, score: '9', text: 'Clear and patient.', post: `${tutor}/${offerPath}` }, 'about the tutor, naming the offer')
+  await second.context.close()
+  await button(page, 'Back').click()
+  say('two people: an offer posted, found by its Share link, messaged, replied to, reviewed')
 })
 
 test("a second browser, the same passkey answering from the first, as a phone answers through the sheet's QR code: Start finds the profile and the stamp", async () => {
@@ -426,6 +544,85 @@ test('a deploy while the app is open: the old proof worker gone, the page reload
   await page.getByRole('heading', { name: 'Clothing' }).waitFor({ timeout: 120_000 })
   assert.equal(loads.length, 1, 'and no reload more')
   say('a deploy while open: one reload onto the next version, and the profile made')
+})
+
+test('the ID check through the stand-in Stripe: consent word for word, paid, checked in its own tab, one unlock, and both badges on every profile', async () => {
+  const { page, context, counts } = first
+  // Stripe's Checkout page, the verifier's own stand-in's: paid at once, and back to the app's page, paid, as Stripe sends the person.
+  await context.route('https://checkout.stripe.example/**', (route) => {
+    const payment = new URL(route.request().url()).pathname.split('/').pop()!
+    services.payments.pay(payment)
+    return route.fulfill({ contentType: 'text/html', body: `<script>location.replace(${JSON.stringify(services.payments.returnUrls.get(payment))})</script>` })
+  })
+  await page.goto(APP)
+  await button(page, 'Settings').click()
+  await button(page, 'Get the ID check').click()
+  const verifier = readFileSync(`${app}services/verifier/README.md`, 'utf8')
+  const consent = verifier.slice(verifier.indexOf('**The consent screen.**')).split('\n\n')[1]!.split('\n').map((l) => l.replace(/^> /, '')).join(' ')
+  assert.equal(await page.locator('.consent').textContent(), consent, "the verifier's consent screen, word for word")
+  await shot(page, 'consent')
+  await button(page, 'Pay $5').click()
+  await page.getByText('Test mode: pay with the card 4242 4242 4242 4242.').waitFor()
+  const payment = JSON.parse((await kept(page))['forest.setup']!).payment as string
+  assert.match(payment, /^cs_test_/, "the payment's id kept on the device before Stripe")
+  await page.getByRole('link', { name: 'Go to Stripe' }).click()
+  await page.waitForURL(`${APP}id`)
+  assert.equal(JSON.parse((await kept(page))['forest.setup']!).payment, payment, 'back from Stripe, nothing lost')
+  const tab = context.waitForEvent('page')
+  await button(page, 'Start').click()
+  await (await tab).waitForEvent('close')
+  await page.getByText('Finish in the other tab.').waitFor()
+  await shot(page, 'id-away')
+  const asked = counts.asserted
+  await button(page, 'Continue').click()
+  await button(page, 'New profile').waitFor({ timeout: 180_000 })
+  assert.equal(counts.asserted - asked, 1, 'one unlock: the stamp, its gift, and every profile')
+  const cards = page.locator('button.card')
+  const n = await cards.count()
+  assert.ok(n >= 2, `every profile: ${n}`)
+  for (let i = 0; i < n; i++) for (const badge of ['Face check', 'ID check']) await cards.nth(i).getByText(badge).waitFor()
+  for (const label of JSON.parse((await kept(page))['forest.profiles']!) as Array<{ address: string }>) {
+    const body = (await readFolder([services.host], label.address, Date.now())).current.get('profile')?.entry.body
+    const keys: string[] = []
+    for (const proof of proofsOf(body).filter((p) => p.circuit === 'verification')) {
+      const check = verificationCheck(proof, label.address)
+      assert.ok(check && (await checkVerification(check)), 'each verification checks, as any reader checks it')
+      keys.push(proof.verifier as string)
+    }
+    assert.deepEqual(keys.sort(), [services.faceKey, services.idKey].sort())
+  }
+  assert.equal((await kept(page))['forest.setup'], undefined, 'nothing of the verification left on the device')
+  await shot(page, 'profiles-both')
+  await button(page, 'Settings').click()
+  await page.getByText('Face check, ID check').waitFor()
+  assert.equal(await button(page, 'Get the ID check').count(), 0)
+  await button(page, 'Profiles').click()
+  say('the ID check: paid through the stand-in Stripe, one unlock, both badges on every profile')
+})
+
+test('a declined check: one red line, and Start again opens a new check that passes', async () => {
+  const p = await phone()
+  // The verifier answers the first stamp asked for as Didit declined it; then as it is.
+  let asked = 0
+  await p.context.route(`${services.verifier}/face/stamp`, (route) => {
+    const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': 'content-type', 'access-control-allow-methods': 'POST' }
+    if (route.request().method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors })
+    if (asked++ === 0) return route.fulfill({ status: 403, headers: { ...cors, 'content-type': 'application/json' }, body: '{"error":"declined"}' })
+    return route.continue()
+  })
+  await newPerson(p)
+  const line = p.page.getByText("The check didn't pass. Start again.")
+  await line.waitFor()
+  assert.equal(await line.getAttribute('class'), 'line red')
+  await shot(p.page, 'declined')
+  const sessions = JSON.parse((await kept(p.page))['forest.setup']!)
+  assert.equal(sessions.session, undefined, 'the declined session dropped')
+  const tab = p.context.waitForEvent('page')
+  await button(p.page, 'Start').click()
+  await (await tab).waitForEvent('close')
+  await button(p.page, 'New profile').waitFor({ timeout: 60_000 })
+  assert.ok(asked >= 2)
+  await p.context.close()
 })
 
 test('nothing the app did was refused by the CSP', () => {

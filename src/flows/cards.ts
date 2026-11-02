@@ -4,11 +4,11 @@
 
 import { proofsOf } from '@foundationforest/folders'
 
-import { type About, about } from '../services/verifier.ts'
+import { type About, type Check, about } from '../services/verifier.ts'
 import { readView } from '../services/host.ts'
 import type { Services } from '../config.ts'
 
-export type Check = 'face' | 'id'
+export type { Check }
 
 /** The checks a profile entry's verifications are from, at this verifier. */
 export function checksOf(body: unknown, verifier: About): Check[] {

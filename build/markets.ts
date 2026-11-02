@@ -1,25 +1,29 @@
-// The markets directory, read at build time through the markets' own package
-// (@foundationforest/markets, markets/build/ at MARKETS) and handed to the app as the module
-// `virtual:markets`. The package reads its checkout from disk, so it runs here, in Node, never in
-// the page; its dist is loaded as it is, by its path, so its own dependencies come from its own
-// node_modules.
+// The markets, read at build time from the markets checkout (markets/ at MARKETS) and handed to the
+// app as data, the module `virtual:markets`: directory.json, build/types.json and the file of each
+// market the directory lists, as the markets' browser entry takes them
+// (@foundationforest/markets/browser, which src/markets.ts runs in the page, with no eval). The page
+// reads no files; this runs in Node, at the build.
 
-import { fileURLToPath, pathToFileURL } from 'node:url'
+import { readFileSync } from 'node:fs'
 import type { Plugin } from 'vite'
 
-const CHECKOUT = fileURLToPath(new URL('../markets/', import.meta.url))
+import type { Directory, Files, Market } from '@foundationforest/markets/browser'
+
+const CHECKOUT = new URL('../markets/', import.meta.url)
 const ID = 'virtual:markets'
 
-/** The directory, as the markets' package loads it from the checkout. */
-export async function directory(): Promise<import('@foundationforest/markets').Directory> {
-  const { loadMarkets } = (await import(pathToFileURL(`${CHECKOUT}build/dist/index.js`).href)) as typeof import('@foundationforest/markets')
-  return loadMarkets(CHECKOUT).directory
+const read = (path: string): unknown => JSON.parse(readFileSync(new URL(path, CHECKOUT), 'utf8'))
+
+/** The files the browser entry takes, from the checkout. */
+export function files(): Files {
+  const directory = read('directory.json') as Directory
+  return { directory, types: read('build/types.json'), markets: directory.markets.map(({ name }) => read(`markets/${name}.json`) as Market) }
 }
 
 export function markets(): Plugin {
   return {
     name: 'forest:markets',
     resolveId: (id) => (id === ID ? `\0${ID}` : undefined),
-    load: async (id) => (id === `\0${ID}` ? `export default ${JSON.stringify(await directory())}` : undefined),
+    load: (id) => (id === `\0${ID}` ? `export default ${JSON.stringify(files())}` : undefined),
   }
 }

@@ -11,6 +11,7 @@ import { passkeys } from '../device.ts'
 import { type Entered, enter } from '../flows/start.ts'
 import { Mark } from '../mark.tsx'
 import { HasPasskey, NoAnswer, type Passkey, ask, asksQuietly, make } from '../passkey.ts'
+import { proveInWorker } from '../proof/prove.ts'
 import { Line, Spinner, UnlockIcon, useAction } from '../ui.tsx'
 
 type Props = { onEntered: (entered: Entered, passkey: Passkey) => void }
@@ -22,7 +23,7 @@ export function Start({ onEntered }: Props) {
   /** A passkey answered: where the person stands. The seed goes on with them only to the verification. */
   const entered = async (passkey: Passkey) => {
     try {
-      const to = await enter(config, passkey)
+      const to = await enter(config, passkey, proveInWorker)
       if (to.to !== 'verify') passkey.seed.fill(0)
       onEntered(to, passkey)
     } catch (err) {
