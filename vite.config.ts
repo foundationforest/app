@@ -1,12 +1,33 @@
+import { fileURLToPath } from 'node:url'
+
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import { defineConfig } from 'vitest/config'
 
-import { PAPER, shell } from './shell.ts'
+import { markets } from './build/markets.ts'
+import { proofs } from './build/proofs.ts'
+import { PAPER, shell } from './build/shell.ts'
+import { commit } from './build/version.ts'
+
+const here = (path: string) => fileURLToPath(new URL(path, import.meta.url))
+
+/**
+ * The standard's packages, by name, from the checkout standard.sh builds (standard/ at STANDARD):
+ * the app's code and services' credits client (services/host/client/client.ts) import them so.
+ * Their own dependencies come from the standard's node_modules. tsconfig.json names the same files.
+ */
+export const standard = [
+  { find: /^@foundationforest\/keys$/, replacement: here('./standard/keys/dist/index.js') },
+  { find: /^@foundationforest\/folders$/, replacement: here('./standard/folders/dist/index.js') },
+  { find: /^@foundationforest\/folders\/locked$/, replacement: here('./standard/folders/dist/locked.js') },
+  { find: /^@foundationforest\/proofs$/, replacement: here('./standard/proofs/dist/index.js') },
+]
 
 export default defineConfig({
   plugins: [
     react(),
+    markets(),
+    proofs(),
     // The icons, made from the mark, and the manifest: emitted here, not by the PWA plugin, which would precache the manifest.
     shell({
       name: 'Forest',
@@ -36,28 +57,26 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
         navigateFallback: null,
         runtimeCaching: [
-          // index.html, the manifest and the icons: from the network first, so each open takes the
+          // The page, the manifest and the icons: from the network first, so each open takes the
           // newest version deployed; the copy kept here serves only when the network does not answer.
           { urlPattern: ({ request, url }) => request.mode === 'navigate' || /^\/(manifest\.webmanifest|icon[\w-]*\.(svg|png))$/.test(url.pathname), handler: 'NetworkFirst', options: { cacheName: 'shell' } },
-          // Named by their SHA-256 (standard.sh), so a cached copy is always the right one. Fetched
+          // Named by their SHA-256 (build/proofs.ts), so a cached copy is always the right one. Fetched
           // the first time a proof is made, not at install: most visits make none.
-          { urlPattern: /\/circuits\/[0-9a-f]{64}\.(wasm|zkey)$/, handler: 'CacheFirst', options: { cacheName: 'circuits' } },
+          { urlPattern: /\/proofs\/[0-9a-f]{64}\.(wasm|zkey)$/, handler: 'CacheFirst', options: { cacheName: 'proofs' } },
         ],
       },
     }),
   ],
-  resolve: {
-    // One copy for the app and the registry client, so a key or a transaction made by one is the
-    // other's own class. test/bundle.test.ts checks both name the same version.
-    dedupe: ['@solana/web3.js'],
-  },
+  resolve: { alias: standard },
+  define: { __COMMIT__: JSON.stringify(commit()) },
   worker: { format: 'es' },
   // Every asset a file of the app's own, never a data: URI, so the CSP (vercel.json) takes fonts and images from 'self' alone.
-  build: { assetsInlineLimit: 0 },
+  build: { assetsInlineLimit: 0, chunkSizeWarningLimit: 4096 },
   test: {
     include: ['test/**/*.test.ts'],
     environment: 'node',
-    testTimeout: 120_000,
-    hookTimeout: 120_000,
+    testTimeout: 180_000,
+    hookTimeout: 180_000,
+    reporters: ['default', './test/no-skips.ts'],
   },
 })

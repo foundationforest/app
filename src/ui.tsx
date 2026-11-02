@@ -1,169 +1,119 @@
-// What every screen draws with: the icons, setup's progress line, an action's busy and error state,
-// the one line under an action that says why it failed or why it is not open, and copying. The
-// mark has its own file (mark.tsx).
+// The pieces every screen shares: the one-line note that says why something can't be done (red when
+// what was given is wrong, quiet when something is still missing), an action's busy and its note,
+// the icons, and the bars.
 
-import { type ReactNode, useState } from 'react'
+import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 
-import { NoPrf } from './seed/passkey.ts'
-import { ServiceError } from './services/http.ts'
+import { NotFinished } from './flows/verify.ts'
+import { HasPasskey, NoAnswer, OldBrowser } from './passkey.ts'
+import { NoCredits } from './services/credits.ts'
+import { Unreachable } from './services/http.ts'
 import { Reloading } from './version.ts'
 
-const stroke = { fill: 'none', stroke: 'currentColor', strokeWidth: 1.75, strokeLinecap: 'round', strokeLinejoin: 'round' } as const
+export type Note = { text: string; red: boolean }
 
-function Icon({ size = 24, children }: { size?: number; children: ReactNode }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" {...stroke}>
-      {children}
-    </svg>
-  )
+/** Something still missing, said in a quiet line. */
+export class Quiet extends Error {}
+
+/** What went wrong, as one line: quiet for what is still missing (a service that did not answer, credits, a newer browser), red for the rest. */
+export function noteOf(err: unknown): Note {
+  const quiet = [Quiet, Unreachable, OldBrowser, NoCredits, HasPasskey, NoAnswer, NotFinished].some((kind) => err instanceof kind)
+  return { text: err instanceof Error ? err.message : String(err), red: !quiet }
 }
 
-export const MenuIcon = () => (
-  <Icon>
-    <path d="M4 7h16M4 12h16M4 17h16" />
-  </Icon>
-)
+export function Line({ note }: { note: Note | null }) {
+  if (!note) return null
+  return <p className={note.red ? 'line red' : 'line'}>{note.text}</p>
+}
 
-export const BackIcon = () => (
-  <Icon>
-    <path d="M15 5l-7 7 7 7" />
-  </Icon>
-)
-
-export const BellIcon = () => (
-  <Icon>
-    <path d="M18 16v-5a6 6 0 0 0-12 0v5l-2 2h16z" />
-    <path d="M10 20.5a2 2 0 0 0 4 0" />
-  </Icon>
-)
-
-export const InboxIcon = () => (
-  <Icon>
-    <path d="M5.5 5h13L21 13v6H3v-6z" />
-    <path d="M3 13h5l1.5 3h5L16 13h5" />
-  </Icon>
-)
-
-export const CopyIcon = () => (
-  <Icon size={20}>
-    <rect x="8" y="8" width="12" height="12" rx="2" />
-    <path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3" />
-  </Icon>
-)
-
-export const CheckIcon = () => (
-  <Icon size={20}>
-    <path d="M5 12.5l4.5 4.5L19 7.5" />
-  </Icon>
-)
-
-export const MoreIcon = () => (
-  <Icon>
-    <circle cx="5" cy="12" r="1" />
-    <circle cx="12" cy="12" r="1" />
-    <circle cx="19" cy="12" r="1" />
-  </Icon>
-)
-
-export const ScanFaceIcon = ({ size = 96 }: { size?: number }) => (
-  <Icon size={size}>
-    <path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3" />
-    <path d="M9 9.5v1M15 9.5v1M12 9.5v3.5h-1" />
-    <path d="M9 15.5c1.6 1.3 4.4 1.3 6 0" />
-  </Icon>
-)
-
-export const StarIcon = () => (
-  <svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true">
-    <path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z" fill="currentColor" />
-  </svg>
-)
+/** An action a tap starts: whether it is running, and its note when it failed. A page reloading for a new version says nothing. */
+export function useAction<A extends unknown[]>(run: (...args: A) => Promise<void>) {
+  const [busy, setBusy] = useState(false)
+  const [note, setNote] = useState<Note | null>(null)
+  const live = useRef(true)
+  useEffect(() => () => void (live.current = false), [])
+  const go = useCallback(
+    async (...args: A) => {
+      setBusy(true)
+      setNote(null)
+      try {
+        await run(...args)
+      } catch (err) {
+        if (live.current && !(err instanceof Reloading)) setNote(noteOf(err))
+      } finally {
+        if (live.current) setBusy(false)
+      }
+    },
+    [run],
+  )
+  return { busy, note, setNote, run: go }
+}
 
 export const Spinner = () => <span className="spinner" role="status" aria-label="Working" />
 
-/** Setup's two steps, the current one and the one before it filled. */
-export function Progress({ step }: { step: 1 | 2 }) {
+const Icon = ({ children }: { children: ReactNode }) => (
+  <svg className="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    {children}
+  </svg>
+)
+
+/** Wherever the passkey is asked. */
+export const UnlockIcon = () => (
+  <Icon>
+    <rect x="5" y="11" width="14" height="10" rx="2" />
+    <path d="M8 11V7a4 4 0 0 1 7.6-1.7" />
+  </Icon>
+)
+export const BackIcon = () => (
+  <Icon>
+    <polyline points="15,5 8,12 15,19" />
+  </Icon>
+)
+export const ProfilesIcon = () => (
+  <Icon>
+    <circle cx="12" cy="8" r="4" />
+    <path d="M4 21a8 8 0 0 1 16 0" />
+  </Icon>
+)
+export const SettingsIcon = () => (
+  <Icon>
+    <line x1="4" y1="6" x2="20" y2="6" />
+    <line x1="4" y1="12" x2="20" y2="12" />
+    <line x1="4" y1="18" x2="20" y2="18" />
+    <circle cx="9" cy="6" r="2" fill="var(--paper)" />
+    <circle cx="15" cy="12" r="2" fill="var(--paper)" />
+    <circle cx="8" cy="18" r="2" fill="var(--paper)" />
+  </Icon>
+)
+
+/** A screen's top bar, with a way back. */
+export function Top({ onBack, children }: { onBack?: () => void; children?: ReactNode }) {
   return (
-    <div className="progress" aria-label={`Step ${step} of 2`}>
-      {[1, 2].map((n) => (
-        <span key={n} className={n <= step ? 'on' : ''} />
-      ))}
+    <div className="top">
+      {onBack && (
+        <button className="plain" aria-label="Back" onClick={onBack}>
+          <BackIcon />
+        </button>
+      )}
+      {children}
     </div>
   )
 }
 
-/** A score from the index: the star and the rating out of 10. */
-export const Score = ({ value }: { value: number }) => (
-  <span className="score">
-    <StarIcon />
-    {value.toFixed(1)}
-  </span>
-)
+export type Place = 'profiles' | 'settings'
 
-/** What the face check says when the issuer has this face from another setup: that setup's passkey opens it. */
-export const DUPLICATE_FACE = 'This face already has a setup. Sign in with that passkey.'
-
-/** What setup says when the issuer gave this note number its welcome gift before: no credits come. */
-export const GIFT_GIVEN = 'Your welcome credits were already given once; write to us to get more.'
-
-/** An error in the person's words, where the app has them; a service's own code where it has not. */
-export function errorText(err: unknown): string {
-  if (err instanceof NoPrf) return err.message
-  if (err instanceof Reloading) return ''
-  if (err instanceof DOMException && err.name === 'NotAllowedError') return 'Your face or fingerprint was not given.'
-  if (err instanceof DOMException && err.name === 'AbortError') return ''
-  if (err instanceof ServiceError) {
-    if (err.code === 'duplicate_face') return DUPLICATE_FACE
-    if (err.code === 'session_used') return 'This check was used before, by another setup.'
-    if (err.code === 'try_later') return 'Too many checks from here. Try again later.'
-    return `${new URL(err.url).host}: ${err.code}`
-  }
-  if (err instanceof TypeError && /fetch/i.test(err.message)) return 'No connection.'
-  return err instanceof Error ? err.message : String(err)
-}
-
-/** An action's run, its busy state and its error, in the person's words. Busy still while the page reloads to take a new version. */
-export function useAction<A extends unknown[]>(fn: (...args: A) => Promise<void>) {
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState('')
-  const run = async (...args: A) => {
-    setBusy(true)
-    setError('')
-    try {
-      await fn(...args)
-    } catch (err) {
-      if (err instanceof Reloading) return
-      console.error(err)
-      setError(errorText(err))
-    }
-    setBusy(false)
-  }
-  return { run, busy, error }
-}
-
-/** Why an action is not open: what is wrong with what was given (`wrong`, red), or what is still to give. Null when it is open. */
-export type Why = { text: string; wrong?: boolean } | null
-
-/** The one line under an action: its error, in red; else why it is not open. */
-export function Line({ error, why }: { error?: string; why?: Why }) {
-  if (error) return <p className="error">{error}</p>
-  if (why) return <p className={why.wrong ? 'error' : 'why'}>{why.text}</p>
-  return null
-}
-
-/** Text copied, "Copied" for a moment after; an error when the browser does not let the page copy. */
-export function useCopy() {
-  const [copied, setCopied] = useState(false)
-  const [error, setError] = useState('')
-  const copy = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text)
-    } catch {
-      return setError("This browser didn't let Forest copy.")
-    }
-    setError('')
-    setCopied(true)
-    setTimeout(() => setCopied(false), 1500)
-  }
-  return { copy, copied, error }
+/** The places, at the bottom: Profiles and Settings. */
+export function Places({ at, go }: { at: Place; go: (to: Place) => void }) {
+  return (
+    <nav className="places">
+      <button className={at === 'profiles' ? 'here' : ''} aria-current={at === 'profiles' ? 'page' : undefined} onClick={() => go('profiles')}>
+        <ProfilesIcon />
+        Profiles
+      </button>
+      <button className={at === 'settings' ? 'here' : ''} aria-current={at === 'settings' ? 'page' : undefined} onClick={() => go('settings')}>
+        <SettingsIcon />
+        Settings
+      </button>
+    </nav>
+  )
 }

@@ -1,17 +1,42 @@
-// The page's side of the proof: a worker for one proof, given the secret (moved, not copied, so the
-// page keeps no copy of it), and stopped when it answers. A worker whose script could not be loaded,
-// a version since replaced, reloads the page once to take the new one (version.ts).
+// The proof's worker: one request, one answer, off the page's thread. It fetches the proving files
+// (the service worker keeps them after the first time), checks each against the SHA-256 setup.json
+// names, makes the verification with the standard's own `proveVerification`, and zeroes the seed it
+// was handed, which no one else holds.
 
-import { Reloading, reloadOnce } from '../version.ts'
-import type { ProveRequest, Proved } from './prove.ts'
+import { b64u } from '@foundationforest/folders'
+import { proofBytes, proveVerification, stampFromJson } from '@foundationforest/proofs'
 
-export function proveInWorker(request: ProveRequest): Promise<Proved> {
-  const worker = new Worker(new URL('./prove.worker.ts', import.meta.url), { type: 'module' })
-  return new Promise<Proved>((resolve, reject) => {
-    worker.onmessage = (e: MessageEvent<{ ok: true; proved: Proved } | { ok: false; error: string }>) =>
-      e.data.ok ? resolve(e.data.proved) : reject(new Error(e.data.error))
-    // A script that never loaded fires a plain error event; one that failed while it ran, an ErrorEvent.
-    worker.onerror = (e) => reject(!(e instanceof ErrorEvent) && reloadOnce() ? new Reloading() : new Error(e.message || 'the proof worker failed'))
-    worker.postMessage(request, [request.secret.buffer])
-  }).finally(() => worker.terminate())
+import { FILES, type ProofFile } from './files.ts'
+
+export type Request = { seed: Uint8Array; stamp: string; label: string }
+export type Made = { verifier: string; verifierName: string; label: string; proof: string }
+export type Reply = { ok: true; made: Made } | { ok: false; error: string }
+
+// snarkjs's field library starts a worker of its own per core, from a blob: URL, which the app's CSP
+// refuses (worker-src 'self', vercel.json). With no Worker here it proves on this one thread: a few
+// seconds on a phone, once per profile.
+;(globalThis as { Worker?: unknown }).Worker = undefined
+
+const scope = self as unknown as { onmessage: ((e: MessageEvent<Request>) => void) | null; postMessage(message: Reply): void }
+
+async function fetchChecked(file: ProofFile): Promise<Uint8Array> {
+  const res = await fetch(file.path)
+  if (!res.ok) throw new Error(`The proving files could not be loaded (${res.status}).`)
+  const bytes = new Uint8Array(await res.arrayBuffer())
+  const hash = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', bytes)), (b) => b.toString(16).padStart(2, '0')).join('')
+  if (hash !== file.sha256) throw new Error('The proving files are not the ones the standard names.')
+  return bytes
+}
+
+scope.onmessage = async (e) => {
+  const { seed, stamp, label } = e.data
+  try {
+    const [wasm, zkey] = await Promise.all([fetchChecked(FILES.wasm), fetchChecked(FILES.zkey)])
+    const r = await proveVerification({ seed, stamp: stampFromJson(JSON.parse(stamp)), label, artifacts: { wasm, zkey } })
+    scope.postMessage({ ok: true, made: { verifier: r.verifier, verifierName: r.verifierName, label, proof: b64u.encode(proofBytes(r.proof)) } })
+  } catch (err) {
+    scope.postMessage({ ok: false, error: err instanceof Error ? err.message : String(err) })
+  } finally {
+    seed.fill(0)
+  }
 }

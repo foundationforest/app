@@ -1,27 +1,32 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "installCommand": "npm ci",
-  "buildCommand": "./standard.sh keys records registry/client reputation/client && npm run build",
+  "buildCommand": "./standard.sh && npm run build",
   "outputDirectory": "dist",
-  "redirects": [
+  "rewrites": [
     {
-      "source": "/:path*",
-      "has": [{ "type": "host", "value": "app.devnet.forest.foundation" }],
-      "destination": "https://app.forest.foundation/:path*",
-      "statusCode": 308
+      "source": "/((?!assets/|proofs/)[^.]*)",
+      "destination": "/index.html"
     }
   ],
-  "rewrites": [{ "source": "/((?!assets/)[^.]*)", "destination": "/index.html" }],
   "headers": [
     {
       "source": "/(.*)",
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; img-src 'self'; font-src 'self'; worker-src 'self'; manifest-src 'self'; connect-src 'self' https://issuer.devnet.forest.foundation https://host.devnet.forest.foundation https://registry-payer.devnet.forest.foundation https://index.devnet.forest.foundation https://api.devnet.solana.com; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
+          "value": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; img-src 'self'; font-src 'self'; worker-src 'self'; manifest-src 'self'; connect-src 'self' https://verifier.forest.foundation https://host.forest.foundation https://mcp.forest.foundation; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
         }
       ]
     },
-    { "source": "/sw.js", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] }
+    {
+      "source": "/sw.js",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache"
+        }
+      ]
+    }
   ]
 }

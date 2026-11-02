@@ -1,6 +1,7 @@
-// The mark: three roofs and a trunk, one drawing, never redrawn. Every screen that shows it draws
-// this component, in the theme's ink; the favicon and the PWA icons are made from it at each build,
-// ink on paper (icons.ts). test/mark.test.ts holds the drawing as it was given.
+// The mark: three chevrons over a short trunk, one drawing, never redrawn. Its strokes are the ones
+// services' mcp draws its icon with (mcp/src/icon.ts). Every screen that shows it draws this
+// component, in the theme's ink; the favicon and the PWA icons are made from it at each build, ink
+// on paper (build/shell.ts). test/mark.test.ts holds the drawing as it was given.
 
 export function Mark({ size = 28 }: { size?: number }) {
   return (

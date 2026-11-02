@@ -1,47 +1,66 @@
 #!/usr/bin/env bash
-# Fetches foundationforest/standard at the commit in STANDARD into standard/ (not committed), runs
-# `npm ci` in each standard package named on the command line, then copies the registry circuit's
-# devnet proving files into public/circuits/, each checked against its SHA-256 in the circuit's
-# setup.json. The app uses standard's pieces from there, unchanged, by relative path: standard/keys,
-# standard/records (and records/private), standard/registry/client and standard/reputation/client.
-# Moving the pin is a one-line change to STANDARD. Needs git and the network.
+# Fetches the three repos the app is built on, each at the commit its file holds, none committed:
 #
-#   ./standard.sh                                                 standard at the pinned commit
-#   ./standard.sh keys records registry/client reputation/client  and `npm ci` in those packages
+#   standard/   foundationforest/standard at STANDARD, installed and built at its root (one npm
+#               workspace): the app uses @foundationforest/keys, /folders (with /locked) and
+#               /proofs from there, unchanged, by name (vite.config.ts, tsconfig.json), and the
+#               verification circuit's committed proving files.
+#   markets/    foundationforest/markets at MARKETS, its package (build/) installed and built: the
+#               app reads the directory through it, at build time.
+#   services/   foundationforest/services at SERVICES, fetched only: the app uses the host's credits
+#               client (host/client/client.ts) as it is, the tests run the host's own code, and
+#               the reference app (mcp/test/app.ts) checks that both write the same.
+#
+# `./standard.sh services` also readies services' own verifier and host to run on this machine, as
+# services' loop runs them (its own standard.sh, then `npm ci` in each): the browser test needs them.
+# Moving a pin is a one-line change to its file. Needs git, Node 22.18 or later, and the network.
 set -euo pipefail
 cd "$(dirname "$0")"
 
-STANDARD_REPO="${STANDARD_REPO:-https://github.com/foundationforest/standard}"
-STANDARD_COMMIT="$(tr -d '[:space:]' < STANDARD)"
+# The repo at a commit into a directory: fetched once, moved when the commit changes.
+pinned() {
+  local dir="$1" repo="$2" commit="$3"
+  if [ ! -d "$dir/.git" ]; then
+    git init -q "$dir"
+    git -C "$dir" remote add origin "$repo"
+  fi
+  if [ "$(git -C "$dir" rev-parse -q --verify HEAD || true)" != "$commit" ]; then
+    git -C "$dir" fetch -q --depth 1 origin "$commit"
+    git -C "$dir" checkout -q --detach "$commit"
+  fi
+  echo "$dir at $commit"
+}
 
-if [ ! -d standard/.git ]; then
-  git init -q standard
-  git -C standard remote add origin "$STANDARD_REPO"
-fi
-if [ "$(git -C standard rev-parse -q --verify HEAD || true)" != "$STANDARD_COMMIT" ]; then
-  git -C standard fetch -q --depth 1 origin "$STANDARD_COMMIT"
-  git -C standard checkout -q --detach "$STANDARD_COMMIT"
-fi
-echo "standard at $STANDARD_COMMIT"
+pin() { tr -d '[:space:]' < "$1"; }
 
-# --include=dev: records builds itself on install with TypeScript, a dev dependency, which a build
-# machine in production mode would otherwise leave out.
-for dir in "$@"; do
-  (cd "standard/$dir" && npm ci --include=dev --no-audit --no-fund)
-done
+# --include=dev: each builds itself with TypeScript, a dev dependency, which a build machine in
+# production mode (Vercel's) would otherwise leave out.
+pinned standard "${STANDARD_REPO:-https://github.com/foundationforest/standard}" "$(pin STANDARD)"
+(cd standard && npm ci --include=dev --no-audit --no-fund && npm run build)
 
-# The person proof's proving files, served from the app's own origin to the proof's worker, each
-# named by its SHA-256 so a cached copy is never a stale one (src/proof/circuit.ts).
-circuit=standard/registry/circuit/devnet
-rm -rf public/circuits
-mkdir -p public/circuits
-for name in person.wasm person.zkey; do
-  want="$(node -e 'console.log(JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")).files[process.argv[2]].sha256)' "$circuit/setup.json" "$name")"
-  got="$(sha256sum "$circuit/$name" | cut -d' ' -f1)"
-  if [ "$got" != "$want" ]; then
-    echo "$name: WRONG, want $want, got $got" >&2
+pinned markets "${MARKETS_REPO:-https://github.com/foundationforest/markets}" "$(pin MARKETS)"
+(cd markets/build && npm ci --include=dev --no-audit --no-fund && npm run build)
+
+pinned services "${SERVICES_REPO:-https://github.com/foundationforest/services}" "$(pin SERVICES)"
+
+# The app and services must stand on the same standard and markets: what the app writes is checked
+# against services' own code, which reads them at its own pins.
+for file in STANDARD MARKETS; do
+  if [ "$(pin "$file")" != "$(pin "services/$file")" ]; then
+    echo "$file is $(pin "$file") here and $(pin "services/$file") at SERVICES: move them together" >&2
     exit 1
   fi
-  cp "$circuit/$name" "public/circuits/$want.${name##*.}"
 done
-echo "public/circuits: person.wasm and person.zkey, hashes match setup.json"
+
+# Services reads them from its own standard/ and markets/: at the same commits, those are these,
+# linked, so services' code (the reference app's proving files among it) finds them without a
+# second checkout.
+for dir in standard markets; do
+  [ -e "services/$dir" ] || ln -s "../$dir" "services/$dir"
+done
+
+if [ "${1:-}" = services ]; then
+  (cd services && ./standard.sh)
+  (cd services/host && npm ci --no-audit --no-fund)
+  (cd services/verifier && npm ci --no-audit --no-fund)
+fi

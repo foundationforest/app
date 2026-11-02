@@ -1,33 +1,40 @@
-// JSON over HTTP, the way each service answers: a body, or `{ "error": "<code>" }` with a status.
+// Requests to a service, with the two ways they fail in words a person reads: the service did not
+// answer, or it answered no, with its own code.
 
-export class ServiceError extends Error {
-  readonly url: string
-  readonly status: number
+/** A service did not answer, or not as a service of its kind does. */
+export class Unreachable extends Error {
+  constructor(service: string) {
+    super(`Can't reach the ${service}. Try again.`)
+    this.name = 'Unreachable'
+  }
+}
+
+/** A service answered no, with its code. */
+export class Refused extends Error {
   readonly code: string
-  constructor(url: string, status: number, code: string) {
-    super(`${url}: ${status} ${code}`)
-    this.url = url
-    this.status = status
+  readonly status: number
+  constructor(service: string, status: number, code: string) {
+    super(`The ${service} said no: ${code}.`)
+    this.name = 'Refused'
     this.code = code
+    this.status = status
   }
 }
 
-async function answer(url: string, res: Response): Promise<any> {
-  const text = await res.text()
-  let body: any = null
+export type Answer = { status: number; body: any }
+
+/** A JSON request to `url`: its status and its body, or Unreachable when nothing, or no JSON, came back. */
+export async function call(service: string, url: string, body?: unknown): Promise<Answer> {
+  let res: Response
   try {
-    body = text ? JSON.parse(text) : null
+    res = await fetch(url, body === undefined ? { cache: 'no-store' } : { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
   } catch {
-    // Not JSON: refused below, by status.
+    throw new Unreachable(service)
   }
-  if (!res.ok) throw new ServiceError(url, res.status, typeof body?.error === 'string' ? body.error : 'error')
-  return body
-}
-
-export async function getJson(url: string): Promise<any> {
-  return answer(url, await fetch(url))
-}
-
-export async function postJson(url: string, body: unknown, headers: Record<string, string> = {}): Promise<any> {
-  return answer(url, await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json', ...headers }, body: JSON.stringify(body) }))
+  const text = await res.text().catch(() => '')
+  try {
+    return { status: res.status, body: text ? JSON.parse(text) : null }
+  } catch {
+    throw new Unreachable(service)
+  }
 }

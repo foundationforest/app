@@ -9,7 +9,7 @@ import { type Server, createServer } from 'node:http'
 import { extname, join, normalize } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const app = fileURLToPath(new URL('../..', import.meta.url))
+const app = fileURLToPath(new URL('../../', import.meta.url))
 
 const TYPES: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
@@ -21,6 +21,7 @@ const TYPES: Record<string, string> = {
   '.png': 'image/png',
   '.woff2': 'font/woff2',
   '.wasm': 'application/wasm',
+  '.zkey': 'application/octet-stream',
 }
 
 type Vercel = { headers: { source: string; headers: { key: string; value: string }[] }[]; rewrites: { source: string; destination: string }[] }

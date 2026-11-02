@@ -1,168 +1,85 @@
-// The app's screens and the way between them, in the browser's history so its back button works. A
-// device set up (it keeps the seed's fingerprint) opens on the board; one whose setup stopped before
-// its vault was written opens on setup's face check, which takes it up again, with Start under it.
-// Start always goes on to make a passkey; where the person's manager holds one this device knows,
-// setup sends them back to Start with Sign in under way. The passkey that gave the seed, at setup's
-// first step or at a sign in that found no vault, is the draft: kept here for the face check while
-// setup's screens are open, its seed zeroed once they are left. A page reloaded to take a new
-// version (version.ts) opens on the screen it was on. The message door, /message?to=<address>, the
-// link an index gives for a profile, opens a new message to it; a person not set up yet, or with no
-// profile yet, goes through setup or a new profile first, and comes back to it.
+// The screens, and the way between them. Start, until a person is verified here; then Profiles and
+// Settings, and from Profiles a new profile or a card. Each screen the person can come back to has
+// its own path, so a reload opens on it and the phone's back goes back; a card's address is kept in
+// the page's history, never in its path, which a host's logs would keep.
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 
-import { fingerprint, localProfiles } from './local.ts'
+import { passkey as inUse } from './device.ts'
+import type { Entered } from './flows/start.ts'
+import type { Step } from './flows/verify.ts'
+import type { Passkey } from './passkey.ts'
 import { Back } from './screens/Back.tsx'
-import { Board } from './screens/Board.tsx'
-import { CardPage } from './screens/CardPage.tsx'
-import { InboxPage } from './screens/Inbox.tsx'
+import { Card } from './screens/Card.tsx'
 import { NewProfile } from './screens/NewProfile.tsx'
-import { Setup } from './screens/Setup.tsx'
+import { Profiles } from './screens/Profiles.tsx'
+import { Settings } from './screens/Settings.tsx'
 import { Start } from './screens/Start.tsx'
-import type { Passkey } from './seed/passkey.ts'
-import { hasSetup } from './seed/seed.ts'
-import { resuming } from './version.ts'
+import { Verify } from './screens/Verify.tsx'
+import type { Place } from './ui.tsx'
 
-export type Screen =
-  | { name: 'start' }
-  | { name: 'setup'; step: 1 | 2 }
-  | { name: 'board' }
-  | { name: 'new' }
-  | { name: 'card'; address: string }
-  | { name: 'inbox'; address: string; with?: string }
-  | { name: 'message'; to: string }
+type Screen =
+  | { at: 'start' }
+  | { at: 'verify'; passkey: Passkey | null; id: string; step: Step }
+  | { at: 'profiles' }
+  | { at: 'new' }
+  | { at: 'card'; address: string }
+  | { at: 'settings' }
+  | { at: 'back' }
 
-export type Nav = { go: (to: Screen) => void; back: () => void; reset: (to: Screen) => void }
-
-/** Where this device stands: not set up, setup under way (the passkey made, no vault yet: Start or its face check), or set up. */
-type Stage = 'none' | 'setup' | 'in'
-
-/** The address the message door was opened for, kept for this tab until a message to it can be written. */
-const DOOR = 'forest.door'
-const door = {
-  get: () => sessionStorage.getItem(DOOR),
-  set: (to: string) => sessionStorage.setItem(DOOR, to),
-  clear: () => sessionStorage.removeItem(DOOR),
+/** The screen the page's path and history name; Start until someone is verified here. */
+function here(): Screen {
+  const path = location.pathname
+  if (path === '/back') return { at: 'back' }
+  if (!inUse()) return { at: 'start' }
+  if (path === '/new') return { at: 'new' }
+  if (path === '/settings') return { at: 'settings' }
+  const address = (history.state as { address?: unknown } | null)?.address
+  if (path === '/profile' && typeof address === 'string') return { at: 'card', address }
+  return { at: 'profiles' }
 }
 
-/** Whether this page was opened to take a new version: asked once, as the page loads. */
-const resumed = resuming()
+const PATHS: Partial<Record<Screen['at'], string>> = { new: '/new', card: '/profile', settings: '/settings' }
 
 export function App() {
-  // Where Didit sends the person back after the face check, in a tab of its own.
-  return location.pathname === '/back' ? <Back /> : <Screens />
-}
+  const [screen, setScreen] = useState<Screen>(here)
+  useEffect(() => {
+    const popped = () => setScreen(here())
+    addEventListener('popstate', popped)
+    return () => removeEventListener('popstate', popped)
+  }, [])
+  // A path this screen does not have (Start's, or one from before Forget) is put right.
+  useEffect(() => {
+    const path = PATHS[screen.at] ?? (screen.at === 'back' ? '/back' : '/')
+    if (location.pathname !== path) history.replaceState(null, '', path)
+  }, [screen.at])
 
-function Screens() {
-  const [screen, setScreen] = useState<Screen | null>(null)
-  const stage = useRef<Stage>('none')
-  const draft = useRef<Passkey | null>(null)
-  /** What Start says when a step sent the person back to it, and whether it signs in at once; `n` opens Start afresh each time. */
-  const [said, setSaid] = useState<{ text: string; signIn: boolean; n: number }>()
-
-  /** What the history asks for, unless it is no longer there to show. */
-  const show = (to: Screen) => {
-    if (to.name !== 'setup' && draft.current) {
-      draft.current.seed.fill(0)
-      draft.current = null
-    }
-    if (stage.current === 'setup' && to.name !== 'start' && to.name !== 'setup') return reset({ name: 'setup', step: 2 })
-    if (stage.current === 'in' && (to.name === 'setup' || to.name === 'start')) return home()
-    if (stage.current === 'none' && to.name !== 'start' && !(to.name === 'setup' && to.step === 1)) return reset({ name: 'start' })
+  /** To `to`, its path pushed so back comes back here, or put in place of this one's, which back then leaves as it would have. */
+  const go = (to: Screen, push = false) => {
+    const path = PATHS[to.at] ?? '/'
+    const pushed = push || (history.state as { pushed?: boolean } | null)?.pushed === true
+    const state = to.at === 'card' ? { address: to.address, pushed } : { pushed }
+    if (push) history.pushState(state, '', path)
+    else history.replaceState(state, '', path)
     setScreen(to)
   }
-  const reset = (to: Screen) => {
-    history.replaceState(to, '')
-    show(to)
-  }
-  /** The board; or, when the door was opened, a new profile if there is none, then the message. */
-  const home = () => {
-    const to = door.get()
-    if (!to) return reset({ name: 'board' })
-    if (!localProfiles().length) return reset({ name: 'new' })
-    door.clear()
-    reset({ name: 'message', to })
-  }
-  const nav: Nav = {
-    go: (to) => {
-      history.pushState(to, '')
-      show(to)
-    },
-    back: () => history.back(),
-    reset,
-  }
+  const back = () => ((history.state as { pushed?: boolean } | null)?.pushed ? history.back() : go({ at: 'profiles' }))
+  const place = (to: Place) => go({ at: to })
 
-  useEffect(() => {
-    const pop = (e: PopStateEvent) => show((e.state as Screen | null) ?? { name: 'start' })
-    addEventListener('popstate', pop)
-    const to = location.pathname === '/message' ? new URLSearchParams(location.search).get('to') : null
-    if (to) door.set(to)
-    if (location.pathname !== '/') history.replaceState(null, '', '/')
-    stage.current = !fingerprint() ? 'none' : hasSetup() ? 'setup' : 'in'
-    const was = history.state as Screen | null
-    if (resumed && was) show(was)
-    else if (stage.current === 'in') home()
-    else if (stage.current === 'none') reset({ name: 'start' })
-    // Reloaded on Start or the face check: there still. Opened afresh: the face check, Start under it.
-    else if (was) show(was)
-    else {
-      reset({ name: 'start' })
-      nav.go({ name: 'setup', step: 2 })
-    }
-    return () => removeEventListener('popstate', pop)
-  }, [])
-
-  /** Setup is under way with this passkey: only its face check is left, with the seed it gave. From Start, Start stays under it. */
-  const opened = (passkey: Passkey, fromStart = false) => {
-    stage.current = 'setup'
-    draft.current = passkey
-    ;(fromStart ? nav.go : reset)({ name: 'setup', step: 2 })
-  }
-  /**
-   * Back to Start, which says why, signing in at once when `signIn`. A setup under way stays, unless
-   * the step gave it up: a passkey made and refused takes nothing from it.
-   */
-  const stopped = (why: string, signIn = false) => {
-    stage.current = hasSetup() ? 'setup' : 'none'
-    setSaid((was) => ({ text: why, signIn, n: (was?.n ?? 0) + 1 }))
-    reset({ name: 'start' })
-  }
-  const signedIn = () => {
-    stage.current = 'in'
-    setSaid(undefined)
-    home()
-  }
-  const forgotten = () => {
-    stage.current = 'none'
-    door.clear()
-    reset({ name: 'start' })
-  }
-
-  switch (screen?.name) {
-    case undefined:
-      return null
+  switch (screen.at) {
+    case 'back':
+      return <Back />
     case 'start':
-      return (
-        <Start
-          key={said?.n}
-          said={said?.text}
-          signInNow={said?.signIn}
-          onSigningIn={() => setSaid((was) => was && { ...was, signIn: false })}
-          onStart={() => nav.go({ name: 'setup', step: 1 })}
-          onSignedIn={signedIn}
-          onNoSetup={(passkey) => opened(passkey, true)}
-        />
-      )
-    case 'setup':
-      return <Setup step={screen.step} draft={draft.current} onOpened={opened} onStopped={stopped} onDone={signedIn} onBack={nav.back} />
-    case 'board':
-    case 'message':
-      return <Board nav={nav} onForget={forgotten} compose={screen.name === 'message' ? screen.to : undefined} />
+      return <Start onEntered={(e: Entered, p: Passkey) => go(e.to === 'verify' ? { at: 'verify', passkey: p, id: p.id, step: e.step } : { at: 'profiles' })} />
+    case 'verify':
+      return <Verify passkey={screen.passkey} id={screen.id} step={screen.step} onVerified={() => go({ at: 'profiles' })} />
+    case 'profiles':
+      return <Profiles onOpen={(address) => go({ at: 'card', address }, true)} onNew={() => go({ at: 'new' }, true)} go={place} />
     case 'new':
-      return <NewProfile nav={nav} onMade={() => (door.get() ? home() : nav.back())} />
+      return <NewProfile onMade={(address) => go({ at: 'card', address })} onBack={back} />
     case 'card':
-      return <CardPage address={screen.address} nav={nav} />
-    case 'inbox':
-      return <InboxPage address={screen.address} thread={screen.with} nav={nav} />
+      return <Card address={screen.address} onBack={back} />
+    case 'settings':
+      return <Settings go={place} onForgot={() => go({ at: 'start' })} />
   }
 }

@@ -3,8 +3,15 @@
     "target": "es2022",
     "module": "esnext",
     "moduleResolution": "bundler",
-    "lib": ["es2023", "dom", "dom.iterable"],
-    "types": ["vite/client", "node"],
+    "lib": [
+      "es2023",
+      "dom",
+      "dom.iterable"
+    ],
+    "types": [
+      "vite/client",
+      "node"
+    ],
     "jsx": "react-jsx",
     "strict": true,
     "erasableSyntaxOnly": true,
@@ -13,7 +20,32 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "skipLibCheck": true,
-    "noEmit": true
+    "noEmit": true,
+    "paths": {
+      "@foundationforest/keys": [
+        "./standard/keys/dist/index.d.ts"
+      ],
+      "@foundationforest/folders": [
+        "./standard/folders/dist/index.d.ts"
+      ],
+      "@foundationforest/folders/locked": [
+        "./standard/folders/dist/locked.d.ts"
+      ],
+      "@foundationforest/proofs": [
+        "./standard/proofs/dist/index.d.ts"
+      ],
+      "@foundationforest/markets": [
+        "./markets/build/dist/index.d.ts"
+      ]
+    }
   },
-  "include": ["src", "test", "vite.config.ts", "shell.ts", "standard/registry/client/types"]
+  "include": [
+    "src",
+    "test",
+    "build",
+    "vite.config.ts"
+  ],
+  "exclude": [
+    "test/browser"
+  ]
 }
