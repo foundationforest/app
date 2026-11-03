@@ -18,6 +18,9 @@ export function checksOf(body: unknown, verifier: About): Check[] {
   return [...(keys.has(verifier.face.key) ? ['face' as const] : []), ...(keys.has(verifier.id.key) ? ['id' as const] : [])]
 }
 
+/** The strongest of `checks`, which a profile shows: the ID check, else the face check; null with neither. */
+export const strongest = (checks: Check[]): Check | null => (checks.includes('id') ? 'id' : checks.includes('face') ? 'face' : null)
+
 /** What a profile's card shows: how it is verified, and how many posts it holds; and the access keys it lists now. */
 export type Card = { checks: Check[]; posts: number; keys: string[] }
 

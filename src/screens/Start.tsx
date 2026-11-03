@@ -7,31 +7,34 @@
 // already have one comes first, the primary, and Create a passkey under it: an AI app's login often
 // opens in a browser that has never seen this app (a fresh tab, the AI app's sign-in sheet), where
 // the person almost always has a passkey already, and a second would be a second Forest.
+//
+// Every button here asks: nobody is in yet, so Start drops any seed still held (held.ts) as it opens.
+// The seed a passkey gives is held from then, as after any unlock, so the verification and the first
+// profile ask again only once the page was hidden or 5 minutes went by.
+
+import { useEffect } from 'react'
 
 import { config } from '../config.ts'
 import { passkeys } from '../device.ts'
 import { type Entered, enter } from '../flows/start.ts'
+import { drop, hold } from '../held.ts'
 import { Mark } from '../mark.tsx'
-import { NoAnswer, type Passkey, ask, make } from '../passkey.ts'
+import { NoAnswer, type Passkey, ask, make, withSeed } from '../passkey.ts'
 import { proveInWorker } from '../proof/prove.ts'
 import { Line, Spinner, UnlockIcon, useAction } from '../ui.tsx'
 
-type Props = { onEntered: (entered: Entered, passkey: Passkey) => void; connecting?: boolean }
+type Props = { onEntered: (entered: Entered, passkey: string) => void; connecting?: boolean }
 
 export function Start({ onEntered, connecting = false }: Props) {
   // Read at each draw: a passkey made here is known from the moment it answers (flows/start.ts).
   const known = passkeys()
+  useEffect(drop, [])
 
-  /** A passkey answered: where the person stands. The seed goes on with them only to the verification. */
+  /** A passkey answered: its seed held, and where the person stands. */
   const entered = async (passkey: Passkey) => {
-    try {
-      const to = await enter(config, passkey, proveInWorker)
-      if (to.to !== 'verify') passkey.seed.fill(0)
-      onEntered(to, passkey)
-    } catch (err) {
-      passkey.seed.fill(0)
-      throw err
-    }
+    hold(passkey.id, passkey.seed)
+    const to = await withSeed(passkey.id, (seed) => enter(config, { id: passkey.id, seed }, proveInWorker))
+    onEntered(to, passkey.id)
   }
 
   const start = useAction(async () => entered(await ask(known.length ? { allow: known } : {})))

@@ -1,8 +1,9 @@
-// A profile, opened from its card: its market and role with the shield when it is verified; at the
-// top, Share, and its messages, with a dot when one is new. Share hands out the profile's page on
-// the index: the phone's share sheet where there is one, else the page's link copied. A link, not a
-// fetch: nothing here reaches the index for it. Then the index's rating, how many reviews it
-// counted, and how many reviews, vouches and reports are new, which opens Reviews; then its posts,
+// A profile, opened from its card: its market and role with the shield of its strongest check; at
+// the top, Share alone. Share hands out the profile's page on the index: the phone's share sheet
+// where there is one, else the page's link copied. A link, not a fetch: nothing here reaches the
+// index for it. Under the name, two lines: the index's rating, how many reviews it counted, and how
+// many reviews, vouches and reports are new, which opens Reviews; and Messages, with how many are
+// new, which opens the profile's messages. Then its posts,
 // each a row with its first photo and its preview (PostRow.tsx), tapped to edit; and at the bottom,
 // side by side, Review, which opens Review someone, and a new post in its role's word. Nothing here
 // asks the passkey: its folder is public, and so is what the index says.
@@ -11,10 +12,11 @@ import { useEffect, useState } from 'react'
 
 import { config } from '../config.ts'
 import { type Posted, readPosts } from '../flows/posts.ts'
+import { strongest } from '../flows/cards.ts'
 import { useCards, useNews, useProfiles, useRated } from '../hooks.ts'
 import { kindWords, markets, pairOf, yourPosts } from '../markets.ts'
 import { ratingText, reviewCount } from '../show.ts'
-import { Dot, Line, MessageIcon, Named, type Note, Shield, Spinner, Top, noteOf } from '../ui.tsx'
+import { Line, Named, type Note, Spinner, Top, Verified, noteOf } from '../ui.tsx'
 import { PostRow } from './PostRow.tsx'
 
 type Props = { address: string; onBack: () => void; onPost: (edit?: Posted) => void; onReviews: () => void; onReview: () => void; onMessages: () => void }
@@ -52,38 +54,32 @@ export function Profile({ address, onBack, onPost, onReviews, onReview, onMessag
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
-  const fresh = news?.received.length ?? 0
+  const check = card ? strongest(card.checks) : null
   return (
     <main className="with-foot">
       <Top
         onBack={onBack}
         right={
-          <>
-            <button className="small" onClick={() => void share()}>
-              {copied ? 'Copied' : 'Share'}
-            </button>
-            <button className="plain place-icon" aria-label="Messages" onClick={onMessages}>
-              <MessageIcon />
-              {!!news?.messages && <Dot />}
-            </button>
-          </>
+          <button className="small" onClick={() => void share()}>
+            {copied ? 'Copied' : 'Share'}
+          </button>
         }
       />
       <div className="stack">
         <h1 className="titled">
           <Named label={profile.label} />
-          {card?.checks.length ? <Shield /> : null}
+          {check && <Verified check={check} />}
         </h1>
-        <button className="link" onClick={onReviews}>
-          {held && 'failed' in held ? 'Reviews' : rated?.rating != null ? `★ ${ratingText(rated.rating)} · ${reviewCount(rated.reviews)}` : 'No reviews yet'}
-          {fresh > 0 && (
-            <>
-              {' · '}
-              <strong>{fresh} new</strong>
-            </>
-          )}{' '}
-          ›
-        </button>
+        <div className="lines">
+          <button className="link" onClick={onReviews}>
+            {held && 'failed' in held ? 'Reviews' : rated?.rating != null ? `★ ${ratingText(rated.rating)} · ${reviewCount(rated.reviews)}` : 'No reviews yet'}
+            <New n={news?.received.length ?? 0} /> ›
+          </button>
+          <button className="link" onClick={onMessages}>
+            Messages
+            <New n={news?.messages ?? 0} /> ›
+          </button>
+        </div>
         {held && 'failed' in held && <p className="line">Can't reach the index.</p>}
       </div>
       <h2>{yourPosts(profile.label)}</h2>
@@ -104,3 +100,12 @@ export function Profile({ address, onBack, onPost, onReviews, onReview, onMessag
     </main>
   )
 }
+
+/** How many are new, after a line's words: " · 1 new", in bold; nothing when none is. */
+const New = ({ n }: { n: number }) =>
+  n > 0 ? (
+    <>
+      {' · '}
+      <strong>{n} new</strong>
+    </>
+  ) : null

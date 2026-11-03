@@ -75,6 +75,20 @@ export function previewLines(market: Market, body: Body): string[] {
     .filter(Boolean)
 }
 
+/**
+ * A post's two lines on its row, in every market: with a price, the first of its preview's other
+ * lines, then the price ($20, €30 per hour), wherever the market's preview puts it, or leaves it
+ * out; with none, its preview's first two lines.
+ */
+export function rowLines(market: Market, body: Body): string[] {
+  const price = market.post.price ? valueText(market.post.price, body.price) : ''
+  const lines = previewOf(market)
+    .filter((name) => name !== 'price')
+    .map((name) => (market.post[name] ? valueText(market.post[name], body[name]) : ''))
+    .filter(Boolean)
+  return price ? [...lines.slice(0, 1), price] : lines.slice(0, 2)
+}
+
 /** Where a contact opens with a tap: a phone number, an email, or a link. Undefined for anything else, a handle, which shows as it is. */
 export function contactHref(contact: string): string | undefined {
   const text = contact.trim()

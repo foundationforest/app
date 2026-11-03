@@ -15,7 +15,7 @@ import { type Step, resume } from './verify.ts'
 
 export type Entered = { to: 'profiles' } | { to: 'verify'; step: Step }
 
-/** Where the person goes after Start. The seed is the caller's, which zeroes it once the person is past the verification. */
+/** Where the person goes after Start. The seed is the caller's, held in the page as after any unlock (held.ts). */
 export async function enter(s: Services & Where, passkey: Passkey, prove: Prove): Promise<Entered> {
   knowPasskey(passkey.id)
   const r = await resume(s, passkey.id, passkey.seed, prove)

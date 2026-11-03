@@ -90,14 +90,39 @@ a {
   color: inherit;
 }
 
-main {
-  max-width: 32rem;
-  margin: 0 auto;
-  padding: max(12px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
+/* The screen, filling the page under the new version's line when there is one. */
+#root {
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
+}
+
+main {
+  width: 100%;
+  max-width: 32rem;
+  margin: 0 auto;
+  padding: max(12px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
   gap: 16px;
+}
+
+/* A newer version is live: one quiet line above the screen. */
+.new-version {
+  margin: 0;
+  padding: max(8px, env(safe-area-inset-top)) 16px 0;
+}
+
+.new-version + main {
+  padding-top: 8px;
+}
+
+.new-version button.link {
+  display: inline;
+  min-height: 0;
+  color: var(--ink);
+  font-weight: 700;
 }
 
 .fill {
@@ -821,6 +846,12 @@ button.link {
   color: var(--ink-2);
 }
 
+/* A profile's two lines under its name: its rating, and its messages. */
+.lines {
+  display: grid;
+  justify-items: start;
+}
+
 button.danger.solid {
   background: var(--danger);
   color: var(--paper);
@@ -947,4 +978,39 @@ div.row > .icon {
 button.primary .icon,
 button.solid .icon {
   color: inherit;
+}
+
+/* How a profile is verified, by its strongest check's shield; tapped, its words, above it. */
+.verified {
+  display: inline-flex;
+  flex: none;
+}
+
+.verified .verified-said {
+  position: fixed;
+  z-index: 10;
+  transform: translate(-50%, calc(-100% - 6px));
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* Notifications: a profile's new messages, in the ink, with how many; a review's text in full. */
+.two > .notice {
+  color: var(--ink);
+}
+
+.two > .said-text {
+  white-space: pre-wrap;
+  overflow: visible;
+}
+
+.aside .count {
+  position: static;
 }

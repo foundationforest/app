@@ -3,11 +3,13 @@
 // Reading them needs nothing unlocked: a folder is public. Before the unlock, the app checks what is
 // to be written: its required fields given; the body against its market (checkEntry, the markets'
 // one checker); and for a review, a vouch or a report, its subject, read from the host: a profile's
-// address, none of the person's own, in the same market, on the other side (the same role where the
-// market has one). Then the main key signs it, at a new random id, or for an edit at its own path
-// after what is there (nextTime); a delete is a null body there, free at the host. Each write is
-// paid from the profile's folder, topped up from the wallet when the host refuses for price; then
-// any new photo it names goes to the host, paid the same way (photos.ts).
+// address, not the writing profile's, in the same market, on the other side (the same role where the
+// market has one). For now, for testing, it may be another of the person's own profiles, which the
+// index counts, since it can't tell; this may close before real users. Then the main key signs it,
+// at a new random id, or for an edit at its own path after what is there (nextTime); a delete is a
+// null body there, free at the host. Each write is paid from the profile's folder, topped up from
+// the wallet when the host refuses for price; then any new photo it names goes to the host, paid
+// the same way (photos.ts).
 
 import { type Body, type View, entry, liveContent, nextTime, publicKeyFromAddress } from '@foundationforest/folders'
 import { mainKey } from '@foundationforest/keys'
@@ -58,10 +60,14 @@ export function addressIn(given: string): string {
 /** The profile a review, vouch or report is about, checked: its address, its role, and its posts. */
 export type Subject = { address: string; role: string; posts: Posted[] }
 
-/** The subject at `address` for an entry by `me`, read from the host and checked; else why not, in a red line. */
-export async function subjectOf(s: Services, me: Profile, address: string, mine: Profile[]): Promise<Subject> {
+/**
+ * The subject at `address` for an entry by `me`, read from the host and checked; else why not, in a
+ * red line. `mine`, the person's profiles, goes unused while one of them is allowed, for testing.
+ */
+export async function subjectOf(s: Services, me: Profile, address: string, _mine: Profile[]): Promise<Subject> {
   if (!publicKeyFromAddress(address)) throw new Said("That isn't a profile's address.", true)
-  if (mine.some((p) => p.address === address)) throw new Said("That's one of your own profiles.", true)
+  // The index never counts a profile writing about itself (services' index, "not its writer").
+  if (address === me.address) throw new Said("That's this profile.", true)
   const view = await readView(s.host, address)
   const body = view.current.get('profile')?.entry.body
   if (!body) throw new Said('No profile is at this address.', true)

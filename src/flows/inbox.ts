@@ -8,10 +8,10 @@
 // Opening takes the seed, once for every profile: each profile's main key opens its inbox entries,
 // each message checked as the standard says (openInbox: to this folder, its signature), then
 // against the sender's own profile entry (senderCounts), read from the host. That entry also says
-// who the sender is: their market and role, and whether a verification from this app's verifier
-// checks. The message's own `host` names where their folder is; the app reaches its one host only
-// (the CSP), so it reads them there. A message whose body has no text, or that does not count, is
-// not shown.
+// who the sender is: their market and role, and their strongest check whose verification, from this
+// app's verifier, checks: the ID check's, else the face check's. The message's own `host` names
+// where their folder is; the app reaches its one host only (the CSP), so it reads them there. A
+// message whose body has no text, or that does not count, is not shown.
 //
 // Sending signs with the profile's main key, locks to the recipient's keys (inboxEntry), and leaves
 // the message with their host, paid from the sending profile's folder by its bytes (the credits
@@ -29,7 +29,7 @@ import { inboxPayment } from '../../services/host/client/client.ts'
 import type { Services } from '../config.ts'
 import { type Profile, cursors, saveCursors } from '../device.ts'
 import { leaveAll, readAllInbox, readView, writeAll } from '../services/host.ts'
-import { about } from '../services/verifier.ts'
+import { type Check, about } from '../services/verifier.ts'
 import { Said, hostSays } from '../words.ts'
 import { paid } from './paid.ts'
 import { randomId, walletKey } from './profiles.ts'
@@ -37,8 +37,8 @@ import { randomId, walletKey } from './profiles.ts'
 /** One message in a thread: from the other side, or one of the person's own (`mine`), with its text. */
 export type Message = { id: string; time: number; text: string; mine: boolean }
 
-/** Who a profile is, as its profile entry says: its market and role, and whether a verification from this app's verifier checks. Null when no host here holds its profile entry. */
-export type Who = { market: string; role: string; verified: boolean } | null
+/** Who a profile is, as its profile entry says: its market and role, and its strongest check whose verification from this app's verifier checks, or null. Null when no host here holds its profile entry. */
+export type Who = { market: string; role: string; check: Check | null } | null
 
 /** The messages between one of the person's profiles (`mine`, its address) and another (`them`), oldest first. */
 export type Thread = { mine: string; them: string; who: Who; messages: Message[] }
@@ -72,21 +72,24 @@ async function profileEntry(host: string, address: string): Promise<Body | null>
 /** Whether one of `checks` checks, as the standard's checkVerification checks it: in the page, the proofs' worker (proof/prove.ts), since snarkjs there would start workers the CSP refuses. */
 export type CheckProofs = (checks: VerificationCheck[]) => Promise<boolean>
 
-/** Whether one of `body`'s verifications, from one of this app's verifier's keys, checks for `address`. */
-async function verified(s: Services, address: string, body: Body, check: CheckProofs): Promise<boolean> {
+/** The strongest check whose verification in `body`, from this app's verifier, checks for `address`: the ID key's, else the face key's; null with neither. */
+async function strongestOf(s: Services, address: string, body: Body, check: CheckProofs): Promise<Check | null> {
   const a = await about(s.verifier)
-  const ours = proofsOf(body)
-    .filter((p) => p.circuit === 'verification' && (p.verifier === a.face.key || p.verifier === a.id.key))
-    .map((p) => verificationCheck(p, address))
-    .filter((c): c is VerificationCheck => c !== null)
-  return ours.length > 0 && (await check(ours).catch(() => false))
+  for (const [c, key] of [['id', a.id.key], ['face', a.face.key]] as const) {
+    const ours = proofsOf(body)
+      .filter((p) => p.circuit === 'verification' && p.verifier === key)
+      .map((p) => verificationCheck(p, address))
+      .filter((v): v is VerificationCheck => v !== null)
+    if (ours.length > 0 && (await check(ours).catch(() => false))) return c
+  }
+  return null
 }
 
 /** Who the profile at `address` is, from its profile entry. */
 export async function whoIs(s: Services, address: string, check: CheckProofs): Promise<{ who: Who; body: Body | null }> {
   const body = await profileEntry(s.host, address).catch(() => null)
   if (!body || typeof body.market !== 'string' || typeof body.role !== 'string') return { who: null, body }
-  return { who: { market: body.market, role: body.role, verified: await verified(s, address, body, check) }, body }
+  return { who: { market: body.market, role: body.role, check: await strongestOf(s, address, body, check) }, body }
 }
 
 const textOf = (body: unknown): string | null => {

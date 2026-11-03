@@ -8,11 +8,14 @@
 // verified, the check under way still picked: the asking stops, nothing under way changes, and
 // Continue picks it up where it was (flows/verify.ts, `choose`). From Settings, back is Settings.
 //
-// Two ways in. From Start, the seed Start got is held while the check is open, and the stamp is
-// asked for until it comes; held for review, the screen lets the seed go. With no seed held (from
-// Settings, someone verified adding the ID check, or after a review), opening the check needs none,
-// and one unlock at Continue asks for the stamp, collects its gift, keeps it and makes every profile
-// show it.
+// The screen keeps no seed of its own: it uses the one held after an unlock (held.ts), which the
+// page drops when it is hidden, as it is while the check is open in its tab. So while a seed is
+// still held as the screen opens (from Start, or from an unlock a moment before), the seed's number
+// and the wallet are worked out at once, and the stamp is asked for with them, needing no seed,
+// until it comes. Once it does, it is kept at once if a seed is still held; else Continue asks for
+// one. With none held as the screen opened (from Settings, or after a review), opening the check
+// needs none, and one unlock at Continue asks for the stamp, collects its gift, keeps it and makes
+// every profile show it.
 
 import { useEffect, useRef, useState } from 'react'
 
@@ -21,7 +24,8 @@ import { CONSENT, TEST_CARD } from '../consent.ts'
 import { type Check, under } from '../device.ts'
 import { type Step, NotFinished, NotPassed, advance, ask, checkOf, choose, collect, finish, open, pay, stampNumberAt, stepOf } from '../flows/verify.ts'
 import { walletKey } from '../flows/profiles.ts'
-import { type Passkey, withSeed } from '../passkey.ts'
+import { isHeldFor } from '../held.ts'
+import { withSeed } from '../passkey.ts'
 import { proveInWorker } from '../proof/prove.ts'
 import { Line, Quiet, Spinner, Top, UnlockIcon, noteOf, useAction } from '../ui.tsx'
 
@@ -31,8 +35,8 @@ const AWAY_FOR_MS = 20 * 60_000
 const REVIEW_EVERY_MS = 20_000
 
 type Props = {
-  /** The passkey that answered at Start, its seed held for the check; null when none is held. */
-  passkey: Passkey | null
+  /** Opened from Start, whose back goes there. */
+  fromStart: boolean
   id: string
   step: Step
   onVerified: () => void
@@ -46,16 +50,29 @@ const returnUrl = () => (location.origin === config.app ? `${config.app}/back` :
 /** Where Stripe sends the person back, paid or not: this screen, at this address. */
 const paidUrl = () => `${location.origin}/id`
 
-export function Verify({ passkey, id, step: first, onVerified, onBack }: Props) {
-  const seed = useRef<Uint8Array | null>(passkey?.seed ?? null)
+/** What asking for the stamp needs, worked out from the seed: the seed's number, and the wallet's address, where its gift goes. */
+type Known = { stampNumber: bigint; wallet: string }
+
+const knownOf = async (seed: Uint8Array): Promise<Known> => ({ stampNumber: await stampNumberAt(config, seed), wallet: (await walletKey(seed)).address })
+
+export function Verify({ fromStart, id, step: first, onVerified, onBack }: Props) {
+  // Worked out at once while a seed is held, before the check's tab hides the page.
+  // A failure says itself where it is awaited, as the stamp is asked for.
+  const [atOpen] = useState(() => {
+    if (!isHeldFor(id)) return null
+    const got = withSeed(id, knownOf)
+    got.catch(() => undefined)
+    return got
+  })
+  const known = useRef<Promise<Known> | null>(atOpen)
   const stampNumber = useRef<bigint | null>(null)
   const live = useRef(true)
   // Each back starts a new turn: what the earlier one was asking or waiting for stops.
   const turn = useRef(0)
   const wake = useRef<(() => void) | null>(null)
   // With a seed held, a check left open is opened again, and asked for from here.
-  const [step, setStep] = useState<Step>(first.at === 'away' && seed.current ? { at: 'start' } : first)
-  const [away, setAway] = useState(first.at === 'away' && !seed.current)
+  const [step, setStep] = useState<Step>(first.at === 'away' && known.current ? { at: 'start' } : first)
+  const [away, setAway] = useState(first.at === 'away' && !known.current)
   const [stripe, setStripe] = useState<string | null>(null)
   /** The check under way for this passkey, if any. */
   const underWay = (): Check | null => (under()?.passkey === id ? checkOf(under()) : null)
@@ -72,29 +89,22 @@ export function Verify({ passkey, id, step: first, onVerified, onBack }: Props) 
       }
     })
 
-  /** The seed let go: zeroed, held no more. */
-  const letGo = () => {
-    seed.current?.fill(0)
-    seed.current = null
-  }
   useEffect(
     () => () => {
       live.current = false
-      letGo()
     },
     [],
   )
 
-  /** The stamp, kept with the seed held; the person is verified. */
+  /** The stamp signed: kept at once while a seed is held, and the person is verified; else Continue asks for one. */
   const done = async (stamp: string) => {
-    await finish(config, id, seed.current!, stamp, proveInWorker)
-    letGo()
+    if (!isHeldFor(id)) return setStep({ at: 'signed', stamp })
+    await withSeed(id, (s) => finish(config, id, s, stamp, proveInWorker))
     onVerified()
   }
 
-  /** Held for review: the seed let go, the stamp asked for now and then, and its gift collected as it comes, when the wallet is known. */
+  /** Held for review: the stamp asked for now and then, and its gift collected as it comes, when the wallet is known. */
   const review = async (at: number, wallet?: string) => {
-    letGo()
     setStep({ at: 'review' })
     while (live.current && turn.current === at) {
       await pause(REVIEW_EVERY_MS)
@@ -109,10 +119,9 @@ export function Verify({ passkey, id, step: first, onVerified, onBack }: Props) 
     }
   }
 
-  /** The stamp asked for while the check is open in its tab, with the seed held, until back. */
-  const wait = async (at: number) => {
-    stampNumber.current = await stampNumberAt(config, seed.current!)
-    const wallet = (await walletKey(seed.current!)).address
+  /** The stamp asked for while the check is open in its tab, with what the seed gave, until back. */
+  const wait = async (at: number, { stampNumber: number, wallet }: Known) => {
+    stampNumber.current = number
     const until = Date.now() + AWAY_FOR_MS
     while (live.current && turn.current === at && Date.now() < until) {
       const next = await ask(config, id, stampNumber.current)
@@ -125,14 +134,15 @@ export function Verify({ passkey, id, step: first, onVerified, onBack }: Props) 
     if (turn.current === at) throw new NotFinished()
   }
 
-  // Taken up held for review with the seed: the stamp asked for as it would have been.
+  // Taken up held for review with a seed held: the stamp asked for as it would have been.
   useEffect(() => {
-    if (first.at !== 'review' || !seed.current) return
-    const s = seed.current
+    if (first.at !== 'review' || !known.current) return
+    const k = known.current
     const at = turn.current
     void (async () => {
-      stampNumber.current = await stampNumberAt(config, s)
-      await review(at, (await walletKey(s)).address)
+      const { stampNumber: number, wallet } = await k
+      stampNumber.current = number
+      await review(at, wallet)
     })().catch((err: unknown) => live.current && turn.current === at && start.setNote(noteOf(err)))
   }, [])
 
@@ -150,16 +160,16 @@ export function Verify({ passkey, id, step: first, onVerified, onBack }: Props) 
     }
   }
 
-  /** The check opened in its tab; with the seed held, asked for from here until it comes, or until back. */
+  /** The check opened in its tab; with what a held seed gave, asked for from here until it comes, or until back. */
   const start = useAction(async () => {
     const at = turn.current
     await openTab()
     if (turn.current !== at) return
     setStep({ at: 'away' })
     setAway(true)
-    if (!seed.current) return
+    if (!known.current) return
     try {
-      await wait(at)
+      await wait(at, await known.current)
     } catch (err) {
       if (turn.current !== at) return
       setStep(stepOf(id))
@@ -191,7 +201,9 @@ export function Verify({ passkey, id, step: first, onVerified, onBack }: Props) 
   const go = useAction(async () => {
     const at = turn.current
     const next = await withSeed(id, async (s) => {
-      stampNumber.current = await stampNumberAt(config, s)
+      const k = await knownOf(s)
+      known.current = Promise.resolve(k)
+      stampNumber.current = k.stampNumber
       return advance(config, id, s, proveInWorker)
     }).catch((err: unknown) => {
       if (turn.current !== at) return undefined
@@ -209,10 +221,9 @@ export function Verify({ passkey, id, step: first, onVerified, onBack }: Props) 
     if (next.at === 'review') await review(at)
   })
 
-  /** The stamp kept, with the seed held from Start, after a review. */
+  /** The stamp signed kept: one unlock, unless a seed is still held. */
   const keep = useAction(async () => {
     if (step.at !== 'signed') return
-    if (seed.current) return done(step.stamp)
     await withSeed(id, (s) => finish(config, id, s, step.stamp, proveInWorker))
     onVerified()
   })
@@ -235,7 +246,7 @@ export function Verify({ passkey, id, step: first, onVerified, onBack }: Props) 
   ]
   return (
     <main>
-      <Top onBack={passkey && step.at !== 'choose' ? toChecks : onBack} />
+      <Top onBack={fromStart && step.at !== 'choose' ? toChecks : onBack} />
       <h1>{title}</h1>
       {step.at === 'consent' && (
         <>
@@ -296,7 +307,7 @@ export function Verify({ passkey, id, step: first, onVerified, onBack }: Props) 
             {keep.busy || go.busy ? <Spinner /> : <><UnlockIcon /> Continue</>}
           </button>
         </>
-      ) : away && !seed.current ? (
+      ) : away && !start.busy ? (
         <>
           <p className="line">Finish in the other tab.</p>
           <Line note={go.note ?? start.note} />

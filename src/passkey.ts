@@ -1,8 +1,10 @@
 // The passkey, and the seed it gives: its PRF secret (the WebAuthn PRF extension) for one fixed
 // salt, which the person's password manager gives only after their device's unlock, the same 32
 // bytes every time for the same passkey, on every device it syncs to. That secret is the seed, used
-// as it is, for one action, and zeroed after it (`withSeed`). No server checks these passkeys: the
-// challenge is random and nobody reads the signature; only the PRF secret is used.
+// as it is. After an unlock it is held in the page's memory for 5 minutes, which each action
+// restarts, and dropped at once when the page is hidden or closed (held.ts); it is never stored. No
+// server checks these passkeys: the challenge is random and nobody reads the signature; only the PRF
+// secret is used.
 //
 // One passkey per person. On a device that knows one, Start asks for the ones it knows, and never
 // offers to make another. On a device that knows none, the person says which: make one (`make`), or
@@ -13,6 +15,7 @@
 
 import { base64urlnopad } from '@scure/base'
 
+import { withHeld } from './held.ts'
 import { Said } from './words.ts'
 
 /**
@@ -155,14 +158,10 @@ async function drop(id: string): Promise<void> {
 }
 
 /**
- * The seed for one action, from the passkey in use (`id`), after the device's unlock, zeroed when
- * the action ends, whether it worked or not. The action mixes the keys it needs and keeps none.
+ * The seed for an action, from the passkey in use (`id`): the one held from an unlock less than 5
+ * minutes ago, or, with none held, asked for now, after the device's unlock, and held from then
+ * (held.ts). The action mixes the keys it needs and keeps none.
  */
 export async function withSeed<T>(id: string, action: (seed: Uint8Array) => Promise<T>): Promise<T> {
-  const { seed } = await ask({ allow: [id] })
-  try {
-    return await action(seed)
-  } finally {
-    seed.fill(0)
-  }
+  return withHeld(id, async () => (await ask({ allow: [id] })).seed, action)
 }

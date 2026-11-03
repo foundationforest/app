@@ -1,8 +1,9 @@
 This repo is `app`: the Forest app, the person's control panel for Forest, a web app at
-https://app.forest.foundation. It holds nothing of the person's: their seed is their passkey's PRF
-secret, asked for at each action and dropped after it. It is built on three repos, each fetched by
-`./standard.sh` at the commit its file pins: the standard (`STANDARD`), the markets (`MARKETS`) and
-services (`SERVICES`), all at github.com/foundationforest.
+https://app.forest.foundation. It stores nothing of the person's: their seed is their passkey's PRF
+secret, asked for at an unlock, then kept in the page's memory for 5 minutes, which each action
+restarts, and dropped at once when the page is hidden or closed; never stored. It is built on three
+repos, each fetched by `./standard.sh` at the commit its file pins: the standard (`STANDARD`), the
+markets (`MARKETS`) and services (`SERVICES`), all at github.com/foundationforest.
 
 ## Before any task
 
@@ -45,9 +46,10 @@ on it #edeae0), danger #b3261e; dark swaps them (paper #121a15, paper-2 #313c34,
 #edeae0, danger #f28b82). A review's score sits on its chip, #efe3cc with text #6e4106; dark
 #3b2c12 with #f0d49a. The dot for what is new is the accent, the ink in dark. Manrope, self-hosted;
 bold is the only emphasis. Phone first, fine on a laptop. The mark is drawn once, in `src/mark.tsx`;
-never redraw it. A verified profile shows the shield, drawn once in `src/ui.tsx`: an icon, never a
-word. On screen, as few words as work: no line explaining a title, one button per step. The unlock
-icon goes beside the word on labeled buttons that ask the passkey; never on list rows; an icon-only
-button shows its own icon. When something can't be done, one plain line says why: red when what was
-given is wrong, quiet when something is still missing. Simple and elegant beats complete; when
-unsure, leave it out.
+never redraw it. A verified profile shows its strongest check's shield, drawn once in `src/ui.tsx`:
+an outline for a face check, filled for an ID check; an icon, whose words ("Verified by face",
+"Verified with ID") show only when it is tapped. On screen, as few words as work: no line explaining
+a title, one button per step. The unlock icon goes beside the word on labeled buttons, only when
+tapping will ask the passkey; never on list rows; an icon-only button shows its own icon. When
+something can't be done, one plain line says why: red when what was given is wrong, quiet when
+something is still missing. Simple and elegant beats complete; when unsure, leave it out.

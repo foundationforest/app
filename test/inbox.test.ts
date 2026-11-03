@@ -52,7 +52,7 @@ test('a message and its reply: counted with nothing unlocked, opened in one unlo
   expect(opened.threads).toHaveLength(1)
   const [thread] = opened.threads
   expect([thread!.mine, thread!.them]).toEqual([t.address, s.address])
-  expect(thread!.who, "the sender's market and role, and Verified: their verification checks").toEqual({ market: 'tutoring', role: 'student', verified: true })
+  expect(thread!.who, "the sender's market and role, and the shield of their strongest check whose verification checks, the face check's").toEqual({ market: 'tutoring', role: 'student', check: 'face' })
   expect(thread!.messages.map((m) => [m.text, m.mine])).toEqual([[ASK, false]])
   expect(await newCount(w.host, [t]), 'none new once opened').toBe(0)
 
@@ -63,7 +63,7 @@ test('a message and its reply: counted with nothing unlocked, opened in one unlo
     [ASK, true],
     [YES, false],
   ])
-  expect(theirs.threads[0]!.who).toEqual({ market: 'tutoring', role: 'tutor', verified: true })
+  expect(theirs.threads[0]!.who).toEqual({ market: 'tutoring', role: 'tutor', check: 'face' })
 
   freshDevice()
   expect(await newCount(w.host, [s]), 'on a new device, nothing already there is new').toBe(0)
@@ -93,7 +93,7 @@ test("one of the person's profiles to another of theirs: it arrives, counted wit
   expect(await newMessages(w.host, [s, t]), "new to the tutor; what the student sent is in no inbox").toEqual({ [s.address]: [], [t.address]: [expect.any(String)] })
   const { threads } = await openAll(w, me.seed, [s, t], checkHere)
   const tutors = threads.find((x) => x.mine === t.address)!
-  expect([tutors.them, tutors.who, tutors.messages.map((m) => [m.text, m.mine])], "the tutor's: from the student, verified").toEqual([s.address, { market: 'tutoring', role: 'student', verified: true }, [[ASK, false]]])
+  expect([tutors.them, tutors.who, tutors.messages.map((m) => [m.text, m.mine])], "the tutor's: from the student, verified").toEqual([s.address, { market: 'tutoring', role: 'student', check: 'face' }, [[ASK, false]]])
   const students = threads.find((x) => x.mine === s.address)!
   expect([students.them, students.messages.map((m) => [m.text, m.mine])], "the student's: what it sent").toEqual([t.address, [[ASK, true]]])
 })

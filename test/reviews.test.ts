@@ -7,7 +7,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'vitest'
 
 import * as device from '../src/device.ts'
 import { post, readPosts } from '../src/flows/posts.ts'
-import { givenOf, newOf, newest, rate } from '../src/flows/reviews.ts'
+import { givenOf, newOf, newest, notices, rate } from '../src/flows/reviews.ts'
 import { ratedOf } from '../src/rated.ts'
 import { readRated } from '../src/services/index.ts'
 import { Unreachable } from '../src/services/http.ts'
@@ -116,6 +116,26 @@ describe('what is new on a profile', () => {
     device.forget()
     expect(device.seen(), 'Forget lets the marks go').toEqual({})
   })
+})
+
+test("Notifications: each profile's new messages first, by how many; then every review, vouch and report about any of them, newest first, those after the marks new", async () => {
+  const p = await verifiedWith(w, 'clothing/seller', 'tutoring/tutor')
+  const [seller, tutor] = p.profiles as [device.Profile, device.Profile]
+  const other = (await verifiedWith(w, 'clothing/buyer', 'tutoring/student')).profiles
+  w.indexSays(seller.address, page(seller.address, { reviews: [{ writer: other[0]!.address, id: 'a', body: { score: '9' }, time: 100 }], reports: [{ writer: other[0]!.address, id: 'b', body: { text: 'Late.' }, time: 300 }] }))
+  w.indexSays(tutor.address, page(tutor.address, { vouches: [{ writer: other[1]!.address, id: 'c', body: { text: 'Real.' }, time: 200 }] }))
+  const list = [seller, tutor]
+  await rate(w.index, list)
+  const rated = Object.fromEntries(list.map((x) => [x.address, ratedOf(x.address)]))
+  const rows = notices(list, { [seller.address]: [], [tutor.address]: ['m1', 'm2'] }, rated, { [seller.address]: 150, [tutor.address]: 200 })
+  expect(rows.map((n) => ('messages' in n ? ['messages', n.on, n.messages] : [n.received.kind, n.on, n.fresh]))).toEqual([
+    ['messages', tutor.address, 2],
+    ['report', seller.address, true],
+    ['vouch', tutor.address, false],
+    ['review', seller.address, false],
+  ])
+  expect(notices(list, {}, rated, {}).every((n) => 'received' in n && !n.fresh), 'a profile with no mark: nothing new').toBe(true)
+  expect(notices(list, {}, {}, {}), 'nothing read yet, nothing new: no rows').toEqual([])
 })
 
 test("what a profile gave: its reviews, vouches and reports, from its own folder, each naming who it is about", async () => {
