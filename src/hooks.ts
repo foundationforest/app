@@ -1,14 +1,27 @@
-// What the screens read from the device and the host, kept fresh: the person's profiles as the
-// device keeps them; how each is verified, as its profile entry at the host says; how many new
-// entries their inboxes hold; and the messages opened in this page.
+// What the screens read from the device, the host and the index, kept fresh: the person's profiles
+// as the device keeps them; how each is verified, as its profile entry at the host says; the new
+// entries in their inboxes; what the index says of each, read as a screen showing it opens and held
+// in the page meanwhile; what is new on each; and the messages opened in this page.
 
 import { useEffect, useState } from 'react'
 
 import { config } from './config.ts'
-import { CHANGED, type Profile, profiles } from './device.ts'
-import { type Check, readCard } from './flows/cards.ts'
-import { newCount } from './flows/inbox.ts'
+import { CHANGED, type Profile, profiles, seen } from './device.ts'
+import { type Card, readCard } from './flows/cards.ts'
+import { newMessages } from './flows/inbox.ts'
+import { type Received, newOf, rate } from './flows/reviews.ts'
 import { onOpened, opened } from './opened.ts'
+import { type Held, onRated, ratedOf } from './rated.ts'
+
+/** A render again whenever what the device keeps changes. */
+function useDevice(): void {
+  const [, tick] = useState(0)
+  useEffect(() => {
+    const changed = () => tick((n) => n + 1)
+    addEventListener(CHANGED, changed)
+    return () => removeEventListener(CHANGED, changed)
+  }, [])
+}
 
 /** The person's profiles, as this device keeps them, read again whenever that changes. */
 export function useProfiles(): Profile[] {
@@ -21,55 +34,87 @@ export function useProfiles(): Profile[] {
   return list
 }
 
-/** How each profile is verified, by address, as the host serves its profile entry; filled in as each answers. */
-export function useChecks(list: Profile[]): Record<string, Check[]> {
-  const [checks, setChecks] = useState<Record<string, Check[]>>({})
+/** Each profile's card, by address, as the host serves its folder: how it is verified and how many posts it holds; filled in as each answers. */
+export function useCards(list: Profile[], again = 0): Record<string, Card> {
+  const [cards, setCards] = useState<Record<string, Card>>({})
   const addresses = list.map((p) => p.address).join(',')
   useEffect(() => {
     let live = true
     for (const p of list) {
       readCard(config, p.address).then(
-        (card) => live && card && setChecks((was) => ({ ...was, [p.address]: card.checks })),
+        (card) => live && card && setCards((was) => ({ ...was, [p.address]: card })),
         () => undefined,
       )
     }
     return () => void (live = false)
-  }, [addresses])
-  return checks
+  }, [addresses, again])
+  return cards
 }
 
-/** A check's name, as a badge says it. */
-export const CHECK_WORDS: Record<Check, string> = { face: 'Face check', id: 'ID check' }
-
 /** How often the inboxes are listed while the app is open. */
-const COUNT_EVERY_MS = 30_000
+const LIST_EVERY_MS = 30_000
 
-/** The last count, so a screen opening shows it at once. */
-let lastCount = 0
+/** The last listing, so a screen opening shows it at once. */
+let lastMessages: Record<string, string[]> = {}
 
-/** How many new entries every profile's inbox holds, listed with nothing unlocked: now, every half minute, and whenever the device changes. */
-export function useNewCount(): number {
+/** The new inbox entries of every profile, by address, listed with nothing unlocked: now, every half minute, and whenever the device changes. */
+export function useNewMessages(): Record<string, string[]> {
   const list = useProfiles()
-  const [count, setCount] = useState(lastCount)
+  const [found, setFound] = useState(lastMessages)
   const addresses = list.map((p) => p.address).join(',')
   useEffect(() => {
     let live = true
     const list = profiles()
-    const count = () =>
-      newCount(config.host, list).then(
-        (n) => live && setCount((lastCount = n)),
+    const look = () =>
+      newMessages(config.host, list).then(
+        (ids) => live && setFound((lastMessages = ids)),
         () => undefined,
       )
-    void count()
-    const every = setInterval(count, COUNT_EVERY_MS)
-    addEventListener(CHANGED, count)
+    void look()
+    const every = setInterval(look, LIST_EVERY_MS)
+    addEventListener(CHANGED, look)
     return () => {
       live = false
       clearInterval(every)
-      removeEventListener(CHANGED, count)
+      removeEventListener(CHANGED, look)
     }
   }, [addresses])
-  return count
+  return found
+}
+
+/** What the index said of each profile in `list` when last read in this page, as it is held. */
+export function useHeldRated(list: Profile[]): Record<string, Held | undefined> {
+  const [, tick] = useState(0)
+  useEffect(() => onRated(() => tick((n) => n + 1)), [])
+  return Object.fromEntries(list.map((p) => [p.address, ratedOf(p.address)]))
+}
+
+/** What the index says of each profile in `list`: read as the screen opens, held in the page meanwhile. */
+export function useRated(list: Profile[]): Record<string, Held | undefined> {
+  const addresses = list.map((p) => p.address).join(',')
+  useEffect(() => void rate(config.index, list), [addresses])
+  return useHeldRated(list)
+}
+
+/** What is new on one profile: how many new messages, and the new reviews, vouches and reports. */
+export type News = { messages: number; received: Received[] }
+
+/** What is new on each profile in `list`, by address, and how many new things in all. */
+export function useNews(list: Profile[]): { of: Record<string, News>; total: number } {
+  useDevice()
+  const messages = useNewMessages()
+  const rated = useHeldRated(list)
+  const marks = seen()
+  const of: Record<string, News> = {}
+  let total = 0
+  for (const p of list) {
+    const held = rated[p.address]
+    const received = held && 'rated' in held && p.address in marks ? newOf(held.rated, marks[p.address]!) : []
+    const n = messages[p.address]?.length ?? 0
+    of[p.address] = { messages: n, received }
+    total += n + received.length
+  }
+  return { of, total }
 }
 
 /** The messages opened in this page, or null. */

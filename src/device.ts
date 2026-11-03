@@ -1,8 +1,13 @@
 // What this device keeps, in localStorage, none of it secret: the id of the passkey in use and of
 // every passkey this device has made or used (so Start never makes a second one where one is), the
 // person's profiles' labels and addresses, how they are verified, where they left off in each
-// profile's inbox, their theme, and, while a verification is under way, its check and session, the
-// ID check's payment and the gift's buy (flows/verify.ts). Never the seed, a key, a stamp or a message.
+// profile's inbox, the time of the newest review, vouch or report about each profile the Inbox has
+// shown, their theme, and, while a verification is under way, its check and session, the ID check's
+// payment and the gift's buy (flows/verify.ts). Never the seed, a key, a stamp or a message.
+//
+// What is new on a profile is what came after those two marks. A profile this device has no mark for
+// yet (on a new device, or after Forget) is marked at what it holds when first read, so nothing old
+// shows as new; one made here is marked at the start, so all that comes to it is.
 //
 // Anything else at this origin is the earlier app's, built on an architecture that is gone, and is
 // cleared at the first start (`cleanOld`): its passkey ids are kept, under the same name and in the
@@ -37,6 +42,7 @@ const KEYS = {
   under: 'forest.setup',
   checks: 'forest.checks',
   read: 'forest.read',
+  seen: 'forest.seen',
 } as const
 
 /** The key this app keeps in sessionStorage, for one tab (version.ts). */
@@ -97,6 +103,19 @@ export const cursors = (): Record<string, number> => {
 }
 export const saveCursors = (more: Record<string, number>) => write(KEYS.read, { ...cursors(), ...more })
 
+/** The time of the newest review, vouch or report about each profile, by its address, that the Inbox has shown. */
+export const seen = (): Record<string, number> => {
+  const kept = read<Record<string, unknown>>(KEYS.seen, {})
+  return Object.fromEntries(Object.entries(kept).filter((e): e is [string, number] => Number.isSafeInteger(e[1])))
+}
+export const saveSeen = (more: Record<string, number>) => write(KEYS.seen, { ...seen(), ...more })
+
+/** A profile made on this device: marked at the start, so every message, review, vouch and report that comes to it is new. */
+export function markNew(address: string): void {
+  if (!(address in cursors())) saveCursors({ [address]: 0 })
+  if (!(address in seen())) saveSeen({ [address]: 0 })
+}
+
 export const theme = (): Theme => {
   const t = read<string>(KEYS.theme, 'device')
   return t === 'light' || t === 'dark' ? t : 'device'
@@ -107,9 +126,9 @@ export const under = (): Under | null => read<Under | null>(KEYS.under, null)
 export const keepUnder = (u: Under) => write(KEYS.under, u)
 export const endUnder = () => write(KEYS.under, undefined)
 
-/** Forget this device: the profiles, how they are verified, where each inbox was left off, the theme, the passkey in use and any verification under way. The ids of the passkeys it knows stay, so Start asks for them and never makes a second one. */
+/** Forget this device: the profiles, how they are verified, what was new on each, the theme, the passkey in use and any verification under way. The ids of the passkeys it knows stay, so Start asks for them and never makes a second one. */
 export function forget(): void {
-  for (const key of [KEYS.passkey, KEYS.profiles, KEYS.checks, KEYS.read, KEYS.theme, KEYS.under]) store().removeItem(key)
+  for (const key of [KEYS.passkey, KEYS.profiles, KEYS.checks, KEYS.read, KEYS.seen, KEYS.theme, KEYS.under]) store().removeItem(key)
   globalThis.dispatchEvent?.(new Event(CHANGED))
 }
 

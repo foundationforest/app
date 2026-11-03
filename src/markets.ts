@@ -1,7 +1,7 @@
 // The markets, from their files as the build hands them over (build/markets.ts), through the markets'
 // browser entry, which takes them as data and runs no eval: the directory, each market file, and
 // checkEntry. As the app shows them: each market and role a pair, in the market's own words,
-// "Tutoring · tutor"; each kind of entry's fields for a role; and the other side of a market.
+// "Tutoring / tutor"; each kind of entry's fields for a role; and the other side of a market.
 
 import { type Field, type Fields, type Kind, type Market, SHARED, loadMarkets } from '@foundationforest/markets/browser'
 import files from 'virtual:markets'
@@ -24,7 +24,7 @@ export const marketWords = (name: string) => {
 
 /** Every market and role in the directory, in its order. */
 export const pairs: Pair[] = markets.directory.markets.flatMap((m) =>
-  m.roles.map((r) => ({ label: `${m.name}/${r.role}`, market: m.name, role: r.role, words: `${marketWords(m.name)} · ${r.role}`, offers: r.posts === 'offers', posts: r.posts })),
+  m.roles.map((r) => ({ label: `${m.name}/${r.role}`, market: m.name, role: r.role, words: `${marketWords(m.name)} / ${r.role}`, offers: r.posts === 'offers', posts: r.posts })),
 )
 
 /** The pair a label names; one the directory no longer lists is named from the label itself. */
@@ -32,7 +32,7 @@ export function pairOf(label: string): Pair {
   const found = pairs.find((p) => p.label === label)
   if (found) return found
   const [market = label, role = ''] = label.split('/')
-  return { label, market, role, words: role ? `${marketWords(market)} · ${role}` : marketWords(market), offers: false, posts: 'posts' }
+  return { label, market, role, words: role ? `${marketWords(market)} / ${role}` : marketWords(market), offers: false, posts: 'posts' }
 }
 
 /**
@@ -48,6 +48,12 @@ export function otherSide(market: string, role: string): string[] {
 
 /** A role's post, in its market's word for it: an offer, a request or a post. */
 export const POST_WORDS = { offers: 'Offer', requests: 'Request', posts: 'Post' } as const
+
+/** A role's posts in its word, `n` of them: 3 offers, 1 request. */
+export const postCount = (n: number, label: string) => `${n} ${POST_WORDS[pairOf(label).posts].toLowerCase()}${n === 1 ? '' : 's'}`
+
+/** A role's posts as a heading, in its word: Your offers, Your requests, Your posts. */
+export const yourPosts = (label: string) => `Your ${POST_WORDS[pairOf(label).posts].toLowerCase()}s`
 
 /** A kind's name on screen, for a profile of `label`. */
 export function kindWords(kind: Kind, label: string): string {

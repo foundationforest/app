@@ -9,6 +9,10 @@
 //                  expired, not passed, or past its hour. Services' verifier itself runs in the ID
 //                  check's tests (id.test.ts) and the browser test, with its stand-ins; here a test
 //                  says what Didit decided.
+//   the index      a stand-in answering /profiles/<address>.json in the shape services' index
+//                  answers it (index/src/pages/profile.ts), each page what a test says the index made
+//                  of the profile; 404 for any other, and down when a test says so. Services' index
+//                  itself runs in the browser test, reading the host there.
 //
 // The ID check's tests run in another world, services' own verifier (verifier/services.ts).
 //
@@ -75,8 +79,17 @@ export type Decision = 'approved' | 'unfinished' | 'review' | 'declined' | 'expi
 export const VERIFIER_NAME = 'verifier.stand-in.invalid'
 export const FACE_CREDITS = 10
 
+/** What a stand-in index page holds of a profile: the index's own JSON for it, as services' index writes it. */
+export type IndexPage = { [key: string]: unknown }
+
 export type World = Services & {
   faceKey: string
+  /** The stand-in index's origin. */
+  index: string
+  /** What the stand-in index answers for the profile at `address`, from now; null, a 404. */
+  indexSays(address: string, page: IndexPage | null): void
+  /** The stand-in index down, or up again. */
+  indexDown(down: boolean): void
   /** What Didit decides for every session from now, unless `decide` names one. */
   decideAll(d: Decision): void
   decide(session: string, d: Decision): void
@@ -90,17 +103,18 @@ export type World = Services & {
 }
 
 /**
- * The host and a stand-in verifier, on loopback. `entryPerKb` is the host's price of a kilobyte of
- * an entry, in credits; its own default unless a test sets it.
+ * The host, a stand-in verifier and a stand-in index, on loopback. `entryPerKb` and `filePerKb` are
+ * the host's price of a kilobyte of an entry and of a file, in credits; its own defaults unless a
+ * test sets them.
  */
-export async function world({ entryPerKb }: { entryPerKb?: string } = {}): Promise<World> {
+export async function world({ entryPerKb, filePerKb }: { entryPerKb?: string; filePerKb?: string } = {}): Promise<World> {
   const dir = mkdtempSync(join(tmpdir(), 'forest-app-'))
   const sponsor = ed25519(newSeed())
   const face = serviceKey(newSeed())
   const id = serviceKey(newSeed())
   const hostPort = await freePort()
   const host = `http://127.0.0.1:${hostPort}`
-  const running = await startHost(readConfig({ DATA_DIR: join(dir, 'host'), PUBLIC_ORIGIN: host, PORT: String(hostPort), SPONSORS: sponsor.address, ...(entryPerKb && { ENTRY_PER_KB: entryPerKb }) }))
+  const running = await startHost(readConfig({ DATA_DIR: join(dir, 'host'), PUBLIC_ORIGIN: host, PORT: String(hostPort), SPONSORS: sponsor.address, ...(entryPerKb && { ENTRY_PER_KB: entryPerKb }), ...(filePerKb && { FILE_PER_KB: filePerKb }) }))
 
   let all: Decision = 'approved'
   const decided = new Map<string, Decision>()
@@ -171,9 +185,24 @@ export async function world({ entryPerKb }: { entryPerKb?: string } = {}): Promi
   })
   await new Promise<void>((resolve) => verifier.listen(0, '127.0.0.1', resolve))
 
+  const pages = new Map<string, IndexPage>()
+  let down = false
+  const index: Server = createServer((req, res) => {
+    req.resume()
+    if (down) return void res.writeHead(503).end()
+    const address = /^\/profiles\/([^/]+)\.json$/.exec(req.url ?? '')?.[1]
+    const page = address ? pages.get(address) : undefined
+    if (!page) return answer(404, { error: 'not_found' }, res)
+    answer(200, page, res)
+  })
+  await new Promise<void>((resolve) => index.listen(0, '127.0.0.1', resolve))
+
   return {
     verifier: `http://127.0.0.1:${(verifier.address() as AddressInfo).port}`,
     host,
+    index: `http://127.0.0.1:${(index.address() as AddressInfo).port}`,
+    indexSays: (address, page) => void (page ? pages.set(address, page) : pages.delete(address)),
+    indexDown: (d) => void (down = d),
     faceKey: face.address,
     decideAll: (d) => void (all = d),
     decide: (session, d) => void decided.set(session, d),
@@ -182,6 +211,7 @@ export async function world({ entryPerKb }: { entryPerKb?: string } = {}): Promi
     balance: async (folder) => ((await (await fetch(`${host}/credits/balance/${folder}`)).json()) as { credits: number }).credits,
     close: async () => {
       await new Promise<void>((resolve) => verifier.close(() => resolve()))
+      await new Promise<void>((resolve) => index.close(() => resolve()))
       await running.close()
       rmSync(dir, { recursive: true, force: true })
     },

@@ -1,27 +1,30 @@
-// The screens, and the way between them. Start, until a person is verified here; then Profiles,
-// Messages and Settings, and from them a new profile, a card, a post, a thread, a new message, or
-// the ID check. Each screen the person can come back to has its own path, so a reload opens on it
-// and the phone's back goes back; what a screen is about (a profile's address, a thread, an entry
-// being edited) is kept in the page's history, never in its path, which a host's logs would keep.
-// A Share link's address arrives in its query: it is moved into the history at once, and waits
-// there through Start and the verification when no one is verified here yet.
+// The screens, and the way between them. Start, until a person is verified here; then a person with
+// no profile yet makes their first; then Profiles, Inbox and Settings, and from them New profile, a
+// profile, its reviews, a review received, a post, Review someone, a thread, a new message, or the
+// ID check. Each screen the person can come back to has its own path, so a reload opens on it and
+// the phone's back goes back; what a screen is about (a profile's address, a thread, an entry being
+// edited) is kept in the page's history, never in its path, which a host's logs would keep. A Share
+// link's address arrives in its query: it is moved into the history at once, and waits there through
+// Start and the verification when no one is verified here yet.
 
-import { useEffect, useRef, useState } from 'react'
+import { type ReactNode, useEffect, useRef, useState } from 'react'
 
-import { passkey as inUse } from './device.ts'
+import { passkey as inUse, profiles } from './device.ts'
 import type { Posted } from './flows/posts.ts'
 import type { Entered } from './flows/start.ts'
 import { type Step, choose, stepOf } from './flows/verify.ts'
 import { useProfiles } from './hooks.ts'
-import type { Kind } from './markets.ts'
 import type { Passkey } from './passkey.ts'
 import { Back } from './screens/Back.tsx'
-import { Card } from './screens/Card.tsx'
+import { Inbox } from './screens/Inbox.tsx'
 import { Message } from './screens/Message.tsx'
-import { Messages } from './screens/Messages.tsx'
 import { NewProfile } from './screens/NewProfile.tsx'
 import { Post } from './screens/Post.tsx'
+import { Profile } from './screens/Profile.tsx'
 import { Profiles } from './screens/Profiles.tsx'
+import { Received } from './screens/Received.tsx'
+import { Review } from './screens/Review.tsx'
+import { Reviews } from './screens/Reviews.tsx'
 import { Settings } from './screens/Settings.tsx'
 import { Start } from './screens/Start.tsx'
 import { Thread } from './screens/Thread.tsx'
@@ -33,27 +36,33 @@ type Screen =
   | { at: 'verify'; passkey: Passkey | null; id: string; step: Step }
   | { at: 'profiles' }
   | { at: 'new' }
-  | { at: 'card'; address: string }
-  | { at: 'post'; address: string; kinds: Kind[]; edit?: Posted; subject?: string }
-  | { at: 'messages' }
+  | { at: 'profile'; address: string }
+  | { at: 'reviews'; address: string }
+  | { at: 'received'; address: string; entry: string }
+  | { at: 'post'; address: string; edit?: Posted }
+  | { at: 'review'; address: string; subject?: string; edit?: Posted; report?: boolean }
+  | { at: 'inbox'; only?: string }
   | { at: 'thread'; mine: string; them: string }
-  | { at: 'message'; to: string }
+  | { at: 'message'; to?: string }
   | { at: 'settings' }
   | { at: 'back' }
 
 const PATHS: Partial<Record<Screen['at'], string>> = {
   verify: '/id',
   new: '/new',
-  card: '/profile',
+  profile: '/profile',
+  reviews: '/reviews',
+  received: '/received',
   post: '/post',
-  messages: '/messages',
+  review: '/review',
+  inbox: '/inbox',
   thread: '/thread',
   message: '/message',
   settings: '/settings',
 }
 
 /** What the page's history keeps of a screen: what it is about, never in the path. */
-type Kept = { address?: string; kinds?: Kind[]; edit?: Posted; subject?: string; mine?: string; them?: string; to?: string; pushed?: boolean }
+type Kept = { address?: string; entry?: string; edit?: Posted; subject?: string; report?: boolean; only?: string; mine?: string; them?: string; to?: string; pushed?: boolean }
 
 const kept = (): Kept => (history.state as Kept | null) ?? {}
 const isText = (v: unknown): v is string => typeof v === 'string' && v.length > 0
@@ -74,29 +83,47 @@ function here(): Screen {
   if (path === '/message' && isText(to)) history.replaceState({ ...k, to }, '', '/message')
   const id = inUse()
   if (!id) return { at: 'start' }
-  if (path === '/id') return idCheck(id)
-  if (path === '/new') return { at: 'new' }
-  if (path === '/settings') return { at: 'settings' }
-  if (path === '/messages') return { at: 'messages' }
   const now = kept()
-  if (path === '/profile' && isText(now.address)) return { at: 'card', address: now.address }
-  if (path === '/post' && isText(now.address) && Array.isArray(now.kinds)) return { at: 'post', address: now.address, kinds: now.kinds, ...(now.edit && { edit: now.edit }), ...(isText(now.subject) && { subject: now.subject }) }
+  switch (path) {
+    case '/id':
+      return idCheck(id)
+    case '/new':
+      return { at: 'new' }
+    case '/settings':
+      return { at: 'settings' }
+    case '/inbox':
+    case '/messages':
+      return { at: 'inbox', ...(isText(now.only) && { only: now.only }) }
+    case '/message':
+      return { at: 'message', ...(isText(now.to) && { to: now.to }) }
+  }
+  if (path === '/profile' && isText(now.address)) return { at: 'profile', address: now.address }
+  if (path === '/reviews' && isText(now.address)) return { at: 'reviews', address: now.address }
+  if (path === '/received' && isText(now.address) && isText(now.entry)) return { at: 'received', address: now.address, entry: now.entry }
+  if (path === '/post' && isText(now.address)) return { at: 'post', address: now.address, ...(now.edit && { edit: now.edit }) }
+  if (path === '/review' && isText(now.address)) return { at: 'review', address: now.address, ...(now.edit && { edit: now.edit }), ...(isText(now.subject) && { subject: now.subject }), ...(now.report && { report: true }) }
   if (path === '/thread' && isText(now.mine) && isText(now.them)) return { at: 'thread', mine: now.mine, them: now.them }
-  if (path === '/message' && isText(now.to)) return { at: 'message', to: now.to }
   return { at: 'profiles' }
 }
 
 /** What a screen keeps in the history. */
 function keptOf(to: Screen): Kept {
   switch (to.at) {
-    case 'card':
+    case 'profile':
+    case 'reviews':
       return { address: to.address }
+    case 'received':
+      return { address: to.address, entry: to.entry }
     case 'post':
-      return { address: to.address, kinds: to.kinds, ...(to.edit && { edit: to.edit }), ...(to.subject && { subject: to.subject }) }
+      return { address: to.address, ...(to.edit && { edit: to.edit }) }
+    case 'review':
+      return { address: to.address, ...(to.edit && { edit: to.edit }), ...(to.subject && { subject: to.subject }), ...(to.report && { report: true }) }
+    case 'inbox':
+      return to.only ? { only: to.only } : {}
     case 'thread':
       return { mine: to.mine, them: to.them }
     case 'message':
-      return { to: to.to }
+      return to.to ? { to: to.to } : {}
     default:
       return {}
   }
@@ -128,12 +155,13 @@ export function App() {
   }
   const back = () => (kept().pushed ? history.back() : go({ at: 'profiles' }))
   const place = (to: Place) => go({ at: to })
-  /** In, past Start and the verification: the Share link's message if one waits, else Profiles. */
+  /** In, past Start and the verification: the Share link's message if one waits; a first profile to make; else Profiles. */
   const inside = () => {
     const to = waiting.current
     waiting.current = null
-    go(to ? { at: 'message', to } : { at: 'profiles' })
+    go(to ? { at: 'message', to } : profiles().length === 0 ? { at: 'new' } : { at: 'profiles' })
   }
+  const review = (address: string, more: { subject?: string; edit?: Posted; report?: boolean } = {}) => go({ at: 'review', address, ...more }, true)
 
   switch (screen.at) {
     case 'back':
@@ -143,27 +171,68 @@ export function App() {
     case 'verify':
       return <Verify passkey={screen.passkey} id={screen.id} step={screen.step} onVerified={inside} {...(!screen.passkey && { onBack: back })} />
     case 'profiles':
-      return <Profiles onOpen={(address) => go({ at: 'card', address }, true)} onNew={() => go({ at: 'new' }, true)} go={place} />
+      return <Profiles onOpen={(address) => go({ at: 'profile', address }, true)} onNew={() => go({ at: 'new' }, true)} go={place} />
     case 'new':
-      return <NewProfile onMade={(address) => go({ at: 'card', address })} onBack={back} />
-    case 'card':
-      return <Card address={screen.address} onBack={back} onPost={(kinds, edit) => go({ at: 'post', address: screen.address, kinds, ...(edit && { edit }) }, true)} />
+      return <NewProfile onMade={(address) => go({ at: 'profile', address })} onBack={back} />
+    case 'profile':
+      return (
+        <Profile
+          address={screen.address}
+          onBack={back}
+          onPost={(edit) => go({ at: 'post', address: screen.address, ...(edit && { edit }) }, true)}
+          onReviews={() => go({ at: 'reviews', address: screen.address }, true)}
+          onInbox={() => go({ at: 'inbox', only: screen.address }, true)}
+        />
+      )
+    case 'reviews':
+      return (
+        <Reviews
+          address={screen.address}
+          onBack={back}
+          onOpen={(entry) => go({ at: 'received', address: screen.address, entry }, true)}
+          onEdit={(edit) => review(screen.address, { edit })}
+          onReview={() => review(screen.address)}
+        />
+      )
+    case 'received':
+      return (
+        <Received
+          mine={screen.address}
+          at={screen.entry}
+          onBack={back}
+          onMessage={(to) => go({ at: 'message', to }, true)}
+          onReport={(subject) => review(screen.address, { subject, report: true })}
+        />
+      )
     case 'post':
-      return <PostFor screen={screen} onDone={back} onBack={back} />
-    case 'messages':
-      return <Messages go={place} onThread={(mine, them) => go({ at: 'thread', mine, them }, true)} />
+      return <For address={screen.address}>{(me) => <Post me={me} {...(screen.edit && { edit: screen.edit })} onDone={back} onBack={back} />}</For>
+    case 'review':
+      return (
+        <For address={screen.address}>
+          {(me) => <Review me={me} {...(screen.edit && { edit: screen.edit })} {...(screen.subject && { subject: screen.subject })} {...(screen.report && { report: true })} onDone={back} onBack={back} />}
+        </For>
+      )
+    case 'inbox':
+      return (
+        <Inbox
+          {...(screen.only && { only: screen.only, onBack: back })}
+          go={place}
+          onThread={(mine, them) => go({ at: 'thread', mine, them }, true)}
+          onReceived={(address, entry) => go({ at: 'received', address, entry }, true)}
+          onNew={() => go({ at: 'message' }, true)}
+        />
+      )
     case 'thread':
-      return <Thread mine={screen.mine} them={screen.them} onBack={back} onPost={(mine, them) => go({ at: 'post', address: mine, kinds: ['review', 'vouch', 'report'], subject: them }, true)} />
+      return <Thread mine={screen.mine} them={screen.them} onBack={back} onReview={(mine, them) => review(mine, { subject: them })} />
     case 'message':
-      return <Message to={screen.to} onSent={(mine, them) => go({ at: 'thread', mine, them })} onBack={back} />
+      return <Message {...(screen.to && { to: screen.to })} onSent={(mine, them) => go({ at: 'thread', mine, them })} onBack={back} />
     case 'settings':
       return <Settings go={place} onForgot={() => go({ at: 'start' })} onIdCheck={() => go(idCheck(inUse()!), true)} />
   }
 }
 
-/** Post, as the person's profile at the screen's address. */
-function PostFor({ screen, onDone, onBack }: { screen: Extract<Screen, { at: 'post' }>; onDone: () => void; onBack: () => void }) {
-  const me = useProfiles().find((p) => p.address === screen.address)
-  if (!me) return null
-  return <Post me={me} kinds={screen.kinds} {...(screen.edit && { edit: screen.edit })} {...(screen.subject && { subject: screen.subject })} onDone={onDone} onBack={onBack} />
+/** A screen for the person's profile at `address`, once the device lists it. */
+function For({ address, children }: { address: string; children: (me: ReturnType<typeof useProfiles>[number]) => ReactNode }) {
+  const me = useProfiles().find((p) => p.address === address)
+  return me ? <>{children(me)}</> : null
 }

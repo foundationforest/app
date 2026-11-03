@@ -1,8 +1,11 @@
-// A place: online, an area, or both. The type holds an area only with a point (the markets' types,
-// `place`), so an area takes the device's location, rounded to the kilometres the person picks:
-// the point says no more than that. With no location given, only Online can be written.
+// A place: an area typed in, which is enough alone (the markets' types, `place`). Near me adds the
+// device's location, rounded to the kilometres the person picks, so a search near a point finds it:
+// the point says no more than that. Online, too, only where the field lets the place be online.
 
 import { useState } from 'react'
+
+import type { Field } from '../markets.ts'
+import { CheckIcon } from '../ui.tsx'
 
 const KMS = [1, 5, 25]
 const KM_PER_DEGREE = 111.32
@@ -24,20 +27,25 @@ export function rounded(p: Point, km: number): { lat: string; lon: string } {
   return { lat: text(lat), lon: text(lon) }
 }
 
-export function Place({ label, value, onChange }: { label: string; value: unknown; onChange: (v: unknown) => void }) {
+/** What a place holds, from what the person gave: an area, with its point if added, online too if picked; online alone; or nothing. */
+export function placeOf(area: string, point: Point | null, km: number, online: boolean): Record<string, unknown> | undefined {
+  const named = area.trim()
+  const also = online ? { online: true } : {}
+  if (named && point) return { ...rounded(point, km), precisionKm: km, area: named, ...also }
+  if (named) return { area: named, ...also }
+  return online ? { online: true } : undefined
+}
+
+export function Place({ label, field, value, onChange }: { label: string; field: Pick<Field, 'online'>; value: unknown; onChange: (v: unknown) => void }) {
   const was = (value ?? {}) as { online?: boolean; area?: string; precisionKm?: number; lat?: string; lon?: string }
-  const [online, setOnline] = useState(was.online === true)
+  const canOnline = field.online !== false
+  const [online, setOnline] = useState(canOnline && was.online === true)
   const [area, setArea] = useState(was.area ?? '')
   const [km, setKm] = useState(was.precisionKm && KMS.includes(was.precisionKm) ? was.precisionKm : 5)
   const [point, setPoint] = useState<Point | null>(was.lat && was.lon ? { lat: Number(was.lat), lon: Number(was.lon) } : null)
   const [asking, setAsking] = useState(false)
   const [unavailable, setUnavailable] = useState(false)
 
-  const emit = (next: { online: boolean; area: string; km: number; point: Point | null }) => {
-    const named = next.area.trim()
-    if (named && next.point) onChange({ ...rounded(next.point, next.km), precisionKm: next.km, area: named, ...(next.online && { online: true }) })
-    else onChange(next.online ? { online: true } : undefined)
-  }
   const now = { online, area, km, point }
   const set = (change: Partial<typeof now>) => {
     const next = { ...now, ...change }
@@ -45,9 +53,10 @@ export function Place({ label, value, onChange }: { label: string; value: unknow
     if ('area' in change) setArea(next.area)
     if ('km' in change) setKm(next.km)
     if ('point' in change) setPoint(next.point)
-    emit(next)
+    onChange(placeOf(next.area, next.point, next.km, next.online))
   }
   const locate = () => {
+    if (point) return set({ point: null })
     if (!navigator.geolocation) return setUnavailable(true)
     setAsking(true)
     navigator.geolocation.getCurrentPosition(
@@ -65,27 +74,30 @@ export function Place({ label, value, onChange }: { label: string; value: unknow
   }
   return (
     <div className="place" role="group" aria-label={label}>
+      <input aria-label="Area" placeholder="Area" autoComplete="off" value={area} onChange={(e) => set({ area: e.target.value })} />
       <div className="chips">
-        <button type="button" className={online ? 'chip here' : 'chip'} aria-pressed={online} onClick={() => set({ online: !online })}>
-          Online
-        </button>
-      </div>
-      <input aria-label="Area" placeholder="Area" value={area} onChange={(e) => set({ area: e.target.value })} />
-      {area.trim() && (
-        <>
-          <div className="chips" role="radiogroup" aria-label="Within">
-            {KMS.map((k) => (
-              <button key={k} type="button" role="radio" aria-checked={km === k} className={km === k ? 'chip here' : 'chip'} onClick={() => set({ km: k })}>
-                {k} km
-              </button>
-            ))}
-          </div>
-          <button type="button" disabled={asking} onClick={locate}>
-            {point ? 'Location added' : 'Add my location'}
+        {area.trim() && (
+          <button type="button" className={point ? 'chip here' : 'chip'} aria-pressed={point !== null} disabled={asking} onClick={locate}>
+            {point && <CheckIcon />}
+            Near me
           </button>
-          {!point && <p className="hint">{unavailable ? "Your location isn't available. Choose Online instead." : 'The area needs your location.'}</p>}
-        </>
+        )}
+        {canOnline && (
+          <button type="button" className={online ? 'chip here' : 'chip'} aria-pressed={online} onClick={() => set({ online: !online })}>
+            Online
+          </button>
+        )}
+      </div>
+      {point && area.trim() && (
+        <div className="chips" role="radiogroup" aria-label="Within">
+          {KMS.map((k) => (
+            <button key={k} type="button" role="radio" aria-checked={km === k} className={km === k ? 'chip here' : 'chip'} onClick={() => set({ km: k })}>
+              {k} km
+            </button>
+          ))}
+        </div>
       )}
+      {unavailable && <p className="hint">Your location isn't available.</p>}
     </div>
   )
 }

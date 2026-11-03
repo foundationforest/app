@@ -83,7 +83,8 @@ export async function oldBrowser(): Promise<boolean> {
 /**
  * Whether this browser can ask for a passkey without showing the sheet when there is none
  * (WebAuthn's immediate mediation, `uiMode: 'immediate'`): then a person with no passkey here goes
- * straight to Make one, and one whose passkey is on another device asks again with the sheet.
+ * straight to Create a passkey, and one whose passkey is on another device asks again with the
+ * sheet.
  */
 export const asksQuietly = async (): Promise<boolean> => (await capabilities()).immediateGet === true
 

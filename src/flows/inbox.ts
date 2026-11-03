@@ -1,8 +1,9 @@
 // The person's messages: one inbox for all their profiles.
 //
 // Listing needs nothing unlocked: anyone lists any inbox, and only the envelopes protect it
-// (folders/README.md, The inbox). So the app counts what each profile's inbox holds after where the
-// person left off there (device.ts), with no seed.
+// (folders/README.md, The inbox). So the app lists what each profile's inbox holds after where the
+// person left off there (device.ts), with no seed: those are new. A profile the device has no mark
+// for yet is marked at the end of its inbox, so nothing old shows as new on a new device.
 //
 // Opening takes the seed, once for every profile: each profile's main key opens its inbox entries,
 // each message checked as the standard says (openInbox: to this folder, its signature), then
@@ -26,7 +27,7 @@ import { mainKey, openingHalf } from '@foundationforest/keys'
 
 import { inboxPayment } from '../../services/host/client/client.ts'
 import type { Services } from '../config.ts'
-import { type Profile, cursors } from '../device.ts'
+import { type Profile, cursors, saveCursors } from '../device.ts'
 import { leaveAll, readAllInbox, readView, writeAll } from '../services/host.ts'
 import { about } from '../services/verifier.ts'
 import { Said, hostSays } from '../words.ts'
@@ -42,10 +43,25 @@ export type Who = { market: string; role: string; verified: boolean } | null
 /** The messages between one of the person's profiles (`mine`, its address) and another (`them`), oldest first. */
 export type Thread = { mine: string; them: string; who: Who; messages: Message[] }
 
-/** How many entries every profile's inbox holds after where the person left off there: nothing unlocked. */
-export async function newCount(host: string, list: Profile[], kept: Record<string, number> = cursors()): Promise<number> {
-  const counts = await Promise.all(list.map(async (p) => (await readAllInbox(host, p.address, kept[p.address] ?? 0)).entries.length))
-  return counts.reduce((a, b) => a + b, 0)
+/**
+ * The inbox entries each profile's inbox holds after where the person left off there, by the
+ * profile's address: their ids, nothing unlocked. A profile with no mark yet is marked at the end of
+ * its inbox, and has none.
+ */
+export async function newMessages(host: string, list: Profile[]): Promise<Record<string, string[]>> {
+  const kept = cursors()
+  const out: Record<string, string[]> = {}
+  const marked: Record<string, number> = {}
+  await Promise.all(
+    list.map(async (p) => {
+      const known = p.address in kept
+      const { entries, cursor } = await readAllInbox(host, p.address, kept[p.address] ?? 0)
+      out[p.address] = known ? entries.map((e) => e.id) : []
+      if (!known) marked[p.address] = cursor
+    }),
+  )
+  if (Object.keys(marked).length) saveCursors(marked)
+  return out
 }
 
 /** A profile's current profile entry at the host, or null. */

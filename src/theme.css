@@ -1,7 +1,9 @@
 /* Four colors and one accent, and red for what went wrong. Dark is the same four reversed, with a
    lighter red; the device's setting picks one unless data-theme on <html> says otherwise. The
-   accent is a fill only, with paper-light text on it in both themes. Manrope only; bold is the only
-   emphasis. Phone first: one column, at most 32rem wide on a laptop. */
+   accent is a fill only, with paper-light text on it in both themes. A review's score sits on its
+   own chip, sand with brown text, darker sand with light text in dark; the dot that marks what is
+   new is the accent, the ink in dark, where the accent is too faint for it. Manrope only; bold is
+   the only emphasis. Phone first: one column, at most 32rem wide on a laptop. */
 :root {
   --paper: #edeae0;
   --paper-2: #c0cabf;
@@ -10,6 +12,9 @@
   --accent: #1e5e43;
   --on-accent: #edeae0;
   --danger: #b3261e;
+  --chip: #efe3cc;
+  --on-chip: #6e4106;
+  --dot: var(--accent);
   --radius: 10px;
   --touch: 48px;
   --font: 'Manrope Variable', system-ui, sans-serif;
@@ -23,6 +28,9 @@
     --ink-2: #c0cabf;
     --ink: #edeae0;
     --danger: #f28b82;
+    --chip: #3b2c12;
+    --on-chip: #f0d49a;
+    --dot: var(--ink);
     color-scheme: dark;
   }
 }
@@ -33,6 +41,9 @@
   --ink-2: #c0cabf;
   --ink: #edeae0;
   --danger: #f28b82;
+  --chip: #3b2c12;
+  --on-chip: #f0d49a;
+  --dot: var(--ink);
   color-scheme: dark;
 }
 
@@ -428,11 +439,10 @@ button:focus-visible {
   gap: 8px;
 }
 
+/* A review's score: big, its slider under it. */
 .score {
   display: grid;
-  grid-template-columns: 1fr 2ch;
-  align-items: center;
-  gap: 12px;
+  gap: 4px;
 }
 
 /* What a profile posted, on its card. */
@@ -482,4 +492,338 @@ button:focus-visible {
   justify-self: end;
   background: var(--accent);
   color: var(--on-accent);
+}
+
+/* The top bar's title, and what sits at its right. */
+.top-title {
+  flex: 1;
+  min-width: 0;
+}
+
+.top-right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.top h1 {
+  font-size: 22px;
+}
+
+.titled {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.titled .shield {
+  width: 24px;
+  height: 24px;
+}
+
+/* Two lines in a row or a card: what it is, in bold, and a quiet line under it. */
+.two {
+  display: grid;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+}
+
+.two > span,
+.two .last {
+  color: var(--ink-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.card-line {
+  font-size: 14px;
+}
+
+.row {
+  gap: 12px;
+}
+
+.row.pick {
+  min-height: 64px;
+  padding: 10px 16px;
+}
+
+.row .aside {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+}
+
+.said-row,
+.post-row {
+  min-height: 64px;
+  padding: 10px 14px;
+  justify-content: flex-start;
+}
+
+.thumb {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex: none;
+}
+
+/* Something new. */
+.dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--dot);
+  flex: none;
+}
+
+.place-icon .dot {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+
+/* A review's score, a vouch and a report, each on its chip. */
+.said-chip {
+  flex: none;
+  min-width: 56px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 3px 10px;
+  white-space: nowrap;
+}
+
+.said-chip.score {
+  background: var(--chip);
+  color: var(--on-chip);
+}
+
+.said-chip.vouch {
+  border: 1px solid var(--ink-2);
+  color: var(--ink);
+}
+
+.said-chip.report {
+  background: var(--danger);
+  color: var(--paper);
+}
+
+.big {
+  font-size: 48px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--ink);
+}
+
+.center {
+  justify-items: center;
+  text-align: center;
+}
+
+.quiet-text {
+  font-size: 14px;
+}
+
+.said-text {
+  color: var(--ink);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* A review's facts, one a row. */
+.facts {
+  display: grid;
+  margin: 0;
+  border-top: 1px solid var(--paper-2);
+}
+
+.facts > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--paper-2);
+}
+
+.facts dt {
+  color: var(--ink-2);
+}
+
+.facts dd {
+  margin: 0;
+  text-align: right;
+  font-weight: 700;
+}
+
+/* Two or three choices side by side: Received and Given; All, Messages and Reviews. */
+.tabs {
+  display: flex;
+  gap: 6px;
+}
+
+.tabs button {
+  min-height: 40px;
+  border-radius: 999px;
+  padding: 0 14px;
+}
+
+.tabs .here {
+  border-color: var(--ink);
+  font-weight: 700;
+}
+
+button.small {
+  min-height: 40px;
+  padding: 0 12px;
+}
+
+button.link {
+  justify-self: start;
+  border: none;
+  background: none;
+  padding: 0;
+  min-height: 32px;
+  color: var(--ink-2);
+}
+
+button.danger.solid {
+  background: var(--danger);
+  color: var(--paper);
+}
+
+button.danger-text {
+  color: var(--danger);
+}
+
+.messages-row {
+  display: flex;
+  align-items: center;
+  padding: 8px 8px 8px 16px;
+  border: 1px solid var(--paper-2);
+  border-radius: var(--radius);
+}
+
+.who .addr {
+  color: var(--ink-2);
+  font-weight: 400;
+}
+
+.field .label {
+  display: flex;
+  gap: 8px;
+}
+
+.field .label .aside {
+  font-weight: 400;
+  color: var(--ink-2);
+}
+
+.composer {
+  display: grid;
+  gap: 8px;
+}
+
+/* A button that stays at the bottom while the page scrolls. */
+.foot {
+  position: sticky;
+  bottom: 0;
+  margin-top: auto;
+  display: grid;
+  padding-top: 8px;
+  background: var(--paper);
+}
+
+/* A post's photos: tiles, and one to add more. */
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.tile {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--paper-2);
+}
+
+.tile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.tile.add {
+  display: grid;
+  place-items: center;
+  border: 1px dashed var(--ink-2);
+  background: none;
+  cursor: pointer;
+}
+
+.tile .remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  min-height: 32px;
+  min-width: 32px;
+  background: var(--paper);
+  border-radius: 50%;
+}
+
+/* A sheet from the bottom. */
+.sheet-cover {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 0.4);
+  display: grid;
+  align-items: end;
+  z-index: 10;
+}
+
+.sheet {
+  width: 100%;
+  max-width: 32rem;
+  margin: 0 auto;
+  display: grid;
+  gap: 16px;
+  padding: 20px 16px max(16px, env(safe-area-inset-bottom));
+  background: var(--paper);
+  border-radius: 16px 16px 0 0;
+}
+
+.address {
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+/* A row that is no button: what it says at the left, its check or its one action at the right. */
+div.row {
+  display: flex;
+  align-items: center;
+  min-height: var(--touch);
+  padding: 4px 4px 4px 16px;
+  border: 1px solid var(--paper-2);
+  border-radius: var(--radius);
+}
+
+div.row > .icon {
+  margin-right: 12px;
 }

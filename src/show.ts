@@ -64,3 +64,9 @@ export function contactHref(contact: string): string | undefined {
   if (/^\+?[\d\s().-]{6,}$/.test(text) && (text.match(/\d/g) ?? []).length >= 6) return `tel:${text.replace(/[^\d+]/g, '')}`
   return undefined
 }
+
+/** A rating as the index gives it, from 1 to 10, to one decimal: 9.4. */
+export const ratingText = (rating: number) => rating.toFixed(1)
+
+/** How many reviews: 1 review, 12 reviews. */
+export const reviewCount = (n: number) => `${n} review${n === 1 ? '' : 's'}`
