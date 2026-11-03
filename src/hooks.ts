@@ -1,12 +1,12 @@
 // What the screens read from the device, the host and the index, kept fresh: the person's profiles
-// as the device keeps them; how each is verified, as its profile entry at the host says; the new
+// and AI apps as the device keeps them; how each is verified, as its profile entry at the host says; the new
 // entries in their inboxes; what the index says of each, read as a screen showing it opens and held
 // in the page meanwhile; what is new on each; and the messages opened in this page.
 
 import { useEffect, useState } from 'react'
 
 import { config } from './config.ts'
-import { CHANGED, type Profile, profiles, seen } from './device.ts'
+import { CHANGED, type Connection, type Profile, connections, profiles, seen } from './device.ts'
 import { type Card, readCard } from './flows/cards.ts'
 import { newMessages } from './flows/inbox.ts'
 import { type Received, newOf, rate } from './flows/reviews.ts'
@@ -28,6 +28,17 @@ export function useProfiles(): Profile[] {
   const [list, setList] = useState(profiles)
   useEffect(() => {
     const changed = () => setList(profiles())
+    addEventListener(CHANGED, changed)
+    return () => removeEventListener(CHANGED, changed)
+  }, [])
+  return list
+}
+
+/** The person's AI apps, as this device keeps them, read again whenever that changes. */
+export function useConnections(): Connection[] {
+  const [list, setList] = useState(connections)
+  useEffect(() => {
+    const changed = () => setList(connections())
     addEventListener(CHANGED, changed)
     return () => removeEventListener(CHANGED, changed)
   }, [])

@@ -1,8 +1,8 @@
 // The pieces every screen shares: the one-line note that says why something can't be done (red when
 // what was given is wrong, quiet when something is still missing), an action's busy and its note,
 // the icons (the shield, drawn once here, is how a profile shows it is verified: an icon, never a
-// word), the dot that marks what is new, the chips of a review, vouch or report, the bottom sheet,
-// the bars, and how long ago something was.
+// word), a checkbox's box, the dot that marks what is new, the chips of a review, vouch or report, the
+// bottom sheet, the bars, how long ago something was, and the day something happened.
 
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 
@@ -133,6 +133,13 @@ export const CheckIcon = ({ label }: { label?: string }) => (
     <polyline points="5,12.5 10,17.5 19,7" />
   </Icon>
 )
+/** A checkbox's box: empty, or filled with its tick. */
+export const TickBox = ({ ticked }: { ticked: boolean }) => (
+  <svg className={ticked ? 'icon tick ticked' : 'icon tick'} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <rect x="3.5" y="3.5" width="17" height="17" rx="4" />
+    {ticked && <polyline points="7.5,12.5 10.5,15.5 16.5,9" />}
+  </svg>
+)
 export const PlusIcon = () => (
   <Icon>
     <line x1="12" y1="5" x2="12" y2="19" />
@@ -242,6 +249,12 @@ export function ago(time: number, now = Date.now()): string {
   const days = Math.floor(hours / 24)
   if (days < 7) return `${days} d`
   return new Date(time).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
+}
+
+/** The day `time` was: 3 Nov, and its year when it is not this one. */
+export function day(time: number, now = Date.now()): string {
+  const d = new Date(time)
+  return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', ...(d.getFullYear() !== new Date(now).getFullYear() && { year: 'numeric' }) })
 }
 
 /** An address cut short, its start and end: enough to tell two apart at a glance. */

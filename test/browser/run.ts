@@ -1,6 +1,7 @@
 // The app in headless Chromium, through Playwright, with Chrome's virtual passkey authenticator,
 // which has PRF, against services' own verifier (its stand-in Didit and stand-in face model), host
-// and index on loopback (services.ts). The app is built with its config pointed at them, served as
+// and index on loopback (services.ts), and services' own mcp, its APP_URL this app's /connect, as
+// services' tests run it (mcp/test/setup.ts: its host reached with plain fetch, on loopback). The app is built with its config pointed at them, served as
 // Vercel serves it (vercel.ts: vercel.json's headers, its files, its rewrites, else 404) under
 // vercel.json's CSP, its connect-src and img-src naming these services, at app.forest.foundation
 // mapped to loopback and taken as a secure origin, so its passkeys are made for that address.
@@ -18,8 +19,10 @@
 //     profile.
 //  4. The first profile, in two steps: back to Profiles and in again; a search over the markets, a
 //     market, its roles, back to the markets; one pick, one unlock, the verification proven in the
-//     worker; its profile entry on the host, its verification checking as any reader checks it; the
-//     shield; Share, a sheet whose Copy copies its address; a market's role made is gone from it.
+//     worker; Use Forest from your AI, whose Connect opens Connect an AI: three steps, no links, Copy
+//     copying the connector's address; its profile entry on the host, its verification checking as
+//     any reader checks it; the shield; Share, a sheet whose Copy copies its address; a market's role
+//     made is gone from it.
 //  5. Settings: Face with its check, ID with + $5, the appearance; no About.
 //  6. Two people: the first posts an offer from their profile, its price per hour; the second opens
 //     its link with nothing set up, goes through Start and the face check, makes the profile on the
@@ -37,6 +40,19 @@
 //     from the thread, then, from their profile's Review, vouches (their own address refused once)
 //     and reports, and Given lists all three; the seller sees the rating on the card, in Reviews, and
 //     the review in the Inbox with its dot, until the Inbox has shown it, and opens it.
+//     Then the AI apps, with services' own mcp and an AI app as services' tests make one (the MCP
+//     SDK's client, mcp/test/setup.ts):
+//  a. its login comes to the connect page: the AI app's name, its redirect's host, the profiles
+//     unticked; one ticked, Connect, one unlock; the AI app gets its token, reads its profile and
+//     writes a post, which shows on the profile; the device keeps the AI app, never a key;
+//  b. Settings' AI apps, between Verified and Appearance: the AI app, its day, its one profile, kept
+//     ticked while it is the last; another ticked, one unticked and ticked again, one unlock each,
+//     the AI's profiles following with no new login; Disconnect, one unlock: the AI's next call
+//     refused, and its post stays;
+//  c. a new phone, nothing set up, at a connect page: I already have one first, then Create a
+//     passkey; the face check and the first profile, then back to the connect page, its one profile
+//     ticked, no Use Forest from your AI; Connect;
+//  d. a connector that isn't ours: one line, nothing else; a request that ran out: one line.
 // 10. Held for review: Being reviewed, the app asking all the while; approved, Continue, one unlock.
 // 11. A manager that gives no PRF secret: its passkey dropped, the line naming another. A browser
 //     that cannot ask for PRF: one quiet line.
@@ -66,10 +82,13 @@ import { Resvg } from '@resvg/resvg-js'
 import { type Browser, type BrowserContext, type CDPSession, type Page, chromium } from 'playwright'
 import { build } from 'vite'
 
-import { liveContent, proofsOf, readFolder, verificationCheck } from '../../standard/folders/dist/index.js'
+import { b64u, liveContent, proofsOf, readFolder, verificationCheck } from '../../standard/folders/dist/index.js'
 import { isLocked, openLocked } from '../../standard/folders/dist/locked.js'
 import { mainKey, openingHalf } from '../../standard/keys/dist/index.js'
 import { checkVerification, stampFromJson } from '../../standard/proofs/dist/index.js'
+import { type Served, serve } from '../../services/mcp/src/server.ts'
+import { App } from '../../services/mcp/test/app.ts'
+import { REDIRECT, aiApp, lesson } from '../../services/mcp/test/setup.ts'
 import { type Running, freePort, startServices } from './services.ts'
 import { serveLikeVercel } from './vercel.ts'
 
@@ -81,6 +100,9 @@ const shots = process.env.SHOTS
 const say = (line: string) => console.log(`  ${line}`)
 
 let services: Running
+/** Services' own mcp, and the directory it keeps its two keys in. */
+let mcp: Served
+let mcpDir: string
 let server: Awaited<ReturnType<typeof serveLikeVercel>>
 let browser: Browser
 let APP: string
@@ -175,6 +197,15 @@ async function pickProfile(page: Page, words: string) {
   await page.getByRole('heading', { name: words }).waitFor({ timeout: 120_000 })
 }
 
+/** A first profile picked on Your first profile: its market found by searching, then its role; one unlock, then Use Forest from your AI. */
+async function pickFirst(page: Page, words: string) {
+  const [market, role] = words.split(' / ') as [string, string]
+  await page.getByLabel('Search').fill(market.toLowerCase())
+  await button(page, market).click()
+  await button(page, roleWords(role)).click()
+  await page.getByRole('heading', { name: 'Use Forest from your AI' }).waitFor({ timeout: 120_000 })
+}
+
 /** The page's own navigator.credentials.get, answering once as a closed sheet does: no passkey. */
 const closeTheSheetOnce = (page: Page) =>
   page.evaluate(() => {
@@ -239,8 +270,10 @@ before(async () => {
   APP = `http://app.forest.foundation:${port}/`
   OTHER = `http://other.forest.foundation:${port}/`
   services = await startServices({ appOrigin: APP.slice(0, -1), say })
-  // The app's one config file, pointed at these services (src/config.ts); the connector is not used yet.
-  process.env.VITE_FOREST_CONFIG = JSON.stringify({ app: APP.slice(0, -1), verifier: services.verifier, host: services.host, connector: 'http://127.0.0.1:9', index: services.index })
+  mcpDir = mkdtempSync(join(tmpdir(), 'forest-app-mcp-'))
+  mcp = await serve({ appUrl: `${APP}connect`, dataDir: mcpDir, read: { index: services.index }, hostFetch: fetch }, '127.0.0.1', 0)
+  // The app's one config file, pointed at these services (src/config.ts).
+  process.env.VITE_FOREST_CONFIG = JSON.stringify({ app: APP.slice(0, -1), verifier: services.verifier, host: services.host, connector: mcp.origin, index: services.index })
   await build({ root: app, configFile: `${app}vite.config.ts`, logLevel: 'warn', build: { outDir, emptyOutDir: true } })
   const renamed = { entryFileNames: 'assets/[name]-next-[hash].js', chunkFileNames: 'assets/[name]-next-[hash].js' }
   await build({ root: app, configFile: `${app}vite.config.ts`, logLevel: 'warn', build: { outDir: nextDir, emptyOutDir: true, rolldownOptions: { output: renamed } }, worker: { rolldownOptions: { output: renamed } } })
@@ -249,19 +282,21 @@ before(async () => {
   const real: string = vercel.headers.find((h: any) => h.source === '/(.*)').headers.find((h: any) => h.key === 'Content-Security-Policy').value
   csp = real
     .split('; ')
-    .map((d) => (d.startsWith('connect-src ') ? `connect-src 'self' ${services.verifier} ${services.host} http://127.0.0.1:9 ${services.index}` : d.startsWith('img-src ') ? d.replace('https://host.forest.foundation', services.host) : d))
+    .map((d) => (d.startsWith('connect-src ') ? `connect-src 'self' ${services.verifier} ${services.host} ${mcp.origin} ${services.index}` : d.startsWith('img-src ') ? d.replace('https://host.forest.foundation', services.host) : d))
     .join('; ')
   server = await serveLikeVercel({ root: outDir, port, override: { 'Content-Security-Policy': csp } })
   // Chromium itself, not its headless shell, which does not take an insecure origin as secure; and WebAuthn wants a secure one.
   CHROME_ARGS = ['--host-resolver-rules=MAP *.forest.foundation 127.0.0.1', `--unsafely-treat-insecure-origin-as-secure=${[APP, OTHER].map((o) => o.slice(0, -1)).join(',')}`]
   browser = await chromium.launch({ channel: 'chromium', args: CHROME_ARGS })
   first = await phone()
-  say(`Chromium ${browser.version()}, the app at ${APP}, services' verifier at ${services.verifier}, host at ${services.host} and index at ${services.index}`)
+  say(`Chromium ${browser.version()}, the app at ${APP}, services' verifier at ${services.verifier}, host at ${services.host}, index at ${services.index} and mcp at ${mcp.origin}`)
 })
 
 after(async () => {
   await browser?.close()
   await server?.close()
+  await mcp?.close()
+  if (mcpDir) rmSync(mcpDir, { recursive: true, force: true })
   await services?.stop()
 })
 
@@ -397,10 +432,24 @@ test('the first profile, in two steps: back to Profiles and in again; a search, 
   await page.getByRole('heading', { name: 'Your first profile' }).waitFor()
   const asked = counts.asserted
   const started = Date.now()
-  await pickProfile(page, 'Tutoring / tutor')
-  await shield(page.getByRole('heading', { name: 'Tutoring / tutor' })).waitFor()
+  await pickFirst(page, 'Tutoring / tutor')
   assert.equal(counts.asserted - asked, 1, 'one unlock')
   say(`a profile made in ${((Date.now() - started) / 1000).toFixed(1)} s, its proof in the worker`)
+  // Use Forest from your AI, once: Connect opens Connect an AI, three steps and no links.
+  assert.deepEqual(await page.getByRole('button').allTextContents(), ['Connect', 'Not now'])
+  await shot(page, 'use-ai')
+  await button(page, 'Connect').click()
+  await page.getByRole('heading', { name: 'Connect an AI' }).waitFor()
+  assert.deepEqual(await page.locator('.steps > li').allTextContents(), ['In your AI app, add a connector.', `Paste this address:${mcp.origin}Copy`, 'It brings you back here to pick its profiles.'])
+  assert.equal(await page.locator('a').count(), 0, 'no links to other sites')
+  await button(page, 'Copy').click()
+  await button(page, 'Copied').waitFor()
+  assert.equal(await page.evaluate(() => navigator.clipboard.readText()), mcp.origin, 'the address shown, in full')
+  await shot(page, 'connect-ai')
+  // Back: Profiles, and Use Forest from your AI never again.
+  await button(page, 'Back').click()
+  await page.locator('button.card', { hasText: 'Tutoring / tutor' }).click()
+  await shield(page.getByRole('heading', { name: 'Tutoring / tutor' })).waitFor()
   await page.getByRole('button', { name: /No reviews yet/ }).waitFor()
   await shot(page, 'profile')
   const main = await mainKey(seed, 'tutoring/tutor')
@@ -689,10 +738,10 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   const buyer = await phone()
   await newPerson(buyer)
   await buyer.page.getByRole('heading', { name: 'Your first profile' }).waitFor({ timeout: 60_000 })
-  await pickProfile(buyer.page, 'Clothing / buyer')
+  await pickFirst(buyer.page, 'Clothing / buyer')
   const buying = (await kept(buyer.page))['forest.profiles']!
   const buyerAddress = JSON.parse(buying)[0].address as string
-  await button(buyer.page, 'Back').click()
+  await button(buyer.page, 'Not now').click()
   await button(buyer.page, /Inbox$/).click()
   await button(buyer.page, 'New message').click()
   await buyer.page.getByRole('heading', { name: 'New message' }).waitFor()
@@ -814,6 +863,164 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   assert.equal(await inInbox.locator('.dot').count(), 0, 'shown once: new no more')
   await button(page, 'Profiles').click()
   say('clothing: two photos redrawn and sent, a review, a vouch and a report; the rating, the dot, Reviews and the Inbox')
+})
+
+type AiApp = Awaited<ReturnType<typeof aiApp>>
+type Answer = { isError?: boolean; content: Array<{ text: string }> }
+/** A tool's answer to the AI app, as JSON; an error answer throws, with its text. */
+async function tool(ai: AiApp, name: string, args: Record<string, unknown> = {}): Promise<any> {
+  const r = (await ai.client.callTool({ name, arguments: args })) as Answer
+  if (r.isError) throw new Error(`${name}: ${r.content[0]?.text}`)
+  return JSON.parse(r.content[0]!.text)
+}
+const SWITCHES = ['read-inbox', 'read', 'write', 'message']
+/** The AI's own post, on the tutor's profile. */
+const BY_THE_AI = 'Physics for secondary school, written by the AI.'
+
+/** An AI app, as services' tests make one (mcp/test/setup.ts): the MCP SDK's own client, whose first call that acts gets the challenge, and the address it sends the browser to, to log in. */
+async function aiLogin(): Promise<AiApp> {
+  const ai = await aiApp(mcp.origin)
+  await assert.rejects(ai.client.callTool({ name: 'my_profiles', arguments: {} }), (err: Error) => err.constructor.name === 'UnauthorizedError')
+  return ai
+}
+
+/**
+ * The code the connector sends the browser back to the AI app with, from the page's request for
+ * the AI app's redirect: no page answers there, since the AI app is the test's own client.
+ */
+const backToTheAiApp = (page: Page) => page.waitForRequest((r) => r.url().startsWith(REDIRECT), { timeout: 60_000 }).then((r) => new URL(r.url()).searchParams.get('code')!)
+
+/** The profiles' checkboxes, by their words, and whether each is ticked. */
+const ticks = async (page: Page) => Object.fromEntries(await Promise.all((await page.getByRole('checkbox').all()).map(async (c) => [await c.textContent(), await c.getAttribute('aria-checked')])))
+
+let ai: AiApp
+
+test("an AI app's login: the connect page, its name and its redirect's host, the profiles unticked; one ticked, Connect, one unlock; the AI reads its profile and writes a post, which shows; the device keeps no key", async () => {
+  const { page, counts } = first
+  ai = await aiLogin()
+  await page.goto(ai.app.authorization!.href)
+  await page.getByRole('heading', { name: 'An AI app' }).waitFor()
+  assert.equal(new URL(page.url()).pathname + new URL(page.url()).search, '/connect', 'the login out of the path, into the history')
+  await page.getByText('ai-app.example', { exact: true }).waitFor()
+  assert.deepEqual(await ticks(page), { 'Clothing / seller': 'false', 'Tutoring / tutor': 'false' }, 'none ticked: there are two')
+  assert.ok(await button(page, 'Connect').isDisabled(), 'Connect once one is ticked')
+  await shot(page, 'connect')
+  await page.getByRole('checkbox', { name: 'Tutoring / tutor' }).click()
+  const asked = counts.asserted
+  const code = backToTheAiApp(page)
+  await button(page, 'Connect').click()
+  await ai.transport.finishAuth(await code)
+  assert.equal(counts.asserted - asked, 1, 'one unlock')
+
+  // The AI acts: its profiles, one, with every switch; it reads its profile entry and writes a post.
+  assert.deepEqual(await tool(ai, 'my_profiles'), { profiles: [{ label: 'tutoring/tutor', can: SWITCHES }] })
+  const profile = await tool(ai, 'read', { label: 'tutoring/tutor', path: 'profile' })
+  assert.deepEqual([profile.body.market, profile.body.role], ['tutoring', 'tutor'])
+  await tool(ai, 'write', { label: 'tutoring/tutor', path: 'post/by-the-ai', body: lesson(BY_THE_AI) })
+  await page.goto(APP)
+  await page.locator('button.card', { hasText: 'Tutoring / tutor' }).click()
+  await page.locator('.post-row', { hasText: BY_THE_AI }).waitFor()
+  await shot(page, 'profile-ai-post')
+
+  // The device: the AI app's name, its day, its folder's address and its profile; no key.
+  const local = await kept(page)
+  const [conn] = await new App({ seed, hosts: [services.host] }).connections()
+  assert.deepEqual(JSON.parse(local['forest.connections']!), [{ address: conn!.address, name: 'An AI app', time: conn!.view.current.get('connection')!.entry.time, labels: ['tutoring/tutor'] }])
+  const all = JSON.stringify(local)
+  for (const secret of [b64u.encode(conn!.key.secret), ...conn!.access.map((a) => a.body.key as string)]) assert.equal(all.includes(secret), false, 'never a key')
+  say('an AI app connected: one unlock, and its post on the profile')
+})
+
+test('Settings, AI apps: the AI app, its day and its one profile, kept ticked while it is the last; another ticked, one unticked, then ticked again, one unlock each, with no new login; Disconnect: its next call refused, its post kept', async () => {
+  const { page, counts } = first
+  await button(page, 'Back').click()
+  await button(page, 'Settings').click()
+  assert.deepEqual(await page.getByRole('heading', { level: 2 }).allTextContents(), ['Verified', 'AI apps', 'Appearance'], 'between Verified and Appearance')
+  const row = page.locator('button.row', { hasText: 'An AI app' })
+  assert.match((await row.textContent()) ?? '', /^An AI app\d{1,2} \w{3}1 profile$|^An AI app\w{3} \d{1,2}1 profile$/, 'its name, its day, its one profile')
+  assert.equal(await button(page, 'Find AI apps').count(), 0, 'every key listed is one this device made')
+  await shot(page, 'settings-ai')
+  await row.click()
+  await page.getByRole('heading', { name: 'An AI app' }).waitFor()
+  assert.deepEqual(await ticks(page), { 'Clothing / seller': 'false', 'Tutoring / tutor': 'true' })
+  assert.ok(await page.getByRole('checkbox', { name: 'Tutoring / tutor' }).isDisabled(), 'the last one stays ticked')
+  await shot(page, 'ai-app')
+
+  /** One tick, and the AI's profiles after it, with no new login. */
+  const tickOne = async (words: string, ticked: boolean, profiles: string[]) => {
+    const asked = counts.asserted
+    await page.getByRole('checkbox', { name: words }).click()
+    await page.getByRole('checkbox', { name: words, checked: ticked }).waitFor({ timeout: 60_000 })
+    await button(page, 'Disconnect').and(page.locator(':enabled')).waitFor()
+    assert.equal(await page.locator('p.line').count(), 0, (await page.locator('p.line').allTextContents()).join(' '))
+    assert.equal(counts.asserted - asked, 1, 'one unlock')
+    assert.deepEqual(await tool(ai, 'my_profiles'), { profiles: profiles.map((label) => ({ label, can: SWITCHES })) })
+  }
+  await tickOne('Clothing / seller', true, ['clothing/seller', 'tutoring/tutor'])
+  await tickOne('Tutoring / tutor', false, ['clothing/seller'])
+  assert.ok(await page.getByRole('checkbox', { name: 'Clothing / seller' }).isDisabled(), 'now the seller is the last')
+  await tickOne('Tutoring / tutor', true, ['clothing/seller', 'tutoring/tutor'])
+
+  const asked = counts.asserted
+  await button(page, 'Disconnect').click()
+  await page.getByRole('heading', { name: 'Settings' }).waitFor({ timeout: 60_000 })
+  assert.equal(counts.asserted - asked, 1, 'one unlock')
+  assert.equal(await page.locator('button.row', { hasText: 'An AI app' }).count(), 0)
+  await assert.rejects(ai.client.callTool({ name: 'my_profiles', arguments: {} }), (err: Error) => err.constructor.name === 'UnauthorizedError', 'its next call refused')
+  assert.deepEqual(JSON.parse((await kept(page))['forest.connections']!), [])
+  await button(page, 'Profiles').click()
+  await page.locator('button.card', { hasText: 'Tutoring / tutor' }).click()
+  await page.locator('.post-row', { hasText: BY_THE_AI }).waitFor()
+  await button(page, 'Back').click()
+  await ai.client.close()
+  say('an AI app given a profile, one taken away and given back, and disconnected, one unlock each; its post kept')
+})
+
+test('a new phone at a connect page, nothing set up: I already have one first; the face check and the first profile, then back to the connect page, its one profile ticked; Connect', async () => {
+  const p = await phone()
+  const login = await aiLogin()
+  await p.page.goto(login.app.authorization!.href)
+  await button(p.page, 'I already have one').waitFor()
+  assert.deepEqual((await p.page.getByRole('button').allTextContents()).map((t) => t.trim()), ['I already have one', 'Create a passkey'], 'I already have one, the primary, first')
+  assert.match((await button(p.page, 'I already have one').getAttribute('class')) ?? '', /primary/)
+  await shot(p.page, 'start-connecting')
+  await button(p.page, 'Create a passkey').click()
+  await faceCheck(p)
+  await p.page.getByRole('heading', { name: 'Your first profile' }).waitFor({ timeout: 60_000 })
+  await p.page.getByLabel('Search').fill('tutoring')
+  await button(p.page, 'Tutoring').click()
+  await button(p.page, 'Student').click()
+  await p.page.getByRole('heading', { name: 'An AI app' }).waitFor({ timeout: 120_000 })
+  assert.equal(await p.page.getByRole('heading', { name: 'Use Forest from your AI' }).count(), 0, 'no Use Forest from your AI')
+  assert.deepEqual(await ticks(p.page), { 'Tutoring / student': 'true' }, 'its one profile, ticked')
+  const asked = p.counts.asserted
+  const code = backToTheAiApp(p.page)
+  await button(p.page, 'Connect').click()
+  await login.transport.finishAuth(await code)
+  assert.equal(p.counts.asserted - asked, 1, 'one unlock')
+  assert.deepEqual(await tool(login, 'my_profiles'), { profiles: [{ label: 'tutoring/student', can: SWITCHES }] })
+  await login.client.close()
+  await p.context.close()
+  say('a new phone: set up from the connect page, then back to it, and connected')
+})
+
+test("a connector that isn't ours: one line, nothing else; a request that ran out: one line", async () => {
+  const p = await phone()
+  await p.page.goto(`${APP}connect?connector=${encodeURIComponent('https://other.example')}&request=x.y`)
+  await p.page.getByText(`Forest connects only to ${new URL(mcp.origin).host} for now.`).waitFor()
+  assert.equal(await p.page.getByRole('button').count(), 0, 'nothing else')
+  await shot(p.page, 'connect-not-ours')
+  // A login 11 minutes old, as the clock goes: run out.
+  const login = await aiLogin()
+  const res = await fetch(login.app.authorization!, { redirect: 'manual' })
+  const connect = res.headers.get('location')!
+  assert.ok(connect.startsWith(`${APP}connect?`), connect)
+  await p.page.clock.setFixedTime(Date.now() + 11 * 60_000)
+  await p.page.goto(connect)
+  await p.page.getByText('This took too long. Start again from your AI app.').waitFor()
+  assert.equal(await p.page.getByRole('button').count(), 0, 'nothing else')
+  await login.client.close()
+  await p.context.close()
 })
 
 test('held for review: Being reviewed, and the app keeps asking; approved, Continue, one unlock', async () => {

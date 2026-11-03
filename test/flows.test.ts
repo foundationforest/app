@@ -233,7 +233,7 @@ describe('a new profile', () => {
     const check = verificationCheck(proof, main.address)
     expect(check && (await checkVerification(check)), 'its verification checks, as any reader checks it').toBe(true)
     expect(proof!.verifier).toBe(w.faceKey)
-    expect(await readCard(w, main.address)).toEqual({ checks: ['face'], posts: 0 })
+    expect(await readCard(w, main.address)).toEqual({ checks: ['face'], posts: 0, keys: [] })
 
     const spent = before - (await w.balance(wallet))
     expect(spent, 'one credit to the new folder, and the label entry').toBeGreaterThan(1)
@@ -296,7 +296,7 @@ describe('Start, on a device that knows nothing', () => {
     freshDevice()
     expect(await enter(w, again(p), proveHere)).toEqual({ to: 'profiles' })
     expect(device.profiles()).toEqual([{ label: 'home-repair/repairer', address }])
-    expect(await readCard(w, address)).toEqual({ checks: ['face'], posts: 0 })
+    expect(await readCard(w, address)).toEqual({ checks: ['face'], posts: 0, keys: [] })
   })
 })
 

@@ -1,10 +1,15 @@
 // What this device keeps, in localStorage, none of it secret: the id of the passkey in use and of
 // every passkey this device has made or used (so Start never makes a second one where one is), the
-// person's profiles' labels and addresses, how they are verified, where they left off in each
-// profile's inbox, the time of the newest review, vouch or report about each profile the Inbox has
-// shown, their theme, and, while a verification is under way, its check and session, the ID check's
-// payment and the gift's buy, then an ID check's payment no stamp has used yet (flows/verify.ts).
-// Never the seed, a key, a stamp or a message.
+// person's profiles' labels and addresses, how they are verified, their AI apps (each one's name,
+// when it connected, its connection folder's address and its profiles' labels), the addresses of the
+// access keys it knows of, where they left off in each profile's inbox, the time of the newest
+// review, vouch or report about each profile the Inbox has shown, their theme, and, while a
+// verification is under way, its check and session, the ID check's payment and the gift's buy, then
+// an ID check's payment no stamp has used yet (flows/verify.ts). Never the seed, a key, a stamp or a
+// message.
+//
+// An access key the person's profile entries list that this device doesn't know was made
+// elsewhere, by another browser with the same seed: Settings offers to find the AI apps then.
 //
 // What is new on a profile is what came after those two marks. A profile this device has no mark for
 // yet (on a new device, or after Forget) is marked at what it holds when first read, so nothing old
@@ -20,6 +25,8 @@ import type { Check } from './services/verifier.ts'
 export type { Check }
 
 export type Profile = { label: string; address: string }
+/** An AI app connected: its connection folder's address, the AI app's name, when it connected, and the labels of the profiles it acts for. Never a key. */
+export type Connection = { address: string; name: string; time: number; labels: string[] }
 export type Theme = 'device' | 'light' | 'dark'
 /**
  * A verification under way: its passkey; its check (the face check when absent, as the earlier
@@ -44,6 +51,8 @@ const KEYS = {
   checks: 'forest.checks',
   read: 'forest.read',
   seen: 'forest.seen',
+  connections: 'forest.connections',
+  known: 'forest.known',
 } as const
 
 /** The key this app keeps in sessionStorage, for one tab (version.ts). */
@@ -97,6 +106,22 @@ export const checks = (): Check[] => {
 }
 export const saveChecks = (list: Check[]) => write(KEYS.checks, [...new Set(list)].sort())
 
+const isConnection = (v: unknown): v is Connection => {
+  const c = v as Connection | null
+  return typeof c?.address === 'string' && typeof c.name === 'string' && Number.isSafeInteger(c.time) && Array.isArray(c.labels) && c.labels.every((l) => typeof l === 'string')
+}
+
+/** The person's AI apps, as this device last saw them, oldest first. */
+export const connections = (): Connection[] => read<unknown[]>(KEYS.connections, []).filter(isConnection)
+export const saveConnections = (list: Connection[]) => write(KEYS.connections, [...new Map(list.map((c) => [c.address, { ...c, labels: [...new Set(c.labels)].sort() }])).values()].sort((a, b) => a.time - b.time))
+export const keepConnection = (c: Connection) => saveConnections([...connections().filter((d) => d.address !== c.address), c])
+export const dropConnection = (address: string) => saveConnections(connections().filter((c) => c.address !== address))
+
+/** The access keys this device knows of, by address: those it made, and every one the person's profile entries listed when it last found their AI apps. Addresses only, never a key. */
+export const knownKeys = (): string[] => read<unknown[]>(KEYS.known, []).filter((a): a is string => typeof a === 'string')
+export const saveKnownKeys = (addresses: string[]) => write(KEYS.known, [...new Set(addresses)].sort())
+export const knowKeys = (addresses: string[]) => saveKnownKeys([...knownKeys(), ...addresses])
+
 /** Where the person left off in each profile's inbox, by the profile's address: the host's cursor after the last entry they opened. */
 export const cursors = (): Record<string, number> => {
   const kept = read<Record<string, unknown>>(KEYS.read, {})
@@ -127,9 +152,9 @@ export const under = (): Under | null => read<Under | null>(KEYS.under, null)
 export const keepUnder = (u: Under) => write(KEYS.under, u)
 export const endUnder = () => write(KEYS.under, undefined)
 
-/** Forget this device: the profiles, how they are verified, what was new on each, the theme, the passkey in use and any verification under way. The ids of the passkeys it knows stay, so Start asks for them and never makes a second one. */
+/** Forget this device: the profiles, how they are verified, the AI apps and the keys it knows of, what was new on each, the theme, the passkey in use and any verification under way. The ids of the passkeys it knows stay, so Start asks for them and never makes a second one. */
 export function forget(): void {
-  for (const key of [KEYS.passkey, KEYS.profiles, KEYS.checks, KEYS.read, KEYS.seen, KEYS.theme, KEYS.under]) store().removeItem(key)
+  for (const key of [KEYS.passkey, KEYS.profiles, KEYS.checks, KEYS.connections, KEYS.known, KEYS.read, KEYS.seen, KEYS.theme, KEYS.under]) store().removeItem(key)
   globalThis.dispatchEvent?.(new Event(CHANGED))
 }
 

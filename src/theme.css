@@ -689,6 +689,37 @@ button:focus-visible {
   font-weight: 700;
   line-height: 1.1;
   color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+/* A checkbox's box: quiet when empty, the accent with its tick on it when ticked. */
+.row .tick {
+  color: var(--ink-2);
+}
+
+.tick.ticked rect {
+  fill: var(--accent);
+  stroke: var(--accent);
+}
+
+.tick.ticked polyline {
+  stroke: var(--on-accent);
+}
+
+/* Steps, numbered, one to a line. */
+.steps {
+  display: grid;
+  gap: 16px;
+  margin: 0;
+  padding-left: 24px;
+}
+
+.steps li {
+  padding-left: 4px;
+}
+
+.steps .stack {
+  margin-top: 8px;
 }
 
 .center {

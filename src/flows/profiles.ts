@@ -20,13 +20,13 @@ export const randomId = () => hex.encode(crypto.getRandomValues(new Uint8Array(1
 /** The Profiles folder's main key, the empty label's: its address is the wallet's. */
 export const walletKey = (seed: Uint8Array) => mainKey(seed, '')
 
-/** Each locked entry under `kind/`, opened with `identity`: what it holds. One that does not open is not the person's, and counts for nothing. */
-async function opened(view: View, kind: string, identity: string): Promise<Body[]> {
-  const out: Body[] = []
+/** Each locked entry under `kind/`, opened with `identity`: its path, and what it holds. One that does not open is not the person's, and counts for nothing. */
+export async function opened(view: View, kind: string, identity: string): Promise<Array<{ path: string; body: Body }>> {
+  const out: Array<{ path: string; body: Body }> = []
   for (const [path, { entry: e }] of liveContent(view)) {
     if (!path.startsWith(`${kind}/`) || !isLocked(e.body)) continue
     const body = await openLocked(e.body, identity).catch(() => null)
-    if (body) out.push(body)
+    if (body) out.push({ path, body })
   }
   return out
 }
@@ -36,8 +36,8 @@ export async function openProfiles(seed: Uint8Array, host: string): Promise<Open
   const key = await walletKey(seed)
   const view = await readView(host, key.address)
   const { identity } = await openingHalf(key.secret)
-  const labels = (await opened(view, 'label', identity)).map((b) => b.label).filter((l): l is string => typeof l === 'string')
-  const stamps = (await opened(view, 'stamp', identity)).map((b) => b.stamp).filter((s): s is string => typeof s === 'string')
+  const labels = (await opened(view, 'label', identity)).map((o) => o.body.label).filter((l): l is string => typeof l === 'string')
+  const stamps = (await opened(view, 'stamp', identity)).map((o) => o.body.stamp).filter((s): s is string => typeof s === 'string')
   return { key, view, labels: [...new Set(labels)].sort(), stamps }
 }
 

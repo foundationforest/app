@@ -1,6 +1,6 @@
 # The app's checks from a clean install, on every pull request and every push to main: the standard,
-# the markets and services at their pins (standard.sh, with services' verifier, host and index
-# readied to run), then the type-check, the tests (Vitest), the build, and the browser test in
+# the markets and services at their pins (standard.sh, with services' verifier, host, index and
+# mcp readied to run), then the type-check, the tests (Vitest), the build, and the browser test in
 # Chromium (Playwright). A test that does not run fails its run.
 
 name: checks
