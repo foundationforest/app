@@ -1,7 +1,7 @@
-// New profile, in two steps. First the markets, "Clothing", with a search box over their words and
-// their roles', those whose every role the person holds left out. Then a market's roles, "Seller",
-// those the person holds left out; one tap asks the passkey, and the app makes the profile: its
-// folder funded, its verification proven on the device, its profile entry written, its label in the
+// New profile, in two steps. First every market, "Clothing", with a search box over their words and
+// their roles'. Then a market's roles, "Seller": one the person has shows a check, and a tap opens
+// that profile; on any other, one tap asks the passkey, and the app makes the profile: its folder
+// funded, its verification proven on the device, its profile entry written, its label in the
 // Profiles folder. A person with none yet comes here once they are verified, under "Your first
 // profile". The market picked is kept in the page's history (App.tsx), so a reload keeps it.
 
@@ -11,14 +11,14 @@ import { config } from '../config.ts'
 import { passkey } from '../device.ts'
 import { makeProfile } from '../flows/profile.ts'
 import { useProfiles } from '../hooks.ts'
-import { marketsLeft, roleWords } from '../markets.ts'
+import { marketList, roleWords } from '../markets.ts'
 import { withSeed } from '../passkey.ts'
 import { proveInWorker } from '../proof/prove.ts'
-import { Line, Spinner, Top, UnlockIcon, useAction } from '../ui.tsx'
+import { CheckIcon, Line, Spinner, Top, UnlockIcon, useAction } from '../ui.tsx'
 
-type Props = { market?: string; onMarket: (name: string) => void; onMade: (address: string, first: boolean) => void; onBack: () => void }
+type Props = { market?: string; onMarket: (name: string) => void; onMade: (address: string, first: boolean) => void; onOpen: (address: string) => void; onBack: () => void }
 
-export function NewProfile({ market: name, onMarket, onMade, onBack }: Props) {
+export function NewProfile({ market: name, onMarket, onMade, onOpen, onBack }: Props) {
   const list = useProfiles()
   const [first] = useState(list.length === 0)
   const [query, setQuery] = useState('')
@@ -32,9 +32,7 @@ export function NewProfile({ market: name, onMarket, onMade, onBack }: Props) {
       setMaking(null)
     }
   })
-  // The one being made stays listed, its spinner on it, until its profile opens.
-  const left = marketsLeft(new Set(list.map((p) => p.label).filter((label) => label !== making)))
-  const market = left.find((m) => m.market === name)
+  const market = marketList.find((m) => m.market === name)
 
   if (market) {
     return (
@@ -43,18 +41,22 @@ export function NewProfile({ market: name, onMarket, onMade, onBack }: Props) {
         <h1>{market.words}</h1>
         <Line note={make.note} />
         <div className="rows">
-          {market.roles.map((p) => (
-            <button key={p.label} className="row" disabled={make.busy} onClick={() => make.run(p.label)}>
-              <span>{roleWords(p.role)}</span>
-              {making === p.label ? <Spinner /> : <UnlockIcon />}
-            </button>
-          ))}
+          {market.roles.map((p) => {
+            // The one being made keeps its spinner until its profile opens.
+            const had = making === p.label ? undefined : list.find((q) => q.label === p.label)
+            return (
+              <button key={p.label} className="row" disabled={make.busy} onClick={() => (had ? onOpen(had.address) : make.run(p.label))}>
+                <span>{roleWords(p.role)}</span>
+                {making === p.label ? <Spinner /> : had ? <CheckIcon label="Yours" /> : <UnlockIcon />}
+              </button>
+            )
+          })}
         </div>
       </main>
     )
   }
   const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean)
-  const shown = left.filter((m) => words.every((w) => [m.words, ...m.roles.map((p) => p.role)].join(' ').toLowerCase().includes(w)))
+  const shown = marketList.filter((m) => words.every((w) => [m.words, ...m.roles.map((p) => p.role)].join(' ').toLowerCase().includes(w)))
   return (
     <main>
       <Top onBack={onBack} />

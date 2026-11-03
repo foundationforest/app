@@ -1,5 +1,5 @@
 // Messages, against services' own host (world.ts): one person messages another's profile from theirs
-// on the other side of the market; the new entries listed with nothing unlocked, and on a new device
+// on the other side of the market, or one of their own; the new entries listed with nothing unlocked, and on a new device
 // none of those already there; one unlock opens
 // every inbox, each message checked against its sender's own profile entry and shown with who they
 // are; a reply, paid from the profile's folder by its bytes; and what each sent, kept locked in the
@@ -84,6 +84,18 @@ test('a message and its reply: counted with nothing unlocked, opened in one unlo
   expect(lockCount(copy.body as { private: string }), 'to the main key alone, with no access key that reads').toBe(1)
   expect(JSON.stringify(copy.body).includes(YES)).toBe(false)
   expect(JSON.stringify(copy.body).includes(s.address)).toBe(false)
+})
+
+test("one of the person's profiles to another of theirs: it arrives, counted with nothing unlocked, and shows in both threads in one unlock", async () => {
+  const me = await verifiedWith(w, 'tutoring/student', 'tutoring/tutor')
+  const [s, t] = me.profiles as [Profile, Profile]
+  await send(w, me.seed, s.label, t.address, ASK)
+  expect(await newMessages(w.host, [s, t]), "new to the tutor; what the student sent is in no inbox").toEqual({ [s.address]: [], [t.address]: [expect.any(String)] })
+  const { threads } = await openAll(w, me.seed, [s, t], checkHere)
+  const tutors = threads.find((x) => x.mine === t.address)!
+  expect([tutors.them, tutors.who, tutors.messages.map((m) => [m.text, m.mine])], "the tutor's: from the student, verified").toEqual([s.address, { market: 'tutoring', role: 'student', verified: true }, [[ASK, false]]])
+  const students = threads.find((x) => x.mine === s.address)!
+  expect([students.them, students.messages.map((m) => [m.text, m.mine])], "the student's: what it sent").toEqual([t.address, [[ASK, true]]])
 })
 
 test("a message that does not count is not shown: signed by a key its sender's profile entry does not list", async () => {

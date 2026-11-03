@@ -3,7 +3,9 @@
 // a profile, who it is (its market and role, the shield). From: the person's profile on the other
 // side of that profile's market (the same role where the market has one), picked for them, or New
 // profile when they have none, one unlock. The message, and Send, one unlock. When Send can't work,
-// one line says why, once. One of the person's own profiles is refused, as for a review.
+// one line says why, once. To may be one of the person's own profiles, From their profile on the
+// other side, as for anyone's; only where that would be the same profile, in a market with one
+// role, is it refused. A review of one's own stays refused (flows/posts.ts).
 
 import { useEffect, useState } from 'react'
 
@@ -43,9 +45,10 @@ export function Message({ to: given, onSent, onBack }: Props) {
     )
     return () => void (live = false)
   }, [to])
-  const own = list.some((p) => p.address === to)
   const side = who ? otherSide(who.market, who.role)[0] : undefined
-  const label = !own && who && side ? `${who.market}/${side}` : null
+  // The profile it would be sent from is the one it is to: a market with one role, and To is the person's own.
+  const self = !!side && list.some((p) => p.address === to && p.label === `${who!.market}/${side}`)
+  const label = !self && who && side ? `${who.market}/${side}` : null
   const me = label ? list.find((p) => p.label === label) : undefined
 
   const make = useAction(async () => {
@@ -65,7 +68,7 @@ export function Message({ to: given, onSent, onBack }: Props) {
     ? null
     : !named
       ? red("That isn't a profile's address.")
-      : own
+      : self
         ? red("That's one of your own profiles.")
         : who === null || (who && !label)
           ? red('No profile Forest can message is at this address.')
@@ -79,7 +82,7 @@ export function Message({ to: given, onSent, onBack }: Props) {
         <div className="field">
           <span className="label">To</span>
           <input aria-label="To" placeholder="Their address" autoComplete="off" value={typed} onChange={(e) => setTyped(e.target.value)} />
-          {named && !own && <Who address={to} {...(who !== undefined && { who })} />}
+          {named && !self && <Who address={to} {...(who !== undefined && { who })} />}
         </div>
         <div className="field">
           <span className="label">From</span>

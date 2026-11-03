@@ -1,12 +1,17 @@
 // What this device keeps, in localStorage, none of it secret: the id of the passkey in use and of
 // every passkey this device has made or used (so Start never makes a second one where one is), the
-// person's profiles' labels and addresses, how they are verified, their AI apps (each one's name,
-// when it connected, its connection folder's address and its profiles' labels), the addresses of the
-// access keys it knows of, where they left off in each profile's inbox, the time of the newest
-// review, vouch or report about each profile the Inbox has shown, their theme, and, while a
-// verification is under way, its check and session, the ID check's payment and the gift's buy, then
-// an ID check's payment no stamp has used yet (flows/verify.ts). Never the seed, a key, a stamp or a
-// message.
+// person's profiles' labels and addresses, the Profiles folder's address and the label entries it
+// has read there, how they are verified, their AI apps (each one's name, when it connected, its
+// connection folder's address and its profiles' labels), the addresses of the access keys it knows
+// of, where they left off in each profile's inbox, the time of the newest review, vouch or report
+// about each profile the Inbox has shown, their theme, and, while a verification is under way, its
+// check and session, the ID check's payment and the gift's buy, then an ID check's payment no stamp
+// has used yet (flows/verify.ts). Never the seed, a key, a stamp or a message.
+//
+// A label entry in the Profiles folder that this device never read, or whose label it doesn't list,
+// is a profile made elsewhere, on another device with the same seed: Profiles offers to read them
+// then (flows/elsewhere.ts). Each entry read is kept with its label, since the folder is opened
+// by flows that save no profile here (an AI app's ticks, the verification): read is not listed.
 //
 // An access key the person's profile entries list that this device doesn't know was made
 // elsewhere, by another browser with the same seed: Settings offers to find the AI apps then.
@@ -25,6 +30,8 @@ import type { Check } from './services/verifier.ts'
 export type { Check }
 
 export type Profile = { label: string; address: string }
+/** The Profiles folder, as this device last opened it: its address (the wallet's), and each label entry it read there, by the random id of its path, with its label. Never a key. */
+export type Folder = { address: string; labels: Record<string, string> }
 /** An AI app connected: its connection folder's address, the AI app's name, when it connected, and the labels of the profiles it acts for. Never a key. */
 export type Connection = { address: string; name: string; time: number; labels: string[] }
 export type Theme = 'device' | 'light' | 'dark'
@@ -53,6 +60,7 @@ const KEYS = {
   seen: 'forest.seen',
   connections: 'forest.connections',
   known: 'forest.known',
+  folder: 'forest.folder',
 } as const
 
 /** The key this app keeps in sessionStorage, for one tab (version.ts). */
@@ -98,6 +106,18 @@ export function usePasskey(id: string): void {
 export const profiles = (): Profile[] => read<Profile[]>(KEYS.profiles, [])
 export const saveProfiles = (list: Profile[]) => write(KEYS.profiles, [...new Map(list.map((p) => [p.label, p])).values()].sort((a, b) => a.label.localeCompare(b.label)))
 export const addProfile = (p: Profile) => saveProfiles([...profiles().filter((q) => q.label !== p.label), p])
+
+/** The Profiles folder, once this device has opened it; else null. */
+export const folder = (): Folder | null => {
+  const f = read<Folder | null>(KEYS.folder, null)
+  if (typeof f?.address !== 'string' || typeof f.labels !== 'object' || f.labels === null) return null
+  return { address: f.address, labels: Object.fromEntries(Object.entries(f.labels).filter((e): e is [string, string] => typeof e[1] === 'string')) }
+}
+/** The Profiles folder at `address` opened, with these label entries read in it, by id: kept beside those read before, unless they were another folder's. */
+export function readLabels(address: string, labels: Record<string, string>): void {
+  const was = folder()
+  write(KEYS.folder, { address, labels: { ...(was?.address === address ? was.labels : {}), ...labels } })
+}
 
 /** How the person is verified: the checks whose stamps their Profiles folder holds, as this device last saw it. */
 export const checks = (): Check[] => {
@@ -152,9 +172,9 @@ export const under = (): Under | null => read<Under | null>(KEYS.under, null)
 export const keepUnder = (u: Under) => write(KEYS.under, u)
 export const endUnder = () => write(KEYS.under, undefined)
 
-/** Forget this device: the profiles, how they are verified, the AI apps and the keys it knows of, what was new on each, the theme, the passkey in use and any verification under way. The ids of the passkeys it knows stay, so Start asks for them and never makes a second one. */
+/** Forget this device: the profiles and the Profiles folder, how they are verified, the AI apps and the keys it knows of, what was new on each, the theme, the passkey in use and any verification under way. The ids of the passkeys it knows stay, so Start asks for them and never makes a second one. */
 export function forget(): void {
-  for (const key of [KEYS.passkey, KEYS.profiles, KEYS.checks, KEYS.connections, KEYS.known, KEYS.read, KEYS.seen, KEYS.theme, KEYS.under]) store().removeItem(key)
+  for (const key of [KEYS.passkey, KEYS.profiles, KEYS.folder, KEYS.checks, KEYS.connections, KEYS.known, KEYS.read, KEYS.seen, KEYS.theme, KEYS.under]) store().removeItem(key)
   globalThis.dispatchEvent?.(new Event(CHANGED))
 }
 

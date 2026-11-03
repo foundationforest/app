@@ -232,6 +232,8 @@ export function App() {
           // The market's roles in place of the markets, so the profile made takes their place and back from it goes where New profile came from.
           onMarket={(market) => go({ at: 'new', market })}
           onMade={made}
+          // A role the person has: its profile, so back comes back to the roles.
+          onOpen={(address) => go({ at: 'profile', address }, true)}
           // From the roles, the markets; from Your first profile, Profiles, empty, which has New profile too.
           onBack={screen.market ? () => go({ at: 'new' }) : profiles().length > 0 ? back : () => go({ at: 'profiles' })}
         />

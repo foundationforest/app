@@ -19,10 +19,10 @@
 //     profile.
 //  4. The first profile, in two steps: back to Profiles and in again; a search over the markets, a
 //     market, its roles, back to the markets; one pick, one unlock, the verification proven in the
-//     worker; Use Forest from your AI, whose Connect opens Connect an AI: three steps, no links, Copy
-//     copying the connector's address; its profile entry on the host, its verification checking as
+//     worker; Use Forest from your AI, whose Connect opens Connect an AI: three steps (sign in now),
+//     no links, Copy copying the connector's address; its profile entry on the host, its verification checking as
 //     any reader checks it; the shield; Share, a sheet whose Copy copies its address; a market's role
-//     made is gone from it.
+//     made shows its check, and opens its profile.
 //  5. Settings: Face with its check, ID with + $5, the appearance; no About.
 //  6. Two people: the first posts an offer from their profile, its price per hour; the second opens
 //     its link with nothing set up, goes through Start and the face check, makes the profile on the
@@ -31,13 +31,18 @@
 //     second reads the reply beside what they sent, and reviews the tutor from the thread, the
 //     slider's thumb hidden until touched, naming the offer.
 //  7. A second browser, with the same passkey, answered from the first, as a phone answers through
-//     the passkey sheet's QR code: I already have one finds the profile and the stamp.
+//     the passkey sheet's QR code: I already have one finds the profile and the stamp; it makes a
+//     profile of its own, and the first, with nothing unlocked, shows New profiles from another
+//     device, which one unlock reads.
+//     Then a message from one of the person's profiles to another of theirs: To their tutor, From
+//     their student; it arrives, and one unlock shows it from the student.
 //  8. One passkey per person: after Forget, Start finds the passkey and asks nothing more; with the
 //     sheet closed, "No passkey chosen." and Try again, and never Create a passkey.
 //  9. Clothing, with the index: the first posts a coat with two photos, redrawn on the device as
 //     JPEGs no longer than 1600 pixels, their notes gone, no per to pick, an area alone; a buyer
-//     writes with the pencil's compose screen (their own address refused once) and reviews the coat
-//     from the thread, then, from their profile's Review, vouches (their own address refused once)
+//     writes with the pencil's compose screen (their own address taken, From the other side) and
+//     reviews the coat from the thread, then, from their profile's Review, vouches (their own address
+//     refused once)
 //     and reports, and Given lists all three; the seller sees the rating on the card, in Reviews, and
 //     the review in the Inbox with its dot, until the Inbox has shown it, and opens it.
 //     Then the AI apps, with services' own mcp and an AI app as services' tests make one (the MCP
@@ -320,7 +325,8 @@ test('Start, on a device that knows no passkey: two buttons at once, nothing ask
   const { credentials } = await cdp.send('WebAuthn.getCredentials', { authenticatorId: authenticator })
   assert.deepEqual(credentials.map((c) => [c.rpId, c.isResidentCredential]), [['app.forest.foundation', true]])
   const local = await kept(page)
-  assert.deepEqual(Object.keys(local).sort(), ['forest.passkeys', 'forest.v'], 'the passkey known, not yet in use: no one is verified here yet')
+  assert.deepEqual(Object.keys(local).sort(), ['forest.folder', 'forest.passkeys', 'forest.v'], 'the passkey known, not yet in use: no one is verified here yet')
+  assert.deepEqual(JSON.parse(local['forest.folder']!).labels, {}, 'its Profiles folder looked at, with no profile in it')
   await shot(page, 'verify')
   say('Start: two buttons, nothing asked first; Create a passkey made it for app.forest.foundation')
 })
@@ -403,8 +409,9 @@ test('Get verified: Face picked again, then Continue; the face check in its own 
   const stamp = stampFromJson(JSON.parse((await openLocked(body, identity)).stamp as string))
   assert.equal(stamp.verifier, services.faceKey, "the stamp from the verifier's face key")
   const local = await kept(page)
-  assert.deepEqual(Object.keys(local).sort(), ['forest.checks', 'forest.passkey', 'forest.passkeys', 'forest.v'])
+  assert.deepEqual(Object.keys(local).sort(), ['forest.checks', 'forest.folder', 'forest.passkey', 'forest.passkeys', 'forest.v'])
   assert.deepEqual(JSON.parse(local['forest.checks']!), ['face'], 'how the person is verified')
+  assert.deepEqual(JSON.parse(local['forest.folder']!), { address: wallet.address, labels: {} }, "the Profiles folder's address, never a key")
   for (const secret of [Buffer.from(seed).toString('hex'), Buffer.from(seed).toString('base64url'), String(stamp.signature.S)]) assert.ok(!JSON.stringify(local).includes(secret), 'nothing of the seed or the stamp kept')
   say(`verified: the stamp in the Profiles folder, the wallet at ${left} credits`)
 })
@@ -440,7 +447,7 @@ test('the first profile, in two steps: back to Profiles and in again; a search, 
   await shot(page, 'use-ai')
   await button(page, 'Connect').click()
   await page.getByRole('heading', { name: 'Connect an AI' }).waitFor()
-  assert.deepEqual(await page.locator('.steps > li').allTextContents(), ['In your AI app, add a connector.', `Paste this address:${mcp.origin}Copy`, 'It brings you back here to pick its profiles.'])
+  assert.deepEqual(await page.locator('.steps > li').allTextContents(), ['In your AI app, add a connector. If it asks how to sign in, pick Sign in now.', `Paste this address:${mcp.origin}Copy`, 'It brings you back here to pick its profiles.'])
   assert.equal(await page.locator('a').count(), 0, 'no links to other sites')
   await button(page, 'Copy').click()
   await button(page, 'Copied').waitFor()
@@ -471,10 +478,17 @@ test('the first profile, in two steps: back to Profiles and in again; a search, 
   assert.equal(await card.locator('.dot').count(), 0, 'nothing new')
   assert.deepEqual(JSON.parse((await kept(page))['forest.profiles']!), [{ label: 'tutoring/tutor', address: tutor }])
   await shot(page, 'profiles')
-  // A role made is gone from its market.
+  // A role made shows its check, and opens its profile; back is the roles again.
   await button(page, 'New profile').click()
   await button(page, 'Tutoring').click()
-  assert.deepEqual(await page.locator('button.row').allTextContents(), ['Student'], 'the tutor made, the student left')
+  assert.deepEqual(await page.locator('button.row').allTextContents(), ['Tutor', 'Student'], 'every role')
+  await shot(page, 'new-profile-made')
+  const asked2 = counts.asserted
+  await button(page, 'Tutor Yours').click()
+  await shield(page.getByRole('heading', { name: 'Tutoring / tutor' })).waitFor()
+  assert.equal(counts.asserted - asked2, 0, 'opened, nothing unlocked')
+  await button(page, 'Back').click()
+  await page.getByRole('heading', { name: 'Tutoring', exact: true }).waitFor()
   await button(page, 'Back').click()
   await button(page, 'Back').click()
   await card.waitFor()
@@ -616,7 +630,7 @@ test('two people: one posts an offer, its price per hour; the other opens its li
   say('two people: an offer per hour, found by its link, messaged, replied to, reviewed in tenths')
 })
 
-test("a second browser, the same passkey answering from the first, as a phone answers through the sheet's QR code: I already have one finds the profile and the stamp", async () => {
+test("a second browser, the same passkey answering from the first, as a phone answers through the sheet's QR code: I already have one finds the profile and the stamp; a profile it makes, the first shows as New profiles from another device, read in one unlock", async () => {
   const second = await phone()
   // The second browser's own authenticator holds no Forest passkey. Asked with the sheet, the first
   // browser's answers, as a phone does through the QR code: its PRF secret for the same salt.
@@ -651,8 +665,66 @@ test("a second browser, the same passkey answering from the first, as a phone an
   assert.equal(first.counts.asserted - asked, 1, "answered once, by the first browser's passkey")
   assert.equal(second.counts.created, 0, 'and no second passkey')
   assert.deepEqual(JSON.parse((await kept(second.page))['forest.profiles']!), [{ label: 'tutoring/tutor', address: tutor }])
+
+  // The second browser makes a profile of its own, answered by the same passkey.
+  await button(second.page, 'New profile').click()
+  await pickProfile(second.page, 'Tutoring / student')
+  assert.equal(first.counts.asserted - asked, 2, 'answered by the same passkey again')
   await second.context.close()
-  say('a second browser found the profile and its verification, answered by the same passkey')
+  const student = (await mainKey(seed, 'tutoring/student')).address
+
+  // The first, with nothing unlocked, tells it; one unlock reads it, and its card shows.
+  const { page, counts } = first
+  await button(page, 'Settings').click()
+  await button(page, 'Profiles').click()
+  const row = button(page, 'New profiles from another device')
+  await row.waitFor({ timeout: 30_000 })
+  assert.equal(first.counts.asserted - asked, 2, 'told with nothing unlocked')
+  await shot(page, 'profiles-elsewhere')
+  const before = counts.asserted
+  await row.click()
+  await page.locator('button.card', { hasText: 'Tutoring / student' }).waitFor({ timeout: 60_000 })
+  assert.equal(counts.asserted - before, 1, 'one unlock')
+  await row.waitFor({ state: 'detached' })
+  assert.deepEqual(JSON.parse((await kept(page))['forest.profiles']!), [
+    { label: 'tutoring/student', address: student },
+    { label: 'tutoring/tutor', address: tutor },
+  ])
+  say('a second browser found the profile and its verification, answered by the same passkey; the profile it made, the first read in one unlock')
+})
+
+const NOTE = 'Note to self: Tuesday at six.'
+
+test("a message to one of the person's own profiles: To their tutor, From their student; it arrives, and one unlock shows it from the student", async () => {
+  const { page, counts } = first
+  await button(page, /Inbox$/).click()
+  await button(page, 'New message').click()
+  await page.getByLabel('To').fill(tutor)
+  await shield(page.locator('.who', { hasText: 'Tutoring / tutor' })).waitFor()
+  await page.locator('.from', { hasText: 'Tutoring / student' }).waitFor()
+  assert.equal(await page.locator('main .line').count(), 0, 'not refused')
+  assert.equal(await page.locator('.from button').count(), 0, 'from the student they have')
+  await page.getByLabel('Message').fill(NOTE)
+  let asked = counts.asserted
+  await button(page, 'Send').click()
+  await page.locator('.said.mine', { hasText: NOTE }).waitFor({ timeout: 60_000 })
+  assert.equal(counts.asserted - asked, 1, 'one unlock')
+  await page.getByText('Your Tutoring / student').waitFor()
+  await button(page, 'Back').click()
+  // The tutor's inbox: counted with nothing unlocked, opened in one unlock, from the student.
+  await page.getByText('1 new message').waitFor({ timeout: 45_000 })
+  asked = counts.asserted
+  await button(page, 'Open').click()
+  const row = page.locator('button.row', { hasText: NOTE }).filter({ hasText: 'Tutoring / student' })
+  await shield(row).waitFor({ timeout: 60_000 })
+  assert.equal(counts.asserted - asked, 1, 'one unlock')
+  await row.locator('.dot').waitFor()
+  await row.click()
+  await page.locator('.said:not(.mine)', { hasText: NOTE }).waitFor()
+  await page.getByText('Your Tutoring / tutor').waitFor()
+  await button(page, 'Back').click()
+  await button(page, 'Profiles').click()
+  say("a message from the person's student to their own tutor: sent, counted, opened")
 })
 
 test('one passkey per person: after Forget, Start finds it; with the sheet closed, "No passkey chosen." and Try again, never Create a passkey', async () => {
@@ -747,9 +819,11 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   await buyer.page.getByRole('heading', { name: 'New message' }).waitFor()
   assert.ok((await buyer.page.getByLabel('To').isVisible()) && (await buyer.page.getByLabel('Message').isVisible()), 'To and the message box, from the start')
   await shot(buyer.page, 'message-empty')
+  // Their own profile: taken, From their profile on the other side, to make.
   await buyer.page.getByLabel('To').fill(buyerAddress)
-  await buyer.page.getByText("That's one of your own profiles.").waitFor()
-  assert.equal(await buyer.page.locator('main .line').count(), 1, 'one line, once')
+  await shield(buyer.page.locator('.who', { hasText: 'Clothing / buyer' })).waitFor()
+  await buyer.page.locator('.from', { hasText: 'Clothing / seller' }).getByRole('button', { name: 'New profile' }).waitFor()
+  assert.equal(await buyer.page.locator('main .line').count(), 0, 'not refused')
   await buyer.page.getByLabel('To').fill(seller)
   await shield(buyer.page.locator('.who', { hasText: 'Clothing / seller' })).waitFor()
   await buyer.page.locator('.from', { hasText: 'Clothing / buyer' }).waitFor()
@@ -902,7 +976,7 @@ test("an AI app's login: the connect page, its name and its redirect's host, the
   await page.getByRole('heading', { name: 'An AI app' }).waitFor()
   assert.equal(new URL(page.url()).pathname + new URL(page.url()).search, '/connect', 'the login out of the path, into the history')
   await page.getByText('ai-app.example', { exact: true }).waitFor()
-  assert.deepEqual(await ticks(page), { 'Clothing / seller': 'false', 'Tutoring / tutor': 'false' }, 'none ticked: there are two')
+  assert.deepEqual(await ticks(page), { 'Clothing / seller': 'false', 'Tutoring / student': 'false', 'Tutoring / tutor': 'false' }, 'none ticked: there are three')
   assert.ok(await button(page, 'Connect').isDisabled(), 'Connect once one is ticked')
   await shot(page, 'connect')
   await page.getByRole('checkbox', { name: 'Tutoring / tutor' }).click()
@@ -942,7 +1016,7 @@ test('Settings, AI apps: the AI app, its day and its one profile, kept ticked wh
   await shot(page, 'settings-ai')
   await row.click()
   await page.getByRole('heading', { name: 'An AI app' }).waitFor()
-  assert.deepEqual(await ticks(page), { 'Clothing / seller': 'false', 'Tutoring / tutor': 'true' })
+  assert.deepEqual(await ticks(page), { 'Clothing / seller': 'false', 'Tutoring / student': 'false', 'Tutoring / tutor': 'true' })
   assert.ok(await page.getByRole('checkbox', { name: 'Tutoring / tutor' }).isDisabled(), 'the last one stays ticked')
   await shot(page, 'ai-app')
 

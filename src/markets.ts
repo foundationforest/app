@@ -1,8 +1,8 @@
 // The markets, from their files as the build hands them over (build/markets.ts), through the markets'
 // browser entry, which takes them as data and runs no eval: the directory, each market file, and
 // checkEntry. As the app shows them: each market and role a pair, in the market's own words,
-// "Tutoring / tutor"; the markets with a role left to make a profile for; each kind of entry's fields
-// for a role; and the other side of a market.
+// "Tutoring / tutor"; every market with its roles, as New profile lists them; each kind of entry's
+// fields for a role; and the other side of a market.
 
 import { type Field, type Fields, type Kind, type Market, SHARED, loadMarkets } from '@foundationforest/markets/browser'
 import files from 'virtual:markets'
@@ -31,15 +31,11 @@ export const pairs: Pair[] = markets.directory.markets.flatMap((m) =>
 /** A role in words: `seller` is Seller. */
 export const roleWords = (role: string) => marketWords(role)
 
-/** A market New profile lists: its name, its words, and its roles the person holds no profile for yet. */
-export type MarketLeft = { market: string; words: string; roles: Pair[] }
+/** A market as New profile lists it: its name, its words, and its roles. */
+export type MarketRoles = { market: string; words: string; roles: Pair[] }
 
-/** The markets with a role the person holds no profile for (`held`, their labels), in the directory's order, each with those roles. */
-export function marketsLeft(held: Set<string>): MarketLeft[] {
-  return markets.directory.markets
-    .map((m) => ({ market: m.name, words: marketWords(m.name), roles: pairs.filter((p) => p.market === m.name && !held.has(p.label)) }))
-    .filter((m) => m.roles.length > 0)
-}
+/** Every market in the directory, in its order, each with every role. */
+export const marketList: MarketRoles[] = markets.directory.markets.map((m) => ({ market: m.name, words: marketWords(m.name), roles: pairs.filter((p) => p.market === m.name) }))
 
 /** The pair a label names; one the directory no longer lists is named from the label itself. */
 export function pairOf(label: string): Pair {
