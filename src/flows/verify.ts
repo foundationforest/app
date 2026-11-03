@@ -17,11 +17,13 @@
 //      folder's balance. Collected again, a buy gets the same answer;
 //   5. keep: the stamp in the Profiles folder, its first write paid from the wallet;
 //   6. show: each profile's entry written again with a verification of the new stamp (stamps.ts).
-//      Then nothing of the verification is left on the device.
+//      Then nothing of the verification is left on the device, but an ID check's payment no stamp
+//      used (paid, then left for the face check), so the ID check from Settings opens paid.
 //
 // The device keeps the check's session and the gift's buy because both are lost otherwise: a second
 // check of the same face goes to review, and a gift is given once a stamp number. It keeps the
-// payment because it is the person's $5.
+// payment because it is the person's $5. Going back to the two checks and picking one again changes
+// none of it (`choose`).
 
 import { seedNumber, stampNumberOf } from '@foundationforest/keys'
 
@@ -93,10 +95,25 @@ async function withGift(s: Services, u: Under, check: Check): Promise<Under> {
   return { ...u, gift }
 }
 
-/** `check` chosen for `passkey`, in place of any check under way that has no session open yet. */
+/**
+ * `check` chosen for `passkey`. The check under way stays as it is when it is the same one, so going
+ * back and picking it again loses nothing; another drops its session, keeping the gift's buy and the
+ * ID check's payment, which is the person's $5.
+ */
 export function choose(passkey: string, check: Check): void {
   const was = mine(passkey)
-  keepUnder({ passkey, check, ...(was?.gift && { gift: was.gift }) })
+  if (was && checkOf(was) === check) return
+  keepUnder({ passkey, check, ...(was?.gift && { gift: was.gift }), ...(was?.payment && { payment: was.payment }) })
+}
+
+/** The ID check's payment under way that no stamp has used: paid for, then left for the face check. */
+const unused = (u: Under | null): string | undefined => (u && checkOf(u) === 'face' ? u.payment : undefined)
+
+/** The verification over: nothing of it left on the device but a payment no stamp used, so the ID check opens paid. */
+function over(passkey: string): void {
+  const payment = unused(mine(passkey))
+  if (payment) keepUnder({ passkey, check: 'id', payment })
+  else endUnder()
 }
 
 /**
@@ -214,9 +231,10 @@ export async function finish(s: Services, passkey: string, seed: Uint8Array, sta
   const held = kept.includes(true) ? folder.stamps : [...folder.stamps, stamp]
   await noteChecks(s, held)
   const u = mine(passkey)
-  if (u) keepUnder({ passkey, check: checkOf(u), kept: true })
+  const payment = unused(u)
+  if (u) keepUnder({ passkey, check: checkOf(u), kept: true, ...(payment && { payment }) })
   await showStamps(s, seed, { labels: folder.labels, stamps: held }, prove)
-  endUnder()
+  over(passkey)
   usePasskey(passkey)
 }
 
@@ -224,7 +242,7 @@ export async function finish(s: Services, passkey: string, seed: Uint8Array, sta
 export async function finishShowing(s: Services, passkey: string, seed: Uint8Array, prove: Prove): Promise<void> {
   const folder = await openProfiles(seed, s.host)
   await showStamps(s, seed, folder, prove)
-  if (mine(passkey)) endUnder()
+  if (mine(passkey)) over(passkey)
 }
 
 /**
@@ -257,7 +275,7 @@ export async function resume(s: Services, passkey: string, seed: Uint8Array, pro
     else if (u && checkOf(u) === 'face') {
       // The face stamp is kept: only its gift may be left to collect.
       await collect(s, passkey, folder.key.address)
-      endUnder()
+      over(passkey)
     } else if (u?.session) await advance(s, passkey, seed, prove).catch(() => undefined)
     return { verified: true, labels: folder.labels }
   }

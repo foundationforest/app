@@ -4,10 +4,12 @@
 // as it is, for one action, and zeroed after it (`withSeed`). No server checks these passkeys: the
 // challenge is random and nobody reads the signature; only the PRF secret is used.
 //
-// One passkey per person. Start asks for one first (`ask`): any Forest passkey the person's managers
-// hold, or, through the passkey sheet's QR code, one on another device. Only when none answers does
-// it offer to make one (`make`), never where the manager holds one of the passkeys this device knows.
-// A passkey whose manager gives no PRF secret is dropped, and the person is told which one does.
+// One passkey per person. On a device that knows one, Start asks for the ones it knows, and never
+// offers to make another. On a device that knows none, the person says which: make one (`make`), or
+// ask for any Forest passkey their managers hold, or, through the passkey sheet's QR code, one on
+// another device (`ask`). A browser can't tell a closed sheet from no passkey, so a closed sheet says
+// neither. A passkey whose manager gives no PRF secret is dropped, and the person is told which one
+// does.
 
 import { base64urlnopad } from '@scure/base'
 
@@ -45,19 +47,11 @@ export class NoPrf extends Said {
   }
 }
 
-/** No passkey answered: none was there, or the person closed the sheet. */
+/** No passkey answered: none was there, or the person closed the sheet, which a browser can't tell apart. */
 export class NoAnswer extends Said {
   constructor() {
-    super('No Forest passkey answered.')
+    super('No passkey chosen.')
     this.name = 'NoAnswer'
-  }
-}
-
-/** The manager holds one of the passkeys this device knows: none is made. */
-export class HasPasskey extends Said {
-  constructor() {
-    super('You already have a Forest passkey.')
-    this.name = 'HasPasskey'
   }
 }
 
@@ -80,14 +74,6 @@ export async function oldBrowser(): Promise<boolean> {
   return (await capabilities())['extension:prf'] === false
 }
 
-/**
- * Whether this browser can ask for a passkey without showing the sheet when there is none
- * (WebAuthn's immediate mediation, `uiMode: 'immediate'`): then a person with no passkey here goes
- * straight to Create a passkey, and one whose passkey is on another device asks again with the
- * sheet.
- */
-export const asksQuietly = async (): Promise<boolean> => (await capabilities()).immediateGet === true
-
 /** The seed from a PRF secret: its 32 bytes, not copied, so zeroing the seed zeroes them. */
 function seedOf(secret: BufferSource): Uint8Array {
   const seed = ArrayBuffer.isView(secret) ? new Uint8Array(secret.buffer, secret.byteOffset, secret.byteLength) : new Uint8Array(secret)
@@ -99,21 +85,19 @@ const prfOf = (credential: Credential | null) => (credential as PublicKeyCredent
 
 /**
  * The seed, from a Forest passkey, after the device's unlock. `allow` names the passkeys that may
- * answer; left out, any Forest passkey the person holds may. `quietly` asks without the sheet,
- * failing at once when this device has none (WebAuthn takes no `allow` that way).
+ * answer; left out, any Forest passkey the person holds may.
  */
-export async function ask({ allow, quietly = false }: { allow?: string[]; quietly?: boolean } = {}): Promise<Passkey> {
+export async function ask({ allow }: { allow?: string[] } = {}): Promise<Passkey> {
   if (await oldBrowser()) throw new OldBrowser()
-  const request = {
+  const request: CredentialRequestOptions = {
     publicKey: {
       rpId: rpId(),
       challenge: random(32),
-      ...(!quietly && allow?.length && { allowCredentials: descriptors(allow) }),
+      ...(allow?.length && { allowCredentials: descriptors(allow) }),
       userVerification: 'required',
       extensions: { prf: { eval: { first: SALT } } },
     },
-    ...(quietly && { uiMode: 'immediate' }),
-  } as CredentialRequestOptions
+  }
   const credential = await navigator.credentials.get(request).catch((err: unknown) => {
     throw err instanceof DOMException && err.name === 'NotAllowedError' ? new NoAnswer() : err
   })
@@ -126,10 +110,10 @@ export async function ask({ allow, quietly = false }: { allow?: string[]; quietl
 /**
  * A new passkey, named Forest, and its seed. Some managers give the PRF secret as the passkey is
  * made; the others (Safari's) only when it is asked for, so one ask follows, naming it. Where
- * neither gives it, the manager is asked to drop it, and the person is told to save it elsewhere. A
- * manager that holds one of the passkeys `known` names makes none.
+ * neither gives it, the manager is asked to drop it, and the person is told to save it elsewhere.
+ * Only Start calls it, on a device that knows no passkey.
  */
-export async function make(known: string[]): Promise<Passkey> {
+export async function make(): Promise<Passkey> {
   if (await oldBrowser()) throw new OldBrowser()
   const credential = await navigator.credentials
     .create({
@@ -144,12 +128,10 @@ export async function make(known: string[]): Promise<Passkey> {
         ],
         // No attachment named, so the sheet offers a phone (the QR code) where this device has no PRF.
         authenticatorSelection: { residentKey: 'required', requireResidentKey: true, userVerification: 'required' },
-        excludeCredentials: descriptors(known),
         extensions: { prf: { eval: { first: SALT } } },
       },
     })
     .catch((err: unknown) => {
-      if (err instanceof DOMException && err.name === 'InvalidStateError') throw new HasPasskey()
       if (err instanceof DOMException && err.name === 'NotAllowedError') throw new NoAnswer()
       throw err
     })

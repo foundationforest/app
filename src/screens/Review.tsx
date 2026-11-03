@@ -1,14 +1,16 @@
-// Review someone, from Reviews, a thread or a review received: who it is about at the top (their
-// market and role, the shield, their address cut short), or a box for their address or Share link
-// when it is not known. A big score on a slider, 1 to 10 in tenths; No score makes it a vouch, "I
-// know they're real". The market's review fields for their role, which of their posts it is about,
-// a comment, and Post. A red Report at the bottom turns it into a report: a comment only, posted in
-// red. Before the unlock, the app checks it as for any entry: they are on the other side of the same
-// market, none of the person's own (flows/posts.ts). An edit keeps its kind, and has Delete.
+// Review someone, from a profile, Reviews, a thread or a review received: who it is about at the top
+// (their market and role, the shield, their address cut short), or a box for their address or Share
+// link when it is not known, with who it is under it as soon as it holds an address. A big score on
+// a slider, 1 to 10 in tenths, its thumb hidden until touched, so no score looks chosen; No score
+// makes it a vouch, "I know they're real". The market's review fields for their role, which of their
+// posts it is about, a comment, and Post. A red Report at the bottom turns it into a report: a
+// comment only, posted in red. Before the unlock, the app checks it as for any entry: they are on the
+// other side of the same market, none of the person's own (flows/posts.ts); a refusal shows once. An
+// edit keeps its kind, and has Delete.
 
 import { useEffect, useState } from 'react'
 
-import type { Body } from '@foundationforest/folders'
+import { type Body, publicKeyFromAddress } from '@foundationforest/folders'
 
 import { config } from '../config.ts'
 import { type Profile, passkey } from '../device.ts'
@@ -72,6 +74,8 @@ export function Review({ me, subject: given, edit, report = false, onDone, onBac
   }, [address])
 
   const send = useAction(async () => {
+    // Refused already, under the box: nothing more to say.
+    if (subjectNote) return
     if (kind === 'review' && !score) throw new Quiet('Add a score.')
     const said = { subject: address || undefined, text: text.trim() || undefined }
     const body = clean((kind === 'review' ? { ...values, ...said, score, post: their || undefined } : said) as Body)
@@ -103,7 +107,7 @@ export function Review({ me, subject: given, edit, report = false, onDone, onBac
       >
         <div className="field">
           {given || edit ? null : <input aria-label="Their address" placeholder="Their address" autoComplete="off" value={about} onChange={(e) => setAbout(e.target.value)} />}
-          {subject && <Who address={subject.address} withAddress />}
+          {address && publicKeyFromAddress(address) && <Who address={address} withAddress={!!(given || edit)} />}
           <Line note={subjectNote} />
         </div>
         {kind !== 'report' && (
@@ -111,7 +115,18 @@ export function Review({ me, subject: given, edit, report = false, onDone, onBac
             {kind === 'review' ? (
               <div className="score">
                 <strong className="big">{score || '–'}</strong>
-                <input type="range" aria-label="Score" min={1} max={10} step={0.1} value={score || '5.5'} onChange={(e) => setScore(scoreOf(e.target.value))} />
+                <input
+                  type="range"
+                  aria-label="Score"
+                  className={score ? undefined : 'untouched'}
+                  min={1}
+                  max={10}
+                  step={0.1}
+                  value={score || '5.5'}
+                  onChange={(e) => setScore(scoreOf(e.target.value))}
+                  // A tap just where the hidden thumb sits changes nothing, so no change comes: it counts too.
+                  onPointerUp={(e) => !score && setScore(scoreOf(e.currentTarget.value))}
+                />
               </div>
             ) : (
               <p className="hint">You know they're real.</p>
@@ -143,7 +158,8 @@ export function Review({ me, subject: given, edit, report = false, onDone, onBac
           <span className="label">Comment</span>
           <textarea aria-label="Comment" rows={4} value={text} onChange={(e) => setText(e.target.value)} />
         </div>
-        <Line note={send.note} />
+        {/* The subject's refusal is said once, under the box. */}
+        <Line note={send.note && send.note.text !== subjectNote?.text ? send.note : null} />
         <button type="submit" className={kind === 'report' ? 'danger solid' : 'primary'} disabled={busy}>
           {send.busy ? <Spinner /> : <><UnlockIcon /> Post</>}
         </button>
