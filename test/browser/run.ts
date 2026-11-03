@@ -11,8 +11,9 @@
 //  1. Start, on a device that knows no passkey: two buttons at once, nothing asked; a closed sheet
 //     claims neither none nor one; Create a passkey made it for app.forest.foundation. Here and on
 //     every screen below with a filled button, its icon takes its text color.
-//  2. Back on each setup step: Get verified to Start, which now asks for the passkey made alone,
-//     never Create; the ID check (its price and tries, what it keeps tapped open) to Get verified,
+//  2. Back on each setup step: Get verified, which from Start, with nothing under way, also offers
+//     Link to my Forest passkey, gone while a check is under way, to Start, which now asks for the
+//     passkey made alone, never Create; the ID check (its price and tries, what it keeps tapped open) to Get verified,
 //     even after "Payment isn't available right now."; the face check's wait to Get verified.
 //  3. Get verified: Face picked again, Continue; the face check in a tab of its own, opened on the
 //     tap, which Didit's page sends back to /back, where it closes itself; the page hidden meanwhile,
@@ -21,7 +22,9 @@
 //     of the seed kept; then Your first profile.
 //  4. The first profile, in two steps: back to Profiles and in again; a search over the markets, a
 //     market, its roles, back to the markets; one pick, nothing asked, the seed held since the last
-//     unlock, the verification proven in the worker; Use Forest from your AI, whose Connect opens
+//     unlock, the verification proven in the worker; Add a backup passkey, its one line, Add a
+//     backup opening Add a backup (its line, Create a passkey with the unlock icon though the seed is
+//     held), back, and Not now; Use Forest from your AI, whose Connect opens
 //     Connect an AI: three steps (sign in now), no links, Copy copying the connector's address; its
 //     profile entry on the host, its verification checking as any reader checks it; the face check's
 //     shield, an outline, which, tapped on a card, says "Verified by face" and opens nothing; its
@@ -51,6 +54,14 @@
 //     their student; it arrives, and, the seed held, it is sent and opened with nothing asked.
 //  8. One passkey per person: after Forget, Start finds the passkey and asks nothing more; with the
 //     sheet closed, "No passkey chosen." and Try again, and never Create a passkey.
+//     Then backup passkeys, with two virtual authenticators: Settings' Passkeys says "1 passkey",
+//     Add a backup and the Settings tab flagged; the phone's own manager, which keeps the Forest
+//     passkey the new one excludes, refuses, in one red line; a security key, a second virtual
+//     authenticator, makes the backup: "2 passkeys", its row with the day, no flag; a browser holding
+//     only the backup, answered through the QR code, opens the same profiles; Remove, tapped twice,
+//     and that browser's next unlock says "This passkey no longer opens your profiles."; after
+//     Forget, its Start opens its own seed, so Get verified, whose Link refuses the same passkey,
+//     then links it to the Forest passkey, and the profiles show.
 //  9. Clothing, with the index: the first, the page hidden a moment so Post shows its unlock icon
 //     again, posts a coat with two photos in one unlock, redrawn on the device as JPEGs no longer
 //     than 1600 pixels, their notes gone, no per to pick, an area alone, its row's price reading
@@ -71,7 +82,7 @@
 //     unticked, each with its shield; one ticked, Connect, one unlock; the AI app gets its token,
 //     reads its profile and writes a post, which shows on the profile; the device keeps the AI app,
 //     never a key;
-//  b. Settings' AI apps, between Verified and Appearance: the AI app, its day, its one profile, kept
+//  b. Settings' AI apps, between Passkeys and Appearance: the AI app, its day, its one profile, kept
 //     ticked while it is the last; another ticked, one unlock, then one unticked and ticked again
 //     with nothing asked, the AI's profiles following with no new login; Disconnect, nothing asked:
 //     the AI's next call refused, and its post stays;
@@ -315,13 +326,48 @@ async function pickProfile(page: Page, words: string) {
   await page.getByRole('heading', { name: words }).waitFor({ timeout: 120_000 })
 }
 
-/** A first profile picked on Your first profile: its market found by searching, then its role; one unlock, then Use Forest from your AI. */
+/** A first profile picked on Your first profile: its market found by searching, then its role; one unlock, then Add a backup passkey. */
 async function pickFirst(page: Page, words: string) {
   const [market, role] = split(words)
   await page.getByLabel('Search').fill(market.toLowerCase())
   await button(page, market).click()
   await button(page, roleWords(role)).click()
-  await page.getByRole('heading', { name: 'Use Forest from your AI' }).waitFor({ timeout: 120_000 })
+  await page.getByRole('heading', { name: 'Add a backup passkey' }).waitFor({ timeout: 120_000 })
+}
+
+/**
+ * `p`'s passkey sheet answered by `from`'s passkeys, as a phone answers through the sheet's QR
+ * code: their PRF secret for the same salt. With `only`, the one passkey it names answers, as the
+ * person picks it on that phone.
+ */
+async function answerFrom(p: Phone, from: Phone, only?: () => string) {
+  await p.context.exposeFunction('answerFromFirst', (wire: { rpId: string; allow: number[][]; first: number[] }) =>
+    from.page.evaluate(
+      async (w) => {
+        try {
+          const got = (await navigator.credentials.get({
+            publicKey: { rpId: w.rpId, challenge: crypto.getRandomValues(new Uint8Array(32)), userVerification: 'required', ...(w.allow.length && { allowCredentials: w.allow.map((id) => ({ type: 'public-key' as const, id: new Uint8Array(id) })) }), extensions: { prf: { eval: { first: new Uint8Array(w.first) } } } },
+          })) as PublicKeyCredential
+          return { rawId: Array.from(new Uint8Array(got.rawId)), first: Array.from(new Uint8Array(got.getClientExtensionResults().prf!.results!.first as ArrayBuffer)) }
+        } catch (err) {
+          return { error: { name: (err as Error).name, message: (err as Error).message } }
+        }
+      },
+      only ? { ...wire, allow: [[...Buffer.from(only(), 'base64url')]] } : wire,
+    ),
+  )
+  await p.context.addInitScript(() => {
+    const own = navigator.credentials.get.bind(navigator.credentials)
+    const bytes = (b: BufferSource) => Array.from(b instanceof ArrayBuffer ? new Uint8Array(b) : new Uint8Array(b.buffer, b.byteOffset, b.byteLength))
+    navigator.credentials.get = async (options?: CredentialRequestOptions) => {
+      const pk = options?.publicKey
+      if (!pk) return own(options)
+      const got = await (globalThis as any).answerFromFirst({ rpId: pk.rpId, allow: (pk.allowCredentials ?? []).map((c) => bytes(c.id)), first: bytes(pk.extensions!.prf!.eval!.first) })
+      if (got.error) throw new DOMException(got.error.message, got.error.name)
+      const first = new Uint8Array(got.first).buffer
+      return { type: 'public-key', id: '', rawId: new Uint8Array(got.rawId).buffer, getClientExtensionResults: () => ({ prf: { results: { first } } }) } as unknown as Credential
+    }
+  })
 }
 
 /** The page's own navigator.credentials.get, answering once as a closed sheet does: no passkey. */
@@ -465,6 +511,8 @@ test("back on each setup step: Get verified to Start, which asks for the passkey
   const rows = await page.getByRole('radio').allTextContents()
   assert.deepEqual(rows, ['FaceA selfieFree', 'IDYour ID and a selfie · counts more$5'], 'two rows, and no other words')
   assert.ok(await button(page, 'Continue').isDisabled(), 'Continue once a row is picked')
+  const link = button(page, 'Link to my Forest passkey')
+  assert.ok((await link.isVisible()) && (await asks(link)), 'from Start, with nothing under way, Link to my Forest passkey too, with the unlock icon: it asks a passkey')
 
   // Get verified, back to Start: this device knows the passkey now, so Start asks for it alone.
   await button(page, 'Back').click()
@@ -510,6 +558,7 @@ test("back on each setup step: Get verified to Start, which asks for the passkey
   await page.waitForFunction(() => !(document.querySelector('main button.primary') as HTMLButtonElement | null)?.disabled, null, { timeout: 5_000 })
   assert.equal(await page.getByRole('radio', { name: /^Face/ }).getAttribute('aria-checked'), 'true', 'the face check still picked')
   assert.equal(JSON.parse((await kept(page))['forest.setup']!).session, session, 'and still under way')
+  assert.equal(await link.count(), 0, 'a check under way: no Link')
   unfinished = false
   say('back: Get verified to Start, the ID check after a failed payment, and the face check waiting, each to Get verified')
 })
@@ -582,7 +631,19 @@ test("the first profile, in two steps: back to Profiles and in again; a search, 
   await pickFirst(page, 'Tutoring tutor')
   assert.equal(counts.asserted - asked, 0, 'nothing asked: the seed held since the unlock that kept the stamp')
   say(`a profile made in ${((Date.now() - started) / 1000).toFixed(1)} s, its proof in the worker`)
+  // Add a backup passkey, once: one line, Add a backup and Not now. Add a backup opens Add a backup, whose back comes back here.
+  assert.deepEqual(await page.getByRole('button').allTextContents(), ['Add a backup', 'Not now'])
+  assert.deepEqual(await page.locator('main p').allTextContents(), ['If you lose your only passkey, your profiles are gone.'])
+  await shot(page, 'backup-offer')
+  await button(page, 'Add a backup').click()
+  await page.getByRole('heading', { name: 'Add a backup', exact: true }).waitFor()
+  assert.deepEqual(await page.locator('main p').allTextContents(), ['Save it in another password manager, on a second phone, or on a security key.'])
+  assert.ok(await asks(button(page, 'Create a passkey')), 'Create a passkey shows the unlock icon, even with the seed held: it makes a passkey')
+  await shot(page, 'backup')
+  await button(page, 'Back').click()
+  await button(page, 'Not now').click()
   // Use Forest from your AI, once: Connect opens Connect an AI, three steps and no links.
+  await page.getByRole('heading', { name: 'Use Forest from your AI' }).waitFor()
   assert.deepEqual(await page.getByRole('button').allTextContents(), ['Connect', 'Not now'])
   await shot(page, 'use-ai')
   await button(page, 'Connect').click()
@@ -593,7 +654,7 @@ test("the first profile, in two steps: back to Profiles and in again; a search, 
   await button(page, 'Copied').waitFor()
   assert.equal(await page.evaluate(() => navigator.clipboard.readText()), mcp.origin, 'the address shown, in full')
   await shot(page, 'connect-ai')
-  // Back: Profiles, and Use Forest from your AI never again.
+  // Back: Profiles, and Add a backup passkey and Use Forest from your AI never again.
   await button(page, 'Back').click()
   await page.locator('button.card', { hasText: 'Tutoring tutor' }).locator('.named').click()
   await shield(page.getByRole('heading', { name: 'Tutoring tutor' })).waitFor()
@@ -861,30 +922,7 @@ test("a second browser, the same passkey answering from the first, as a phone an
   const second = await phone()
   // The second browser's own authenticator holds no Forest passkey. Asked with the sheet, the first
   // browser's answers, as a phone does through the QR code: its PRF secret for the same salt.
-  await second.context.exposeFunction('answerFromFirst', (wire: { rpId: string; allow: number[][]; first: number[] }) =>
-    first.page.evaluate(async (w) => {
-      try {
-        const got = (await navigator.credentials.get({
-          publicKey: { rpId: w.rpId, challenge: crypto.getRandomValues(new Uint8Array(32)), userVerification: 'required', ...(w.allow.length && { allowCredentials: w.allow.map((id) => ({ type: 'public-key' as const, id: new Uint8Array(id) })) }), extensions: { prf: { eval: { first: new Uint8Array(w.first) } } } },
-        })) as PublicKeyCredential
-        return { rawId: Array.from(new Uint8Array(got.rawId)), first: Array.from(new Uint8Array(got.getClientExtensionResults().prf!.results!.first as ArrayBuffer)) }
-      } catch (err) {
-        return { error: { name: (err as Error).name, message: (err as Error).message } }
-      }
-    }, wire),
-  )
-  await second.context.addInitScript(() => {
-    const own = navigator.credentials.get.bind(navigator.credentials)
-    const bytes = (b: BufferSource) => Array.from(b instanceof ArrayBuffer ? new Uint8Array(b) : new Uint8Array(b.buffer, b.byteOffset, b.byteLength))
-    navigator.credentials.get = async (options?: CredentialRequestOptions) => {
-      const pk = options?.publicKey
-      if (!pk) return own(options)
-      const got = await (globalThis as any).answerFromFirst({ rpId: pk.rpId, allow: (pk.allowCredentials ?? []).map((c) => bytes(c.id)), first: bytes(pk.extensions!.prf!.eval!.first) })
-      if (got.error) throw new DOMException(got.error.message, got.error.name)
-      const first = new Uint8Array(got.first).buffer
-      return { type: 'public-key', id: '', rawId: new Uint8Array(got.rawId).buffer, getClientExtensionResults: () => ({ prf: { results: { first } } }) } as unknown as Credential
-    }
-  })
+  await answerFrom(second, first)
   const asked = first.counts.asserted
   await second.page.goto(APP)
   await button(second.page, 'I already have one').click()
@@ -985,6 +1023,122 @@ test('one passkey per person: after Forget, Start finds it; with the sheet close
   say('one passkey: found after Forget; a closed sheet, Try again, and never a second')
 })
 
+/** The live, locked backup/<id> entries of the Profiles folder at `wallet`, as anyone reads them. */
+const backupsOn = async (wallet: string) => (await entriesOf(wallet, 'backup')).filter(([, c]) => isLocked(c.entry.body))
+
+/** A passkey's id as the app keeps it, from the id the virtual authenticator gives. */
+const idOf = (credentialId: string) => Buffer.from(credentialId, 'base64').toString('base64url')
+
+test('backup passkeys: "1 passkey" and Add a backup, flagged; the same manager refused; a security key made the backup, two passkeys and no flag; a browser holding only the backup opens the same profiles; removed, it opens them no more; after Forget, Get verified offers Link, which refuses the same passkey and links this one to the Forest passkey', async () => {
+  const { page, cdp, counts } = first
+  const mainId = JSON.parse((await kept(page))['forest.passkey']!) as string
+  const wallet = (await mainKey(seed, '')).address
+  const passkeys = page.locator('section', { has: page.getByRole('heading', { name: 'Passkeys' }) })
+  const add = button(page, '+ Add a backup')
+  const tabDot = page.locator('nav.places button', { hasText: 'Settings' }).locator('.dot')
+  await button(page, 'Settings').click()
+  await passkeys.getByText('1 passkey', { exact: true }).waitFor()
+  assert.equal(await add.locator('.dot').count(), 1, 'Add a backup flagged')
+  assert.equal(await tabDot.count(), 1, 'and the Settings tab')
+  await shot(page, 'settings-passkeys-one')
+
+  // The phone's own manager keeps the Forest passkey, which the new one excludes: it refuses.
+  const made = counts.created
+  await add.click()
+  await page.getByRole('heading', { name: 'Add a backup', exact: true }).waitFor()
+  await button(page, 'Create a passkey').click()
+  const same = page.getByText('This password manager already has your Forest passkey. Save the backup in another.')
+  await same.waitFor()
+  assert.equal(await same.getAttribute('class'), 'line red')
+  assert.equal(counts.created, made, 'nothing made')
+  await shot(page, 'backup-same-manager')
+
+  // A security key, a second virtual authenticator: it makes the backup.
+  const { authenticatorId: key } = await cdp.send('WebAuthn.addVirtualAuthenticator', {
+    options: { protocol: 'ctap2', ctap2Version: 'ctap2_1', transport: 'usb', hasResidentKey: true, hasUserVerification: true, isUserVerified: true, hasPrf: true, automaticPresenceSimulation: true },
+  })
+  await button(page, 'Create a passkey').click()
+  await page.getByRole('heading', { name: 'Settings' }).waitFor({ timeout: 60_000 })
+  const onKey = (await cdp.send('WebAuthn.getCredentials', { authenticatorId: key })).credentials
+  assert.deepEqual(onKey.map((c) => [c.rpId, c.isResidentCredential]), [['app.forest.foundation', true]], 'made on the security key')
+  assert.equal((await cdp.send('WebAuthn.getCredentials', { authenticatorId: first.authenticator })).credentials.length, 1, "none more in the phone's own manager")
+  const backupId = idOf(onKey[0]!.credentialId)
+  await passkeys.getByText('2 passkeys', { exact: true }).waitFor()
+  const row = passkeys.locator('div.row', { hasText: 'Backup' })
+  const today = new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'short' })
+  assert.deepEqual(await row.locator('.two > *').allTextContents(), ['Backup', today], "the day it was added; no manager's name, since this one sends none")
+  assert.equal(await add.locator('.dot').count(), 0, 'no flag with two')
+  assert.equal(await tabDot.count(), 0, 'nor on the tab')
+  assert.equal(await row.locator('.unlock').count(), 0, 'no unlock icon on a row')
+  await shot(page, 'settings-passkeys-two')
+  assert.equal((await backupsOn(wallet)).length, 1, 'its backup/<id> entry in the Profiles folder')
+  assert.ok((JSON.parse((await kept(page))['forest.passkeys']!) as string[]).includes(backupId), 'the device knows it')
+
+  // A browser holding only the backup, answered through the sheet's QR code: the same profiles.
+  const other = await phone()
+  let answering = backupId
+  await answerFrom(other, first, () => answering)
+  await other.page.goto(APP)
+  await button(other.page, 'I already have one').click()
+  await shield(other.page.locator('button.card', { hasText: 'Tutoring tutor' })).waitFor({ timeout: 60_000 })
+  const there = await kept(other.page)
+  assert.equal(JSON.parse(there['forest.passkey']!), backupId, 'the backup, the passkey in use there')
+  assert.deepEqual((JSON.parse(there['forest.profiles']!) as Array<{ label: string }>).map((x) => x.label), ['tutoring/student', 'tutoring/tutor'])
+  assert.equal(JSON.parse(there['forest.folder']!).address, wallet, "the Forest passkey's Profiles folder")
+
+  // Removed, tapped twice: one passkey again, the flag back, and the backup opens the profiles no more.
+  const remove = row.getByRole('button', { name: 'Remove' })
+  await remove.click()
+  assert.match((await remove.getAttribute('class')) ?? '', /solid/, 'tapped once, it fills red')
+  await shot(page, 'settings-passkeys-remove')
+  await remove.click()
+  await passkeys.getByText('1 passkey', { exact: true }).waitFor({ timeout: 30_000 })
+  assert.equal(await add.locator('.dot').count(), 1, 'flagged again')
+  assert.equal((await backupsOn(wallet)).length, 0)
+  await away(other.page)
+  await messagesOf(other.page, 'Tutoring tutor')
+  await button(other.page, 'Open').click()
+  const gone = other.page.getByText('This passkey no longer opens your profiles.')
+  await gone.waitFor({ timeout: 30_000 })
+  assert.equal(await gone.getAttribute('class'), 'line red')
+  await shot(other.page, 'not-yours')
+
+  // After Forget, Start with it: its own seed, no stamp, so Get verified, and Link.
+  await button(other.page, 'Back').click()
+  await button(other.page, 'Back').click()
+  await button(other.page, 'Settings').click()
+  await button(other.page, 'Forget this device').click()
+  await button(other.page, 'Forget').click()
+  await button(other.page, 'Start').click()
+  await other.page.getByRole('heading', { name: 'Get verified' }).waitFor({ timeout: 60_000 })
+  const link = button(other.page, 'Link to my Forest passkey')
+  await shot(other.page, 'verify-link')
+  // The same passkey picked on the sheet: refused.
+  await link.click()
+  const self = other.page.getByText("That's this passkey.")
+  await self.waitFor({ timeout: 30_000 })
+  assert.equal(await self.getAttribute('class'), 'line red')
+  await shot(other.page, 'link-same')
+  // The Forest passkey picked: linked, and in. The security key unplugged from the first phone first,
+  // since a virtual one asked for a passkey it doesn't hold answers at once that it has none, where a
+  // real sheet waits for the person's pick.
+  await cdp.send('WebAuthn.removeVirtualAuthenticator', { authenticatorId: key })
+  answering = mainId
+  await link.click()
+  await shield(other.page.locator('button.card', { hasText: 'Tutoring tutor' })).waitFor({ timeout: 60_000 })
+  const linked = await kept(other.page)
+  assert.equal(JSON.parse(linked['forest.passkey']!), backupId, 'this passkey stays the one in use here')
+  assert.ok((JSON.parse(linked['forest.passkeys']!) as string[]).includes(mainId), 'and the device knows the Forest passkey')
+  assert.equal((await backupsOn(wallet)).length, 1, 'a backup again')
+  await other.context.close()
+
+  await button(page, 'Profiles').click()
+  await button(page, 'Settings').click()
+  await passkeys.getByText('2 passkeys', { exact: true }).waitFor({ timeout: 30_000 })
+  await button(page, 'Profiles').click()
+  say('backups: made on a security key, opened elsewhere, removed, then a passkey linked')
+})
+
 const COAT = 'A wool coat, worn twice.'
 
 test('clothing, with the index: a coat with two photos redrawn on the device, no per, an area alone, $40; a buyer messages, reviews, vouches and reports; the seller sees the rating, "3 new" on the profile, the tab counting all four, the three marked in Reviews and seen there; Notifications lists them with the message', async () => {
@@ -1047,6 +1201,8 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   await pickFirst(buyer.page, 'Clothing buyer')
   const buying = (await kept(buyer.page))['forest.profiles']!
   const buyerAddress = JSON.parse(buying)[0].address as string
+  await button(buyer.page, 'Not now').click()
+  await buyer.page.getByRole('heading', { name: 'Use Forest from your AI' }).waitFor()
   await button(buyer.page, 'Not now').click()
   await messagesOf(buyer.page, 'Clothing buyer')
   // Before the unlock, how many are new, here none, with Open.
@@ -1311,7 +1467,7 @@ test('Settings, AI apps: the AI app, its day and its one profile, kept ticked wh
   const { page, counts } = first
   await button(page, 'Back').click()
   await button(page, 'Settings').click()
-  assert.deepEqual(await page.getByRole('heading', { level: 2 }).allTextContents(), ['Verified', 'AI apps', 'Appearance'], 'between Verified and Appearance')
+  assert.deepEqual(await page.getByRole('heading', { level: 2 }).allTextContents(), ['Verified', 'Passkeys', 'AI apps', 'Appearance'], 'between Passkeys and Appearance')
   const row = page.locator('button.row', { hasText: 'An AI app' })
   assert.match((await row.textContent()) ?? '', /^An AI app\d{1,2} \w{3}1 profile$|^An AI app\w{3} \d{1,2}1 profile$/, 'its name, its day, its one profile')
   assert.equal(await button(page, 'Find AI apps').count(), 0, 'every key listed is one this device made')
@@ -1371,6 +1527,7 @@ test('a new phone at a connect page, nothing set up: I already have one first; t
   await button(p.page, 'Student').click()
   await p.page.getByRole('heading', { name: 'An AI app' }).waitFor({ timeout: 120_000 })
   assert.equal(await p.page.getByRole('heading', { name: 'Use Forest from your AI' }).count(), 0, 'no Use Forest from your AI')
+  assert.equal(await p.page.getByRole('heading', { name: 'Add a backup passkey' }).count(), 0, 'nor Add a backup passkey')
   assert.deepEqual(await ticks(p.page), { 'Tutoring student': 'true' }, 'its one profile, ticked')
   const asked = p.counts.asserted
   const code = backToTheAiApp(p.page)

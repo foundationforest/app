@@ -1,8 +1,8 @@
 // The screens, and the way between them. Start, until a person is verified here; then a person with
-// no profile yet makes their first, and once it is made, Use Forest from your AI; then Profiles,
-// Notifications and Settings, and from them New profile, a profile, its messages, its reviews, a
-// review received, a post, Review someone, a thread, a new message, the ID check, an AI app, or
-// Connect an AI. Every setup
+// no profile yet makes their first, and once it is made, Add a backup passkey, then Use Forest from
+// your AI; then Profiles, Notifications and Settings, and from them New profile, a profile, its
+// messages, its reviews, a review received, a post, Review someone, a thread, a new message, the ID
+// check, an AI app, Connect an AI, or Add a backup. Every setup
 // step has a back: Get verified to Start, Your first profile to Profiles.
 // Each screen the person can come back to has its own path, so a reload opens on it and the phone's
 // back goes back; what a screen is about (a profile's address, a thread, an entry being edited, the
@@ -11,7 +11,7 @@
 // link's address arrives in its query: it is moved into the history at once, and waits there through
 // Start and the verification when no one is verified here yet. So does an AI app's login, the
 // connect page's connector and request: through Start, the verification and the first profile,
-// then back to the connect page, Use Forest from your AI left out. A login the page can't take (not
+// then back to the connect page, Add a backup passkey and Use Forest from your AI left out. A login the page can't take (not
 // this app's connector, or run out) says so at once, before Start. Above any screen, once a newer
 // version is live, one quiet line says so, with Reload (version.ts).
 
@@ -24,6 +24,8 @@ import { type Step, choose, stepOf } from './flows/verify.ts'
 import { useNewVersion, useProfiles } from './hooks.ts'
 import { AiApp } from './screens/AiApp.tsx'
 import { Back } from './screens/Back.tsx'
+import { Backup } from './screens/Backup.tsx'
+import { BackupOffer } from './screens/BackupOffer.tsx'
 import { Connect, blocked } from './screens/Connect.tsx'
 import { ConnectAi } from './screens/ConnectAi.tsx'
 import { Message } from './screens/Message.tsx'
@@ -62,6 +64,8 @@ type Screen =
   | { at: 'connect-ai' }
   | { at: 'ai'; address: string }
   | { at: 'use-ai' }
+  | { at: 'backup-offer' }
+  | { at: 'backup'; offered?: boolean }
   | { at: 'back' }
 
 const PATHS: Partial<Record<Screen['at'], string>> = {
@@ -80,10 +84,11 @@ const PATHS: Partial<Record<Screen['at'], string>> = {
   connect: '/connect',
   'connect-ai': '/connect-ai',
   ai: '/ai',
+  backup: '/backup',
 }
 
 /** What the page's history keeps of a screen: what it is about, never in the path. */
-type Kept = { address?: string; entry?: string; edit?: Posted; subject?: string; report?: boolean; only?: string; mine?: string; them?: string; to?: string; market?: string; connector?: string; request?: string; pushed?: boolean }
+type Kept = { address?: string; entry?: string; edit?: Posted; subject?: string; report?: boolean; only?: string; mine?: string; them?: string; to?: string; market?: string; connector?: string; request?: string; offered?: boolean; pushed?: boolean }
 
 /** An AI app's login, from the connector: what the connect page is about. */
 type Login = { connector: string; request: string }
@@ -140,6 +145,8 @@ function here(): Screen {
       return isText(now.only) ? { at: 'messages', only: now.only } : { at: 'notifications' }
     case '/message':
       return { at: 'message', ...(isText(now.to) && { to: now.to }) }
+    case '/backup':
+      return { at: 'backup', ...(now.offered && { offered: true }) }
   }
   if (path === '/profile' && isText(now.address)) return { at: 'profile', address: now.address }
   if (path === '/reviews' && isText(now.address)) return { at: 'reviews', address: now.address }
@@ -176,6 +183,8 @@ function keptOf(to: Screen): Kept {
       return { connector: to.connector, request: to.request }
     case 'ai':
       return { address: to.address }
+    case 'backup':
+      return to.offered ? { offered: true } : {}
     default:
       return {}
   }
@@ -226,12 +235,12 @@ function Screens() {
     if (w && 'login' in w) return go({ at: 'connect', ...w.login })
     go(w ? { at: 'message', to: w.to } : profiles().length === 0 ? { at: 'new' } : { at: 'profiles' })
   }
-  /** A profile made on New profile: back to the AI app's login if one waits; after the first, Use Forest from your AI; else the profile. */
+  /** A profile made on New profile: back to the AI app's login if one waits; after the first, Add a backup passkey; else the profile. */
   const made = (address: string, first: boolean) => {
     const w = waiting.current
     waiting.current = null
     if (w && 'login' in w) return go({ at: 'connect', ...w.login })
-    go(first ? { at: 'use-ai' } : { at: 'profile', address })
+    go(first ? { at: 'backup-offer' } : { at: 'profile', address })
   }
   const review = (address: string, more: { subject?: string; edit?: Posted; report?: boolean } = {}) => go({ at: 'review', address, ...more }, true)
 
@@ -318,6 +327,7 @@ function Screens() {
           onIdCheck={() => go(idCheck(inUse()!), true)}
           onConnectAi={() => go({ at: 'connect-ai' }, true)}
           onAiApp={(address) => go({ at: 'ai', address }, true)}
+          onBackup={() => go({ at: 'backup' }, true)}
         />
       )
     case 'connect':
@@ -328,6 +338,11 @@ function Screens() {
       return <AiApp address={screen.address} onBack={back} />
     case 'use-ai':
       return <UseAi onConnect={() => go({ at: 'connect-ai' }, true)} onNotNow={() => go({ at: 'profiles' })} />
+    case 'backup-offer':
+      return <BackupOffer onAdd={() => go({ at: 'backup', offered: true })} onNotNow={() => go({ at: 'use-ai' })} />
+    case 'backup':
+      // From Add a backup passkey: on to Use Forest from your AI, and back to the offer. From Settings: back there.
+      return screen.offered ? <Backup onDone={() => go({ at: 'use-ai' })} onBack={() => go({ at: 'backup-offer' })} /> : <Backup onDone={back} onBack={back} />
   }
 }
 

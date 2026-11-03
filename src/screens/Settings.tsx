@@ -1,5 +1,9 @@
 // Settings: how the person is verified, Face and ID each with its check's shield (an outline for the
-// face check, filled for the ID check), or the ID check's "+ $5" when they have only the face check; their AI apps, each with the day it connected and how many profiles
+// face check, filled for the ID check), or the ID check's "+ $5" when they have only the face check;
+// their passkeys: how many, each backup with the day it was added and, on the device that added it,
+// its password manager's name, with Remove (tapped twice, then one unlock, though a row shows no
+// unlock icon), and + Add a backup, with the dot while there is one passkey alone, all read with
+// nothing unlocked; their AI apps, each with the day it connected and how many profiles
 // it acts for, and + Connect an AI; the appearance, the device's, light or dark; and Forget this
 // device, in red. When a profile entry lists an access key this device doesn't know (made in
 // another browser with the same seed), one row more, Find AI apps, finds them from the seed: one
@@ -8,19 +12,21 @@
 import { type ReactNode, useState } from 'react'
 
 import { config } from '../config.ts'
-import { type Check, type Theme, checks as heldChecks, forget, knownKeys, passkey, saveTheme, theme as savedTheme } from '../device.ts'
+import { type Check, type Theme, backupNames, checks as heldChecks, forget, knownKeys, passkey, saveTheme, theme as savedTheme } from '../device.ts'
+import { removeBackup } from '../flows/backups.ts'
 import { findConnections } from '../flows/connections.ts'
 import { drop } from '../held.ts'
-import { useCards, useConnections, useProfiles } from '../hooks.ts'
+import { backupsChanged, useBackups, useCards, useConnections, useProfiles } from '../hooks.ts'
 import { letGo } from '../opened.ts'
 import { withSeed } from '../passkey.ts'
 import { letGoRated } from '../rated.ts'
 import { applyTheme } from '../theme.ts'
-import { DarkIcon, DeviceIcon, LightIcon, Line, type Place, Places, Spinner, Top, Verified, day, useAction } from '../ui.tsx'
+import { DarkIcon, DeviceIcon, Dot, LightIcon, Line, type Place, Places, Spinner, Top, Verified, day, useAction } from '../ui.tsx'
 
-type Props = { go: (to: Place) => void; onForgot: () => void; onIdCheck: () => void; onConnectAi: () => void; onAiApp: (address: string) => void }
+type Props = { go: (to: Place) => void; onForgot: () => void; onIdCheck: () => void; onConnectAi: () => void; onAiApp: (address: string) => void; onBackup: () => void }
 
 const profileCount = (n: number) => `${n} profile${n === 1 ? '' : 's'}`
+const passkeyCount = (n: number) => `${n} passkey${n === 1 ? '' : 's'}`
 
 const THEMES: Array<[Theme, string, () => ReactNode]> = [
   ['device', 'Device', DeviceIcon],
@@ -28,7 +34,7 @@ const THEMES: Array<[Theme, string, () => ReactNode]> = [
   ['dark', 'Dark', DarkIcon],
 ]
 
-export function Settings({ go, onForgot, onIdCheck, onConnectAi, onAiApp }: Props) {
+export function Settings({ go, onForgot, onIdCheck, onConnectAi, onAiApp, onBackup }: Props) {
   const list = useProfiles()
   const [found, setFound] = useState(0)
   const cards = useCards(list, found)
@@ -44,6 +50,15 @@ export function Settings({ go, onForgot, onIdCheck, onConnectAi, onAiApp }: Prop
   // Start the earlier version knew.
   const shown = new Set<Check>([...heldChecks(), ...Object.values(cards).flatMap((c) => c.checks)])
   const has = (c: Check) => shown.has(c) || (c === 'face' && shown.size === 0)
+  const backups = useBackups()
+  const names = backupNames()
+  // The backup whose Remove was tapped once: tapped again, it is removed.
+  const [removing, setRemoving] = useState<string | null>(null)
+  const remove = useAction(async (id: string) => {
+    await withSeed(passkey()!, (seed) => removeBackup(config, seed, id))
+    setRemoving(null)
+    backupsChanged()
+  })
   const [theme, setTheme] = useState(savedTheme)
   const [forgetting, setForgetting] = useState(false)
   const pick = (t: Theme) => {
@@ -74,6 +89,32 @@ export function Settings({ go, onForgot, onIdCheck, onConnectAi, onAiApp }: Prop
             )}
           </div>
         </div>
+      </section>
+      <section className="stack">
+        <h2>Passkeys</h2>
+        {backups && (
+          <div className="rows">
+            <div className="row">
+              <span>{passkeyCount(backups.length + 1)}</span>
+            </div>
+            {backups.map((b) => (
+              <div key={b.id} className="row">
+                <span className="two">
+                  <strong>{names[b.id] ?? 'Backup'}</strong>
+                  <span>{day(b.time)}</span>
+                </span>
+                <button className={removing === b.id ? 'small danger solid' : 'small danger'} disabled={remove.busy} onClick={() => (removing === b.id ? remove.run(b.id) : setRemoving(b.id))}>
+                  {remove.busy && removing === b.id ? <Spinner /> : 'Remove'}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        <Line note={remove.note} />
+        <button onClick={onBackup}>
+          + Add a backup
+          {backups?.length === 0 && <Dot flag />}
+        </button>
       </section>
       <section className="stack">
         <h2>AI apps</h2>

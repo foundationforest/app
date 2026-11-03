@@ -3,13 +3,13 @@
 // the icons (the shield, drawn once here, is how a profile shows it is verified, by its strongest
 // check: an outline for a face check, filled for an ID check, an icon whose words show only when it
 // is tapped; the unlock icon goes beside the word on a labeled button that asks the passkey, only
-// while a tap will ask, never on a list row), a checkbox's box, the dot that marks what is new, the chips of a review, vouch or
+// while a tap will ask, never on a list row), a checkbox's box, the dot that marks what is new (and Add a backup, while there is one passkey), the chips of a review, vouch or
 // report, a profile's name (its market in bold, then its role, muted: Clothing seller), the bars,
 // how long ago something was, the day something happened, and the time of day.
 
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 
-import { useHeld, useNews, useProfiles, useRated } from './hooks.ts'
+import { useBackups, useHeld, useNews, useProfiles, useRated } from './hooks.ts'
 import { marketWords, pairOf } from './markets.ts'
 import type { Check } from './services/verifier.ts'
 import { Reloading } from './version.ts'
@@ -74,9 +74,10 @@ const Icon = ({ children, label, className }: { children: ReactNode; label?: str
   </svg>
 )
 
-/** Beside the word on a labeled button that asks the passkey, and only while a tap will ask: with a seed held (held.ts), none. Never on a list row. */
-export function UnlockIcon() {
-  if (useHeld()) return null
+/** Beside the word on a labeled button that asks the passkey, and only while a tap will ask: with a seed held (held.ts), none, unless the tap asks a passkey anyway (`always`: one to make, or another to link to). Never on a list row. */
+export function UnlockIcon({ always = false }: { always?: boolean }) {
+  const held = useHeld()
+  if (held && !always) return null
   return (
     <Icon className="unlock">
       <rect x="5" y="11" width="14" height="10" rx="2" />
@@ -211,7 +212,8 @@ export const DarkIcon = () => (
 )
 
 /** Something new: a message, a review, a vouch or a report not yet looked at. */
-export const Dot = () => <span className="dot" role="img" aria-label="New" />
+/** The dot: what is new, said as "New"; or, `flag`, a step still to take, drawn alone, since the words beside it say it (Settings' "1 passkey"). */
+export const Dot = ({ flag = false }: { flag?: boolean }) => (flag ? <span className="dot" aria-hidden /> : <span className="dot" role="img" aria-label="New" />)
 
 /** A review's score, a vouch or a report, as its chip. */
 export function SaidChip({ kind, score }: { kind: 'review' | 'vouch' | 'report'; score?: unknown }) {
@@ -264,11 +266,12 @@ const PLACES: Array<[Place, string, () => ReactNode]> = [
   ['settings', 'Settings', SettingsIcon],
 ]
 
-/** The places, at the bottom: Profiles, Notifications, with how many things are new (messages, reviews, vouches and reports), and Settings. Opening one reads what the index says of every profile. */
+/** The places, at the bottom: Profiles, Notifications, with how many things are new (messages, reviews, vouches and reports), and Settings, with the dot while the person has one passkey alone. Opening one reads what the index says of every profile. */
 export function Places({ at, go }: { at: Place; go: (to: Place) => void }) {
   const list = useProfiles()
   useRated(list)
   const count = useNews(list).all
+  const alone = useBackups()?.length === 0
   return (
     <nav className="places">
       {PLACES.map(([place, words, PlaceIcon]) => (
@@ -280,6 +283,7 @@ export function Places({ at, go }: { at: Place; go: (to: Place) => void }) {
                 {count}
               </span>
             )}
+            {place === 'settings' && alone && <Dot flag />}
           </span>
           {words}
         </button>
