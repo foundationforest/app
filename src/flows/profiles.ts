@@ -3,11 +3,14 @@
 // hosts, a `label/<id>` entry for each profile and a `stamp/<id>` entry for each stamp, each at a
 // random id and locked to the folder's own open key alone. Its balance at the host is the wallet,
 // where the gift lands and which funds every new folder; its own writes are paid from it.
+// Each time it is opened, and each label written, the device keeps the folder's address and the
+// label entries read, so Profiles can tell, with nothing unlocked, one made on another device.
 
 import { type Body, type View, entry, hex, liveContent } from '@foundationforest/folders'
 import { isLocked, lock, openLocked } from '@foundationforest/folders/locked'
 import { type MainKey, mainKey, openingHalf } from '@foundationforest/keys'
 
+import { readLabels } from '../device.ts'
 import { NoCredits } from '../services/credits.ts'
 import { NotWritten, readView, writeAll } from '../services/host.ts'
 
@@ -31,22 +34,33 @@ export async function opened(view: View, kind: string, identity: string): Promis
   return out
 }
 
-/** The Profiles folder, read from the host and opened with the seed: the labels of the person's profiles, and their stamps. */
+/** The paths of the label entries a view of the Profiles folder holds now, each locked: readable with nothing unlocked, never opened. */
+export const labelPaths = (view: View): string[] => [...liveContent(view)].filter(([path, { entry: e }]) => path.startsWith('label/') && isLocked(e.body)).map(([path]) => path)
+
+/** The random id of a label entry's path, `label/<id>`. */
+export const labelId = (path: string) => path.slice('label/'.length)
+
+/** The Profiles folder, read from the host and opened with the seed: the labels of the person's profiles, and their stamps. The device keeps which label entries it read. */
 export async function openProfiles(seed: Uint8Array, host: string): Promise<Opened> {
   const key = await walletKey(seed)
   const view = await readView(host, key.address)
   const { identity } = await openingHalf(key.secret)
-  const labels = (await opened(view, 'label', identity)).map((o) => o.body.label).filter((l): l is string => typeof l === 'string')
+  // Every label entry, read: one that does not open, or names no label, as the empty label, which is no profile's.
+  const read: Record<string, string> = Object.fromEntries(labelPaths(view).map((path) => [labelId(path), '']))
+  for (const o of await opened(view, 'label', identity)) if (typeof o.body.label === 'string') read[labelId(o.path)] = o.body.label
   const stamps = (await opened(view, 'stamp', identity)).map((o) => o.body.stamp).filter((s): s is string => typeof s === 'string')
-  return { key, view, labels: [...new Set(labels)].sort(), stamps }
+  readLabels(key.address, read)
+  return { key, view, labels: [...new Set(Object.values(read).filter(Boolean))].sort(), stamps }
 }
 
-/** One entry more, at `<kind>/<id>`, locked to the folder's own open key alone; its profile entry first, when it has none. Paid from the wallet. */
+/** One entry more, at `<kind>/<id>`, locked to the folder's own open key alone; its profile entry first, when it has none. Paid from the wallet. A label written is one the device has read. */
 export async function addTo(folder: Opened, host: string, kind: 'label' | 'stamp', body: Body): Promise<void> {
   const now = Date.now()
   const first = folder.view.current.has('profile') ? [] : [entry(folder.key, 'profile', { hosts: [host] }, now)]
   const locked = await lock(body, [(await openingHalf(folder.key.secret)).openKey])
-  await writeAll(host, [...first, entry(folder.key, `${kind}/${randomId()}`, locked, now)]).catch((err: unknown) => {
+  const id = randomId()
+  await writeAll(host, [...first, entry(folder.key, `${kind}/${id}`, locked, now)]).catch((err: unknown) => {
     throw err instanceof NotWritten && err.code === 'refused' ? new NoCredits() : err
   })
+  if (kind === 'label' && typeof body.label === 'string') readLabels(folder.key.address, { [id]: body.label })
 }

@@ -1,23 +1,27 @@
 // The flows, against services' own host and a stand-in verifier on loopback (world.ts), with the
 // device's storage in memory: a verification, from its gift to its stamp kept; Start picking one up
 // wherever it stopped; review; back to the two checks, losing nothing; a new profile, its folder
-// funded and topped up; and the same seed read the same way by the app and by the reference app
-// (services' mcp/test/app.ts).
+// funded and topped up; a profile made on another device, told with nothing unlocked and listed in
+// one unlock; and the same seed read the same way by the app and by the reference app (services'
+// mcp/test/app.ts).
 
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'vitest'
 
-import { type Body, proofsOf, readFolder, verificationCheck } from '@foundationforest/folders'
-import { mainKey, newSeed, payAddresses } from '@foundationforest/keys'
+import { type Body, entry, nextTime, proofsOf, readFolder, verificationCheck } from '@foundationforest/folders'
+import { lock } from '@foundationforest/folders/locked'
+import { mainKey, newAccessKey, newSeed, payAddresses } from '@foundationforest/keys'
 import { checkVerification, stampFromJson } from '@foundationforest/proofs'
 
 import { App } from '../services/mcp/test/app.ts'
 import * as device from '../src/device.ts'
 import { readCard } from '../src/flows/cards.ts'
+import { anyNew, labelIds, takeElsewhere } from '../src/flows/elsewhere.ts'
 import { makeProfile } from '../src/flows/profile.ts'
-import { walletKey } from '../src/flows/profiles.ts'
+import { openProfiles, walletKey } from '../src/flows/profiles.ts'
 import { enter } from '../src/flows/start.ts'
 import { NotPassed, ask, choose, collect, finish, open, resume, stampNumberAt, stepOf } from '../src/flows/verify.ts'
 import { NoCredits } from '../src/services/credits.ts'
+import { writeAll } from '../src/services/host.ts'
 import { FACE_CREDITS, type World, freshDevice, proveHere, world } from './world.ts'
 
 let w: World
@@ -271,6 +275,47 @@ describe('a new profile', () => {
   })
 })
 
+describe('a profile made on another device', () => {
+  test('the first device tells it with nothing unlocked, even after opening the folder for something else; one unlock lists it; one that never opens is told once', async () => {
+    const p = await verified()
+    const tutor = await makeProfile(w, p.seed, 'tutoring/tutor', proveHere)
+    const first = globalThis.localStorage
+    const wallet = (await walletKey(p.seed)).address
+    const held = () => new Set(device.profiles().map((x) => x.label))
+    const told = async () => anyNew(await labelIds(w.host, wallet), device.folder()!, held())
+    expect(device.folder()?.address, "the Profiles folder's address, kept as the profile was made").toBe(wallet)
+    expect(await told(), 'what this device made').toBe(false)
+
+    // The second device: Start, then a profile of its own.
+    freshDevice()
+    expect(await enter(w, again(p), proveHere)).toEqual({ to: 'profiles' })
+    expect(await told(), 'what Start read').toBe(false)
+    const student = await makeProfile(w, p.seed, 'tutoring/student', proveHere)
+    expect(await told()).toBe(false)
+
+    // Back on the first.
+    globalThis.localStorage = first
+    expect(await labelIds(w.host, wallet)).toHaveLength(2)
+    expect(await told(), 'a label entry it never read').toBe(true)
+    await openProfiles(p.seed, w.host)
+    expect(Object.values(device.folder()!.labels).sort(), 'the folder opened for something else: both read').toEqual(['tutoring/student', 'tutoring/tutor'])
+    expect(await told(), 'but one not listed here, so still told').toBe(true)
+    expect(await takeElsewhere(w, again(p).seed)).toEqual([student])
+    expect(device.profiles(), 'kept beside the one listed').toEqual([student, tutor])
+    expect(await told()).toBe(false)
+    expect(student.address in device.cursors(), 'marked as on a new device, by what it holds when first read').toBe(false)
+
+    // A label entry the person's seed cannot open: told until one unlock reads it, then never again.
+    const key = await walletKey(p.seed)
+    const view = await readFolder([w.host], wallet, Date.now())
+    const stranger = await newAccessKey()
+    await writeAll(w.host, [entry(key, 'label/00000000000000000000000000000000', await lock({ label: 'clothing/seller' }, [stranger.openKey]), nextTime(Date.now(), view, 'label/00000000000000000000000000000000'))])
+    expect(await told()).toBe(true)
+    expect(await takeElsewhere(w, again(p).seed)).toEqual([])
+    expect(await told(), 'read once, nothing to show').toBe(false)
+  })
+})
+
 describe('Start, on a device that knows nothing', () => {
   test("finds what the person made elsewhere: their profiles' labels and addresses", async () => {
     const p = await verified()
@@ -308,7 +353,8 @@ test('what the device keeps, through all of it: its own keys, and nothing of the
   await finish(w, p.id, p.seed, (step as { stamp: string }).stamp, proveHere)
   await makeProfile(w, p.seed, 'clothing/seller', proveHere)
   const after = JSON.stringify({ ...localStorage })
-  expect(Object.keys(localStorage).sort()).toEqual(['forest.checks', 'forest.passkey', 'forest.passkeys', 'forest.profiles', 'forest.read', 'forest.seen'])
+  expect(Object.keys(localStorage).sort()).toEqual(['forest.checks', 'forest.folder', 'forest.passkey', 'forest.passkeys', 'forest.profiles', 'forest.read', 'forest.seen'])
+  expect([device.folder()?.address, Object.values(device.folder()?.labels ?? {})], "the Profiles folder's address, and its one label entry read here").toEqual([(await walletKey(p.seed)).address, ['clothing/seller']])
   expect([device.cursors(), device.seen()], 'the profile made here, marked new from its start').toEqual([{ [(await mainKey(p.seed, 'clothing/seller')).address]: 0 }, { [(await mainKey(p.seed, 'clothing/seller')).address]: 0 }])
   const hex = (b: Uint8Array) => Buffer.from(b).toString('hex')
   const secrets = [hex(p.seed), Buffer.from(p.seed).toString('base64url'), hex((await walletKey(p.seed)).secret), hex((await mainKey(p.seed, 'clothing/seller')).secret), String(stampFromJson(JSON.parse((step as { stamp: string }).stamp)).signature.S)]

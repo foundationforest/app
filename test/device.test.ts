@@ -43,9 +43,10 @@ test('at every start: what this app keeps stays, anything else goes', () => {
   device.saveCursors({ A: 42 })
   device.saveSeen({ A: 1_000 })
   device.keepUnder({ passkey: ID, check: 'id', payment: 'cs_test_abc' })
+  device.readLabels('W', { a: 'tutoring/tutor' })
   localStorage.setItem('stray', '1')
   device.cleanOld()
-  expect(Object.keys(localStorage).sort()).toEqual(['forest.checks', 'forest.passkey', 'forest.passkeys', 'forest.profiles', 'forest.read', 'forest.seen', 'forest.setup', 'forest.theme', 'forest.v'])
+  expect(Object.keys(localStorage).sort()).toEqual(['forest.checks', 'forest.folder', 'forest.passkey', 'forest.passkeys', 'forest.profiles', 'forest.read', 'forest.seen', 'forest.setup', 'forest.theme', 'forest.v'])
   expect(device.under(), "the ID check's payment, kept while it is under way").toEqual({ passkey: ID, check: 'id', payment: 'cs_test_abc' })
   expect(device.theme()).toBe('dark')
 })
@@ -62,9 +63,10 @@ test('Forget this device: everything but the ids of the passkeys it knows, so St
   device.keepUnder({ passkey: ID, session: 's' })
   device.keepConnection({ address: 'C', name: 'Claude', time: 1, labels: ['tutoring/tutor'] })
   device.knowKeys(['K'])
+  device.readLabels('W', { a: 'tutoring/tutor' })
   device.forget()
   expect({ ...localStorage }).toEqual({ 'forest.v': '"2"', 'forest.passkeys': JSON.stringify(['OtherPasskeyIdOtherPass', ID]) })
-  expect([device.passkey(), device.under(), device.theme(), device.checks(), device.cursors(), device.seen(), device.connections(), device.knownKeys()]).toEqual([null, null, 'device', [], {}, {}, [], []])
+  expect([device.passkey(), device.under(), device.theme(), device.checks(), device.cursors(), device.seen(), device.connections(), device.knownKeys(), device.folder()]).toEqual([null, null, 'device', [], {}, {}, [], [], null])
 })
 
 test('AI apps, one per connection, oldest first, each its profiles once in label order; the keys it knows of, once each; anything else dropped', () => {
@@ -86,6 +88,19 @@ test('AI apps, one per connection, oldest first, each its profiles once in label
   expect(device.knownKeys()).toEqual(['K4'])
   localStorage.setItem('forest.known', JSON.stringify(['K4', 5, null]))
   expect(device.knownKeys()).toEqual(['K4'])
+})
+
+test("the Profiles folder: its address, and each label entry read there with its label, kept together; another folder's in their place; anything else dropped", () => {
+  expect(device.folder()).toBeNull()
+  device.readLabels('W', { a: 'tutoring/tutor' })
+  device.readLabels('W', { b: '' })
+  expect(device.folder()).toEqual({ address: 'W', labels: { a: 'tutoring/tutor', b: '' } })
+  device.readLabels('V', { c: 'clothing/seller' })
+  expect(device.folder(), "another folder's").toEqual({ address: 'V', labels: { c: 'clothing/seller' } })
+  localStorage.setItem('forest.folder', JSON.stringify({ address: 'V', labels: { c: 'clothing/seller', d: 7 } }))
+  expect(device.folder()).toEqual({ address: 'V', labels: { c: 'clothing/seller' } })
+  localStorage.setItem('forest.folder', JSON.stringify('V'))
+  expect(device.folder()).toBeNull()
 })
 
 test('profiles, one per label, in label order', () => {

@@ -15,7 +15,7 @@ import { config } from '../src/config.ts'
 import { CONSENT } from '../src/consent.ts'
 import { placeOf, rounded } from '../src/fields/Place.tsx'
 import { rfc3339 } from '../src/fields/Moment.tsx'
-import { kindWords, marketWords, marketsLeft, otherSide, pairOf, pairs, roleWords } from '../src/markets.ts'
+import { kindWords, marketList, marketWords, otherSide, pairOf, pairs, roleWords } from '../src/markets.ts'
 import { contactHref } from '../src/show.ts'
 import { HOST_CODES, SOMETHING, VERIFIER_CODES, entrySays, fieldWords, verifierSays } from '../src/words.ts'
 
@@ -67,12 +67,11 @@ test("the markets: every role in the directory, in its market's words, one pick 
   expect(new Set(pairs.map((p) => p.label)).size).toBe(pairs.length)
 })
 
-test('New profile: the markets with a role left, each with those roles; a market whose every role is made is gone', () => {
-  expect(marketsLeft(new Set()).map((m) => m.words)).toEqual(files().directory.markets.map((m) => marketWords(m.name)))
-  const left = marketsLeft(new Set(['clothing/seller', 'tennis-matches/player']))
-  expect(left.find((m) => m.market === 'clothing')?.roles.map((p) => roleWords(p.role)), 'the role made is gone').toEqual(['Buyer'])
-  expect(left.some((m) => m.market === 'tennis-matches'), 'its one role made: the market is gone').toBe(false)
-  expect(marketsLeft(new Set(['clothing/seller', 'clothing/buyer'])).some((m) => m.market === 'clothing'), 'both roles made: gone').toBe(false)
+test('New profile: every market, in the directory\'s order, each with every role', () => {
+  expect(marketList.map((m) => m.words)).toEqual(files().directory.markets.map((m) => marketWords(m.name)))
+  expect(marketList.find((m) => m.market === 'clothing')?.roles.map((p) => roleWords(p.role))).toEqual(['Seller', 'Buyer'])
+  expect(marketList.find((m) => m.market === 'tennis-matches')?.roles.map((p) => p.label)).toEqual(['tennis-matches/player'])
+  expect(marketList.flatMap((m) => m.roles)).toEqual(pairs)
 })
 
 test('the markets: each role\'s other side, and its post in its own word', () => {

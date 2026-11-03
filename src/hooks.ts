@@ -1,13 +1,15 @@
 // What the screens read from the device, the host and the index, kept fresh: the person's profiles
 // and AI apps as the device keeps them; how each is verified, as its profile entry at the host says; the new
 // entries in their inboxes; what the index says of each, read as a screen showing it opens and held
-// in the page meanwhile; what is new on each; and the messages opened in this page.
+// in the page meanwhile; what is new on each; whether a profile was made on another device; and the
+// messages opened in this page.
 
 import { useEffect, useState } from 'react'
 
 import { config } from './config.ts'
-import { CHANGED, type Connection, type Profile, connections, profiles, seen } from './device.ts'
+import { CHANGED, type Connection, type Profile, connections, folder, profiles, seen } from './device.ts'
 import { type Card, readCard } from './flows/cards.ts'
+import { anyNew, labelIds } from './flows/elsewhere.ts'
 import { newMessages } from './flows/inbox.ts'
 import { type Received, newOf, rate } from './flows/reviews.ts'
 import { onOpened, opened } from './opened.ts'
@@ -126,6 +128,32 @@ export function useNews(list: Profile[]): { of: Record<string, News>; total: num
     total += n + received.length
   }
   return { of, total }
+}
+
+/** Whether the Profiles folder holds a profile made on another device: its list read with nothing unlocked as the screen opens, and again whenever the page comes back into view. */
+export function useElsewhere(): boolean {
+  useDevice()
+  const kept = folder()
+  const address = kept?.address
+  const [ids, setIds] = useState<string[]>([])
+  useEffect(() => {
+    setIds([])
+    if (!address) return
+    let live = true
+    const look = () =>
+      labelIds(config.host, address).then(
+        (found) => live && setIds(found),
+        () => undefined,
+      )
+    const shown = () => document.visibilityState === 'visible' && void look()
+    void look()
+    document.addEventListener('visibilitychange', shown)
+    return () => {
+      live = false
+      document.removeEventListener('visibilitychange', shown)
+    }
+  }, [address])
+  return kept !== null && anyNew(ids, kept, new Set(profiles().map((p) => p.label)))
 }
 
 /** The messages opened in this page, or null. */
