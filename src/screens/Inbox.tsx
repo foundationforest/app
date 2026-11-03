@@ -6,7 +6,7 @@
 // the page is, each with who it is from, its last message, when, and a dot when it holds a new one.
 // All, Messages or Reviews; and a pencil for a new message.
 
-import { type ReactNode, useEffect, useRef, useState } from 'react'
+import { Fragment, type ReactNode, useEffect, useRef, useState } from 'react'
 
 import { config } from '../config.ts'
 import { type Profile, passkey, profiles, saveCursors, saveSeen, seen } from '../device.ts'
@@ -120,7 +120,11 @@ export function Inbox({ only, go, onBack, onThread, onReceived, onNew }: Props) 
         </div>
       )}
       <Line note={open.note} />
-      <div className="rows">{items.map((i) => <div key={i.key}>{i.draw()}</div>)}</div>
+      <div className="rows">
+        {items.map((i) => (
+          <Fragment key={i.key}>{i.draw()}</Fragment>
+        ))}
+      </div>
       {loading && <Spinner />}
       {failed && filter !== 'messages' && <p className="line">Can't reach the index.</p>}
       <div className="fill" />

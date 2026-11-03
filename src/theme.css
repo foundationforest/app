@@ -439,11 +439,10 @@ button:focus-visible {
   gap: 8px;
 }
 
+/* A review's score: big, its slider under it. */
 .score {
   display: grid;
-  grid-template-columns: 1fr 2ch;
-  align-items: center;
-  gap: 12px;
+  gap: 4px;
 }
 
 /* What a profile posted, on its card. */
@@ -734,10 +733,6 @@ button.danger-text {
   color: var(--ink-2);
 }
 
-.score {
-  grid-template-columns: 5ch 1fr;
-}
-
 .composer {
   display: grid;
   gap: 8px;
@@ -817,4 +812,18 @@ button.danger-text {
 .address {
   color: var(--ink);
   overflow-wrap: anywhere;
+}
+
+/* A row that is no button: what it says at the left, its check or its one action at the right. */
+div.row {
+  display: flex;
+  align-items: center;
+  min-height: var(--touch);
+  padding: 4px 4px 4px 16px;
+  border: 1px solid var(--paper-2);
+  border-radius: var(--radius);
+}
+
+div.row > .icon {
+  margin-right: 12px;
 }

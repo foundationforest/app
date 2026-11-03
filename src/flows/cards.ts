@@ -3,11 +3,10 @@
 // verifier's keys each names: the face key's a face check, the ID key's an ID check. How many posts
 // it holds is its folder's entries at post/<id>.
 
-import { proofsOf } from '@foundationforest/folders'
+import { liveContent, proofsOf } from '@foundationforest/folders'
 
 import { type About, type Check, about } from '../services/verifier.ts'
 import { readView } from '../services/host.ts'
-import { postsOf } from './posts.ts'
 import type { Services } from '../config.ts'
 
 export type { Check }
@@ -25,5 +24,5 @@ export type Card = { checks: Check[]; posts: number }
 export async function readCard(s: Services, address: string): Promise<Card | null> {
   const [view, verifier] = await Promise.all([readView(s.host, address), about(s.verifier)])
   const body = view.current.get('profile')?.entry.body
-  return body ? { checks: checksOf(body, verifier), posts: postsOf(view).filter((p) => p.kind === 'post').length } : null
+  return body ? { checks: checksOf(body, verifier), posts: [...liveContent(view)].filter(([path, { entry }]) => /^post\/[^/]+$/.test(path) && entry.body).length } : null
 }

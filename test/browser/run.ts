@@ -439,7 +439,7 @@ test('two people: one posts an offer, its price per hour; the other opens its li
   await second.page.locator('.score .big', { hasText: '9.4' }).waitFor()
   await second.page.getByLabel('Comment').fill('Clear and patient.')
   await second.page.getByRole('button', { name: OFFER }).click()
-  await shot(second.page, 'review')
+  await shot(second.page, 'review-someone')
   await button(second.page, 'Post').click()
   await second.page.getByLabel('Reply').waitFor({ timeout: 60_000 })
   const reviews = await entriesOf(student, 'review')
