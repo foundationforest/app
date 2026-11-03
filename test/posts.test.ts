@@ -108,7 +108,10 @@ describe('a review, a vouch or a report', () => {
     expect(await refusal(check(w, me, 'review', { subject: tutor.profiles[0]!.address, score: '11' }, mine))).toEqual(["Score doesn't fit.", true])
 
     const body = { subject: addressIn(`https://app.forest.foundation/message?to=${tutor.profiles[0]!.address}`), score: '9', text: 'Clear and patient.', post: `${tutor.profiles[0]!.address}/${offer}` }
-    expect(body.subject, 'a Share link gives its address').toBe(tutor.profiles[0]!.address)
+    expect(body.subject, 'an older Share link gives its address').toBe(tutor.profiles[0]!.address)
+    const page = `https://index.forest.foundation/profiles/${tutor.profiles[0]!.address}`
+    expect([addressIn(page), addressIn(` ${page}.json `)], "and so does a profile's page on the index, as Share hands it out, or its JSON twin").toEqual([tutor.profiles[0]!.address, tutor.profiles[0]!.address])
+    expect(addressIn('https://index.forest.foundation/markets/tutoring'), 'any other page is no address').toBe('https://index.forest.foundation/markets/tutoring')
     await check(w, me, 'review', body, mine)
     const path = await post(w, student.seed, me, 'review', body)
     expect(path).toMatch(/^review\/[0-9a-f]{32}$/)

@@ -1,12 +1,12 @@
-// A review, vouch or report about one of the person's profiles, opened from Reviews or the Inbox, as
-// the index counted it: which profile it is on and when, the score big, its text, then the market's
-// review fields it holds, the post it names (by its preview's first line, as the index keeps it, so
-// even a deleted one shows) and who wrote it. Message them, or Report them, in red.
+// A review, vouch or report about one of the person's profiles, opened from Reviews, as the index
+// counted it: which profile it is on and when, the score big, its text, then the market's review
+// fields it holds, the post it names (by its preview's first line, as the index keeps it, so even a
+// deleted one shows) and who wrote it. Message them, or Report them, in red.
 
 import { useProfiles, useRated } from '../hooks.ts'
 import { kindWords, markets, pairOf } from '../markets.ts'
 import { previewLines, valueText } from '../show.ts'
-import { SaidChip, Spinner, Top, ago } from '../ui.tsx'
+import { Named, SaidChip, Spinner, Top, ago } from '../ui.tsx'
 import { fieldWords } from '../words.ts'
 import { Who } from './Who.tsx'
 
@@ -40,7 +40,7 @@ export function Received({ mine, at, onBack, onMessage, onReport }: Props) {
       ) : (
         <>
           <p>
-            On your {pair.words}
+            On your <Named label={me.label} />
             {r.time !== undefined && ` · ${ago(r.time)}`}
           </p>
           {r.kind === 'review' ? <strong className="big">{typeof body.score === 'string' ? body.score : '–'} / 10</strong> : <SaidChip kind={r.kind} />}

@@ -1,7 +1,8 @@
 // The screens, and the way between them. Start, until a person is verified here; then a person with
 // no profile yet makes their first, and once it is made, Use Forest from your AI; then Profiles,
-// Inbox and Settings, and from them New profile, a profile, its reviews, a review received, a post,
-// Review someone, a thread, a new message, the ID check, an AI app, or Connect an AI. Every setup
+// Messages and Settings, and from them New profile, a profile, its messages, its reviews, a review
+// received, a post, Review someone, a thread, a new message, the ID check, an AI app, or Connect an
+// AI. Every setup
 // step has a back: Get verified to Start, Your first profile to Profiles.
 // Each screen the person can come back to has its own path, so a reload opens on it and the phone's
 // back goes back; what a screen is about (a profile's address, a thread, an entry being edited, the
@@ -25,8 +26,8 @@ import { AiApp } from './screens/AiApp.tsx'
 import { Back } from './screens/Back.tsx'
 import { Connect, blocked } from './screens/Connect.tsx'
 import { ConnectAi } from './screens/ConnectAi.tsx'
-import { Inbox } from './screens/Inbox.tsx'
 import { Message } from './screens/Message.tsx'
+import { Messages } from './screens/Messages.tsx'
 import { NewProfile } from './screens/NewProfile.tsx'
 import { Post } from './screens/Post.tsx'
 import { Profile } from './screens/Profile.tsx'
@@ -51,7 +52,7 @@ type Screen =
   | { at: 'received'; address: string; entry: string }
   | { at: 'post'; address: string; edit?: Posted }
   | { at: 'review'; address: string; subject?: string; edit?: Posted; report?: boolean }
-  | { at: 'inbox'; only?: string }
+  | { at: 'messages'; only?: string }
   | { at: 'thread'; mine: string; them: string }
   | { at: 'message'; to?: string }
   | { at: 'settings' }
@@ -69,7 +70,7 @@ const PATHS: Partial<Record<Screen['at'], string>> = {
   received: '/received',
   post: '/post',
   review: '/review',
-  inbox: '/inbox',
+  messages: '/messages',
   thread: '/thread',
   message: '/message',
   settings: '/settings',
@@ -127,9 +128,10 @@ function here(): Screen {
       return { at: 'new', ...(isText(now.market) && { market: now.market }) }
     case '/settings':
       return { at: 'settings' }
+    // The Inbox's path, from before it was Messages, opens Messages.
     case '/inbox':
     case '/messages':
-      return { at: 'inbox', ...(isText(now.only) && { only: now.only }) }
+      return { at: 'messages', ...(isText(now.only) && { only: now.only }) }
     case '/message':
       return { at: 'message', ...(isText(now.to) && { to: now.to }) }
   }
@@ -158,7 +160,7 @@ function keptOf(to: Screen): Kept {
       return { address: to.address, ...(to.edit && { edit: to.edit }) }
     case 'review':
       return { address: to.address, ...(to.edit && { edit: to.edit }), ...(to.subject && { subject: to.subject }), ...(to.report && { report: true }) }
-    case 'inbox':
+    case 'messages':
       return to.only ? { only: to.only } : {}
     case 'thread':
       return { mine: to.mine, them: to.them }
@@ -246,7 +248,7 @@ export function App() {
           onPost={(edit) => go({ at: 'post', address: screen.address, ...(edit && { edit }) }, true)}
           onReviews={() => go({ at: 'reviews', address: screen.address }, true)}
           onReview={() => review(screen.address)}
-          onInbox={() => go({ at: 'inbox', only: screen.address }, true)}
+          onMessages={() => go({ at: 'messages', only: screen.address }, true)}
         />
       )
     case 'reviews':
@@ -277,13 +279,12 @@ export function App() {
           {(me) => <Review me={me} {...(screen.edit && { edit: screen.edit })} {...(screen.subject && { subject: screen.subject })} {...(screen.report && { report: true })} onDone={back} onBack={back} />}
         </For>
       )
-    case 'inbox':
+    case 'messages':
       return (
-        <Inbox
+        <Messages
           {...(screen.only && { only: screen.only, onBack: back })}
           go={place}
           onThread={(mine, them) => go({ at: 'thread', mine, them }, true)}
-          onReceived={(address, entry) => go({ at: 'received', address, entry }, true)}
           onNew={() => go({ at: 'message' }, true)}
         />
       )

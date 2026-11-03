@@ -4,7 +4,7 @@
 // has read there, how they are verified, their AI apps (each one's name, when it connected, its
 // connection folder's address and its profiles' labels), the addresses of the access keys it knows
 // of, where they left off in each profile's inbox, the time of the newest review, vouch or report
-// about each profile the Inbox has shown, their theme, and, while a verification is under way, its
+// about each profile its Reviews has shown, their theme, and, while a verification is under way, its
 // check and session, the ID check's payment and the gift's buy, then an ID check's payment no stamp
 // has used yet (flows/verify.ts). Never the seed, a key, a stamp or a message.
 //
@@ -149,7 +149,7 @@ export const cursors = (): Record<string, number> => {
 }
 export const saveCursors = (more: Record<string, number>) => write(KEYS.read, { ...cursors(), ...more })
 
-/** The time of the newest review, vouch or report about each profile, by its address, that the Inbox has shown. */
+/** The time of the newest review, vouch or report about each profile, by its address, that its Reviews has shown. */
 export const seen = (): Record<string, number> => {
   const kept = read<Record<string, unknown>>(KEYS.seen, {})
   return Object.fromEntries(Object.entries(kept).filter((e): e is [string, number] => Number.isSafeInteger(e[1])))

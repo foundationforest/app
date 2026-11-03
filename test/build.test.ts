@@ -58,11 +58,12 @@ test("the proving files: the standard's committed setup, each under the SHA-256 
   expect(total / 1e6, 'about 7 MB').toBeCloseTo(6.7, 0)
 })
 
-test("the markets: every role in the directory, in its market's words, one pick each", () => {
+test("the markets: every role in the directory, in its market's words, no symbol between, one pick each", () => {
   const dir = files().directory
   expect(pairs.length).toBe(dir.markets.reduce((n, m) => n + m.roles.length, 0))
-  expect(pairOf('tutoring/tutor')).toMatchObject({ words: 'Tutoring / tutor', offers: true })
-  expect(pairOf('home-cleaning/client')).toMatchObject({ words: 'Home cleaning / client', offers: false })
+  expect(pairOf('tutoring/tutor')).toMatchObject({ words: 'Tutoring tutor', offers: true })
+  expect(pairOf('home-cleaning/client')).toMatchObject({ words: 'Home cleaning client', offers: false })
+  expect(pairs.some((p) => p.words.includes('/')), 'no slash').toBe(false)
   expect(marketWords('software-development')).toBe('Software development')
   expect(new Set(pairs.map((p) => p.label)).size).toBe(pairs.length)
 })

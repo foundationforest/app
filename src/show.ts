@@ -1,5 +1,6 @@
 // How an entry's values read on screen, by their type (the markets manual's Types): a choice in
-// words, money as an amount, a place as its area or Online, a moment as a date and time, hours as
+// words, money as people write a price, in the device's own number format ($20, €30 per hour), a
+// place as its area or Online, a moment as a date and time, hours as
 // days and times; and a post's preview, the fields its market shows first. A contact opens with a
 // tap when it is a phone number, an email or a link.
 
@@ -30,7 +31,7 @@ export function valueText(field: Field, value: unknown): string {
     case 'words':
       return Array.isArray(value) ? value.join(', ') : ''
     case 'money':
-      return isObject(value) ? `${value.amount} ${value.currency}${value.per ? ` per ${value.per}` : ''}` : ''
+      return isObject(value) ? priceText(value) : ''
     case 'place':
       if (!isObject(value)) return ''
       return [value.area, value.online ? 'Online' : ''].filter(Boolean).join(' · ')
@@ -47,6 +48,24 @@ export function valueText(field: Field, value: unknown): string {
     default:
       return String(value)
   }
+}
+
+/**
+ * A price as people write it, in the device's own number format (or `locale`'s): $20, $12.50, €30
+ * per hour, 30 € per hour. An amount that is no number, or a currency that is no code, reads as it
+ * was written: 30 coins.
+ */
+export function priceText(money: { amount?: unknown; currency?: unknown; per?: unknown }, locale?: string): string {
+  const amount = Number(money.amount)
+  let text = `${String(money.amount)} ${String(money.currency)}`
+  if (typeof money.amount === 'string' && money.amount.trim() !== '' && Number.isFinite(amount)) {
+    try {
+      text = new Intl.NumberFormat(locale, { style: 'currency', currency: String(money.currency), trailingZeroDisplay: 'stripIfInteger' }).format(amount)
+    } catch {
+      // Not a currency code: as it was written.
+    }
+  }
+  return typeof money.per === 'string' && money.per ? `${text} per ${money.per}` : text
 }
 
 /** A post's preview: the fields its market shows first, those it has, in one line each. */

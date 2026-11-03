@@ -112,8 +112,8 @@ export function useRated(list: Profile[]): Record<string, Held | undefined> {
 /** What is new on one profile: how many new messages, and the new reviews, vouches and reports. */
 export type News = { messages: number; received: Received[] }
 
-/** What is new on each profile in `list`, by address, and how many new things in all. */
-export function useNews(list: Profile[]): { of: Record<string, News>; total: number } {
+/** What is new on each profile in `list`, by address, and how many new messages in all: what Messages counts. */
+export function useNews(list: Profile[]): { of: Record<string, News>; messages: number } {
   useDevice()
   const messages = useNewMessages()
   const rated = useHeldRated(list)
@@ -125,9 +125,9 @@ export function useNews(list: Profile[]): { of: Record<string, News>; total: num
     const received = held && 'rated' in held && p.address in marks ? newOf(held.rated, marks[p.address]!) : []
     const n = messages[p.address]?.length ?? 0
     of[p.address] = { messages: n, received }
-    total += n + received.length
+    total += n
   }
-  return { of, total }
+  return { of, messages: total }
 }
 
 /** Whether the Profiles folder holds a profile made on another device: its list read with nothing unlocked as the screen opens, and again whenever the page comes back into view. */

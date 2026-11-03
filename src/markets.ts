@@ -1,8 +1,9 @@
 // The markets, from their files as the build hands them over (build/markets.ts), through the markets'
 // browser entry, which takes them as data and runs no eval: the directory, each market file, and
 // checkEntry. As the app shows them: each market and role a pair, in the market's own words,
-// "Tutoring / tutor"; every market with its roles, as New profile lists them; each kind of entry's
-// fields for a role; and the other side of a market.
+// "Tutoring tutor", no symbol between (on screen, the market in bold and the role muted: Named, in
+// ui.tsx); every market with its roles, as New profile lists them; each kind of entry's fields for
+// a role; and the other side of a market.
 
 import { type Field, type Fields, type Kind, type Market, SHARED, loadMarkets } from '@foundationforest/markets/browser'
 import files from 'virtual:markets'
@@ -25,7 +26,7 @@ export const marketWords = (name: string) => {
 
 /** Every market and role in the directory, in its order. */
 export const pairs: Pair[] = markets.directory.markets.flatMap((m) =>
-  m.roles.map((r) => ({ label: `${m.name}/${r.role}`, market: m.name, role: r.role, words: `${marketWords(m.name)} / ${r.role}`, offers: r.posts === 'offers', posts: r.posts })),
+  m.roles.map((r) => ({ label: `${m.name}/${r.role}`, market: m.name, role: r.role, words: `${marketWords(m.name)} ${r.role}`, offers: r.posts === 'offers', posts: r.posts })),
 )
 
 /** A role in words: `seller` is Seller. */
@@ -42,7 +43,7 @@ export function pairOf(label: string): Pair {
   const found = pairs.find((p) => p.label === label)
   if (found) return found
   const [market = label, role = ''] = label.split('/')
-  return { label, market, role, words: role ? `${marketWords(market)} / ${role}` : marketWords(market), offers: false, posts: 'posts' }
+  return { label, market, role, words: role ? `${marketWords(market)} ${role}` : marketWords(market), offers: false, posts: 'posts' }
 }
 
 /**

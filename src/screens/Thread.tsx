@@ -1,20 +1,22 @@
 // One thread: the messages between one of the person's profiles and another. At the top, who it is
 // from (their market and role, the shield when their verification checks) with which of the
 // person's profiles it is with under it, and Review, for a review, a vouch or a report about them;
-// then the messages, and the reply. Reply, one unlock: signed with the profile's main key, locked to
-// their keys, left with their host and paid from the profile's folder; its copy kept in that folder.
+// then the messages, each with the time it was sent, quietly, and a line with the day wherever the
+// day changes; and the reply, in one row: the text box and a round Send, which shows its own icon
+// (an icon-only button shows what it does) and asks the passkey once: signed with the profile's main
+// key, locked to their keys, left with their host and paid from the profile's folder; its copy kept
+// in that folder.
 
-import { useEffect, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 
 import { config } from '../config.ts'
 import { passkey, profiles, saveCursors } from '../device.ts'
 import { openAll, send } from '../flows/inbox.ts'
 import { useNewMessages, useOpened, useProfiles } from '../hooks.ts'
-import { pairOf } from '../markets.ts'
 import { hold, holdThread, looked } from '../opened.ts'
 import { withSeed } from '../passkey.ts'
 import { checkInWorker } from '../proof/prove.ts'
-import { Line, Spinner, Top, UnlockIcon, useAction } from '../ui.tsx'
+import { Line, Named, SendIcon, Spinner, Top, UnlockIcon, clock, day, newDay, useAction } from '../ui.tsx'
 import { Who } from './Who.tsx'
 
 type Props = { mine: string; them: string; onBack: () => void; onReview: (mine: string, them: string) => void }
@@ -56,25 +58,35 @@ export function Thread({ mine, them, onBack, onReview }: Props) {
           <strong>
             <Who address={them} {...(thread && { who: thread.who })} />
           </strong>
-          <span>Your {pairOf(me.label).words}</span>
+          <span>
+            Your <Named label={me.label} />
+          </span>
         </span>
       </Top>
       <div className="thread">
-        {thread?.messages.map((m) => (
-          <p key={m.id} className={m.mine ? 'said mine' : 'said'}>
-            {m.text}
-          </p>
+        {thread?.messages.map((m, i) => (
+          <Fragment key={m.id}>
+            {newDay(thread.messages[i - 1]?.time, m.time) && <p className="day-line">{day(m.time)}</p>}
+            <div className={m.mine ? 'said mine' : 'said'}>
+              <span className="text">{m.text}</span>
+              <time className="sent" dateTime={new Date(m.time).toISOString()}>
+                {clock(m.time)}
+              </time>
+            </div>
+          </Fragment>
         ))}
       </div>
       <div className="fill" />
       {held ? (
-        <div className="composer">
-          <textarea aria-label="Reply" rows={2} value={text} onChange={(e) => setText(e.target.value)} />
+        <>
           <Line note={reply.note} />
-          <button className="primary" disabled={reply.busy || !text.trim()} onClick={() => reply.run()}>
-            {reply.busy ? <Spinner /> : <><UnlockIcon /> Send</>}
-          </button>
-        </div>
+          <div className="composer">
+            <textarea aria-label="Reply" rows={1} value={text} onChange={(e) => setText(e.target.value)} />
+            <button className="primary round" aria-label="Send" disabled={reply.busy || !text.trim()} onClick={() => reply.run()}>
+              {reply.busy ? <Spinner /> : <SendIcon />}
+            </button>
+          </div>
+        </>
       ) : (
         <>
           <Line note={open.note} />

@@ -1,12 +1,15 @@
 // The pieces every screen shares: the one-line note that says why something can't be done (red when
 // what was given is wrong, quiet when something is still missing), an action's busy and its note,
 // the icons (the shield, drawn once here, is how a profile shows it is verified: an icon, never a
-// word), a checkbox's box, the dot that marks what is new, the chips of a review, vouch or report, the
-// bottom sheet, the bars, how long ago something was, and the day something happened.
+// word; the unlock icon goes beside the word on a labeled button that asks the passkey, never on a
+// list row), a checkbox's box, the dot that marks what is new, the chips of a review, vouch or
+// report, a profile's name (its market in bold, then its role, muted: Clothing seller), the bars,
+// how long ago something was, the day something happened, and the time of day.
 
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 
 import { useNews, useProfiles, useRated } from './hooks.ts'
+import { marketWords, pairOf } from './markets.ts'
 import { Reloading } from './version.ts'
 import { SOMETHING, Said } from './words.ts'
 
@@ -52,9 +55,9 @@ export function useAction<A extends unknown[]>(run: (...args: A) => Promise<void
 
 export const Spinner = () => <span className="spinner" role="status" aria-label="Working" />
 
-const Icon = ({ children, label }: { children: ReactNode; label?: string }) => (
+const Icon = ({ children, label, className }: { children: ReactNode; label?: string; className?: string }) => (
   <svg
-    className="icon"
+    className={className ? `icon ${className}` : 'icon'}
     width="20"
     height="20"
     viewBox="0 0 24 24"
@@ -69,9 +72,9 @@ const Icon = ({ children, label }: { children: ReactNode; label?: string }) => (
   </svg>
 )
 
-/** Wherever the passkey is asked. */
+/** Beside the word on a labeled button that asks the passkey; never on a list row. */
 export const UnlockIcon = () => (
-  <Icon>
+  <Icon className="unlock">
     <rect x="5" y="11" width="14" height="10" rx="2" />
     <path d="M8 11V7a4 4 0 0 1 7.6-1.7" />
   </Icon>
@@ -94,12 +97,6 @@ export const ProfilesIcon = () => (
     <path d="M4 21a8 8 0 0 1 16 0" />
   </Icon>
 )
-export const InboxIcon = ({ label }: { label?: string }) => (
-  <Icon {...(label && { label })}>
-    <path d="M4 13l2.5-8h11L20 13v6H4z" />
-    <path d="M4 13h4.5l1 2h5l1-2H20" />
-  </Icon>
-)
 export const MessageIcon = () => (
   <Icon>
     <path d="M4 5h16v11H9l-5 4z" />
@@ -115,17 +112,11 @@ export const SettingsIcon = () => (
     <circle cx="8" cy="18" r="2" fill="var(--paper)" />
   </Icon>
 )
-export const ShareIcon = () => (
+/** A thread's round Send: an icon-only button shows what it does. */
+export const SendIcon = () => (
   <Icon>
-    <path d="M12 15V3" />
-    <polyline points="7,8 12,3 17,8" />
-    <path d="M5 12v8h14v-8" />
-  </Icon>
-)
-export const PencilIcon = () => (
-  <Icon>
-    <path d="M4 20l1-5L16 4l4 4L9 19z" />
-    <line x1="13.5" y1="6.5" x2="17.5" y2="10.5" />
+    <path d="M21 3L10 14" />
+    <path d="M21 3l-7 18-4-7-7-4z" />
   </Icon>
 )
 export const CheckIcon = ({ label }: { label?: string }) => (
@@ -181,14 +172,14 @@ export function SaidChip({ kind, score }: { kind: 'review' | 'vouch' | 'report';
   return <span className="said-chip score">{typeof score === 'string' ? score : '–'} ★</span>
 }
 
-/** A sheet from the bottom, over the screen; a tap outside it closes it. */
-export function Sheet({ onClose, children }: { onClose: () => void; children: ReactNode }) {
+/** A profile's name, from its label: its market in bold, then its role in the muted tone, no symbol between: Clothing seller. */
+export function Named({ label }: { label: string }) {
+  const { market, role } = pairOf(label)
   return (
-    <div className="sheet-cover" onClick={onClose}>
-      <div className="sheet" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
-        {children}
-      </div>
-    </div>
+    <span className="named">
+      <strong>{marketWords(market)}</strong>
+      {role && <> <span className="role">{role}</span></>}
+    </span>
   )
 }
 
@@ -207,26 +198,26 @@ export function Top({ onBack, children, right }: { onBack?: () => void; children
   )
 }
 
-export type Place = 'profiles' | 'inbox' | 'settings'
+export type Place = 'profiles' | 'messages' | 'settings'
 
 const PLACES: Array<[Place, string, () => ReactNode]> = [
   ['profiles', 'Profiles', ProfilesIcon],
-  ['inbox', 'Inbox', () => <InboxIcon />],
+  ['messages', 'Messages', MessageIcon],
   ['settings', 'Settings', SettingsIcon],
 ]
 
-/** The places, at the bottom: Profiles, Inbox, with how many new things it holds, and Settings. Opening one reads what the index says of every profile. */
+/** The places, at the bottom: Profiles, Messages, with how many new messages there are, and Settings. Opening one reads what the index says of every profile. */
 export function Places({ at, go }: { at: Place; go: (to: Place) => void }) {
   const list = useProfiles()
   useRated(list)
-  const count = useNews(list).total
+  const count = useNews(list).messages
   return (
     <nav className="places">
       {PLACES.map(([place, words, PlaceIcon]) => (
         <button key={place} className={at === place ? 'here' : ''} aria-current={at === place ? 'page' : undefined} onClick={() => go(place)}>
           <span className="place-icon">
             <PlaceIcon />
-            {place === 'inbox' && count > 0 && (
+            {place === 'messages' && count > 0 && (
               <span className="count" aria-label={`${count} new`}>
                 {count}
               </span>
@@ -255,6 +246,16 @@ export function ago(time: number, now = Date.now()): string {
 export function day(time: number, now = Date.now()): string {
   const d = new Date(time)
   return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', ...(d.getFullYear() !== new Date(now).getFullYear() && { year: 'numeric' }) })
+}
+
+/** The time of day `time` was, in the device's words for it: 18:42, or 6:42 PM. */
+export const clock = (time: number) => new Date(time).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
+
+/** Whether `time` falls on another day than `before`, on the device's calendar; true with nothing before. */
+export function newDay(before: number | undefined, time: number): boolean {
+  if (before === undefined) return true
+  const [a, b] = [new Date(before), new Date(time)]
+  return a.getFullYear() !== b.getFullYear() || a.getMonth() !== b.getMonth() || a.getDate() !== b.getDate()
 }
 
 /** An address cut short, its start and end: enough to tell two apart at a glance. */
