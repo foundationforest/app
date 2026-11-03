@@ -1,5 +1,6 @@
-// Who another profile is, as its profile entry says: its market and role, and Verified when a
-// verification from this app's verifier checks. Read from the host, unless it is known already.
+// Who another profile is, as its profile entry says: its market and role, "Clothing / seller", and
+// the shield when a verification from this app's verifier checks; with its address cut short when
+// asked. Read from the host, unless it is known already.
 
 import { useEffect, useState } from 'react'
 
@@ -7,9 +8,9 @@ import { config } from '../config.ts'
 import { type Who as Known, whoIs } from '../flows/inbox.ts'
 import { marketWords } from '../markets.ts'
 import { checkInWorker } from '../proof/prove.ts'
-import { Spinner } from '../ui.tsx'
+import { Shield, Spinner, short } from '../ui.tsx'
 
-export function Who({ address, who: known }: { address: string; who?: Known }) {
+export function Who({ address, who: known, withAddress = false }: { address: string; who?: Known; withAddress?: boolean }) {
   const [who, setWho] = useState<Known | undefined>(known)
   useEffect(() => {
     if (known !== undefined) return setWho(known)
@@ -21,13 +22,11 @@ export function Who({ address, who: known }: { address: string; who?: Known }) {
     return () => void (live = false)
   }, [address, known])
   if (who === undefined) return <Spinner />
-  if (who === null) return <span className="who">A profile Forest can't read</span>
   return (
     <span className="who">
-      <span>
-        {marketWords(who.market)} · {who.role}
-      </span>
-      {who.verified && <span className="badge">Verified</span>}
+      <span>{who ? `${marketWords(who.market)} / ${who.role}` : "A profile Forest can't read"}</span>
+      {who?.verified && <Shield />}
+      {withAddress && <span className="addr">{short(address)}</span>}
     </span>
   )
 }

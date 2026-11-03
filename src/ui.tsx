@@ -1,10 +1,12 @@
 // The pieces every screen shares: the one-line note that says why something can't be done (red when
 // what was given is wrong, quiet when something is still missing), an action's busy and its note,
-// the icons, and the bars.
+// the icons (the shield, drawn once here, is how a profile shows it is verified: an icon, never a
+// word), the dot that marks what is new, the chips of a review, vouch or report, the bottom sheet,
+// the bars, and how long ago something was.
 
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 
-import { useNewCount } from './hooks.ts'
+import { useNews, useProfiles, useRated } from './hooks.ts'
 import { Reloading } from './version.ts'
 import { SOMETHING, Said } from './words.ts'
 
@@ -50,8 +52,19 @@ export function useAction<A extends unknown[]>(run: (...args: A) => Promise<void
 
 export const Spinner = () => <span className="spinner" role="status" aria-label="Working" />
 
-const Icon = ({ children }: { children: ReactNode }) => (
-  <svg className="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+const Icon = ({ children, label }: { children: ReactNode; label?: string }) => (
+  <svg
+    className="icon"
+    width="20"
+    height="20"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    {...(label ? { role: 'img', 'aria-label': label } : { 'aria-hidden': true })}
+  >
     {children}
   </svg>
 )
@@ -62,6 +75,13 @@ export const UnlockIcon = () => (
     <rect x="5" y="11" width="14" height="10" rx="2" />
     <path d="M8 11V7a4 4 0 0 1 7.6-1.7" />
   </Icon>
+)
+/** A profile that is verified: the one way the app says so. */
+export const Shield = () => (
+  <svg className="icon shield" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" role="img" aria-label="Verified">
+    <path d="M12 3l7 3v5c0 4.5-3 8.2-7 10-4-1.8-7-5.5-7-10V6z" />
+    <polyline points="9,12 11.2,14.2 15.5,9.8" />
+  </svg>
 )
 export const BackIcon = () => (
   <Icon>
@@ -74,7 +94,13 @@ export const ProfilesIcon = () => (
     <path d="M4 21a8 8 0 0 1 16 0" />
   </Icon>
 )
-export const MessagesIcon = () => (
+export const InboxIcon = ({ label }: { label?: string }) => (
+  <Icon {...(label && { label })}>
+    <path d="M4 13l2.5-8h11L20 13v6H4z" />
+    <path d="M4 13h4.5l1 2h5l1-2H20" />
+  </Icon>
+)
+export const MessageIcon = () => (
   <Icon>
     <path d="M4 5h16v11H9l-5 4z" />
   </Icon>
@@ -89,9 +115,78 @@ export const SettingsIcon = () => (
     <circle cx="8" cy="18" r="2" fill="var(--paper)" />
   </Icon>
 )
+export const ShareIcon = () => (
+  <Icon>
+    <path d="M12 15V3" />
+    <polyline points="7,8 12,3 17,8" />
+    <path d="M5 12v8h14v-8" />
+  </Icon>
+)
+export const PencilIcon = () => (
+  <Icon>
+    <path d="M4 20l1-5L16 4l4 4L9 19z" />
+    <line x1="13.5" y1="6.5" x2="17.5" y2="10.5" />
+  </Icon>
+)
+export const CheckIcon = ({ label }: { label?: string }) => (
+  <Icon {...(label && { label })}>
+    <polyline points="5,12.5 10,17.5 19,7" />
+  </Icon>
+)
+export const PlusIcon = () => (
+  <Icon>
+    <line x1="12" y1="5" x2="12" y2="19" />
+    <line x1="5" y1="12" x2="19" y2="12" />
+  </Icon>
+)
+export const CloseIcon = () => (
+  <Icon>
+    <line x1="6" y1="6" x2="18" y2="18" />
+    <line x1="18" y1="6" x2="6" y2="18" />
+  </Icon>
+)
+export const DeviceIcon = () => (
+  <Icon>
+    <rect x="3" y="4" width="18" height="12" rx="2" />
+    <line x1="8" y1="20" x2="16" y2="20" />
+    <line x1="12" y1="16" x2="12" y2="20" />
+  </Icon>
+)
+export const LightIcon = () => (
+  <Icon>
+    <circle cx="12" cy="12" r="4" />
+    <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+  </Icon>
+)
+export const DarkIcon = () => (
+  <Icon>
+    <path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" />
+  </Icon>
+)
 
-/** A screen's top bar, with a way back. */
-export function Top({ onBack, children }: { onBack?: () => void; children?: ReactNode }) {
+/** Something new: a message, a review, a vouch or a report not yet looked at. */
+export const Dot = () => <span className="dot" role="img" aria-label="New" />
+
+/** A review's score, a vouch or a report, as its chip. */
+export function SaidChip({ kind, score }: { kind: 'review' | 'vouch' | 'report'; score?: unknown }) {
+  if (kind === 'report') return <span className="said-chip report">Report</span>
+  if (kind === 'vouch') return <span className="said-chip vouch">Vouch</span>
+  return <span className="said-chip score">{typeof score === 'string' ? score : '–'} ★</span>
+}
+
+/** A sheet from the bottom, over the screen; a tap outside it closes it. */
+export function Sheet({ onClose, children }: { onClose: () => void; children: ReactNode }) {
+  return (
+    <div className="sheet-cover" onClick={onClose}>
+      <div className="sheet" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+        {children}
+      </div>
+    </div>
+  )
+}
+
+/** A screen's top bar, with a way back, and anything at its right. */
+export function Top({ onBack, children, right }: { onBack?: () => void; children?: ReactNode; right?: ReactNode }) {
   return (
     <div className="top">
       {onBack && (
@@ -99,29 +194,32 @@ export function Top({ onBack, children }: { onBack?: () => void; children?: Reac
           <BackIcon />
         </button>
       )}
-      {children}
+      <div className="top-title">{children}</div>
+      {right && <div className="top-right">{right}</div>}
     </div>
   )
 }
 
-export type Place = 'profiles' | 'messages' | 'settings'
+export type Place = 'profiles' | 'inbox' | 'settings'
 
 const PLACES: Array<[Place, string, () => ReactNode]> = [
   ['profiles', 'Profiles', ProfilesIcon],
-  ['messages', 'Messages', MessagesIcon],
+  ['inbox', 'Inbox', () => <InboxIcon />],
   ['settings', 'Settings', SettingsIcon],
 ]
 
-/** The places, at the bottom: Profiles, Messages, with how many new entries every inbox holds, and Settings. */
+/** The places, at the bottom: Profiles, Inbox, with how many new things it holds, and Settings. Opening one reads what the index says of every profile. */
 export function Places({ at, go }: { at: Place; go: (to: Place) => void }) {
-  const count = useNewCount()
+  const list = useProfiles()
+  useRated(list)
+  const count = useNews(list).total
   return (
     <nav className="places">
       {PLACES.map(([place, words, PlaceIcon]) => (
         <button key={place} className={at === place ? 'here' : ''} aria-current={at === place ? 'page' : undefined} onClick={() => go(place)}>
           <span className="place-icon">
             <PlaceIcon />
-            {place === 'messages' && count > 0 && (
+            {place === 'inbox' && count > 0 && (
               <span className="count" aria-label={`${count} new`}>
                 {count}
               </span>
@@ -133,3 +231,18 @@ export function Places({ at, go }: { at: Place; go: (to: Place) => void }) {
     </nav>
   )
 }
+
+/** How long ago `time` was, as few words as work: now, 5 min, 2 h, 3 d, then the date. */
+export function ago(time: number, now = Date.now()): string {
+  const minutes = Math.floor((now - time) / 60_000)
+  if (minutes < 1) return 'now'
+  if (minutes < 60) return `${minutes} min`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours} h`
+  const days = Math.floor(hours / 24)
+  if (days < 7) return `${days} d`
+  return new Date(time).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
+}
+
+/** An address cut short, its start and end: enough to tell two apart at a glance. */
+export const short = (address: string) => `${address.slice(0, 4)}…${address.slice(-4)}`

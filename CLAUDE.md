@@ -42,8 +42,11 @@ salt, `forest-seed-v1`): rename the code around it, never the string, and say wh
 
 The app's own look: paper #edeae0, paper-2 #c0cabf, ink-2 #313c34, ink #121a15, accent #1e5e43 (text
 on it #edeae0), danger #b3261e; dark swaps them (paper #121a15, paper-2 #313c34, ink-2 #c0cabf, ink
-#edeae0, danger #f28b82). Manrope, self-hosted; bold is the only emphasis. Phone first, fine on a
-laptop. The mark is drawn once, in `src/mark.tsx`; never redraw it. On screen, as few words as work:
-no line explaining a title, one button per step, an unlock icon wherever the passkey is asked. When
-something can't be done, one plain line says why: red when what was given is wrong, quiet when
-something is still missing. Simple and elegant beats complete; when unsure, leave it out.
+#edeae0, danger #f28b82). A review's score sits on its chip, #efe3cc with text #6e4106; dark
+#3b2c12 with #f0d49a. The dot for what is new is the accent, the ink in dark. Manrope, self-hosted;
+bold is the only emphasis. Phone first, fine on a laptop. The mark is drawn once, in `src/mark.tsx`;
+never redraw it. A verified profile shows the shield, drawn once in `src/ui.tsx`: an icon, never a
+word. On screen, as few words as work: no line explaining a title, one button per step, an unlock
+icon wherever the passkey is asked. When something can't be done, one plain line says why: red when
+what was given is wrong, quiet when something is still missing. Simple and elegant beats complete;
+when unsure, leave it out.

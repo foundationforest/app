@@ -1,14 +1,17 @@
-// A new message to the profile a Share link names (/message?to=<address>): from the person's profile
-// on the other side of that profile's market (the same role where the market has one), or, when
-// they have none, New profile first. Then the text, and one unlock sends it.
+// A new message: to the profile a Share link names (/message?to=<address>), or, from the Inbox's
+// pencil, to an address the person gives (or a Share link). From the person's profile on the other
+// side of that profile's market (the same role where the market has one), or, when they have none,
+// New profile first. Then the text, and one unlock sends it.
 
 import { useEffect, useState } from 'react'
 
+import { publicKeyFromAddress } from '@foundationforest/folders'
+
 import { config } from '../config.ts'
 import { passkey } from '../device.ts'
-import { type Who as Known, whoIs } from '../flows/inbox.ts'
-import { send } from '../flows/inbox.ts'
+import { type Who as Known, send, whoIs } from '../flows/inbox.ts'
 import { makeProfile } from '../flows/profile.ts'
+import { addressIn } from '../flows/posts.ts'
 import { useProfiles } from '../hooks.ts'
 import { otherSide, pairOf } from '../markets.ts'
 import { holdThread, opened } from '../opened.ts'
@@ -17,13 +20,18 @@ import { checkInWorker, proveInWorker } from '../proof/prove.ts'
 import { Line, Spinner, Top, UnlockIcon, useAction } from '../ui.tsx'
 import { Who } from './Who.tsx'
 
-type Props = { to: string; onSent: (mine: string, them: string) => void; onBack: () => void }
+type Props = { to?: string; onSent: (mine: string, them: string) => void; onBack: () => void }
 
-export function Message({ to, onSent, onBack }: Props) {
+export function Message({ to: known, onSent, onBack }: Props) {
   const list = useProfiles()
+  const [typed, setTyped] = useState('')
+  const to = known ?? addressIn(typed)
+  const named = to.length > 0 && publicKeyFromAddress(to) !== null
   const [who, setWho] = useState<Known | undefined>(undefined)
   const [text, setText] = useState('')
   useEffect(() => {
+    setWho(undefined)
+    if (!named) return
     let live = true
     whoIs(config, to, checkInWorker).then(
       (r) => live && setWho(r.who),
@@ -50,13 +58,11 @@ export function Message({ to, onSent, onBack }: Props) {
   const own = list.some((p) => p.address === to)
   return (
     <main>
-      <Top onBack={onBack}>
-        <strong>
-          <Who address={to} {...(who !== undefined && { who })} />
-        </strong>
-      </Top>
+      <Top onBack={onBack}>{named && <strong>{<Who address={to} {...(who !== undefined && { who })} />}</strong>}</Top>
+      {!known && <input aria-label="Their address" placeholder="Their address" autoComplete="off" value={typed} onChange={(e) => setTyped(e.target.value)} />}
+      {!known && typed.trim() && !named && <p className="line red">That isn't a profile's address.</p>}
       <div className="fill" />
-      {who === undefined ? null : own ? (
+      {!named || who === undefined ? null : own ? (
         <p className="line">This is one of your own profiles.</p>
       ) : !who || !label ? (
         <p className="line red">No profile Forest can message is at this address.</p>

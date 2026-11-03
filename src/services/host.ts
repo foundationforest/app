@@ -1,8 +1,9 @@
-// Reading and writing folders at the host, and leaving inbox entries there, with the standard's own
-// client (folders), and what a refusal means: `refused` is the host's price, which a top-up from the
-// wallet pays (flows/paid.ts); anything else is said in words.ts's words.
+// Reading and writing folders at the host, leaving inbox entries there, and sending it a file's
+// bytes, with the standard's own client (folders), and what a refusal means: `refused` is the host's
+// price, which a top-up from the wallet pays (flows/paid.ts); anything else is said in words.ts's
+// words.
 
-import { type CheckedInbox, type InboxEntry, type Payment, type SignedEntry, type View, leave, readFolder, readInbox, write } from '@foundationforest/folders'
+import { type CheckedInbox, type InboxEntry, type Payment, type SignedEntry, type View, leave, readFolder, readInbox, upload, write } from '@foundationforest/folders'
 
 import { hostSays, Said } from '../words.ts'
 import { Unreachable } from './http.ts'
@@ -45,6 +46,13 @@ export async function writeAll(host: string, entries: SignedEntry[]): Promise<vo
 export async function leaveAll(host: string, entries: InboxEntry[], payment: Payment): Promise<void> {
   const [outcome] = await leave([host], entries, { redirect: 'error', payment })
   taken(outcome, entries.length)
+}
+
+/** A file's bytes sent to the host, as `type`, once an entry there names them; else NotWritten, naming its refusal. */
+export async function putFile(host: string, bytes: Uint8Array, type: string): Promise<void> {
+  const [outcome] = await upload([host], bytes, type, { redirect: 'error' })
+  if (!outcome || outcome.status === 0 || outcome.status >= 500) throw new Unreachable('host')
+  if (!outcome.ok) throw new NotWritten(outcome.error ?? 'refused')
 }
 
 /** A folder's inbox at the host after `after`, every page: its entries in arrival order, and the cursor after the last. */

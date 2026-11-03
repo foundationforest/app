@@ -11,6 +11,8 @@ export type Config = {
   host: string
   /** The connector, over MCP, which an AI app acts through. */
   connector: string
+  /** The index, which rates each profile: the app reads what it says of the person's own. */
+  index: string
 }
 
 const OURS: Config = {
@@ -18,6 +20,7 @@ const OURS: Config = {
   verifier: 'https://verifier.forest.foundation',
   host: 'https://host.forest.foundation',
   connector: 'https://mcp.forest.foundation',
+  index: 'https://index.forest.foundation',
 }
 
 const given = import.meta.env?.VITE_FOREST_CONFIG as string | undefined

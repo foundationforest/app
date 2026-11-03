@@ -7,7 +7,6 @@ import { defineConfig } from 'vitest/config'
 import { markets } from './build/markets.ts'
 import { proofs } from './build/proofs.ts'
 import { PAPER, shell } from './build/shell.ts'
-import { commit } from './build/version.ts'
 
 const here = (path: string) => fileURLToPath(new URL(path, import.meta.url))
 
@@ -71,7 +70,6 @@ export default defineConfig({
     }),
   ],
   resolve: { alias: [...standard, ...marketsEntry] },
-  define: { __COMMIT__: JSON.stringify(commit()) },
   worker: { format: 'es' },
   // Every asset a file of the app's own, never a data: URI, so the CSP (vercel.json) takes fonts and images from 'self' alone.
   build: { assetsInlineLimit: 0, chunkSizeWarningLimit: 4096 },

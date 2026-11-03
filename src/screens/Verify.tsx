@@ -1,5 +1,6 @@
-// Get verified: the face check, free, or the ID check, $5. Each check in a tab of its own, opened on
-// the tap itself (iPhone Safari blocks a tab opened after an await). The ID check is paid first, on
+// Get verified: two rows to pick from, the face check, free, or the ID check, $5, then Continue. Each
+// check in a tab of its own, opened on the tap itself (iPhone Safari blocks a tab opened after an
+// await). The ID check is paid first, on
 // Stripe's page in this tab, after the verifier's consent screen, word for word; Stripe sends the
 // person back to /id, where the payment, kept on the device, takes them on.
 //
@@ -51,6 +52,7 @@ export function Verify({ passkey, id, step: first, onVerified, onBack }: Props) 
   const [step, setStep] = useState<Step>(first.at === 'away' && seed.current ? { at: 'start' } : first)
   const [away, setAway] = useState(first.at === 'away' && !seed.current)
   const [stripe, setStripe] = useState<string | null>(null)
+  const [picked, setPicked] = useState<'face' | 'id' | null>(null)
   const check = checkOf(under())
 
   /** The seed let go: zeroed, held no more. */
@@ -186,6 +188,10 @@ export function Verify({ passkey, id, step: first, onVerified, onBack }: Props) 
   })
 
   const title = check === 'id' && step.at !== 'choose' ? 'ID check' : 'Get verified'
+  const CHECKS = [
+    { c: 'face' as const, name: 'Face', what: 'A selfie', price: 'Free' },
+    { c: 'id' as const, name: 'ID', what: 'Your ID and a selfie · counts more', price: '$5' },
+  ]
   return (
     <main>
       <Top onBack={onBack} />
@@ -194,17 +200,21 @@ export function Verify({ passkey, id, step: first, onVerified, onBack }: Props) 
       <div className="fill" />
       {step.at === 'choose' ? (
         <>
-          <Line note={start.note} />
-          <div className="rows">
-            <button className="row" disabled={start.busy} onClick={() => pick('face')}>
-              <span>Face</span>
-              {start.busy ? <Spinner /> : <span className="aside">Free</span>}
-            </button>
-            <button className="row" disabled={start.busy} onClick={() => pick('id')}>
-              <span>ID</span>
-              <span className="aside">$5</span>
-            </button>
+          <div className="rows" role="radiogroup" aria-label="Check">
+            {CHECKS.map(({ c, name, what, price }) => (
+              <button key={c} role="radio" aria-checked={picked === c} className={picked === c ? 'row pick chosen' : 'row pick'} disabled={start.busy} onClick={() => setPicked(c)}>
+                <span className="two">
+                  <strong>{name}</strong>
+                  <span>{what}</span>
+                </span>
+                <span className="aside">{price}</span>
+              </button>
+            ))}
           </div>
+          <Line note={start.note} />
+          <button className="primary" disabled={!picked || start.busy} onClick={() => picked && pick(picked)}>
+            {start.busy ? <Spinner /> : 'Continue'}
+          </button>
         </>
       ) : step.at === 'consent' ? (
         <>

@@ -1,13 +1,19 @@
 // Posting, against services' own host (world.ts): every kind at <kind>/<id>, a random id, checked
 // before the unlock against its market (the markets' browser entry, which answers as the Node entry
 // does) and, for a review, a vouch or a report, against its subject's profile entry at the host;
-// paid from the profile's folder, topped up from the wallet; edited at its own path; deleted.
+// paid from the profile's folder, topped up from the wallet; edited at its own path; deleted. A
+// post's photos: named in its files, then each sent to the host, paid the same way; a price's per
+// only from its field's list; a place an area alone.
 
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'vitest'
 
+import { createHash, randomBytes } from 'node:crypto'
+
 import { loadMarkets } from '../markets/build/dist/index.js'
 import * as device from '../src/device.ts'
-import { addressIn, check, post, readPosts, unpost } from '../src/flows/posts.ts'
+import { PHOTO_TYPE, newPhotos, sendPhotos, withFiles } from '../src/flows/photos.ts'
+import { walletKey } from '../src/flows/profiles.ts'
+import { addressIn, check, newPath, post, readPosts, unpost } from '../src/flows/posts.ts'
 import { markets } from '../src/markets.ts'
 import { Said } from '../src/words.ts'
 import { type World, freshDevice, verifiedWith, world } from './world.ts'
@@ -123,5 +129,75 @@ describe('a review, a vouch or a report', () => {
     await check(w, client.profiles[0]!, 'review', { subject: repairer.profiles[0]!.address, onTime: 'yes' }, client.profiles)
     expect(await refusal(check(w, repairer.profiles[0]!, 'review', { subject: client.profiles[0]!.address, onTime: 'yes' }, repairer.profiles)), "onTime is for reviews of repairers").toEqual(["On time doesn't fit.", true])
     expect(markets.checkEntry('home-repair', 'repairer', 'review', { subject: 'x', onTime: 'yes' }, 'client')).toBe(loadMarkets().checkEntry('home-repair', 'repairer', 'review', { subject: 'x', onTime: 'yes' }, 'client'))
+  })
+})
+
+/** A photo's bytes, as the device's redraw gives them: a JPEG, here stand-in bytes of `size`. */
+const photo = (size: number) => new Uint8Array(randomBytes(size))
+const shaOf = (bytes: Uint8Array) => createHash('sha256').update(bytes).digest('hex')
+
+describe('photos', () => {
+  test('a clothing post with two photos: named in its files, written, then each sent to the host, which serves it to anyone; no per, and an area alone', async () => {
+    const p = await verifiedWith(w, 'clothing/seller')
+    const me = p.profiles[0]!
+    const [a, b] = [photo(20_000), photo(30_000)]
+    const picked = new Map([
+      [shaOf(a), a],
+      [shaOf(b), b],
+    ])
+    const given = { description: 'A wool coat, worn twice.', price: { amount: '40', currency: 'EUR' }, location: { area: 'Lavapiés, Madrid' }, photos: [shaOf(a), shaOf(b)] }
+    const body = withFiles(given, ['photos'], picked)
+    expect(body.files).toEqual([
+      { sha256: shaOf(a), type: PHOTO_TYPE, size: 20_000 },
+      { sha256: shaOf(b), type: PHOTO_TYPE, size: 30_000 },
+    ])
+    await check(w, me, 'post', body, [me])
+    expect(await refusal(check(w, me, 'post', { ...body, price: { amount: '40', currency: 'EUR', per: 'hour' } }, [me])), 'a jacket takes no per').toEqual(["Price doesn't fit.", true])
+    expect(await refusal(check(w, me, 'post', { ...body, location: { online: true } }, [me])), 'an item is never online').toEqual(["Location doesn't fit.", true])
+    const path = await post(w, p.seed, me, 'post', body, undefined, newPhotos(body, picked))
+    for (const bytes of [a, b]) {
+      const res = await fetch(`${w.host}/v1/files/${shaOf(bytes)}`)
+      expect([res.status, res.headers.get('content-type')]).toEqual([200, PHOTO_TYPE])
+      expect(new Uint8Array(await res.arrayBuffer())).toEqual(bytes)
+    }
+
+    // An edit that keeps one photo: its name kept, nothing new to send.
+    const kept = withFiles({ ...body, photos: [shaOf(b)] }, ['photos'], new Map())
+    expect(kept.files).toEqual([{ sha256: shaOf(b), type: PHOTO_TYPE, size: 30_000 }])
+    expect(newPhotos(kept, picked)).toEqual([b])
+    await post(w, p.seed, me, 'post', kept, path)
+    expect((await readPosts(w, me.address)).map((x) => [x.path, x.body.photos])).toEqual([[path, [shaOf(b)]]])
+    expect(withFiles({ description: 'No photos.', photos: [] }, ['photos'], new Map()), 'none: no field and no files').toEqual({ description: 'No photos.' })
+  })
+
+  test('a price per one of its field\'s values; any other, red', async () => {
+    const p = await verifiedWith(w, 'tutoring/tutor')
+    const me = p.profiles[0]!
+    await check(w, me, 'post', { ...MATHS, price: { amount: '30', currency: 'USD', per: 'session' } }, [me])
+    await check(w, me, 'post', { ...MATHS, price: { amount: '300', currency: 'USD' } }, [me])
+    expect(await refusal(check(w, me, 'post', { ...MATHS, price: { amount: '30', currency: 'USD', per: 'night' } }, [me]))).toEqual(["Price doesn't fit.", true])
+  })
+
+  test('a photo refused for its price: one more credit from the wallet, and sent; posted again at its path after a photo failed, still one post', async () => {
+    const pricey = await world({ filePerKb: '0.01' })
+    try {
+      const p = await verifiedWith(pricey, 'clothing/seller')
+      const me = p.profiles[0]!
+      const big = photo(150_000)
+      const picked = new Map([[shaOf(big), big]])
+      const body = withFiles({ description: 'A coat.', photos: [shaOf(big)] }, ['photos'], picked)
+      const path = newPath('post')
+      const stray = photo(1_000)
+      await expect(post(pricey, p.seed, me, 'post', body, path, [stray]), 'bytes no entry names').rejects.toThrow()
+      const wallet = (await walletKey(p.seed)).address
+      const before = await pricey.balance(wallet)
+      expect(await post(pricey, p.seed, me, 'post', body, path, newPhotos(body, picked))).toBe(path)
+      expect(await pricey.balance(wallet), 'the wallet topped the profile up for the photo').toBeLessThan(before - 0.9)
+      expect((await fetch(`${pricey.host}/v1/files/${shaOf(big)}`)).status).toBe(200)
+      expect((await readPosts(pricey, me.address)).map((x) => x.path), 'one post').toEqual([path])
+      await sendPhotos(pricey.host, me.address, (await walletKey(p.seed)), [big])
+    } finally {
+      await pricey.close()
+    }
   })
 })

@@ -1,5 +1,6 @@
 // How the app is built and served: Vercel runs ./standard.sh, then the build; the strict content
-// security policy lets the page reach only its own origin and the services in its one config file;
+// security policy lets the page reach only its own origin and the services in its one config file,
+// and show photos only from the host, its bucket, and those picked on the device;
 // a missing chunk is a 404, never the page, so a page left open across a deploy reloads; the markets
 // come from the directory, in each market's words, through the browser entry; and what the app says
 // is the verifier's consent screen word for word, and its own line for every code a service answers.
@@ -12,7 +13,7 @@ import { files } from '../build/markets.ts'
 import { proofFiles } from '../build/proofs.ts'
 import { config } from '../src/config.ts'
 import { CONSENT } from '../src/consent.ts'
-import { rounded } from '../src/fields/Place.tsx'
+import { placeOf, rounded } from '../src/fields/Place.tsx'
 import { rfc3339 } from '../src/fields/Moment.tsx'
 import { kindWords, marketWords, otherSide, pairOf, pairs } from '../src/markets.ts'
 import { contactHref } from '../src/show.ts'
@@ -30,19 +31,22 @@ test('Vercel installs, then runs ./standard.sh, then the build', () => {
   expect(vercel.outputDirectory).toBe('dist')
 })
 
-test('the CSP: the page reaches its own origin and its verifier, host and connector, and nothing else', () => {
-  expect(config).toEqual({ app: 'https://app.forest.foundation', verifier: 'https://verifier.forest.foundation', host: 'https://host.forest.foundation', connector: 'https://mcp.forest.foundation' })
-  expect(directive('connect-src')).toEqual(["'self'", config.verifier, config.host, config.connector])
-  for (const name of ['default-src', 'style-src', 'img-src', 'font-src', 'worker-src', 'manifest-src']) expect(directive(name), name).toEqual(["'self'"])
+test('the CSP: the page reaches its own origin and its verifier, host, connector and index, and nothing else; it shows photos from the host and its bucket, and those picked here', () => {
+  expect(config).toEqual({ app: 'https://app.forest.foundation', verifier: 'https://verifier.forest.foundation', host: 'https://host.forest.foundation', connector: 'https://mcp.forest.foundation', index: 'https://index.forest.foundation' })
+  expect(directive('connect-src')).toEqual(["'self'", config.verifier, config.host, config.connector, config.index])
+  // The host answers a photo with a redirect to its bucket, at either address its FILES_STYLE gives.
+  expect(directive('img-src')).toEqual(["'self'", 'blob:', config.host, 'https://t3.storageapi.dev', 'https://reserved-basket-15it-i6omre.t3.storageapi.dev'])
+  for (const name of ['default-src', 'style-src', 'font-src', 'worker-src', 'manifest-src']) expect(directive(name), name).toEqual(["'self'"])
   expect(directive('script-src')).toEqual(["'self'", "'wasm-unsafe-eval'"])
   for (const [name, value] of [['object-src', "'none'"], ['base-uri', "'none'"], ['frame-ancestors', "'none'"], ['form-action', "'self'"]]) expect(directive(name!), name).toEqual([value])
-  expect(csp).not.toMatch(/unsafe-inline|'unsafe-eval'|data:|blob:/)
+  expect(csp).not.toMatch(/unsafe-inline|'unsafe-eval'|data:/)
+  expect(csp.match(/blob:/g), 'blob: only for photos picked and not sent yet').toHaveLength(1)
 })
 
 test('every path but a file is the page; a missing chunk or proving file is a 404', () => {
   const [rule] = vercel.rewrites
   const page = (path: string) => new RegExp(`^(?:${rule.source})$`).test(path)
-  for (const path of ['/', '/back', '/new', '/settings', '/profile', '/message', '/messages', '/thread', '/post', '/id']) expect(page(path), path).toBe(true)
+  for (const path of ['/', '/back', '/new', '/settings', '/profile', '/reviews', '/received', '/review', '/inbox', '/message', '/thread', '/post', '/id']) expect(page(path), path).toBe(true)
   for (const path of ['/assets/index-abc.js', '/assets/x', '/proofs/abc', '/sw.js', '/manifest.webmanifest']) expect(page(path), path).toBe(false)
   expect(vercel.redirects).toBeUndefined()
 })
@@ -57,8 +61,8 @@ test("the proving files: the standard's committed setup, each under the SHA-256 
 test("the markets: every role in the directory, in its market's words, one pick each", () => {
   const dir = files().directory
   expect(pairs.length).toBe(dir.markets.reduce((n, m) => n + m.roles.length, 0))
-  expect(pairOf('tutoring/tutor')).toMatchObject({ words: 'Tutoring · tutor', offers: true })
-  expect(pairOf('home-cleaning/client')).toMatchObject({ words: 'Home cleaning · client', offers: false })
+  expect(pairOf('tutoring/tutor')).toMatchObject({ words: 'Tutoring / tutor', offers: true })
+  expect(pairOf('home-cleaning/client')).toMatchObject({ words: 'Home cleaning / client', offers: false })
   expect(marketWords('software-development')).toBe('Software development')
   expect(new Set(pairs.map((p) => p.label)).size).toBe(pairs.length)
 })
@@ -110,6 +114,14 @@ test('a contact opens with a tap: a phone, an email, a link; a handle shows as i
   expect(contactHref('ada@example.com')).toBe('mailto:ada@example.com')
   expect(contactHref('https://example.com/ada')).toBe('https://example.com/ada')
   expect(contactHref('@ada')).toBeUndefined()
+})
+
+test('a place: an area alone, with online when picked, or with the point Near me adds; online alone; nothing', () => {
+  expect(placeOf(' Lavapiés ', null, 5, false)).toEqual({ area: 'Lavapiés' })
+  expect(placeOf('Lavapiés', null, 5, true)).toEqual({ area: 'Lavapiés', online: true })
+  expect(placeOf('Lavapiés', { lat: 40.4089, lon: -3.7007 }, 1, false)).toEqual({ ...rounded({ lat: 40.4089, lon: -3.7007 }, 1), precisionKm: 1, area: 'Lavapiés' })
+  expect(placeOf('', { lat: 40.4, lon: -3.7 }, 5, true), 'no area: a point is never written alone').toEqual({ online: true })
+  expect(placeOf('', null, 5, false)).toBeUndefined()
 })
 
 test('a place: a point rounded to the kilometres picked, as decimal text; a moment with its offset', () => {

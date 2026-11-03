@@ -202,7 +202,7 @@ describe('a new profile', () => {
     const check = verificationCheck(proof, main.address)
     expect(check && (await checkVerification(check)), 'its verification checks, as any reader checks it').toBe(true)
     expect(proof!.verifier).toBe(w.faceKey)
-    expect(await readCard(w, main.address)).toEqual({ checks: ['face'] })
+    expect(await readCard(w, main.address)).toEqual({ checks: ['face'], posts: 0 })
 
     const spent = before - (await w.balance(wallet))
     expect(spent, 'one credit to the new folder, and the label entry').toBeGreaterThan(1)
@@ -265,7 +265,7 @@ describe('Start, on a device that knows nothing', () => {
     freshDevice()
     expect(await enter(w, again(p), proveHere)).toEqual({ to: 'profiles' })
     expect(device.profiles()).toEqual([{ label: 'home-repair/repairer', address }])
-    expect(await readCard(w, address)).toEqual({ checks: ['face'] })
+    expect(await readCard(w, address)).toEqual({ checks: ['face'], posts: 0 })
   })
 })
 
@@ -277,7 +277,8 @@ test('what the device keeps, through all of it: its own keys, and nothing of the
   await finish(w, p.id, p.seed, (step as { stamp: string }).stamp, proveHere)
   await makeProfile(w, p.seed, 'clothing/seller', proveHere)
   const after = JSON.stringify({ ...localStorage })
-  expect(Object.keys(localStorage).sort()).toEqual(['forest.checks', 'forest.passkey', 'forest.passkeys', 'forest.profiles'])
+  expect(Object.keys(localStorage).sort()).toEqual(['forest.checks', 'forest.passkey', 'forest.passkeys', 'forest.profiles', 'forest.read', 'forest.seen'])
+  expect([device.cursors(), device.seen()], 'the profile made here, marked new from its start').toEqual([{ [(await mainKey(p.seed, 'clothing/seller')).address]: 0 }, { [(await mainKey(p.seed, 'clothing/seller')).address]: 0 }])
   const hex = (b: Uint8Array) => Buffer.from(b).toString('hex')
   const secrets = [hex(p.seed), Buffer.from(p.seed).toString('base64url'), hex((await walletKey(p.seed)).secret), hex((await mainKey(p.seed, 'clothing/seller')).secret), String(stampFromJson(JSON.parse((step as { stamp: string }).stamp)).signature.S)]
   for (const kept of [during, after]) for (const s of secrets) expect(kept.includes(s)).toBe(false)

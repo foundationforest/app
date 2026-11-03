@@ -6,7 +6,8 @@
 // address, none of the person's own, in the same market, on the other side (the same role where the
 // market has one). Then the main key signs it, at a new random id, or for an edit at its own path
 // after what is there (nextTime); a delete is a null body there, free at the host. Each write is
-// paid from the profile's folder, topped up from the wallet when the host refuses for price.
+// paid from the profile's folder, topped up from the wallet when the host refuses for price; then
+// any new photo it names goes to the host, paid the same way (photos.ts).
 
 import { type Body, type View, entry, liveContent, nextTime, publicKeyFromAddress } from '@foundationforest/folders'
 import { mainKey } from '@foundationforest/keys'
@@ -17,6 +18,7 @@ import { KINDS, type Kind, fieldsOf, markets, otherSide, pairOf } from '../marke
 import { readView, writeAll } from '../services/host.ts'
 import { Said, entrySays, fieldWords } from '../words.ts'
 import { paid } from './paid.ts'
+import { sendPhotos } from './photos.ts'
 import { randomId, walletKey } from './profiles.ts'
 
 /** One entry a profile posted: its path, its kind, its body and time, and the access key that signed it, when one did. */
@@ -82,13 +84,20 @@ export async function check(s: Services, me: Profile, kind: Kind, body: Body, mi
   if (why) throw entrySays(why, Object.keys(body))
 }
 
-/** `body` posted by `me` as a `kind` entry: at `path` for an edit, else at a new random id. Gives back its path. */
-export async function post(s: Services, seed: Uint8Array, me: Profile, kind: Kind, body: Body, path?: string): Promise<string> {
+/** A path for a new `kind` entry: a random id, which names nothing. */
+export const newPath = (kind: Kind) => `${kind}/${randomId()}`
+
+/**
+ * `body` posted by `me` as a `kind` entry at `path` (an edit's own, or newPath's), then the bytes of
+ * each new photo it names. Posted again at the same path after its photos failed, it writes nothing
+ * new beside it.
+ */
+export async function post(s: Services, seed: Uint8Array, me: Profile, kind: Kind, body: Body, path: string = newPath(kind), photos: Uint8Array[] = []): Promise<string> {
   const [main, wallet] = await Promise.all([mainKey(seed, me.label), walletKey(seed)])
-  const at = path ?? `${kind}/${randomId()}`
   const view = await readView(s.host, main.address)
-  await paid(s.host, main.address, wallet, () => writeAll(s.host, [entry(main, at, body, nextTime(Date.now(), view, at))]))
-  return at
+  await paid(s.host, main.address, wallet, () => writeAll(s.host, [entry(main, path, body, nextTime(Date.now(), view, path))]))
+  await sendPhotos(s.host, main.address, wallet, photos)
+  return path
 }
 
 /** The entry at `path` in `me`'s folder deleted: a null body there. */

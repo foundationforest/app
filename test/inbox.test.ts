@@ -1,5 +1,6 @@
 // Messages, against services' own host (world.ts): one person messages another's profile from theirs
-// on the other side of the market; the count of new entries with nothing unlocked; one unlock opens
+// on the other side of the market; the new entries listed with nothing unlocked, and on a new device
+// none of those already there; one unlock opens
 // every inbox, each message checked against its sender's own profile entry and shown with who they
 // are; a reply, paid from the profile's folder by its bytes; and what each sent, kept locked in the
 // sender's own folder, showing on any device and never counting as new.
@@ -11,7 +12,9 @@ import { inboxEntry, isLocked, lockCount } from '@foundationforest/folders/locke
 import { mainKey, newAccessKey } from '@foundationforest/keys'
 
 import { inboxPayment } from '../services/host/client/client.ts'
-import { newCount, openAll, send } from '../src/flows/inbox.ts'
+import * as device from '../src/device.ts'
+import type { Profile } from '../src/device.ts'
+import { newMessages, openAll, send } from '../src/flows/inbox.ts'
 import { walletKey } from '../src/flows/profiles.ts'
 import { leaveAll } from '../src/services/host.ts'
 import { Said } from '../src/words.ts'
@@ -24,6 +27,9 @@ beforeEach(() => {
   freshDevice()
   w.decideAll('approved')
 })
+
+/** How many new inbox entries `list`'s inboxes hold, as the device keeps where each was left off. */
+const newCount = async (host: string, list: Profile[]) => Object.values(await newMessages(host, list)).flat().length
 
 const ASK = 'Is Tuesday at six free?'
 const YES = 'Tuesday at six, yes.'
@@ -40,17 +46,18 @@ test('a message and its reply: counted with nothing unlocked, opened in one unlo
   expect(await w.balance(s.address), "paid from the sender's folder").toBeLessThan(fromBefore)
   expect(await w.balance(t.address), "and nothing from the recipient's").toBe(toBefore)
 
-  expect(await newCount(w.host, [t], {}), 'one new, counted with nothing unlocked').toBe(1)
+  expect(await newCount(w.host, [t]), 'one new, listed with nothing unlocked: the profile was made on this device').toBe(1)
   const opened = await openAll(w, tutor.seed, [t], checkHere)
+  device.saveCursors(opened.cursors)
   expect(opened.threads).toHaveLength(1)
   const [thread] = opened.threads
   expect([thread!.mine, thread!.them]).toEqual([t.address, s.address])
   expect(thread!.who, "the sender's market and role, and Verified: their verification checks").toEqual({ market: 'tutoring', role: 'student', verified: true })
   expect(thread!.messages.map((m) => [m.text, m.mine])).toEqual([[ASK, false]])
-  expect(await newCount(w.host, [t], opened.cursors), 'none new once opened').toBe(0)
+  expect(await newCount(w.host, [t]), 'none new once opened').toBe(0)
 
   await send(w, tutor.seed, t.label, s.address, YES)
-  expect(await newCount(w.host, [s], {}), "the reply is new to the student; what they sent is in no inbox").toBe(1)
+  expect(await newCount(w.host, [s]), "the reply is new to the student; what they sent is in no inbox").toBe(1)
   const theirs = await openAll(w, student.seed, [s], checkHere)
   expect(theirs.threads[0]!.messages.map((m) => [m.text, m.mine]), 'what they sent, then the reply').toEqual([
     [ASK, true],
@@ -59,12 +66,18 @@ test('a message and its reply: counted with nothing unlocked, opened in one unlo
   expect(theirs.threads[0]!.who).toEqual({ market: 'tutoring', role: 'tutor', verified: true })
 
   freshDevice()
+  expect(await newCount(w.host, [s]), 'on a new device, nothing already there is new').toBe(0)
+  expect(device.cursors()[s.address], 'and the device marks where the inbox is now').toBeGreaterThan(0)
+  await send(w, tutor.seed, t.label, s.address, 'See you then.')
+  expect(await newCount(w.host, [s]), 'what comes after is').toBe(1)
   const elsewhere = await openAll(w, tutor.seed, [t], checkHere)
   expect(elsewhere.threads[0]!.messages.map((m) => [m.text, m.mine]), "on another device, the tutor's own reply too").toEqual([
     [ASK, false],
     [YES, true],
+    ['See you then.', true],
   ])
-  expect(await newCount(w.host, [t], opened.cursors), 'and their own reply never counts as new').toBe(0)
+  device.saveCursors(opened.cursors)
+  expect(await newCount(w.host, [t]), 'and their own replies never count as new').toBe(0)
 
   const copy = [...(await readFolder([w.host], t.address, Date.now())).current].find(([path]) => path.startsWith('sent/'))![1].entry
   expect(isLocked(copy.body), 'the copy is locked').toBe(true)
@@ -81,7 +94,7 @@ test("a message that does not count is not shown: signed by a key its sender's p
   const stranger = await newAccessKey()
   const forged = await inboxEntry({ profile: s.address, key: stranger }, t.address, { text: 'Pay me first.' }, Date.now(), body, w.host)
   await leaveAll(w.host, [forged], inboxPayment(await mainKey(student.seed, s.label)))
-  expect(await newCount(w.host, [t], {}), 'listed, as anyone lists it').toBe(1)
+  expect(await newCount(w.host, [t]), 'listed, as anyone lists it').toBe(1)
   expect((await openAll(w, tutor.seed, [t], checkHere)).threads, 'but not shown').toEqual([])
   expect(encodeInbox(forged).length).toBeGreaterThan(0)
 })
@@ -109,7 +122,7 @@ test('a message refused for its price: one more credit from the wallet, and sent
     const before = await pricey.balance(wallet)
     await send(pricey, student.seed, s.label, t.address, 'Hello. '.repeat(100))
     expect(await pricey.balance(wallet), 'the wallet topped the profile up').toBeLessThan(before - 0.9)
-    expect(await newCount(pricey.host, [t], {})).toBe(1)
+    expect(await newCount(pricey.host, [t])).toBe(1)
   } finally {
     await pricey.close()
   }

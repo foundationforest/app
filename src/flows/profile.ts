@@ -4,13 +4,14 @@
 // its host, its main key's open key (so it takes messages), both pay addresses, and a verification
 // for each stamp the Profiles folder holds, made on the device; then its label in the Profiles
 // folder. When the host refuses a write for its price, one more credit goes in and it is written
-// again (paid.ts). The device keeps its label and address.
+// again (paid.ts). The device keeps its label and address, and marks it new: all that comes to it
+// from now shows as new.
 
 import { type Body, entry, nextTime } from '@foundationforest/folders'
 import { mainKey, openingHalf, payAddresses } from '@foundationforest/keys'
 
 import type { Services } from '../config.ts'
-import { type Profile, addProfile } from '../device.ts'
+import { type Profile, addProfile, markNew } from '../device.ts'
 import { fund } from '../services/credits.ts'
 import { readView, writeAll } from '../services/host.ts'
 import { paid } from './paid.ts'
@@ -39,6 +40,7 @@ export async function makeProfile(s: Services, seed: Uint8Array, label: string, 
   if (!folder.labels.includes(label)) await addTo(folder, s.host, 'label', { label, time: Date.now() })
   const made = { label, address: main.address }
   addProfile(made)
+  markNew(made.address)
   return made
 }
 
