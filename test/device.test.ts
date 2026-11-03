@@ -60,9 +60,32 @@ test('Forget this device: everything but the ids of the passkeys it knows, so St
   device.saveCursors({ A: 7 })
   device.saveSeen({ A: 9 })
   device.keepUnder({ passkey: ID, session: 's' })
+  device.keepConnection({ address: 'C', name: 'Claude', time: 1, labels: ['tutoring/tutor'] })
+  device.knowKeys(['K'])
   device.forget()
   expect({ ...localStorage }).toEqual({ 'forest.v': '"2"', 'forest.passkeys': JSON.stringify(['OtherPasskeyIdOtherPass', ID]) })
-  expect([device.passkey(), device.under(), device.theme(), device.checks(), device.cursors(), device.seen()]).toEqual([null, null, 'device', [], {}, {}])
+  expect([device.passkey(), device.under(), device.theme(), device.checks(), device.cursors(), device.seen(), device.connections(), device.knownKeys()]).toEqual([null, null, 'device', [], {}, {}, [], []])
+})
+
+test('AI apps, one per connection, oldest first, each its profiles once in label order; the keys it knows of, once each; anything else dropped', () => {
+  device.keepConnection({ address: 'B', name: 'ChatGPT', time: 20, labels: ['tutoring/tutor'] })
+  device.keepConnection({ address: 'A', name: 'Claude', time: 10, labels: ['tutoring/tutor', 'clothing/seller', 'tutoring/tutor'] })
+  expect(device.connections()).toEqual([
+    { address: 'A', name: 'Claude', time: 10, labels: ['clothing/seller', 'tutoring/tutor'] },
+    { address: 'B', name: 'ChatGPT', time: 20, labels: ['tutoring/tutor'] },
+  ])
+  device.keepConnection({ address: 'B', name: 'ChatGPT', time: 20, labels: [] })
+  device.dropConnection('A')
+  expect(device.connections()).toEqual([{ address: 'B', name: 'ChatGPT', time: 20, labels: [] }])
+  localStorage.setItem('forest.connections', JSON.stringify([{ address: 'B', name: 'ChatGPT', time: 20, labels: [] }, { address: 'C', name: 'Claude', time: 'then', labels: [] }, { address: 'D', name: 'Claude', time: 1, labels: [7] }, null]))
+  expect(device.connections().map((c) => c.address)).toEqual(['B'])
+  device.knowKeys(['K2', 'K1'])
+  device.knowKeys(['K1', 'K3'])
+  expect(device.knownKeys()).toEqual(['K1', 'K2', 'K3'])
+  device.saveKnownKeys(['K4'])
+  expect(device.knownKeys()).toEqual(['K4'])
+  localStorage.setItem('forest.known', JSON.stringify(['K4', 5, null]))
+  expect(device.knownKeys()).toEqual(['K4'])
 })
 
 test('profiles, one per label, in label order', () => {

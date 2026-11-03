@@ -16,7 +16,7 @@ import { withSeed } from '../passkey.ts'
 import { proveInWorker } from '../proof/prove.ts'
 import { Line, Spinner, Top, UnlockIcon, useAction } from '../ui.tsx'
 
-type Props = { market?: string; onMarket: (name: string) => void; onMade: (address: string) => void; onBack: () => void }
+type Props = { market?: string; onMarket: (name: string) => void; onMade: (address: string, first: boolean) => void; onBack: () => void }
 
 export function NewProfile({ market: name, onMarket, onMade, onBack }: Props) {
   const list = useProfiles()
@@ -27,7 +27,7 @@ export function NewProfile({ market: name, onMarket, onMade, onBack }: Props) {
     setMaking(label)
     try {
       const made = await withSeed(passkey()!, (seed) => makeProfile(config, seed, label, proveInWorker))
-      onMade(made.address)
+      onMade(made.address, first)
     } finally {
       setMaking(null)
     }

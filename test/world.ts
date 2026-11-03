@@ -13,6 +13,9 @@
 //                  answers it (index/src/pages/profile.ts), each page what a test says the index made
 //                  of the profile; 404 for any other, and down when a test says so. Services' index
 //                  itself runs in the browser test, reading the host there.
+//   the connector  a stand-in answering /open-key as services' mcp does (mcp/README.md, The
+//                  connection), its identity kept so a test opens what is locked to it as the mcp
+//                  would. Services' mcp itself runs in the browser test.
 //
 // The ID check's tests run in another world, services' own verifier (verifier/services.ts).
 //
@@ -26,7 +29,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 import { b64u } from '@foundationforest/folders'
-import { newSeed, serviceKey } from '@foundationforest/keys'
+import { newAccessKey, newSeed, serviceKey } from '@foundationforest/keys'
 import { checkVerification, proofBytes, proveVerification, signStamp, stampFromJson, stampToJson } from '@foundationforest/proofs'
 
 import { readConfig, startHost } from '../services/host/src/host.ts'
@@ -90,6 +93,9 @@ export type World = Services & {
   indexSays(address: string, page: IndexPage | null): void
   /** The stand-in index down, or up again. */
   indexDown(down: boolean): void
+  /** The stand-in connector's origin, and the identity its open key opens with. */
+  connector: string
+  connectorIdentity: string
   /** What Didit decides for every session from now, unless `decide` names one. */
   decideAll(d: Decision): void
   decide(session: string, d: Decision): void
@@ -197,12 +203,22 @@ export async function world({ entryPerKb, filePerKb }: { entryPerKb?: string; fi
   })
   await new Promise<void>((resolve) => index.listen(0, '127.0.0.1', resolve))
 
+  const opening = await newAccessKey()
+  const connector: Server = createServer((req, res) => {
+    req.resume()
+    if (req.method === 'GET' && req.url === '/open-key') return answer(200, { openKey: opening.openKey }, res)
+    answer(404, { error: 'not_found' }, res)
+  })
+  await new Promise<void>((resolve) => connector.listen(0, '127.0.0.1', resolve))
+
   return {
     verifier: `http://127.0.0.1:${(verifier.address() as AddressInfo).port}`,
     host,
     index: `http://127.0.0.1:${(index.address() as AddressInfo).port}`,
     indexSays: (address, page) => void (page ? pages.set(address, page) : pages.delete(address)),
     indexDown: (d) => void (down = d),
+    connector: `http://127.0.0.1:${(connector.address() as AddressInfo).port}`,
+    connectorIdentity: opening.identity,
     faceKey: face.address,
     decideAll: (d) => void (all = d),
     decide: (session, d) => void decided.set(session, d),
@@ -212,6 +228,7 @@ export async function world({ entryPerKb, filePerKb }: { entryPerKb?: string; fi
     close: async () => {
       await new Promise<void>((resolve) => verifier.close(() => resolve()))
       await new Promise<void>((resolve) => index.close(() => resolve()))
+      await new Promise<void>((resolve) => connector.close(() => resolve()))
       await running.close()
       rmSync(dir, { recursive: true, force: true })
     },
