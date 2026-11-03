@@ -66,6 +66,7 @@ On Vercel, at app.forest.foundation. The page talks only to our host, verifier, 
 - What your AI sends shows in your chat, not in the app.
 - The host you write to can link your profiles: one device writes them all, one wallet funds them, one inbox lists them. It promises to keep no addresses in its logs; that's its promise, not the app's.
 - To show your ratings, the app asks the index about each of your profiles from your device, so the index can link them, as the host already can.
+- What's new goes by the time each writer puts on what they write: a review dated in the past shows no dot.
 - A web app's code comes from its server each time you open it, so you trust whoever serves it. It's open source, and you can run your own.
 - Your seed can't leave this app yet: the passkey belongs to this address, and there's no export. Lose the passkey and the seed is gone.
 - One host, ours, for everything you make, and only profiles on it can be messaged from here.
