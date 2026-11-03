@@ -3,7 +3,8 @@
 
 import { expect, test } from 'vitest'
 
-import { priceText, valueText } from '../src/show.ts'
+import { markets } from '../src/markets.ts'
+import { priceText, rowLines, valueText } from '../src/show.ts'
 import { newDay } from '../src/ui.tsx'
 
 test('a price as people write it, in the number format of the device (here, a locale given)', () => {
@@ -20,6 +21,18 @@ test("every price on screen reads so: a money field's value", () => {
   const field = { type: 'money', description: 'The price.' } as Parameters<typeof valueText>[0]
   expect(valueText(field, { amount: '20', currency: 'USD' })).toBe(priceText({ amount: '20', currency: 'USD' }))
   expect(valueText(field, { amount: '30', currency: 'EUR', per: 'hour' })).toMatch(/30.*per hour$/)
+})
+
+test("a post's row in every market: with a price, its preview's first other line, then the price; with none, its preview's first two", () => {
+  const tutoring = markets.market('tutoring')!
+  const lesson = { description: 'Maths, one hour online.', subjects: ['maths'], price: { amount: '30', currency: 'USD', per: 'hour' }, place: { online: true } }
+  expect(rowLines(tutoring, lesson), 'tutoring puts subjects first, and the price after the description: here second').toEqual(['Maths', priceText(lesson.price)])
+  const { price: _, ...free } = lesson
+  expect(rowLines(tutoring, free), 'no price: as the preview runs').toEqual(['Maths', 'Maths, one hour online.'])
+  const clothing = markets.market('clothing')!
+  const coat = { amount: '40', currency: 'USD' }
+  expect(rowLines(clothing, { description: 'A wool coat.', price: coat, location: { area: 'Lyon' } })).toEqual(['A wool coat.', priceText(coat)])
+  expect(rowLines(clothing, { price: coat }), 'the price alone').toEqual([priceText(coat)])
 })
 
 test("a day line before a thread's first message, and wherever the day changes on the device's calendar", () => {

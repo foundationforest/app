@@ -1,15 +1,17 @@
 // The pieces every screen shares: the one-line note that says why something can't be done (red when
 // what was given is wrong, quiet when something is still missing), an action's busy and its note,
-// the icons (the shield, drawn once here, is how a profile shows it is verified: an icon, never a
-// word; the unlock icon goes beside the word on a labeled button that asks the passkey, never on a
-// list row), a checkbox's box, the dot that marks what is new, the chips of a review, vouch or
+// the icons (the shield, drawn once here, is how a profile shows it is verified, by its strongest
+// check: an outline for a face check, filled for an ID check, an icon whose words show only when it
+// is tapped; the unlock icon goes beside the word on a labeled button that asks the passkey, only
+// while a tap will ask, never on a list row), a checkbox's box, the dot that marks what is new, the chips of a review, vouch or
 // report, a profile's name (its market in bold, then its role, muted: Clothing seller), the bars,
 // how long ago something was, the day something happened, and the time of day.
 
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 
-import { useNews, useProfiles, useRated } from './hooks.ts'
+import { useHeld, useNews, useProfiles, useRated } from './hooks.ts'
 import { marketWords, pairOf } from './markets.ts'
+import type { Check } from './services/verifier.ts'
 import { Reloading } from './version.ts'
 import { SOMETHING, Said } from './words.ts'
 
@@ -72,20 +74,60 @@ const Icon = ({ children, label, className }: { children: ReactNode; label?: str
   </svg>
 )
 
-/** Beside the word on a labeled button that asks the passkey; never on a list row. */
-export const UnlockIcon = () => (
-  <Icon className="unlock">
-    <rect x="5" y="11" width="14" height="10" rx="2" />
-    <path d="M8 11V7a4 4 0 0 1 7.6-1.7" />
-  </Icon>
-)
-/** A profile that is verified: the one way the app says so. */
-export const Shield = () => (
-  <svg className="icon shield" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" role="img" aria-label="Verified">
-    <path d="M12 3l7 3v5c0 4.5-3 8.2-7 10-4-1.8-7-5.5-7-10V6z" />
-    <polyline points="9,12 11.2,14.2 15.5,9.8" />
-  </svg>
-)
+/** Beside the word on a labeled button that asks the passkey, and only while a tap will ask: with a seed held (held.ts), none. Never on a list row. */
+export function UnlockIcon() {
+  if (useHeld()) return null
+  return (
+    <Icon className="unlock">
+      <rect x="5" y="11" width="14" height="10" rx="2" />
+      <path d="M8 11V7a4 4 0 0 1 7.6-1.7" />
+    </Icon>
+  )
+}
+/** What each check's shield says, tapped: its words, and its accessible name. */
+const VERIFIED: Record<Check, string> = { face: 'Verified by face', id: 'Verified with ID' }
+
+/**
+ * How a profile is verified, by its strongest check: the one way the app says so, an icon, the
+ * shield drawn once here. An outline for a face check; filled, its tick in the paper's color, for an
+ * ID check. Tapped, it says its words for a moment, above it; the tap goes no further, so a card or
+ * row it sits in does not open. A span, not a button, so it can sit inside one.
+ */
+export function Verified({ check }: { check: Check }) {
+  const [at, setAt] = useState<{ x: number; y: number } | null>(null)
+  useEffect(() => {
+    if (!at) return
+    const t = setTimeout(() => setAt(null), 2000)
+    return () => clearTimeout(t)
+  }, [at])
+  const words = VERIFIED[check]
+  const id = check === 'id'
+  return (
+    <span
+      className={id ? 'verified id' : 'verified'}
+      role="img"
+      aria-label={words}
+      title={words}
+      onClick={(e) => {
+        e.stopPropagation()
+        e.preventDefault()
+        const r = e.currentTarget.getBoundingClientRect()
+        // Its middle, kept far enough from the screen's edges for its words to fit.
+        setAt({ x: Math.min(Math.max(r.left + r.width / 2, 80), innerWidth - 80), y: r.top })
+      }}
+    >
+      <svg className="icon shield" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <path d="M12 3l7 3v5c0 4.5-3 8.2-7 10-4-1.8-7-5.5-7-10V6z" fill={id ? 'currentColor' : 'none'} />
+        <polyline points="9,12 11.2,14.2 15.5,9.8" stroke={id ? 'var(--paper)' : 'currentColor'} />
+      </svg>
+      {at && (
+        <span className="verified-said" style={{ left: at.x, top: at.y }}>
+          {words}
+        </span>
+      )}
+    </span>
+  )
+}
 export const BackIcon = () => (
   <Icon>
     <polyline points="15,5 8,12 15,19" />
@@ -100,6 +142,12 @@ export const ProfilesIcon = () => (
 export const MessageIcon = () => (
   <Icon>
     <path d="M4 5h16v11H9l-5 4z" />
+  </Icon>
+)
+export const BellIcon = () => (
+  <Icon>
+    <path d="M6 16v-5a6 6 0 0 1 12 0v5l2 2H4z" />
+    <path d="M10 21h4" />
   </Icon>
 )
 export const SettingsIcon = () => (
@@ -183,6 +231,16 @@ export function Named({ label }: { label: string }) {
   )
 }
 
+/** A newer version of the app is live: one quiet line at the top, with Reload, which opens the same screen in it. */
+export const NewVersion = () => (
+  <p className="line new-version">
+    A new version is ready.{' '}
+    <button className="link" onClick={() => location.reload()}>
+      Reload
+    </button>
+  </p>
+)
+
 /** A screen's top bar, with a way back, and anything at its right. */
 export function Top({ onBack, children, right }: { onBack?: () => void; children?: ReactNode; right?: ReactNode }) {
   return (
@@ -198,26 +256,26 @@ export function Top({ onBack, children, right }: { onBack?: () => void; children
   )
 }
 
-export type Place = 'profiles' | 'messages' | 'settings'
+export type Place = 'profiles' | 'notifications' | 'settings'
 
 const PLACES: Array<[Place, string, () => ReactNode]> = [
   ['profiles', 'Profiles', ProfilesIcon],
-  ['messages', 'Messages', MessageIcon],
+  ['notifications', 'Notifications', BellIcon],
   ['settings', 'Settings', SettingsIcon],
 ]
 
-/** The places, at the bottom: Profiles, Messages, with how many new messages there are, and Settings. Opening one reads what the index says of every profile. */
+/** The places, at the bottom: Profiles, Notifications, with how many things are new (messages, reviews, vouches and reports), and Settings. Opening one reads what the index says of every profile. */
 export function Places({ at, go }: { at: Place; go: (to: Place) => void }) {
   const list = useProfiles()
   useRated(list)
-  const count = useNews(list).messages
+  const count = useNews(list).all
   return (
     <nav className="places">
       {PLACES.map(([place, words, PlaceIcon]) => (
         <button key={place} className={at === place ? 'here' : ''} aria-current={at === place ? 'page' : undefined} onClick={() => go(place)}>
           <span className="place-icon">
             <PlaceIcon />
-            {place === 'messages' && count > 0 && (
+            {place === 'notifications' && count > 0 && (
               <span className="count" aria-label={`${count} new`}>
                 {count}
               </span>

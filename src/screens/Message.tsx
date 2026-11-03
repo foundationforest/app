@@ -6,7 +6,7 @@
 // profile when they have none, one unlock. The message, and Send, one unlock. When Send can't work,
 // one line says why, once. To may be one of the person's own profiles, From their profile on the
 // other side, as for anyone's; only where that would be the same profile, in a market with one
-// role, is it refused. A review of one's own stays refused (flows/posts.ts).
+// role, is it refused. From shows the shield of that profile's strongest check, from its card.
 
 import { useEffect, useState } from 'react'
 
@@ -16,13 +16,14 @@ import { config } from '../config.ts'
 import { passkey } from '../device.ts'
 import { type Who as Known, send, whoIs } from '../flows/inbox.ts'
 import { makeProfile } from '../flows/profile.ts'
+import { strongest } from '../flows/cards.ts'
 import { addressIn } from '../flows/posts.ts'
-import { useProfiles } from '../hooks.ts'
+import { useCards, useProfiles } from '../hooks.ts'
 import { otherSide } from '../markets.ts'
 import { holdThread, opened } from '../opened.ts'
 import { withSeed } from '../passkey.ts'
 import { checkInWorker, proveInWorker } from '../proof/prove.ts'
-import { Line, Named, type Note, Spinner, Top, UnlockIcon, useAction } from '../ui.tsx'
+import { Line, Named, type Note, Spinner, Top, UnlockIcon, Verified, useAction } from '../ui.tsx'
 import { Who } from './Who.tsx'
 
 type Props = { to?: string; onSent: (mine: string, them: string) => void; onBack: () => void }
@@ -51,6 +52,8 @@ export function Message({ to: given, onSent, onBack }: Props) {
   const self = !!side && list.some((p) => p.address === to && p.label === `${who!.market}/${side}`)
   const label = !self && who && side ? `${who.market}/${side}` : null
   const me = label ? list.find((p) => p.label === label) : undefined
+  const card = useCards(me ? [me] : [])[me?.address ?? '']
+  const fromCheck = card ? strongest(card.checks) : null
 
   const make = useAction(async () => {
     if (!label) return
@@ -89,7 +92,10 @@ export function Message({ to: given, onSent, onBack }: Props) {
           <span className="label">From</span>
           {label ? (
             <div className="from">
-              <Named label={label} />
+              <span className="who">
+                <Named label={label} />
+                {me && fromCheck && <Verified check={fromCheck} />}
+              </span>
               {!me && (
                 <button className="small" disabled={make.busy} onClick={() => make.run()}>
                   {make.busy ? <Spinner /> : <><UnlockIcon /> New profile</>}

@@ -1,5 +1,5 @@
-// Settings: how the person is verified, Face and ID each with a check, or the ID check's "+ $5" when
-// they have only the face check; their AI apps, each with the day it connected and how many profiles
+// Settings: how the person is verified, Face and ID each with its check's shield (an outline for the
+// face check, filled for the ID check), or the ID check's "+ $5" when they have only the face check; their AI apps, each with the day it connected and how many profiles
 // it acts for, and + Connect an AI; the appearance, the device's, light or dark; and Forget this
 // device, in red. When a profile entry lists an access key this device doesn't know (made in
 // another browser with the same seed), one row more, Find AI apps, finds them from the seed: one
@@ -10,12 +10,13 @@ import { type ReactNode, useState } from 'react'
 import { config } from '../config.ts'
 import { type Check, type Theme, checks as heldChecks, forget, knownKeys, passkey, saveTheme, theme as savedTheme } from '../device.ts'
 import { findConnections } from '../flows/connections.ts'
+import { drop } from '../held.ts'
 import { useCards, useConnections, useProfiles } from '../hooks.ts'
 import { letGo } from '../opened.ts'
 import { withSeed } from '../passkey.ts'
 import { letGoRated } from '../rated.ts'
 import { applyTheme } from '../theme.ts'
-import { CheckIcon, DarkIcon, DeviceIcon, LightIcon, Line, type Place, Places, Spinner, Top, day, useAction } from '../ui.tsx'
+import { DarkIcon, DeviceIcon, LightIcon, Line, type Place, Places, Spinner, Top, Verified, day, useAction } from '../ui.tsx'
 
 type Props = { go: (to: Place) => void; onForgot: () => void; onIdCheck: () => void; onConnectAi: () => void; onAiApp: (address: string) => void }
 
@@ -60,12 +61,12 @@ export function Settings({ go, onForgot, onIdCheck, onConnectAi, onAiApp }: Prop
         <div className="rows">
           <div className="row">
             <span>Face</span>
-            {has('face') && <CheckIcon label="Done" />}
+            {has('face') && <Verified check="face" />}
           </div>
           <div className="row">
             <span>ID</span>
             {has('id') ? (
-              <CheckIcon label="Done" />
+              <Verified check="id" />
             ) : (
               <button className="small" onClick={onIdCheck}>
                 + $5
@@ -115,6 +116,7 @@ export function Settings({ go, onForgot, onIdCheck, onConnectAi, onAiApp }: Prop
           onClick={() => {
             if (!forgetting) return setForgetting(true)
             forget()
+            drop()
             letGo()
             letGoRated()
             applyTheme('device')

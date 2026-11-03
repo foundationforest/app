@@ -1,8 +1,9 @@
 // What the screens read from the device, the host and the index, kept fresh: the person's profiles
 // and AI apps as the device keeps them; how each is verified, as its profile entry at the host says; the new
 // entries in their inboxes; what the index says of each, read as a screen showing it opens and held
-// in the page meanwhile; what is new on each; whether a profile was made on another device; and the
-// messages opened in this page.
+// in the page meanwhile; what is new on each; whether a profile was made on another device; the
+// messages opened in this page; whether a seed is held in it; and whether a newer version of the app
+// is live.
 
 import { useEffect, useState } from 'react'
 
@@ -12,8 +13,10 @@ import { type Card, readCard } from './flows/cards.ts'
 import { anyNew, labelIds } from './flows/elsewhere.ts'
 import { newMessages } from './flows/inbox.ts'
 import { type Received, newOf, rate } from './flows/reviews.ts'
+import { isHeld, onHeld } from './held.ts'
 import { onOpened, opened } from './opened.ts'
 import { type Held, onRated, ratedOf } from './rated.ts'
+import { entryIn, newerLive } from './version.ts'
 
 /** A render again whenever what the device keeps changes. */
 function useDevice(): void {
@@ -112,8 +115,8 @@ export function useRated(list: Profile[]): Record<string, Held | undefined> {
 /** What is new on one profile: how many new messages, and the new reviews, vouches and reports. */
 export type News = { messages: number; received: Received[] }
 
-/** What is new on each profile in `list`, by address, and how many new messages in all: what Messages counts. */
-export function useNews(list: Profile[]): { of: Record<string, News>; messages: number } {
+/** What is new on each profile in `list`, by address, and how many things are new in all, messages, reviews, vouches and reports: what Notifications counts. */
+export function useNews(list: Profile[]): { of: Record<string, News>; all: number } {
   useDevice()
   const messages = useNewMessages()
   const rated = useHeldRated(list)
@@ -125,9 +128,9 @@ export function useNews(list: Profile[]): { of: Record<string, News>; messages: 
     const received = held && 'rated' in held && p.address in marks ? newOf(held.rated, marks[p.address]!) : []
     const n = messages[p.address]?.length ?? 0
     of[p.address] = { messages: n, received }
-    total += n
+    total += n + received.length
   }
-  return { of, messages: total }
+  return { of, all: total }
 }
 
 /** Whether the Profiles folder holds a profile made on another device: its list read with nothing unlocked as the screen opens, and again whenever the page comes back into view. */
@@ -161,4 +164,36 @@ export function useOpened() {
   const [held, setHeld] = useState(opened)
   useEffect(() => onOpened(() => setHeld(opened())), [])
   return held
+}
+
+/** Whether a seed is held in the page (held.ts): a tap that needs it asks nothing. */
+export function useHeld(): boolean {
+  const [held, setHeld] = useState(isHeld)
+  useEffect(() => onHeld(() => setHeld(isHeld())), [])
+  return held
+}
+
+/** How often the page asks whether a newer version is live while it is open, besides each time it comes back into view. */
+const VERSION_EVERY_MS = 10 * 60_000
+
+/** Whether a newer version of the app than this page's is live (version.ts). Never asked in development, where the page is the source itself. */
+export function useNewVersion(): boolean {
+  const [newer, setNewer] = useState(false)
+  useEffect(() => {
+    if (import.meta.env.DEV) return
+    const mine = entryIn(document.documentElement.outerHTML)
+    let live = true
+    const look = () => {
+      if (document.visibilityState !== 'visible') return
+      void newerLive(mine).then((n) => live && n && setNewer(true))
+    }
+    const every = setInterval(look, VERSION_EVERY_MS)
+    document.addEventListener('visibilitychange', look)
+    return () => {
+      live = false
+      clearInterval(every)
+      document.removeEventListener('visibilitychange', look)
+    }
+  }, [])
+  return newer
 }

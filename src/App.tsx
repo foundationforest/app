@@ -1,8 +1,8 @@
 // The screens, and the way between them. Start, until a person is verified here; then a person with
 // no profile yet makes their first, and once it is made, Use Forest from your AI; then Profiles,
-// Messages and Settings, and from them New profile, a profile, its messages, its reviews, a review
-// received, a post, Review someone, a thread, a new message, the ID check, an AI app, or Connect an
-// AI. Every setup
+// Notifications and Settings, and from them New profile, a profile, its messages, its reviews, a
+// review received, a post, Review someone, a thread, a new message, the ID check, an AI app, or
+// Connect an AI. Every setup
 // step has a back: Get verified to Start, Your first profile to Profiles.
 // Each screen the person can come back to has its own path, so a reload opens on it and the phone's
 // back goes back; what a screen is about (a profile's address, a thread, an entry being edited, the
@@ -12,7 +12,8 @@
 // Start and the verification when no one is verified here yet. So does an AI app's login, the
 // connect page's connector and request: through Start, the verification and the first profile,
 // then back to the connect page, Use Forest from your AI left out. A login the page can't take (not
-// this app's connector, or run out) says so at once, before Start.
+// this app's connector, or run out) says so at once, before Start. Above any screen, once a newer
+// version is live, one quiet line says so, with Reload (version.ts).
 
 import { type ReactNode, useEffect, useRef, useState } from 'react'
 
@@ -20,8 +21,7 @@ import { passkey as inUse, profiles } from './device.ts'
 import type { Posted } from './flows/posts.ts'
 import type { Entered } from './flows/start.ts'
 import { type Step, choose, stepOf } from './flows/verify.ts'
-import { useProfiles } from './hooks.ts'
-import type { Passkey } from './passkey.ts'
+import { useNewVersion, useProfiles } from './hooks.ts'
 import { AiApp } from './screens/AiApp.tsx'
 import { Back } from './screens/Back.tsx'
 import { Connect, blocked } from './screens/Connect.tsx'
@@ -29,6 +29,7 @@ import { ConnectAi } from './screens/ConnectAi.tsx'
 import { Message } from './screens/Message.tsx'
 import { Messages } from './screens/Messages.tsx'
 import { NewProfile } from './screens/NewProfile.tsx'
+import { Notifications } from './screens/Notifications.tsx'
 import { Post } from './screens/Post.tsx'
 import { Profile } from './screens/Profile.tsx'
 import { Profiles } from './screens/Profiles.tsx'
@@ -40,11 +41,11 @@ import { Start } from './screens/Start.tsx'
 import { Thread } from './screens/Thread.tsx'
 import { UseAi } from './screens/UseAi.tsx'
 import { Verify } from './screens/Verify.tsx'
-import type { Place } from './ui.tsx'
+import { NewVersion, type Place } from './ui.tsx'
 
 type Screen =
   | { at: 'start' }
-  | { at: 'verify'; passkey: Passkey | null; id: string; step: Step }
+  | { at: 'verify'; fromStart: boolean; id: string; step: Step }
   | { at: 'profiles' }
   | { at: 'new'; market?: string }
   | { at: 'profile'; address: string }
@@ -52,7 +53,8 @@ type Screen =
   | { at: 'received'; address: string; entry: string }
   | { at: 'post'; address: string; edit?: Posted }
   | { at: 'review'; address: string; subject?: string; edit?: Posted; report?: boolean }
-  | { at: 'messages'; only?: string }
+  | { at: 'notifications' }
+  | { at: 'messages'; only: string }
   | { at: 'thread'; mine: string; them: string }
   | { at: 'message'; to?: string }
   | { at: 'settings' }
@@ -70,6 +72,7 @@ const PATHS: Partial<Record<Screen['at'], string>> = {
   received: '/received',
   post: '/post',
   review: '/review',
+  notifications: '/notifications',
   messages: '/messages',
   thread: '/thread',
   message: '/message',
@@ -100,7 +103,7 @@ const isText = (v: unknown): v is string => typeof v === 'string' && v.length > 
 /** The ID check, for the person verified here: where it stands, from the device; nothing under way, its consent screen. */
 function idCheck(id: string): Screen {
   if (stepOf(id).at === 'choose') choose(id, 'id')
-  return { at: 'verify', passkey: null, id, step: stepOf(id) }
+  return { at: 'verify', fromStart: false, id, step: stepOf(id) }
 }
 
 /** The screen the page's path and history name; Start until someone is verified here. */
@@ -128,10 +131,13 @@ function here(): Screen {
       return { at: 'new', ...(isText(now.market) && { market: now.market }) }
     case '/settings':
       return { at: 'settings' }
-    // The Inbox's path, from before it was Messages, opens Messages.
+    case '/notifications':
+      return { at: 'notifications' }
+    // A profile's messages; with none named, as from the Inbox's path or Messages' from before
+    // Notifications took their place, Notifications.
     case '/inbox':
     case '/messages':
-      return { at: 'messages', ...(isText(now.only) && { only: now.only }) }
+      return isText(now.only) ? { at: 'messages', only: now.only } : { at: 'notifications' }
     case '/message':
       return { at: 'message', ...(isText(now.to) && { to: now.to }) }
   }
@@ -161,7 +167,7 @@ function keptOf(to: Screen): Kept {
     case 'review':
       return { address: to.address, ...(to.edit && { edit: to.edit }), ...(to.subject && { subject: to.subject }), ...(to.report && { report: true }) }
     case 'messages':
-      return to.only ? { only: to.only } : {}
+      return { only: to.only }
     case 'thread':
       return { mine: to.mine, them: to.them }
     case 'message':
@@ -175,7 +181,18 @@ function keptOf(to: Screen): Kept {
   }
 }
 
+/** The app: the screen, and above it, once a newer version is live, one quiet line saying so, with Reload. */
 export function App() {
+  const newer = useNewVersion()
+  return (
+    <>
+      {newer && <NewVersion />}
+      <Screens />
+    </>
+  )
+}
+
+function Screens() {
   const [screen, setScreen] = useState<Screen>(here)
   // The Share link's address, or the AI app's login, while Start, the verification and a first profile come first.
   const waiting = useRef<Waiting | null>(waitingAt(screen))
@@ -222,9 +239,9 @@ export function App() {
     case 'back':
       return <Back />
     case 'start':
-      return <Start connecting={!!waiting.current && 'login' in waiting.current} onEntered={(e: Entered, p: Passkey) => (e.to === 'verify' ? go({ at: 'verify', passkey: p, id: p.id, step: e.step }) : inside())} />
+      return <Start connecting={!!waiting.current && 'login' in waiting.current} onEntered={(e: Entered, id: string) => (e.to === 'verify' ? go({ at: 'verify', fromStart: true, id, step: e.step }) : inside())} />
     case 'verify':
-      return <Verify passkey={screen.passkey} id={screen.id} step={screen.step} onVerified={inside} onBack={screen.passkey ? () => go({ at: 'start' }) : back} />
+      return <Verify fromStart={screen.fromStart} id={screen.id} step={screen.step} onVerified={inside} onBack={screen.fromStart ? () => go({ at: 'start' }) : back} />
     case 'profiles':
       return <Profiles onOpen={(address) => go({ at: 'profile', address }, true)} onNew={() => go({ at: 'new' }, true)} go={place} />
     case 'new':
@@ -279,15 +296,16 @@ export function App() {
           {(me) => <Review me={me} {...(screen.edit && { edit: screen.edit })} {...(screen.subject && { subject: screen.subject })} {...(screen.report && { report: true })} onDone={back} onBack={back} />}
         </For>
       )
-    case 'messages':
+    case 'notifications':
       return (
-        <Messages
-          {...(screen.only && { only: screen.only, onBack: back })}
+        <Notifications
           go={place}
-          onThread={(mine, them) => go({ at: 'thread', mine, them }, true)}
-          onNew={() => go({ at: 'message' }, true)}
+          onMessages={(only) => go({ at: 'messages', only }, true)}
+          onReceived={(address, entry) => go({ at: 'received', address, entry }, true)}
         />
       )
+    case 'messages':
+      return <Messages only={screen.only} onBack={back} onThread={(mine, them) => go({ at: 'thread', mine, them }, true)} onNew={() => go({ at: 'message' }, true)} />
     case 'thread':
       return <Thread mine={screen.mine} them={screen.them} onBack={back} onReview={(mine, them) => review(mine, { subject: them })} />
     case 'message':

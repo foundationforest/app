@@ -5,7 +5,7 @@
 // makes it a vouch, "I know they're real". The market's review fields for their role, which of their
 // posts it is about, a comment, and Post. A red Report at the bottom turns it into a report: a
 // comment only, posted in red. Before the unlock, the app checks it as for any entry: they are on the
-// other side of the same market, none of the person's own (flows/posts.ts); a refusal shows once. An
+// other side of the same market, and not this profile (flows/posts.ts); a refusal shows once. An
 // edit keeps its kind, and has Delete.
 
 import { useEffect, useState } from 'react'

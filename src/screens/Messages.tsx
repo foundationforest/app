@@ -1,9 +1,8 @@
-// Messages: the messages that came to the person's profiles, or to one of them, from its messages
-// icon; only messages (reviews, vouches and reports about a profile show on it: Profile.tsx,
-// Reviews.tsx). Before the unlock one row, how many are new ("3 new messages", or "No new
-// messages"), and Open; one unlock opens every profile's inbox and what it sent, into threads that
-// stay open while the page is, each with who it is from, its last message, when, and a dot when it
-// holds a new one. At the bottom, New message.
+// A profile's messages, from its Messages line or a row in Notifications; only messages (reviews,
+// vouches and reports about it show in Notifications and its Reviews). Before the unlock one row, how
+// many are new ("3 new messages", or "No new messages"), and Open; one unlock opens every profile's
+// inbox and what it sent, into threads that stay open while the page is, each with who it is from,
+// its last message, when, and a dot when it holds a new one. At the bottom, New message.
 
 import { config } from '../config.ts'
 import { passkey, profiles, saveCursors } from '../device.ts'
@@ -12,14 +11,13 @@ import { useNewMessages, useOpened, useProfiles } from '../hooks.ts'
 import { hold, isFresh } from '../opened.ts'
 import { withSeed } from '../passkey.ts'
 import { checkInWorker } from '../proof/prove.ts'
-import { Dot, Line, MessageIcon, Named, type Place, Places, Spinner, Top, UnlockIcon, ago, useAction } from '../ui.tsx'
+import { Dot, Line, MessageIcon, Named, Spinner, Top, UnlockIcon, ago, useAction } from '../ui.tsx'
 import { Who } from './Who.tsx'
 
 type Props = {
-  /** The one profile shown, from its messages icon; else all of them. */
-  only?: string
-  go: (to: Place) => void
-  onBack?: () => void
+  /** The profile whose messages these are. */
+  only: string
+  onBack: () => void
   onThread: (mine: string, them: string) => void
   onNew: () => void
 }
@@ -27,9 +25,8 @@ type Props = {
 /** How many new messages: No new messages, 1 new message, 3 new messages. */
 const newWords = (n: number) => (n === 0 ? 'No new messages' : `${n} new message${n === 1 ? '' : 's'}`)
 
-export function Messages({ only, go, onBack, onThread, onNew }: Props) {
-  const all = useProfiles()
-  const list = only ? all.filter((p) => p.address === only) : all
+export function Messages({ only, onBack, onThread, onNew }: Props) {
+  const list = useProfiles().filter((p) => p.address === only)
   const fresh = useNewMessages()
   const held = useOpened()
 
@@ -45,8 +42,8 @@ export function Messages({ only, go, onBack, onThread, onNew }: Props) {
 
   return (
     <main>
-      <Top {...(onBack && { onBack })}>
-        <h1>{only && list[0] ? <Named label={list[0].label} /> : 'Messages'}</h1>
+      <Top onBack={onBack}>
+        <h1>{list[0] && <Named label={list[0].label} />}</h1>
       </Top>
       {list.length > 0 && (!held || newCount > 0) && (
         <div className="row messages-row">
@@ -66,7 +63,6 @@ export function Messages({ only, go, onBack, onThread, onNew }: Props) {
       <button className="primary" onClick={onNew}>
         New message
       </button>
-      {!only && <Places at="messages" go={go} />}
     </main>
   )
 }
