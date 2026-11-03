@@ -1,17 +1,20 @@
 // A profile's reviews, from its rating line: the index's rating, big, how many reviews it counted,
 // and, quietly, which index rated it. Received: what the index counted about the profile, each
-// review with its score, each vouch and report with its chip, its text and when; a tap opens it.
+// review with its score, each vouch and report with its chip, its text and when, and a dot on those
+// that came after the newest Reviews had shown of it, as the screen opened; from now they are seen
+// (device.ts), so the profile's card and rating line count them new no more. A tap opens one.
 // Given: the profile's own reviews, vouches and reports, from its folder, each with who it is
 // about; a tap edits it. Then Review someone. Nothing here asks the passkey.
 
 import { useEffect, useState } from 'react'
 
 import { config } from '../config.ts'
+import { saveSeen, seen } from '../device.ts'
 import { type Posted, readPosts } from '../flows/posts.ts'
-import { givenOf } from '../flows/reviews.ts'
+import { givenOf, newest } from '../flows/reviews.ts'
 import { useProfiles, useRated } from '../hooks.ts'
 import { ratingText, reviewCount } from '../show.ts'
-import { Line, type Note, SaidChip, Spinner, Top, ago, noteOf } from '../ui.tsx'
+import { Dot, Line, type Note, SaidChip, Spinner, Top, ago, noteOf } from '../ui.tsx'
 import { Who } from './Who.tsx'
 
 type Props = { address: string; onBack: () => void; onOpen: (at: string) => void; onEdit: (given: Posted) => void; onReview: () => void }
@@ -22,6 +25,15 @@ export function Reviews({ address, onBack, onOpen, onEdit, onReview }: Props) {
   const [tab, setTab] = useState<'received' | 'given'>('received')
   const [given, setGiven] = useState<Posted[] | null>(null)
   const [note, setNote] = useState<Note | null>(null)
+  // The newest Reviews had shown of this profile as it opened: what came after has its dot while the
+  // screen is open. A profile with no mark yet is marked at what the index holds when first read
+  // (flows/reviews.ts), so none is new.
+  const [since] = useState(() => seen()[address] ?? Infinity)
+  useEffect(() => {
+    if (!held || !('rated' in held)) return
+    const last = newest(held.rated)
+    if (last > (seen()[address] ?? 0)) saveSeen({ [address]: last })
+  }, [held])
   useEffect(() => {
     let live = true
     readPosts(config, address).then(
@@ -60,7 +72,10 @@ export function Reviews({ address, onBack, onOpen, onEdit, onReview }: Props) {
                 <span className="two">
                   <span>{typeof r.body.text === 'string' ? r.body.text : ''}</span>
                 </span>
-                {r.time !== undefined && <span className="aside">{ago(r.time)}</span>}
+                <span className="aside">
+                  {r.time !== undefined && ago(r.time)}
+                  {(r.time ?? 0) > since && <Dot />}
+                </span>
               </button>
             ))}
           </div>

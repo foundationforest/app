@@ -2,7 +2,8 @@
 // they have only the face check; their AI apps, each with the day it connected and how many profiles
 // it acts for, and + Connect an AI; the appearance, the device's, light or dark; and Forget this
 // device, in red. When a profile entry lists an access key this device doesn't know (made in
-// another browser with the same seed), one row more, Find AI apps, finds them from the seed.
+// another browser with the same seed), one row more, Find AI apps, finds them from the seed: one
+// unlock, though a row shows no unlock icon.
 
 import { type ReactNode, useState } from 'react'
 
@@ -14,7 +15,7 @@ import { letGo } from '../opened.ts'
 import { withSeed } from '../passkey.ts'
 import { letGoRated } from '../rated.ts'
 import { applyTheme } from '../theme.ts'
-import { CheckIcon, DarkIcon, DeviceIcon, LightIcon, Line, type Place, Places, Spinner, Top, UnlockIcon, day, useAction } from '../ui.tsx'
+import { CheckIcon, DarkIcon, DeviceIcon, LightIcon, Line, type Place, Places, Spinner, Top, day, useAction } from '../ui.tsx'
 
 type Props = { go: (to: Place) => void; onForgot: () => void; onIdCheck: () => void; onConnectAi: () => void; onAiApp: (address: string) => void }
 
@@ -89,7 +90,7 @@ export function Settings({ go, onForgot, onIdCheck, onConnectAi, onAiApp }: Prop
             {unknown && (
               <button className="row" disabled={find.busy} onClick={() => find.run()}>
                 <span>Find AI apps</span>
-                {find.busy ? <Spinner /> : <UnlockIcon />}
+                {find.busy && <Spinner />}
               </button>
             )}
           </div>

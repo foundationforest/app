@@ -1,10 +1,11 @@
 // Profiles, the person's home: one card per profile, those that offer first. Its market and role,
-// "Clothing / seller", and the shield when it is verified; a dot when something is new on it, a
+// "Clothing seller" (the market in bold, the role muted), and the shield when it is verified; a dot when something is new on it, a
 // message or a review; then its posts in its role's word, the index's rating and how many reviews
 // the index counted, each left out when there is none. Nothing on a card asks the passkey: the
 // device keeps which profiles are the person's, and all a card shows is public. Above them, when
 // the Profiles folder holds a profile made on another device, one row, New profiles from another
-// device: one unlock reads them, and their cards show (flows/elsewhere.ts).
+// device: one unlock reads them, and their cards show (flows/elsewhere.ts); a row, so it shows no
+// unlock icon.
 
 import { config } from '../config.ts'
 import { passkey } from '../device.ts'
@@ -14,7 +15,7 @@ import { Mark } from '../mark.tsx'
 import { pairOf, pairs, postCount } from '../markets.ts'
 import { withSeed } from '../passkey.ts'
 import { ratingText, reviewCount } from '../show.ts'
-import { Dot, Line, type Place, Places, Shield, Spinner, Top, UnlockIcon, useAction } from '../ui.tsx'
+import { Dot, Line, Named, type Place, Places, Shield, Spinner, Top, useAction } from '../ui.tsx'
 
 type Props = { onOpen: (address: string) => void; onNew: () => void; go: (to: Place) => void }
 
@@ -42,7 +43,7 @@ export function Profiles({ onOpen, onNew, go }: Props) {
         {elsewhere && (
           <button className="row" disabled={take.busy} onClick={() => take.run()}>
             <span>New profiles from another device</span>
-            {take.busy ? <Spinner /> : <UnlockIcon />}
+            {take.busy && <Spinner />}
           </button>
         )}
         <Line note={take.note} />
@@ -55,7 +56,7 @@ export function Profiles({ onOpen, onNew, go }: Props) {
           return (
             <button key={p.address} className="card" onClick={() => onOpen(p.address)}>
               <span className="card-head">
-                <strong>{p.pair.words}</strong>
+                <Named label={p.label} />
                 {card?.checks.length ? <Shield /> : null}
                 <span className="fill" />
                 {n && (n.messages > 0 || n.received.length > 0) && <Dot />}

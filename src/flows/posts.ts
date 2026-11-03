@@ -40,11 +40,16 @@ export async function readPosts(s: Services, address: string): Promise<Posted[]>
   return postsOf(await readView(s.host, address))
 }
 
-/** The address a person gives for a subject: an address as it is, or the one a Share link names. */
+/**
+ * The address a person gives for a subject: an address as it is, or the one a link names: a
+ * profile's page on an index, as Share hands it out (`<index>/profiles/<address>`, or its JSON twin),
+ * or an older Share link to this app's New message (`/message?to=<address>`).
+ */
 export function addressIn(given: string): string {
   const text = given.trim()
   try {
-    return new URL(text).searchParams.get('to') ?? text
+    const url = new URL(text)
+    return url.searchParams.get('to') ?? /^\/profiles\/([^/]+?)(?:\.json)?$/.exec(url.pathname)?.[1] ?? text
   } catch {
     return text
   }

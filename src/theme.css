@@ -168,6 +168,16 @@ button.danger {
   flex: none;
 }
 
+/* A profile's name: its market in bold (one bold, in a title too), then its role in the muted tone. */
+.named strong {
+  font-weight: 700;
+}
+
+.named .role {
+  color: var(--ink-2);
+  font-weight: 400;
+}
+
 /* The one line that says why something can't be done. */
 .line {
   color: var(--ink-2);
@@ -268,7 +278,7 @@ button.danger {
   display: inline-flex;
 }
 
-/* How many new entries the inboxes hold. */
+/* How many new messages there are. */
 .count {
   position: absolute;
   top: -6px;
@@ -532,7 +542,8 @@ button:focus-visible {
   gap: 8px;
 }
 
-/* A thread: theirs on the left, the person's own on the right, on the accent. */
+/* A thread: theirs on the left, the person's own on the right, on the accent; each with its time,
+   quietly, and a quiet line with the day wherever the day changes. */
 .thread {
   display: grid;
   gap: 8px;
@@ -540,13 +551,30 @@ button:focus-visible {
 
 .said {
   justify-self: start;
+  display: grid;
+  gap: 2px;
   max-width: 85%;
   padding: 8px 12px;
   border-radius: var(--radius);
   background: var(--paper-2);
   color: var(--ink);
+}
+
+.said .text {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+}
+
+.said .sent {
+  justify-self: end;
+  font-size: 11px;
+  opacity: 0.75;
+}
+
+.day-line {
+  justify-self: center;
+  font-size: 13px;
+  padding: 4px 0;
 }
 
 .said.mine {
@@ -762,7 +790,7 @@ button:focus-visible {
   font-weight: 700;
 }
 
-/* Two or three choices side by side: Received and Given; All, Messages and Reviews. */
+/* Two choices side by side: Received and Given. */
 .tabs {
   display: flex;
   gap: 6px;
@@ -825,9 +853,25 @@ button.danger-text {
   color: var(--ink-2);
 }
 
+/* A thread's reply, in one row: the text box, growing with what is typed, and the round Send. */
 .composer {
-  display: grid;
+  display: flex;
+  align-items: flex-end;
   gap: 8px;
+}
+
+.composer textarea {
+  flex: 1;
+  resize: none;
+  field-sizing: content;
+  max-height: 10rem;
+}
+
+button.round {
+  flex: none;
+  width: var(--touch);
+  padding: 0;
+  border-radius: 50%;
 }
 
 /* A button that stays at the bottom while the page scrolls. */
@@ -880,27 +924,6 @@ button.danger-text {
   border-radius: 50%;
 }
 
-/* A sheet from the bottom. */
-.sheet-cover {
-  position: fixed;
-  inset: 0;
-  background: rgb(0 0 0 / 0.4);
-  display: grid;
-  align-items: end;
-  z-index: 10;
-}
-
-.sheet {
-  width: 100%;
-  max-width: 32rem;
-  margin: 0 auto;
-  display: grid;
-  gap: 16px;
-  padding: 20px 16px max(16px, env(safe-area-inset-bottom));
-  background: var(--paper);
-  border-radius: 16px 16px 0 0;
-}
-
 .address {
   color: var(--ink);
   overflow-wrap: anywhere;
@@ -918,4 +941,10 @@ div.row {
 
 div.row > .icon {
   margin-right: 12px;
+}
+
+/* An icon on a filled button takes the button's text color, wherever the button sits. */
+button.primary .icon,
+button.solid .icon {
+  color: inherit;
 }

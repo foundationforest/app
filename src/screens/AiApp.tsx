@@ -44,7 +44,7 @@ export function AiApp({ address, onBack }: Props) {
     <main>
       <Top onBack={onBack} />
       <h1>{conn.name}</h1>
-      <Ticks labels={labels} ticked={new Set(conn.labels)} onTick={(label) => void tick.run(label)} disabled={working} fixed={conn.labels.length === 1 ? conn.labels[0] : null} unlock busy={busy} />
+      <Ticks labels={labels} ticked={new Set(conn.labels)} onTick={(label) => void tick.run(label)} disabled={working} fixed={conn.labels.length === 1 ? conn.labels[0] : null} busy={busy} />
       <Line note={tick.note ?? off.note} />
       <div className="fill" />
       <button className="danger" disabled={working} onClick={() => off.run()}>

@@ -3,7 +3,7 @@
 // they are one person's, as the host already can. Those a profile wrote come from its own folder.
 //
 // What is new about a profile is what the index counted after the time the device keeps for it, the
-// newest the Inbox has shown (device.ts). A profile the device has no time for yet is marked at the
+// newest its Reviews has shown (device.ts). A profile the device has no time for yet is marked at the
 // newest the index holds now, so nothing old shows as new on a new device.
 
 import type { Profile } from '../device.ts'

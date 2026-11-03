@@ -1,9 +1,10 @@
 // New profile, in two steps. First every market, "Clothing", with a search box over their words and
-// their roles'. Then a market's roles, "Seller": one the person has shows a check, and a tap opens
-// that profile; on any other, one tap asks the passkey, and the app makes the profile: its folder
-// funded, its verification proven on the device, its profile entry written, its label in the
-// Profiles folder. A person with none yet comes here once they are verified, under "Your first
-// profile". The market picked is kept in the page's history (App.tsx), so a reload keeps it.
+// their roles'. Then a market's roles, "Seller": one the person has shows "Yours", quietly, and a
+// tap opens that profile; any other shows a +, and one tap asks the passkey (a row never shows the
+// unlock icon) and makes the profile: its folder funded, its verification proven on the device, its
+// profile entry written, its label in the Profiles folder. A person with none yet comes here once
+// they are verified, under "Your first profile". The market picked is kept in the page's history
+// (App.tsx), so a reload keeps it.
 
 import { useState } from 'react'
 
@@ -14,7 +15,7 @@ import { useProfiles } from '../hooks.ts'
 import { marketList, roleWords } from '../markets.ts'
 import { withSeed } from '../passkey.ts'
 import { proveInWorker } from '../proof/prove.ts'
-import { CheckIcon, Line, Spinner, Top, UnlockIcon, useAction } from '../ui.tsx'
+import { Line, PlusIcon, Spinner, Top, useAction } from '../ui.tsx'
 
 type Props = { market?: string; onMarket: (name: string) => void; onMade: (address: string, first: boolean) => void; onOpen: (address: string) => void; onBack: () => void }
 
@@ -47,7 +48,7 @@ export function NewProfile({ market: name, onMarket, onMade, onOpen, onBack }: P
             return (
               <button key={p.label} className="row" disabled={make.busy} onClick={() => (had ? onOpen(had.address) : make.run(p.label))}>
                 <span>{roleWords(p.role)}</span>
-                {making === p.label ? <Spinner /> : had ? <CheckIcon label="Yours" /> : <UnlockIcon />}
+                {making === p.label ? <Spinner /> : had ? <span className="aside">Yours</span> : <PlusIcon />}
               </button>
             )
           })}
