@@ -1,8 +1,9 @@
 // A profile, opened from its card: its market and role with the shield when it is verified; at the
 // top, Share, a sheet with its address and Copy, and its Inbox, with a dot when something there is
 // new; the index's rating and how many reviews it counted, which opens Reviews; then its posts, each
-// a row with its first photo and its preview (PostRow.tsx), tapped to edit; and a button for a new
-// one. Nothing here asks the passkey: its folder is public, and so is what the index says.
+// a row with its first photo and its preview (PostRow.tsx), tapped to edit; and at the bottom, side
+// by side, Review, which opens Review someone, and a new post in its role's word. Nothing here asks
+// the passkey: its folder is public, and so is what the index says.
 
 import { useEffect, useState } from 'react'
 
@@ -14,9 +15,9 @@ import { ratingText, reviewCount } from '../show.ts'
 import { Dot, InboxIcon, Line, type Note, Shield, ShareIcon, Sheet, Spinner, Top, noteOf } from '../ui.tsx'
 import { PostRow } from './PostRow.tsx'
 
-type Props = { address: string; onBack: () => void; onPost: (edit?: Posted) => void; onReviews: () => void; onInbox: () => void }
+type Props = { address: string; onBack: () => void; onPost: (edit?: Posted) => void; onReviews: () => void; onReview: () => void; onInbox: () => void }
 
-export function Profile({ address, onBack, onPost, onReviews, onInbox }: Props) {
+export function Profile({ address, onBack, onPost, onReviews, onReview, onInbox }: Props) {
   const list = useProfiles()
   const profile = list.find((p) => p.address === address)
   const mine = profile ? [profile] : []
@@ -79,7 +80,8 @@ export function Profile({ address, onBack, onPost, onReviews, onInbox }: Props) 
           {market && posts.map((p) => <PostRow key={p.path} market={market} body={p.body} onClick={() => onPost(p)} />)}
         </div>
       )}
-      <div className="foot">
+      <div className="foot pair">
+        <button onClick={onReview}>Review</button>
         <button className="primary" onClick={() => onPost()}>
           New {kindWords('post', profile.label).toLowerCase()}
         </button>

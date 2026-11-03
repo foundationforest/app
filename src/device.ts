@@ -3,7 +3,8 @@
 // person's profiles' labels and addresses, how they are verified, where they left off in each
 // profile's inbox, the time of the newest review, vouch or report about each profile the Inbox has
 // shown, their theme, and, while a verification is under way, its check and session, the ID check's
-// payment and the gift's buy (flows/verify.ts). Never the seed, a key, a stamp or a message.
+// payment and the gift's buy, then an ID check's payment no stamp has used yet (flows/verify.ts).
+// Never the seed, a key, a stamp or a message.
 //
 // What is new on a profile is what came after those two marks. A profile this device has no mark for
 // yet (on a new device, or after Forget) is marked at what it holds when first read, so nothing old

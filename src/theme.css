@@ -343,6 +343,12 @@ a.button.primary {
   font-size: 14px;
 }
 
+/* Text tapped open, such as what the ID check keeps. */
+summary {
+  cursor: pointer;
+  padding: 10px 0;
+}
+
 .pair {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -439,10 +445,65 @@ button:focus-visible {
   gap: 8px;
 }
 
-/* A review's score: big, its slider under it. */
+/* A review's score: big, its slider under it, its thumb hidden until touched, so no score looks chosen. */
 .score {
   display: grid;
   gap: 4px;
+}
+
+/* Drawn here, not the browser's, so Safari hides its thumb too: a plain track, the thumb on the accent. */
+.score input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: var(--touch);
+  background: none;
+}
+
+.score input[type='range']::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--paper-2);
+}
+
+.score input[type='range']::-moz-range-track {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--paper-2);
+}
+
+.score input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 26px;
+  height: 26px;
+  margin-top: -10px;
+  border: none;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.score input[type='range']::-moz-range-thumb {
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.score input.untouched::-webkit-slider-thumb {
+  visibility: hidden;
+}
+
+.score input.untouched::-moz-range-thumb {
+  visibility: hidden;
+}
+
+/* New message's From: the profile it goes from, and New profile when there is none yet. */
+.from {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
 }
 
 /* What a profile posted, on its card. */

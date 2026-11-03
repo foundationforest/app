@@ -1,9 +1,11 @@
 // The screens, and the way between them. Start, until a person is verified here; then a person with
 // no profile yet makes their first; then Profiles, Inbox and Settings, and from them New profile, a
 // profile, its reviews, a review received, a post, Review someone, a thread, a new message, or the
-// ID check. Each screen the person can come back to has its own path, so a reload opens on it and
-// the phone's back goes back; what a screen is about (a profile's address, a thread, an entry being
-// edited) is kept in the page's history, never in its path, which a host's logs would keep. A Share
+// ID check. Every setup step has a back: Get verified to Start, Your first profile to Profiles.
+// Each screen the person can come back to has its own path, so a reload opens on it and the phone's
+// back goes back; what a screen is about (a profile's address, a thread, an entry being edited, the
+// market picked on New profile) is kept in the page's history, never in its path, which a host's
+// logs would keep. A Share
 // link's address arrives in its query: it is moved into the history at once, and waits there through
 // Start and the verification when no one is verified here yet.
 
@@ -35,7 +37,7 @@ type Screen =
   | { at: 'start' }
   | { at: 'verify'; passkey: Passkey | null; id: string; step: Step }
   | { at: 'profiles' }
-  | { at: 'new' }
+  | { at: 'new'; market?: string }
   | { at: 'profile'; address: string }
   | { at: 'reviews'; address: string }
   | { at: 'received'; address: string; entry: string }
@@ -62,7 +64,7 @@ const PATHS: Partial<Record<Screen['at'], string>> = {
 }
 
 /** What the page's history keeps of a screen: what it is about, never in the path. */
-type Kept = { address?: string; entry?: string; edit?: Posted; subject?: string; report?: boolean; only?: string; mine?: string; them?: string; to?: string; pushed?: boolean }
+type Kept = { address?: string; entry?: string; edit?: Posted; subject?: string; report?: boolean; only?: string; mine?: string; them?: string; to?: string; market?: string; pushed?: boolean }
 
 const kept = (): Kept => (history.state as Kept | null) ?? {}
 const isText = (v: unknown): v is string => typeof v === 'string' && v.length > 0
@@ -88,7 +90,7 @@ function here(): Screen {
     case '/id':
       return idCheck(id)
     case '/new':
-      return { at: 'new' }
+      return { at: 'new', ...(isText(now.market) && { market: now.market }) }
     case '/settings':
       return { at: 'settings' }
     case '/inbox':
@@ -109,6 +111,8 @@ function here(): Screen {
 /** What a screen keeps in the history. */
 function keptOf(to: Screen): Kept {
   switch (to.at) {
+    case 'new':
+      return to.market ? { market: to.market } : {}
     case 'profile':
     case 'reviews':
       return { address: to.address }
@@ -169,11 +173,20 @@ export function App() {
     case 'start':
       return <Start onEntered={(e: Entered, p: Passkey) => (e.to === 'verify' ? go({ at: 'verify', passkey: p, id: p.id, step: e.step }) : inside())} />
     case 'verify':
-      return <Verify passkey={screen.passkey} id={screen.id} step={screen.step} onVerified={inside} {...(!screen.passkey && { onBack: back })} />
+      return <Verify passkey={screen.passkey} id={screen.id} step={screen.step} onVerified={inside} onBack={screen.passkey ? () => go({ at: 'start' }) : back} />
     case 'profiles':
       return <Profiles onOpen={(address) => go({ at: 'profile', address }, true)} onNew={() => go({ at: 'new' }, true)} go={place} />
     case 'new':
-      return <NewProfile onMade={(address) => go({ at: 'profile', address })} onBack={back} />
+      return (
+        <NewProfile
+          {...(screen.market && { market: screen.market })}
+          // The market's roles in place of the markets, so the profile made takes their place and back from it goes where New profile came from.
+          onMarket={(market) => go({ at: 'new', market })}
+          onMade={(address) => go({ at: 'profile', address })}
+          // From the roles, the markets; from Your first profile, Profiles, empty, which has New profile too.
+          onBack={screen.market ? () => go({ at: 'new' }) : profiles().length > 0 ? back : () => go({ at: 'profiles' })}
+        />
+      )
     case 'profile':
       return (
         <Profile
@@ -181,6 +194,7 @@ export function App() {
           onBack={back}
           onPost={(edit) => go({ at: 'post', address: screen.address, ...(edit && { edit }) }, true)}
           onReviews={() => go({ at: 'reviews', address: screen.address }, true)}
+          onReview={() => review(screen.address)}
           onInbox={() => go({ at: 'inbox', only: screen.address }, true)}
         />
       )

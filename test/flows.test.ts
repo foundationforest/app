@@ -1,7 +1,8 @@
 // The flows, against services' own host and a stand-in verifier on loopback (world.ts), with the
 // device's storage in memory: a verification, from its gift to its stamp kept; Start picking one up
-// wherever it stopped; review; a new profile, its folder funded and topped up; and the same seed
-// read the same way by the app and by the reference app (services' mcp/test/app.ts).
+// wherever it stopped; review; back to the two checks, losing nothing; a new profile, its folder
+// funded and topped up; and the same seed read the same way by the app and by the reference app
+// (services' mcp/test/app.ts).
 
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'vitest'
 
@@ -15,7 +16,7 @@ import { readCard } from '../src/flows/cards.ts'
 import { makeProfile } from '../src/flows/profile.ts'
 import { walletKey } from '../src/flows/profiles.ts'
 import { enter } from '../src/flows/start.ts'
-import { NotPassed, ask, collect, finish, open, resume, stampNumberAt } from '../src/flows/verify.ts'
+import { NotPassed, ask, choose, collect, finish, open, resume, stampNumberAt, stepOf } from '../src/flows/verify.ts'
 import { NoCredits } from '../src/services/credits.ts'
 import { FACE_CREDITS, type World, freshDevice, proveHere, world } from './world.ts'
 
@@ -179,6 +180,36 @@ describe('Start picks up a verification stopped anywhere, and loses nothing', ()
     await ask(w, p.id, await stampNumberAt(w, p.seed))
     freshDevice()
     await expect(enter(w, again(p), proveHere)).rejects.toBeInstanceOf(NoCredits)
+  })
+})
+
+describe('back to Get verified, a check picked again loses nothing', () => {
+  test('the same check: the check under way stays as it was, so the same page opens again', async () => {
+    const p = person()
+    w.decideAll('unfinished')
+    const url = await open(w, p.id)
+    const kept = device.under()
+    choose(p.id, 'face')
+    expect(device.under()).toEqual(kept)
+    expect(await open(w, p.id)).toBe(url)
+  })
+
+  test("the other check: its open check dropped, the gift's buy and the ID check's payment kept; a payment no stamp used outlives the face check, so the ID check opens paid", async () => {
+    const p = person()
+    // Paid for the ID check (its payment's id, as the device keeps it before Stripe's page), then back, and the face check.
+    device.keepUnder({ passkey: p.id, check: 'id', payment: 'cs_test_paid' })
+    choose(p.id, 'face')
+    expect(device.under()).toEqual({ passkey: p.id, check: 'face', payment: 'cs_test_paid' })
+    await open(w, p.id)
+    const { gift } = device.under()!
+    choose(p.id, 'id')
+    expect(device.under(), 'the face check dropped').toEqual({ passkey: p.id, check: 'id', payment: 'cs_test_paid', gift })
+    choose(p.id, 'face')
+    await verified(p)
+    expect(device.under(), 'only the payment left').toEqual({ passkey: p.id, check: 'id', payment: 'cs_test_paid' })
+    expect(stepOf(p.id), 'the ID check, paid: Start').toEqual({ at: 'start' })
+    expect(await enter(w, again(p), proveHere), 'and Start on another visit lets it be').toEqual({ to: 'profiles' })
+    expect(device.under()?.payment).toBe('cs_test_paid')
   })
 })
 

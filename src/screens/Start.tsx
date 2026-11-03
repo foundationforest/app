@@ -1,25 +1,23 @@
-// Start: one button. It asks for a Forest passkey first, any the person's managers hold, synced from
-// another device or answered by a phone through the sheet's QR code; where the browser can ask
-// without the sheet (immediate mediation), a device with none goes straight on. Only when none
-// answers does the screen offer Create a passkey, which never makes a passkey where the manager
-// holds one this device knows. After an ask without the sheet, I already have one asks again with
-// it, its QR code among it.
-
-import { useState } from 'react'
+// Start. On a device that knows a Forest passkey (any id it keeps), one button, Start, which asks for
+// those alone, and never Create a passkey: so nobody makes a second one by mistake. On a device that
+// knows none, two buttons at once, no sheet first: Create a passkey, or I already have one, the
+// sheet, which finds a passkey synced from another device, or, through its QR code, one on a device
+// that doesn't sync with this one. A browser can't tell a closed sheet from no passkey, so a closed
+// sheet says neither: "No passkey chosen.", and the same ask again.
 
 import { config } from '../config.ts'
 import { passkeys } from '../device.ts'
 import { type Entered, enter } from '../flows/start.ts'
 import { Mark } from '../mark.tsx'
-import { HasPasskey, NoAnswer, type Passkey, ask, asksQuietly, make } from '../passkey.ts'
+import { NoAnswer, type Passkey, ask, make } from '../passkey.ts'
 import { proveInWorker } from '../proof/prove.ts'
 import { Line, Spinner, UnlockIcon, useAction } from '../ui.tsx'
 
 type Props = { onEntered: (entered: Entered, passkey: Passkey) => void }
 
 export function Start({ onEntered }: Props) {
-  // No passkey answered: whether the ask was without the sheet, so the QR code is still to offer.
-  const [none, setNone] = useState<{ quietly: boolean } | null>(null)
+  // Read at each draw: a passkey made here is known from the moment it answers (flows/start.ts).
+  const known = passkeys()
 
   /** A passkey answered: where the person stands. The seed goes on with them only to the verification. */
   const entered = async (passkey: Passkey) => {
@@ -33,24 +31,13 @@ export function Start({ onEntered }: Props) {
     }
   }
 
-  const start = useAction(async (sheet: boolean) => {
-    const known = passkeys()
-    const quietly = !sheet && (await asksQuietly())
-    try {
-      await entered(await ask(quietly ? { quietly } : { allow: known }))
-    } catch (err) {
-      if (!(err instanceof NoAnswer)) throw err
-      setNone({ quietly })
-    }
-  })
+  const start = useAction(async () => entered(await ask(known.length ? { allow: known } : {})))
 
   const makeOne = useAction(async () => {
     try {
-      await entered(await make(passkeys()))
+      await entered(await make())
     } catch (err) {
-      if (err instanceof NoAnswer) return
-      if (err instanceof HasPasskey) setNone(null)
-      throw err
+      if (!(err instanceof NoAnswer)) throw err
     }
   })
 
@@ -64,22 +51,19 @@ export function Start({ onEntered }: Props) {
       </div>
       <div className="fill" />
       <Line note={start.note ?? makeOne.note} />
-      {none ? (
+      {known.length ? (
+        <button className="primary" disabled={busy} onClick={() => start.run()}>
+          {start.busy ? <Spinner /> : <><UnlockIcon /> {start.note ? 'Try again' : 'Start'}</>}
+        </button>
+      ) : (
         <>
-          <p className="line">No Forest passkey on this device.</p>
           <button className="primary" disabled={busy} onClick={() => makeOne.run()}>
             {makeOne.busy ? <Spinner /> : <><UnlockIcon /> Create a passkey</>}
           </button>
-          {none.quietly && (
-            <button className="quiet" disabled={busy} onClick={() => start.run(true)}>
-              I already have one
-            </button>
-          )}
+          <button className="quiet" disabled={busy} onClick={() => start.run()}>
+            {start.busy ? <Spinner /> : 'I already have one'}
+          </button>
         </>
-      ) : (
-        <button className="primary" disabled={busy} onClick={() => start.run(false)}>
-          {start.busy ? <Spinner /> : <><UnlockIcon /> Start</>}
-        </button>
       )}
     </main>
   )
