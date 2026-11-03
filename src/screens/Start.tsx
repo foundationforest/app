@@ -10,12 +10,15 @@
 //
 // Every button here asks: nobody is in yet, so Start drops any seed still held (held.ts) as it opens.
 // The seed a passkey gives is held from then, as after any unlock, so the verification and the first
-// profile ask again only once the page was hidden or 5 minutes went by.
+// profile ask again only once the page was hidden or 5 minutes went by. A passkey that answers is
+// followed first: a backup's own seed names the person's in its seed entry, and that one is held
+// (flows/seed.ts). A passkey just made names none.
 
 import { useEffect } from 'react'
 
 import { config } from '../config.ts'
 import { passkeys } from '../device.ts'
+import { follow } from '../flows/seed.ts'
 import { type Entered, enter } from '../flows/start.ts'
 import { drop, hold } from '../held.ts'
 import { Mark } from '../mark.tsx'
@@ -30,14 +33,17 @@ export function Start({ onEntered, connecting = false }: Props) {
   const known = passkeys()
   useEffect(drop, [])
 
-  /** A passkey answered: its seed held, and where the person stands. */
+  /** A passkey answered: the seed it stands for held, and where the person stands. */
   const entered = async (passkey: Passkey) => {
     hold(passkey.id, passkey.seed)
     const to = await withSeed(passkey.id, (seed) => enter(config, { id: passkey.id, seed }, proveInWorker))
     onEntered(to, passkey.id)
   }
 
-  const start = useAction(async () => entered(await ask(known.length ? { allow: known } : {})))
+  const start = useAction(async () => {
+    const answered = await ask(known.length ? { allow: known } : {})
+    await entered({ id: answered.id, seed: await follow(config.host, answered.seed) })
+  })
 
   const makeOne = useAction(async () => {
     try {

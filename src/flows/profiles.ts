@@ -1,7 +1,8 @@
 // The person's Profiles folder (folders/README.md, The Profiles folder), exactly as the reference app
 // keeps it (services' mcp/test/app.ts): the empty label's folder, its profile entry holding only its
 // hosts, a `label/<id>` entry for each profile and a `stamp/<id>` entry for each stamp, each at a
-// random id and locked to the folder's own open key alone. Its balance at the host is the wallet,
+// random id and locked to the folder's own open key alone; and, as the standard's example keeps them,
+// a `backup/<id>` entry for each backup passkey (flows/backups.ts). Its balance at the host is the wallet,
 // where the gift lands and which funds every new folder; its own writes are paid from it.
 // Each time it is opened, and each label written, the device keeps the folder's address and the
 // label entries read, so Profiles can tell, with nothing unlocked, one made on another device.
@@ -53,8 +54,8 @@ export async function openProfiles(seed: Uint8Array, host: string): Promise<Open
   return { key, view, labels: [...new Set(Object.values(read).filter(Boolean))].sort(), stamps }
 }
 
-/** One entry more, at `<kind>/<id>`, locked to the folder's own open key alone; its profile entry first, when it has none. Paid from the wallet. A label written is one the device has read. */
-export async function addTo(folder: Opened, host: string, kind: 'label' | 'stamp', body: Body): Promise<void> {
+/** One entry more, at `<kind>/<id>`, locked to the folder's own open key alone; its profile entry first, when it has none. Paid from the wallet. A label written is one the device has read. Gives back the id. */
+export async function addTo(folder: Pick<Opened, 'key' | 'view'>, host: string, kind: 'label' | 'stamp' | 'backup', body: Body): Promise<string> {
   const now = Date.now()
   const first = folder.view.current.has('profile') ? [] : [entry(folder.key, 'profile', { hosts: [host] }, now)]
   const locked = await lock(body, [(await openingHalf(folder.key.secret)).openKey])
@@ -63,4 +64,5 @@ export async function addTo(folder: Opened, host: string, kind: 'label' | 'stamp
     throw err instanceof NotWritten && err.code === 'refused' ? new NoCredits() : err
   })
   if (kind === 'label' && typeof body.label === 'string') readLabels(folder.key.address, { [id]: body.label })
+  return id
 }

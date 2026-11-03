@@ -64,9 +64,21 @@ test('Forget this device: everything but the ids of the passkeys it knows, so St
   device.keepConnection({ address: 'C', name: 'Claude', time: 1, labels: ['tutoring/tutor'] })
   device.knowKeys(['K'])
   device.readLabels('W', { a: 'tutoring/tutor' })
+  device.nameBackup('b', 'Bitwarden')
   device.forget()
   expect({ ...localStorage }).toEqual({ 'forest.v': '"2"', 'forest.passkeys': JSON.stringify(['OtherPasskeyIdOtherPass', ID]) })
-  expect([device.passkey(), device.under(), device.theme(), device.checks(), device.cursors(), device.seen(), device.connections(), device.knownKeys(), device.folder()]).toEqual([null, null, 'device', [], {}, {}, [], [], null])
+  expect([device.passkey(), device.under(), device.theme(), device.checks(), device.cursors(), device.seen(), device.connections(), device.knownKeys(), device.folder(), device.backupNames()]).toEqual([null, null, 'device', [], {}, {}, [], [], null, {}])
+})
+
+test("the backups' names: each by its entry's id, one dropped alone, anything else dropped; kept through a start", () => {
+  device.cleanOld()
+  device.nameBackup('a', '1Password')
+  device.nameBackup('b', 'Bitwarden')
+  device.unnameBackup('a')
+  expect(device.backupNames()).toEqual({ b: 'Bitwarden' })
+  localStorage.setItem('forest.backups', JSON.stringify({ b: 'Bitwarden', c: 7 }))
+  device.cleanOld()
+  expect(device.backupNames()).toEqual({ b: 'Bitwarden' })
 })
 
 test('AI apps, one per connection, oldest first, each its profiles once in label order; the keys it knows of, once each; anything else dropped', () => {

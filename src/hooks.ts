@@ -2,14 +2,15 @@
 // and AI apps as the device keeps them; how each is verified, as its profile entry at the host says; the new
 // entries in their inboxes; what the index says of each, read as a screen showing it opens and held
 // in the page meanwhile; what is new on each; whether a profile was made on another device; the
-// messages opened in this page; whether a seed is held in it; and whether a newer version of the app
-// is live.
+// messages opened in this page; the backup passkeys the Profiles folder lists; whether a seed is held
+// in it; and whether a newer version of the app is live.
 
 import { useEffect, useState } from 'react'
 
 import { config } from './config.ts'
 import { CHANGED, type Connection, type Profile, connections, folder, profiles, seen } from './device.ts'
 import { type Card, readCard } from './flows/cards.ts'
+import { type Backup, backupsAt } from './flows/backups.ts'
 import { anyNew, labelIds } from './flows/elsewhere.ts'
 import { newMessages } from './flows/inbox.ts'
 import { type Received, newOf, rate } from './flows/reviews.ts'
@@ -157,6 +158,44 @@ export function useElsewhere(): boolean {
     }
   }, [address])
   return kept !== null && anyNew(ids, kept, new Set(profiles().map((p) => p.label)))
+}
+
+/** The event that has the backups read again: one was added or removed. */
+const BACKUPS = 'forest:backups'
+
+/** The backups read again, wherever they show: after one is added or removed. */
+export const backupsChanged = () => dispatchEvent(new Event(BACKUPS))
+
+/** The last read of the backups, so a screen opening shows it at once. */
+let lastBackups: { address: string; list: Backup[] } | null = null
+
+/** The backup passkeys the Profiles folder lists, read with nothing unlocked as a screen opens, again when the page comes back into view, and after one is added or removed; null until read. */
+export function useBackups(): Backup[] | null {
+  useDevice()
+  const address = folder()?.address
+  const [list, setList] = useState<Backup[] | null>(() => (lastBackups && lastBackups.address === address ? lastBackups.list : null))
+  useEffect(() => {
+    if (!address) return
+    let live = true
+    const look = () =>
+      backupsAt(config.host, address).then(
+        (found) => {
+          lastBackups = { address, list: found }
+          if (live) setList(found)
+        },
+        () => undefined,
+      )
+    const shown = () => document.visibilityState === 'visible' && void look()
+    void look()
+    document.addEventListener('visibilitychange', shown)
+    addEventListener(BACKUPS, look)
+    return () => {
+      live = false
+      document.removeEventListener('visibilitychange', shown)
+      removeEventListener(BACKUPS, look)
+    }
+  }, [address])
+  return address && lastBackups?.address === address ? list : null
 }
 
 /** The messages opened in this page, or null. */
