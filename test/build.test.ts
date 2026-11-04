@@ -1,9 +1,11 @@
 // How the app is built and served: Vercel runs ./standard.sh, then the build; the strict content
 // security policy lets the page reach only its own origin and the services in its one config file,
-// and show photos only from the host, its bucket, and those picked on the device;
-// a missing chunk is a 404, never the page, so a page left open across a deploy reloads; the markets
-// come from the directory, in each market's words, through the browser entry; and what the app says
-// is its own line for every code a service answers.
+// and show photos only from the host, its bucket, and those picked on the device; every screen's
+// path is the page, and a missing chunk is a 404, never the page, so a page left open across a
+// deploy reloads; the markets come from the directory, in each market's words, through the browser
+// entry; what the app says is its own line for every code a service answers; the host's credits
+// client gets its packages at the host's own versions; and every colour the app writes outside
+// theme.css is theme.css's.
 
 import { readFileSync } from 'node:fs'
 
@@ -15,11 +17,14 @@ import { CODES as HOST_LIST } from '../services/host/src/codes.ts'
 import { CODES as VERIFIER_LIST } from '../services/verifier/src/codes.ts'
 import { files } from '../build/markets.ts'
 import { proofFiles } from '../build/proofs.ts'
+import { INK, PAPER } from '../build/shell.ts'
 import { config } from '../src/config.ts'
 import { placeLine } from '../src/fields/Place.tsx'
 import { rfc3339 } from '../src/fields/Moment.tsx'
 import { kindWords, marketList, marketWords, otherSide, pairOf, pairs, roleWords } from '../src/markets.ts'
+import { PATHS } from '../src/paths.ts'
 import { contactHref } from '../src/show.ts'
+import { PAPER as THEME_PAPER } from '../src/theme.ts'
 import { HOST_CODES, SOMETHING, VERIFIER_CODES, entrySays, fieldWords, hostSays, verifierSays } from '../src/words.ts'
 
 const vercel = JSON.parse(readFileSync(new URL('../vercel.json', import.meta.url), 'utf8'))
@@ -44,10 +49,11 @@ test('the CSP: the page reaches its own origin and its verifier, host, connector
   expect(csp.match(/blob:/g), 'blob: only for photos picked and not sent yet').toHaveLength(1)
 })
 
-test('every path but a file is the page; a missing chunk or proving file is a 404', () => {
+test("every screen's path is the page; a missing chunk or proving file is a 404", () => {
   const [rule] = vercel.rewrites
   const page = (path: string) => new RegExp(`^(?:${rule.source})$`).test(path)
-  for (const path of ['/', '/back', '/new', '/settings', '/profile', '/reviews', '/received', '/review', '/inbox', '/message', '/thread', '/post', '/id']) expect(page(path), path).toBe(true)
+  expect(Object.keys(PATHS).length, 'the screens with a path of their own').toBeGreaterThan(10)
+  for (const path of ['/', '/back', ...Object.values(PATHS)]) expect(page(path), path).toBe(true)
   for (const path of ['/assets/index-abc.js', '/assets/x', '/proofs/abc', '/sw.js', '/manifest.webmanifest']) expect(page(path), path).toBe(false)
   expect(vercel.redirects).toBeUndefined()
 })
@@ -92,6 +98,29 @@ test("every code the verifier, the host and the standard list has its own plain 
   expect([verifierSays('duplicate_document').message, verifierSays('duplicate_document').red]).toEqual(['This ID was already used to verify someone else.', true])
   expect(verifierSays('not_for_sale').message).toBe("The ID check isn't available yet.")
   expect(verifierSays('a_code_from_tomorrow').message).toBe(SOMETHING)
+})
+
+test("the host's credits client: every package it imports but the standard's, at the host's own version", () => {
+  const client = readFileSync(new URL('../services/host/client/client.ts', import.meta.url), 'utf8')
+  const imported = [...client.matchAll(/^import\b[^;]*?\bfrom '([^']+)'/gm)].map(([, name]) => name!).filter((name) => !/^(\.|node:|@foundationforest\/)/.test(name))
+  expect(imported.length, 'it imports some').toBeGreaterThan(0)
+  const app = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))
+  const host = JSON.parse(readFileSync(new URL('../services/host/package.json', import.meta.url), 'utf8'))
+  for (const name of imported) expect(app.dependencies[name], name).toBe(host.dependencies[name])
+})
+
+test("every colour the app writes outside theme.css: theme.css's paper and ink, light and dark", () => {
+  const css = readFileSync(new URL('../src/theme.css', import.meta.url), 'utf8')
+  const block = (selector: string) => css.slice(css.indexOf(selector)).split('}')[0]!
+  const token = (selector: string, name: string) => new RegExp(`--${name}:\\s*(#[0-9a-f]{6});`, 'i').exec(block(selector))![1]!.toLowerCase()
+  const light = { paper: token(':root {', 'paper'), ink: token(':root {', 'ink') }
+  const dark = { paper: token(":root[data-theme='dark'] {", 'paper'), ink: token(":root[data-theme='dark'] {", 'ink') }
+  expect(token(":root:not([data-theme='light']) {", 'paper'), "the device's dark, as the chosen one").toBe(dark.paper)
+  expect(THEME_PAPER, 'theme.ts, for the browser bars').toEqual({ light: light.paper, dark: dark.paper })
+  expect([PAPER.toLowerCase(), INK.toLowerCase()], "the icons and the manifest's colours (build/shell.ts)").toEqual([light.paper, light.ink])
+  const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8')
+  const meta = (scheme: string) => new RegExp(`<meta name="theme-color" content="(#[0-9a-f]{6})" media="\\(prefers-color-scheme: ${scheme}\\)"`, 'i').exec(html)?.[1]?.toLowerCase()
+  expect([meta('light'), meta('dark')], "index.html's theme colours").toEqual([light.paper, dark.paper])
 })
 
 test("checkEntry's words, as one line naming the field by its name in words", () => {

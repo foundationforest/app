@@ -2,7 +2,8 @@
 
 import type { Theme } from './device.ts'
 
-const PAPER = { light: '#edeae0', dark: '#121a15' }
+/** The paper, light and dark (theme.css), for the browser's own bars. */
+export const PAPER = { light: '#edeae0', dark: '#121a15' }
 
 export function applyTheme(theme: Theme): void {
   const root = document.documentElement

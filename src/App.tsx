@@ -24,6 +24,7 @@ import { type ReactNode, useEffect, useRef, useState } from 'react'
 
 import { passkey as inUse, profiles } from './device.ts'
 import type { Posted } from './flows/posts.ts'
+import { PATHS as SCREEN_PATHS } from './paths.ts'
 import type { Entered } from './flows/start.ts'
 import { type Step, choose, nothingUnderWay, stepOf } from './flows/verify.ts'
 import { useNewVersion, useProfiles } from './hooks.ts'
@@ -77,24 +78,7 @@ type Screen =
   | { at: 'add-passkey'; offered?: boolean }
   | { at: 'back' }
 
-const PATHS: Partial<Record<Screen['at'], string>> = {
-  verify: '/id',
-  new: '/new',
-  profile: '/profile',
-  reviews: '/reviews',
-  received: '/received',
-  post: '/post',
-  review: '/review',
-  notifications: '/notifications',
-  messages: '/messages',
-  thread: '/thread',
-  message: '/message',
-  settings: '/settings',
-  connect: '/connect',
-  'connect-ai': '/connect-ai',
-  ai: '/ai',
-  'add-passkey': '/passkey',
-}
+const PATHS: Partial<Record<Screen['at'], string>> = SCREEN_PATHS
 
 /** What the page's history keeps of a screen: what it is about, never in the path. */
 type Kept = { address?: string; entry?: string; edit?: Posted; subject?: string; report?: boolean; only?: string; mine?: string; them?: string; to?: string; market?: string; connector?: string; request?: string; offered?: boolean; pushed?: boolean }
