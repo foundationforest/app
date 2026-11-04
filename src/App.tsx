@@ -1,9 +1,13 @@
-// The screens, and the way between them. Start, until a person is verified here; then a person with
-// no profile yet makes their first, and once it is made, Add a backup passkey, then Use Forest from
-// your AI; then Profiles, Notifications and Settings, and from them New profile, a profile, its
-// messages, its reviews, a review received, a post, Review someone, a thread, a new message, the ID
-// check, an AI app, Connect an AI, or Add a backup. Every setup
-// step has a back: Get verified to Start, Your first profile to Profiles.
+// The screens, and the way between them. Start, until a person is verified here: a passkey that
+// opens a seed with no stamp and nothing under way goes to New to Forest? first, then Get verified;
+// one that answered from another device, letting a verified person in, to Save a passkey on this
+// device?, once. Then a person with no profile yet makes their first, and once it is made, Add a
+// second passkey, then Use Forest from your AI; then Profiles, Notifications and Settings, and from
+// them New profile, every profile's messages (the inbox at the top of Profiles and Notifications),
+// a profile, its messages, its reviews, a review received, a post, Review someone, a thread, a new
+// message, the ID check, an AI app, Connect an AI, or Add a passkey. Every setup step has a back:
+// New to Forest? to Start, Get verified to New to Forest? (or Start, once a check is under way),
+// Your first profile to Profiles.
 // Each screen the person can come back to has its own path, so a reload opens on it and the phone's
 // back goes back; what a screen is about (a profile's address, a thread, an entry being edited, the
 // market picked on New profile) is kept in the page's history, never in its path, which a host's
@@ -11,7 +15,8 @@
 // link's address arrives in its query: it is moved into the history at once, and waits there through
 // Start and the verification when no one is verified here yet. So does an AI app's login, the
 // connect page's connector and request: through Start, the verification and the first profile,
-// then back to the connect page, Add a backup passkey and Use Forest from your AI left out. A login the page can't take (not
+// then back to the connect page, Save a passkey on this device?, Add a second passkey and Use Forest
+// from your AI left out. A login the page can't take (not
 // this app's connector, or run out) says so at once, before Start. Above any screen, once a newer
 // version is live, one quiet line says so, with Reload (version.ts).
 
@@ -20,16 +25,16 @@ import { type ReactNode, useEffect, useRef, useState } from 'react'
 import { passkey as inUse, profiles } from './device.ts'
 import type { Posted } from './flows/posts.ts'
 import type { Entered } from './flows/start.ts'
-import { type Step, choose, stepOf } from './flows/verify.ts'
+import { type Step, choose, nothingUnderWay, stepOf } from './flows/verify.ts'
 import { useNewVersion, useProfiles } from './hooks.ts'
 import { AiApp } from './screens/AiApp.tsx'
+import { AddPasskey } from './screens/AddPasskey.tsx'
 import { Back } from './screens/Back.tsx'
-import { Backup } from './screens/Backup.tsx'
-import { BackupOffer } from './screens/BackupOffer.tsx'
 import { Connect, blocked } from './screens/Connect.tsx'
 import { ConnectAi } from './screens/ConnectAi.tsx'
 import { Message } from './screens/Message.tsx'
 import { Messages } from './screens/Messages.tsx'
+import { NewHere } from './screens/NewHere.tsx'
 import { NewProfile } from './screens/NewProfile.tsx'
 import { Notifications } from './screens/Notifications.tsx'
 import { Post } from './screens/Post.tsx'
@@ -38,8 +43,10 @@ import { Profiles } from './screens/Profiles.tsx'
 import { Received } from './screens/Received.tsx'
 import { Review } from './screens/Review.tsx'
 import { Reviews } from './screens/Reviews.tsx'
+import { SavePasskey } from './screens/SavePasskey.tsx'
+import { SecondPasskey } from './screens/SecondPasskey.tsx'
 import { Settings } from './screens/Settings.tsx'
-import { Start } from './screens/Start.tsx'
+import { type How, Start } from './screens/Start.tsx'
 import { Thread } from './screens/Thread.tsx'
 import { UseAi } from './screens/UseAi.tsx'
 import { Verify } from './screens/Verify.tsx'
@@ -47,7 +54,9 @@ import { NewVersion, type Place } from './ui.tsx'
 
 type Screen =
   | { at: 'start' }
-  | { at: 'verify'; fromStart: boolean; id: string; step: Step }
+  | { at: 'new-here'; id: string; step: Step; aaguid?: string }
+  | { at: 'save-passkey' }
+  | { at: 'verify'; fromStart: boolean; id: string; step: Step; aaguid?: string }
   | { at: 'profiles' }
   | { at: 'new'; market?: string }
   | { at: 'profile'; address: string }
@@ -56,7 +65,7 @@ type Screen =
   | { at: 'post'; address: string; edit?: Posted }
   | { at: 'review'; address: string; subject?: string; edit?: Posted; report?: boolean }
   | { at: 'notifications' }
-  | { at: 'messages'; only: string }
+  | { at: 'messages'; only?: string }
   | { at: 'thread'; mine: string; them: string }
   | { at: 'message'; to?: string }
   | { at: 'settings' }
@@ -64,8 +73,8 @@ type Screen =
   | { at: 'connect-ai' }
   | { at: 'ai'; address: string }
   | { at: 'use-ai' }
-  | { at: 'backup-offer' }
-  | { at: 'backup'; offered?: boolean }
+  | { at: 'second-passkey' }
+  | { at: 'add-passkey'; offered?: boolean }
   | { at: 'back' }
 
 const PATHS: Partial<Record<Screen['at'], string>> = {
@@ -84,7 +93,7 @@ const PATHS: Partial<Record<Screen['at'], string>> = {
   connect: '/connect',
   'connect-ai': '/connect-ai',
   ai: '/ai',
-  backup: '/backup',
+  'add-passkey': '/passkey',
 }
 
 /** What the page's history keeps of a screen: what it is about, never in the path. */
@@ -138,15 +147,14 @@ function here(): Screen {
       return { at: 'settings' }
     case '/notifications':
       return { at: 'notifications' }
-    // A profile's messages; with none named, as from the Inbox's path or Messages' from before
-    // Notifications took their place, Notifications.
+    // A profile's messages, or with none named every profile's, as the Inbox's path from before was.
     case '/inbox':
     case '/messages':
-      return isText(now.only) ? { at: 'messages', only: now.only } : { at: 'notifications' }
+      return { at: 'messages', ...(isText(now.only) && { only: now.only }) }
     case '/message':
       return { at: 'message', ...(isText(now.to) && { to: now.to }) }
-    case '/backup':
-      return { at: 'backup', ...(now.offered && { offered: true }) }
+    case '/passkey':
+      return { at: 'add-passkey', ...(now.offered && { offered: true }) }
   }
   if (path === '/profile' && isText(now.address)) return { at: 'profile', address: now.address }
   if (path === '/reviews' && isText(now.address)) return { at: 'reviews', address: now.address }
@@ -174,7 +182,7 @@ function keptOf(to: Screen): Kept {
     case 'review':
       return { address: to.address, ...(to.edit && { edit: to.edit }), ...(to.subject && { subject: to.subject }), ...(to.report && { report: true }) }
     case 'messages':
-      return { only: to.only }
+      return to.only ? { only: to.only } : {}
     case 'thread':
       return { mine: to.mine, them: to.them }
     case 'message':
@@ -183,7 +191,7 @@ function keptOf(to: Screen): Kept {
       return { connector: to.connector, request: to.request }
     case 'ai':
       return { address: to.address }
-    case 'backup':
+    case 'add-passkey':
       return to.offered ? { offered: true } : {}
     default:
       return {}
@@ -235,12 +243,25 @@ function Screens() {
     if (w && 'login' in w) return go({ at: 'connect', ...w.login })
     go(w ? { at: 'message', to: w.to } : profiles().length === 0 ? { at: 'new' } : { at: 'profiles' })
   }
-  /** A profile made on New profile: back to the AI app's login if one waits; after the first, Add a backup passkey; else the profile. */
+  /** A profile made on New profile: back to the AI app's login if one waits; after the first, Add a second passkey; else the profile. */
   const made = (address: string, first: boolean) => {
     const w = waiting.current
     waiting.current = null
     if (w && 'login' in w) return go({ at: 'connect', ...w.login })
-    go(first ? { at: 'backup-offer' } : { at: 'profile', address })
+    go(first ? { at: 'second-passkey' } : { at: 'profile', address })
+  }
+  const connecting = () => !!waiting.current && 'login' in waiting.current
+  /**
+   * Past Start: a passkey with no stamp and nothing under way, to New to Forest? (a passkey just made
+   * keeps its manager's AAGUID there); else, not verified, to the verification; verified through a
+   * passkey on another device, Save a passkey on this device? first, unless an AI app's login waits;
+   * else in.
+   */
+  const entered = (e: Entered, id: string, how: How) => {
+    const aaguid = how.made?.aaguid
+    if (e.to === 'verify') return go(nothingUnderWay(id) ? { at: 'new-here', id, step: e.step, ...(aaguid && { aaguid }) } : { at: 'verify', fromStart: true, id, step: e.step })
+    if (how.elsewhere && !connecting()) return go({ at: 'save-passkey' })
+    inside()
   }
   const review = (address: string, more: { subject?: string; edit?: Posted; report?: boolean } = {}) => go({ at: 'review', address, ...more }, true)
 
@@ -248,11 +269,29 @@ function Screens() {
     case 'back':
       return <Back />
     case 'start':
-      return <Start connecting={!!waiting.current && 'login' in waiting.current} onEntered={(e: Entered, id: string) => (e.to === 'verify' ? go({ at: 'verify', fromStart: true, id, step: e.step }) : inside())} />
-    case 'verify':
-      return <Verify fromStart={screen.fromStart} id={screen.id} step={screen.step} onVerified={inside} onBack={screen.fromStart ? () => go({ at: 'start' }) : back} />
+      return <Start connecting={connecting()} onEntered={entered} />
+    case 'new-here': {
+      const { id, step, aaguid } = screen
+      return (
+        <NewHere
+          id={id}
+          {...(aaguid && { aaguid })}
+          onNew={() => go({ at: 'verify', fromStart: true, id, step, ...(aaguid && { aaguid }) })}
+          onIn={(e) => (e.to === 'profiles' ? inside() : go({ at: 'verify', fromStart: true, id, step: e.step }))}
+          onBack={() => go({ at: 'start' })}
+        />
+      )
+    }
+    case 'save-passkey':
+      return <SavePasskey onDone={inside} />
+    case 'verify': {
+      const { id, aaguid } = screen
+      // From Start: back to New to Forest? while nothing is under way, else to Start.
+      const toStart = () => go(nothingUnderWay(id) ? { at: 'new-here', id, step: stepOf(id), ...(aaguid && { aaguid }) } : { at: 'start' })
+      return <Verify fromStart={screen.fromStart} id={id} step={screen.step} onVerified={inside} onBack={screen.fromStart ? toStart : back} />
+    }
     case 'profiles':
-      return <Profiles onOpen={(address) => go({ at: 'profile', address }, true)} onNew={() => go({ at: 'new' }, true)} go={place} />
+      return <Profiles onOpen={(address) => go({ at: 'profile', address }, true)} onNew={() => go({ at: 'new' }, true)} onMessages={() => go({ at: 'messages' }, true)} go={place} />
     case 'new':
       return (
         <NewProfile
@@ -309,12 +348,12 @@ function Screens() {
       return (
         <Notifications
           go={place}
-          onMessages={(only) => go({ at: 'messages', only }, true)}
+          onMessages={() => go({ at: 'messages' }, true)}
           onReceived={(address, entry) => go({ at: 'received', address, entry }, true)}
         />
       )
     case 'messages':
-      return <Messages only={screen.only} onBack={back} onThread={(mine, them) => go({ at: 'thread', mine, them }, true)} onNew={() => go({ at: 'message' }, true)} />
+      return <Messages {...(screen.only && { only: screen.only })} onBack={back} onThread={(mine, them) => go({ at: 'thread', mine, them }, true)} onNew={() => go({ at: 'message' }, true)} />
     case 'thread':
       return <Thread mine={screen.mine} them={screen.them} onBack={back} onReview={(mine, them) => review(mine, { subject: them })} />
     case 'message':
@@ -327,7 +366,7 @@ function Screens() {
           onIdCheck={() => go(idCheck(inUse()!), true)}
           onConnectAi={() => go({ at: 'connect-ai' }, true)}
           onAiApp={(address) => go({ at: 'ai', address }, true)}
-          onBackup={() => go({ at: 'backup' }, true)}
+          onAddPasskey={() => go({ at: 'add-passkey' }, true)}
         />
       )
     case 'connect':
@@ -338,11 +377,11 @@ function Screens() {
       return <AiApp address={screen.address} onBack={back} />
     case 'use-ai':
       return <UseAi onConnect={() => go({ at: 'connect-ai' }, true)} onNotNow={() => go({ at: 'profiles' })} />
-    case 'backup-offer':
-      return <BackupOffer onAdd={() => go({ at: 'backup', offered: true })} onNotNow={() => go({ at: 'use-ai' })} />
-    case 'backup':
-      // From Add a backup passkey: on to Use Forest from your AI, and back to the offer. From Settings: back there.
-      return screen.offered ? <Backup onDone={() => go({ at: 'use-ai' })} onBack={() => go({ at: 'backup-offer' })} /> : <Backup onDone={back} onBack={back} />
+    case 'second-passkey':
+      return <SecondPasskey onAdd={() => go({ at: 'add-passkey', offered: true })} onNotNow={() => go({ at: 'use-ai' })} />
+    case 'add-passkey':
+      // From Add a second passkey: on to Use Forest from your AI, and back to the offer. From Settings: back there.
+      return screen.offered ? <AddPasskey onDone={() => go({ at: 'use-ai' })} onBack={() => go({ at: 'second-passkey' })} /> : <AddPasskey onDone={back} onBack={back} />
   }
 }
 

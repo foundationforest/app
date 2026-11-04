@@ -5,17 +5,18 @@
 // day changes; and the reply, in one row: the text box and a round Send, which shows its own icon
 // (an icon-only button shows what it does) and asks the passkey once: signed with the profile's main
 // key, locked to their keys, left with their host and paid from the profile's folder; its copy kept
-// in that folder.
+// in that folder. Reached with the messages not yet opened (a reload), they open by themselves with
+// a seed held, else with Open (opening.ts).
 
 import { Fragment, useEffect, useState } from 'react'
 
 import { config } from '../config.ts'
-import { passkey, profiles, saveCursors } from '../device.ts'
-import { openAll, send } from '../flows/inbox.ts'
-import { useNewMessages, useOpened, useProfiles } from '../hooks.ts'
-import { hold, holdThread, looked } from '../opened.ts'
+import { passkey } from '../device.ts'
+import { send } from '../flows/inbox.ts'
+import { useOpened, useProfiles } from '../hooks.ts'
+import { holdThread, looked } from '../opened.ts'
+import { useOpening } from '../opening.ts'
 import { withSeed } from '../passkey.ts'
-import { checkInWorker } from '../proof/prove.ts'
 import { Line, Named, SendIcon, Spinner, Top, UnlockIcon, clock, day, newDay, useAction } from '../ui.tsx'
 import { Who } from './Who.tsx'
 
@@ -25,18 +26,12 @@ export function Thread({ mine, them, onBack, onReview }: Props) {
   const list = useProfiles()
   const me = list.find((p) => p.address === mine)
   const held = useOpened()
-  const fresh = useNewMessages()
+  const { open, held: seedHeld } = useOpening()
   const thread = held?.threads.find((t) => t.mine === mine && t.them === them)
   const [text, setText] = useState('')
   useEffect(() => {
     if (thread) looked(thread)
   }, [thread])
-  const open = useAction(async () => {
-    const ids = Object.values(fresh).flat()
-    const got = await withSeed(passkey()!, (seed) => openAll(config, seed, profiles(), checkInWorker))
-    hold(got.threads, ids)
-    saveCursors(got.cursors)
-  })
   const reply = useAction(async () => {
     if (!me || !text.trim()) return
     const sent = await withSeed(passkey()!, (seed) => send(config, seed, me.label, them, text.trim()))
@@ -77,7 +72,7 @@ export function Thread({ mine, them, onBack, onReview }: Props) {
         ))}
       </div>
       <div className="fill" />
-      {held ? (
+      {thread || held?.all ? (
         <>
           <Line note={reply.note} />
           <div className="composer">
@@ -87,6 +82,8 @@ export function Thread({ mine, them, onBack, onReview }: Props) {
             </button>
           </div>
         </>
+      ) : seedHeld && !open.note ? (
+        <Spinner />
       ) : (
         <>
           <Line note={open.note} />

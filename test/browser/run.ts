@@ -9,27 +9,31 @@
 //   ./standard.sh services && npm run test:browser
 //
 //  1. Start, on a device that knows no passkey: two buttons at once, nothing asked; a closed sheet
-//     claims neither none nor one; Create a passkey made it for app.forest.foundation. Here and on
-//     every screen below with a filled button, its icon takes its text color.
-//  2. Back on each setup step: Get verified, which from Start, with nothing under way, also offers
-//     Link to my Forest passkey, gone while a check is under way, to Start, which now asks for the
-//     passkey made alone, never Create; the ID check (its price and tries, what it keeps tapped open) to Get verified,
-//     even after "Payment isn't available right now."; the face check's wait to Get verified.
+//     claims neither none nor one; Create a passkey made it for app.forest.foundation; then New to
+//     Forest?, its back and two answers, I already use Forest with the unlock icon, and Yes, I'm new
+//     opening Get verified, nothing asked. Here and on every screen below with a filled button, its
+//     icon takes its text color.
+//  2. Back on each setup step: Get verified, back and Continue alone, to New to Forest?, then to
+//     Start, which now asks for the passkey made alone, never Create, and comes back to New to
+//     Forest?; the ID check (its price and tries, what it keeps tapped open) to Get verified, even
+//     after "Payment isn't available right now."; the face check's wait to Get verified; with a
+//     check under way, Get verified's back to Start, and Start straight back to the check.
 //  3. Get verified: Face picked again, Continue; the face check in a tab of its own, opened on the
 //     tap, which Didit's page sends back to /back, where it closes itself; the page hidden meanwhile,
-//     as the check's tab hides it, so the seed dropped: the stamp still asked for, then Continue and
-//     one unlock; the gift collected into the wallet; the stamp kept in the Profiles folder; nothing
-//     of the seed kept; then Your first profile.
+//     as the check's tab hides it, which keeps the seed: the stamp kept with nothing asked; the gift
+//     collected into the wallet; the stamp kept in the Profiles folder; nothing of the seed kept;
+//     then Your first profile.
 //  4. The first profile, in two steps: back to Profiles and in again; a search over the markets, a
 //     market, its roles, back to the markets; one pick, nothing asked, the seed held since the last
-//     unlock, the verification proven in the worker; Add a backup passkey, its one line, Add a
-//     backup opening Add a backup (its line, Create a passkey with the unlock icon though the seed is
+//     unlock, the verification proven in the worker; Add a second passkey, its one line, Add
+//     opening Add a passkey (its line, Create a passkey with the unlock icon though the seed is
 //     held), back, and Not now; Use Forest from your AI, whose Connect opens
 //     Connect an AI: three steps (sign in now), no links, Copy copying the connector's address; its
 //     profile entry on the host, its verification checking as any reader checks it; the face check's
 //     shield, an outline, which, tapped on a card, says "Verified by face" and opens nothing; its
 //     name, Tutoring tutor, the market in bold and the role muted, as on every name below; under it,
-//     two lines, its reviews and its messages; at its top, Share alone: Share copies its page on the
+//     one line, its reviews; at its top right, Share and the inbox, its own icon and no number while
+//     nothing is new, as at the top of Profiles: Share copies its page on the
 //     index where there is no share sheet, and hands the sheet that page where there is; a market's
 //     roles show a + or, made, Yours, quietly, which opens its profile, and no row anywhere shows the
 //     unlock icon.
@@ -39,68 +43,82 @@
 //     are In person, then the place right after, filled in with no button, "Within 5 km of you", the
 //     slider moved to 10 and an area named, gone again with In person; a contact, which no market
 //     lists; asking nothing, the seed still held, so Post shows no unlock icon; the second
-//     opens its link with nothing set up, goes through Start and the face check, makes the profile on
-//     the other side from the compose screen's From, and messages, nothing asked after Start; the
-//     first sees it counted with nothing unlocked, on the card, the tab, the profile's Messages line
-//     and Notifications, whose row, "New message · Tutoring tutor" with how many, opens the profile's
-//     messages: "1 new message" and Open, and New message at the bottom; the page hidden a moment,
-//     Open shows its unlock icon again, and every inbox opens in one unlock, who it is from with the
-//     shield; the reply in one row, the text box and a round Send with its own icon, each message
-//     with its time and the day above them; Notifications then says "Nothing yet."; the second reads
-//     the reply beside what they sent, and reviews the tutor from the thread, the slider's thumb
-//     hidden until touched, naming the offer.
+//     opens its link with nothing set up, goes through Start, New to Forest? and the face check,
+//     makes the profile on the other side from the compose screen's From, and messages, nothing
+//     asked after Start; the first sees it counted with nothing unlocked, on the card and the inbox
+//     at the top of Profiles, of the profile and of Notifications, never on the bell, Notifications
+//     holding no message and the profile no Messages line; the page closed and opened again, the
+//     inbox opens every profile's conversations: "1 new message" and Open with its unlock icon, and
+//     New message at the bottom; every inbox opens in one unlock, who it is from with the shield;
+//     the reply in one row, the text box and a round Send with its own icon, each message with its
+//     time and the day above them; Notifications then says "Nothing yet.", its inbox no number; the
+//     second, their page closed and opened again, reads the reply beside what they sent, and reviews
+//     the tutor from the thread, the slider's thumb hidden until touched, naming the offer.
 //  7. A second browser, with the same passkey, answered from the first, as a phone answers through
-//     the passkey sheet's QR code: I already have one finds the profile and the stamp; it makes a
-//     profile of its own, nothing asked again; the first, with nothing unlocked, shows New profiles
-//     from another device, which one unlock reads.
+//     the passkey sheet's QR code, from another device: I already have one, then Save a passkey on
+//     this device?, Save with the unlock icon, and Not now; it finds the profile and the stamp; it
+//     makes a profile of its own, nothing asked again; the first, with nothing unlocked, shows New
+//     profiles from another device, which, the page closed and opened again, one unlock reads.
 //     Then a message from one of the person's profiles to another of theirs: To their tutor, From
-//     their student; it arrives, and, the seed held, it is sent and opened with nothing asked.
+//     their student; the seed held, the messages open by themselves, no Open, and it is sent, arrives
+//     and opens by itself, new, with nothing asked.
 //  8. One passkey per person: after Forget, Start finds the passkey and asks nothing more; with the
 //     sheet closed, "No passkey chosen." and Try again, and never Create a passkey.
-//     Then backup passkeys, with two virtual authenticators: Settings' Passkeys says "1 passkey",
-//     Add a backup and the Settings tab flagged; the phone's own manager, which keeps the Forest
-//     passkey the new one excludes, refuses, in one red line; a security key, a second virtual
-//     authenticator, makes the backup: "2 passkeys", its row with the day, no flag; a browser holding
-//     only the backup, answered through the QR code, opens the same profiles; Remove, tapped twice,
-//     and that browser's next unlock says "This passkey no longer opens your profiles."; after
-//     Forget, its Start opens its own seed, so Get verified, whose Link refuses the same passkey,
-//     then links it to the Forest passkey, and the profiles show.
-//  9. Clothing, with the index: the first, the page hidden a moment so Post shows its unlock icon
-//     again, posts a coat with two photos in one unlock, redrawn on the device as JPEGs no longer
+//     Then passkeys, every one alike, with two virtual authenticators: Settings' Passkeys says "Your
+//     first passkey" and the quiet line, with no dot on + Add a passkey or the Settings tab, and no
+//     "backup" anywhere; the phone's own manager, which keeps the first passkey the new one excludes,
+//     refuses, in one red line; a security key, a second virtual authenticator, makes one: its row
+//     by the day it was added, no line; a browser holding only that one, answered through the QR
+//     code, Not now, opens the same profiles; Remove, tapped twice, the line back, and that browser's
+//     next unlock, its page closed and opened again, says "This passkey no longer opens your
+//     profiles."; after Forget, its Start opens its own seed, so New to Forest?, whose I already use
+//     Forest refuses the same passkey, then adds this one to the first, straight to the profiles.
+//     Then a browser signed in through the QR code saves a passkey: Save makes one there, added to
+//     the first, the one in use there, so its next unlock asks it and not the phone; the first lists
+//     three passkeys, and removes that one again.
+//  9. Clothing, with the index: the first, the page closed and opened again so Post shows its unlock
+//     icon, a moment hidden keeping it so, posts a coat with two photos in one unlock, redrawn on the device as JPEGs no longer
 //     than 1600 pixels, their notes gone, no per to pick; for women, then a coat, and only then one
 //     size question, right after them, its values by their labels (XL); picked up and shipped, a
 //     choice of several; its location the offer's kept point, moved a little from the phone's, within
 //     3 km of Lavapiés; its row's price reading $40, as on the buyer's pick of it in their review;
 //     the index lists it. A buyer, whose phone hasn't allowed its location: told no before, a
 //     request's place is one line saying why it needs it; never asked, Use my location, and the
-//     prompt refused, that line; their profile's messages say "No new messages"; they write with New message (their own address taken, From the other side; the
-//     seller's page on the index taken as the seller's address) and reviews the coat from the
-//     thread, then, from their profile's Review, vouches ("That's this profile." once) and reports,
-//     and Given lists all three; the seller sees the rating and the dot on the card, "3 new" on the
-//     profile's rating line and "1 new" on its Messages line, the tab counting all four; Reviews
-//     marks the three, and once seen there they are new no more; the review opened; Notifications
-//     lists the message first, then all that came, newest first, in full, with no dot, and its
-//     message row opens the seller's messages, which hold no review.
+//     prompt refused, that line; their page closed and opened again, their profile's messages say
+//     "No new messages" with Open; they write with New message (their own address taken, From the
+//     other side; the seller's page on the index taken as the seller's address) and reviews the coat
+//     from the thread, then, from their profile's Review, vouches ("That's this profile." once) and
+//     reports, and Given lists all three; the seller sees the rating and the dot on the card, "3
+//     new" on the profile's rating line and 1 on its inbox, the bell counting the three and the
+//     inbox the message; Reviews marks the three, and once seen there they are new no more, the
+//     bell counting nothing; the review opened; Notifications lists all that came, newest first, in
+//     full, with no dot and no message, and its inbox opens the messages, which hold no review.
 //     Then a post an older market shaped, written to the host as the app wrote it before: its row
 //     says Update this post; opened, what still fits is filled in; posted, it fits, and the line goes.
 //     Then, for testing, a review of one of the person's own profiles, from their student about
-//     their tutor: Notifications shows it after the message, new, and once opened it is seen.
+//     their tutor: Notifications shows it first, new, and once shown it is seen, the bell counting
+//     it no more.
 //     Then the AI apps, with services' own mcp and an AI app as services' tests make one (the MCP
 //     SDK's client, mcp/test/setup.ts):
 //  a. its login comes to the connect page: the AI app's name, its redirect's host, the profiles
 //     unticked, each with its shield; one ticked, Connect, one unlock; the AI app gets its token,
 //     reads its profile and writes a post, which shows on the profile; the device keeps the AI app,
 //     never a key;
+//     Then a whole visit asks exactly once: from a page just opened, post, edit, open messages (by
+//     themselves), message, review from the thread, the note arriving and opening by itself, an AI
+//     app's profile ticked and unticked, and the post deleted, the page hidden between each;
 //  b. Settings' AI apps, between Passkeys and Appearance: the AI app, its day, its one profile, kept
 //     ticked while it is the last; another ticked, one unlock, then one unticked and ticked again
 //     with nothing asked, the AI's profiles following with no new login; Disconnect, nothing asked:
 //     the AI's next call refused, and its post stays;
 //  c. a new phone, nothing set up, at a connect page: I already have one first, then Create a
-//     passkey; the face check and the first profile, then back to the connect page, its one profile
-//     ticked, no Use Forest from your AI; Connect, nothing asked after Start;
+//     passkey; New to Forest?, the face check and the first profile, then back to the connect page,
+//     its one profile ticked, no Add a second passkey nor Use Forest from your AI; Connect, nothing
+//     asked after Start;
 //  d. a connector that isn't ours: one line, nothing else; a request that ran out: one line.
-// 10. Held for review: Being reviewed, the app asking all the while; the page hidden meanwhile;
-//     approved, Continue, one unlock.
+// 10. Held for review: Being reviewed, the app asking all the while; the page hidden meanwhile,
+//     which keeps the seed; approved, Continue, nothing asked. Then the same, with the page's clock
+//     run 5 minutes past the last action: Continue asks once.
 // 11. A manager that gives no PRF secret: its passkey dropped, the line naming another. A browser
 //     that cannot ask for PRF: one quiet line.
 // 12. The passkey belongs to app.forest.foundation: another page under forest.foundation is refused.
@@ -257,11 +275,20 @@ async function away(page: Page) {
 /** Whether `b` shows the unlock icon: it does only when a tap on it will ask the passkey. */
 const asks = async (b: Locator) => (await b.locator('.unlock').count()) === 1
 
-/** A profile's messages, from its card on Profiles (tapped on its name: a tap on its shield only says its words) and its Messages line. */
+/** The inbox at the top right of the screen: the way into messages, its number only when some are new. */
+const inbox = (page: Page) => page.locator('.top-right').getByRole('button', { name: /^Messages/ })
+
+/** A profile's messages, from its card on Profiles (tapped on its name: a tap on its shield only says its words) and the inbox at its top. */
 async function messagesOf(page: Page, card: string) {
   await page.locator('button.card', { hasText: card }).locator('.named').click()
-  await page.getByRole('button', { name: /^Messages/ }).click()
+  await inbox(page).click()
   await page.getByRole('heading', { name: card }).waitFor()
+}
+
+/** The page closed and opened again, on the same screen: what drops the seed now, besides 5 minutes with nothing done. */
+async function closed(page: Page) {
+  await page.reload()
+  await page.locator('main').waitFor()
 }
 
 /** Notifications opened again and again, so it reads the index each time, until a row says `text`. */
@@ -330,10 +357,17 @@ async function faceCheck(p: Phone) {
   await (await tab).waitForEvent('close')
 }
 
-/** A new person in `p`'s browser through Start's Create a passkey and the face check. */
+/** New to Forest?, right after Create a passkey: Yes, I'm new, on to Get verified. */
+async function imNew(p: Phone) {
+  await p.page.getByRole('heading', { name: 'New to Forest?' }).waitFor({ timeout: 60_000 })
+  await button(p.page, "Yes, I'm new").click()
+}
+
+/** A new person in `p`'s browser through Start's Create a passkey, New to Forest?, and the face check. */
 async function newPerson(p: Phone) {
   await p.page.goto(APP)
   await button(p.page, 'Create a passkey').click()
+  await imNew(p)
   await faceCheck(p)
 }
 
@@ -352,19 +386,20 @@ async function pickProfile(page: Page, words: string) {
   await page.getByRole('heading', { name: words }).waitFor({ timeout: 120_000 })
 }
 
-/** A first profile picked on Your first profile: its market found by searching, then its role; one unlock, then Add a backup passkey. */
+/** A first profile picked on Your first profile: its market found by searching, then its role; one unlock, then Add a second passkey. */
 async function pickFirst(page: Page, words: string) {
   const [market, role] = split(words)
   await page.getByLabel('Search').fill(market.toLowerCase())
   await button(page, market).click()
   await button(page, roleWords(role)).click()
-  await page.getByRole('heading', { name: 'Add a backup passkey' }).waitFor({ timeout: 120_000 })
+  await page.getByRole('heading', { name: 'Add a second passkey' }).waitFor({ timeout: 120_000 })
 }
 
 /**
  * `p`'s passkey sheet answered by `from`'s passkeys, as a phone answers through the sheet's QR
- * code: their PRF secret for the same salt. With `only`, the one passkey it names answers, as the
- * person picks it on that phone.
+ * code: their PRF secret for the same salt, from another device (cross-platform). With `only`, the
+ * one passkey it names answers, as the person picks it on that phone. A passkey `p`'s own
+ * authenticator holds, once one is saved there, answers there.
  */
 async function answerFrom(p: Phone, from: Phone, only?: () => string) {
   await p.context.exposeFunction('answerFromFirst', (wire: { rpId: string; allow: number[][]; first: number[] }) =>
@@ -388,10 +423,20 @@ async function answerFrom(p: Phone, from: Phone, only?: () => string) {
     navigator.credentials.get = async (options?: CredentialRequestOptions) => {
       const pk = options?.publicKey
       if (!pk) return own(options)
+      // A passkey named that this browser's own authenticator holds (one saved here) answers here;
+      // one it doesn't hold, it says so at once, and the phone answers.
+      if (pk.allowCredentials?.length) {
+        try {
+          return await own(options)
+        } catch (err) {
+          if ((err as Error).name !== 'NotAllowedError') throw err
+        }
+      }
       const got = await (globalThis as any).answerFromFirst({ rpId: pk.rpId, allow: (pk.allowCredentials ?? []).map((c) => bytes(c.id)), first: bytes(pk.extensions!.prf!.eval!.first) })
       if (got.error) throw new DOMException(got.error.message, got.error.name)
       const first = new Uint8Array(got.first).buffer
-      return { type: 'public-key', id: '', rawId: new Uint8Array(got.rawId).buffer, getClientExtensionResults: () => ({ prf: { results: { first } } }) } as unknown as Credential
+      // From another device, as a phone through the QR code answers: cross-platform.
+      return { type: 'public-key', id: '', rawId: new Uint8Array(got.rawId).buffer, authenticatorAttachment: 'cross-platform', getClientExtensionResults: () => ({ prf: { results: { first } } }) } as unknown as Credential
     }
   })
 }
@@ -505,7 +550,7 @@ after(async () => {
   await services?.stop()
 })
 
-test('Start, on a device that knows no passkey: two buttons at once, nothing asked; a closed sheet claims neither; Create a passkey made it for app.forest.foundation', async () => {
+test("Start, on a device that knows no passkey: two buttons at once, nothing asked; a closed sheet claims neither; Create a passkey made it for app.forest.foundation; then New to Forest?, and Yes, I'm new opens Get verified", async () => {
   const { page, counts, cdp, authenticator } = first
   const res = await page.goto(APP)
   assert.equal(res?.headers()['content-security-policy'], csp, 'the page comes with the CSP')
@@ -521,34 +566,45 @@ test('Start, on a device that knows no passkey: two buttons at once, nothing ask
   assert.ok((await button(page, 'Create a passkey').isVisible()) && (await button(page, 'I already have one').isVisible()), 'both still there')
   await shot(page, 'start-closed')
   await button(page, 'Create a passkey').click()
-  await page.getByRole('heading', { name: 'Get verified' }).waitFor()
+  await page.getByRole('heading', { name: 'New to Forest?' }).waitFor()
   assert.equal(counts.created, 1)
+  assert.deepEqual((await page.locator('main button').allTextContents()).map((t) => t.trim()), ['', "Yes, I'm new", 'I already use Forest'], 'back, and the two answers')
+  assert.ok(await asks(button(page, 'I already use Forest')), 'I already use Forest shows the unlock icon: it asks the passkey they use')
+  assert.equal(await page.locator('main p').count(), 0, 'no line explaining the title')
+  await shot(page, 'new-here')
   const { credentials } = await cdp.send('WebAuthn.getCredentials', { authenticatorId: authenticator })
   assert.deepEqual(credentials.map((c) => [c.rpId, c.isResidentCredential]), [['app.forest.foundation', true]])
   const local = await kept(page)
   assert.deepEqual(Object.keys(local).sort(), ['forest.folder', 'forest.passkeys', 'forest.v'], 'the passkey known, not yet in use: no one is verified here yet')
   assert.deepEqual(JSON.parse(local['forest.folder']!).labels, {}, 'its Profiles folder looked at, with no profile in it')
+  const asked = counts.asserted
+  await button(page, "Yes, I'm new").click()
+  await page.getByRole('heading', { name: 'Get verified' }).waitFor()
+  assert.equal(counts.asserted, asked, 'nothing asked')
   await shot(page, 'verify')
-  say('Start: two buttons, nothing asked first; Create a passkey made it for app.forest.foundation')
+  say("Start: two buttons, nothing asked first; Create a passkey made it for app.forest.foundation; New to Forest?, then Get verified")
 })
 
-test("back on each setup step: Get verified to Start, which asks for the passkey made alone; the ID check to Get verified, even after a payment that failed; the face check's wait to Get verified", async () => {
+test("back on each setup step: Get verified to New to Forest?, then to Start, which asks for the passkey made alone and comes back to New to Forest?; the ID check to Get verified, even after a payment that failed; the face check's wait to Get verified; a check under way, Start goes straight to Get verified", async () => {
   const { page, context, counts } = first
   const rows = await page.getByRole('radio').allTextContents()
   assert.deepEqual(rows, ['FaceA selfieFree', 'IDYour ID and a selfie · counts more$5'], 'two rows, and no other words')
   assert.ok(await button(page, 'Continue').isDisabled(), 'Continue once a row is picked')
-  const link = button(page, 'Link to my Forest passkey')
-  assert.ok((await link.isVisible()) && (await asks(link)), 'from Start, with nothing under way, Link to my Forest passkey too, with the unlock icon: it asks a passkey')
+  assert.deepEqual((await page.locator('main button:not([role=radio])').allTextContents()).map((t) => t.trim()), ['', 'Continue'], 'back and Continue: no Link')
 
-  // Get verified, back to Start: this device knows the passkey now, so Start asks for it alone.
+  // Get verified, back to New to Forest?, then to Start: this device knows the passkey now, so Start asks for it alone.
+  await button(page, 'Back').click()
+  await page.getByRole('heading', { name: 'New to Forest?' }).waitFor()
   await button(page, 'Back').click()
   await button(page, 'Start').waitFor()
   assert.equal(await button(page, 'Create a passkey').count(), 0, 'never a second passkey')
   await shot(page, 'start-known')
   const asked = counts.asserted
   await button(page, 'Start').click()
+  await page.getByRole('heading', { name: 'New to Forest?' }).waitFor()
+  assert.equal(counts.asserted - asked, 1, 'one unlock, by the passkey made: no stamp yet, nothing under way, so New to Forest? again')
+  await button(page, "Yes, I'm new").click()
   await page.getByRole('heading', { name: 'Get verified' }).waitFor()
-  assert.equal(counts.asserted - asked, 1, 'one unlock, by the passkey made')
 
   // The ID check: its price and tries, what it keeps behind a tap; the payment fails, and back.
   let unavailable = true
@@ -584,29 +640,32 @@ test("back on each setup step: Get verified to Start, which asks for the passkey
   await page.waitForFunction(() => !(document.querySelector('main button.primary') as HTMLButtonElement | null)?.disabled, null, { timeout: 5_000 })
   assert.equal(await page.getByRole('radio', { name: /^Face/ }).getAttribute('aria-checked'), 'true', 'the face check still picked')
   assert.equal(JSON.parse((await kept(page))['forest.setup']!).session, session, 'and still under way')
-  assert.equal(await link.count(), 0, 'a check under way: no Link')
+  // A check under way: Get verified's back goes to Start, and Start straight back to the check, then
+  // its back to Get verified, the check still picked.
+  await button(page, 'Back').click()
+  await button(page, 'Start').click()
+  await page.getByRole('heading', { name: 'Get verified' }).waitFor({ timeout: 60_000 })
+  assert.equal(await page.getByRole('heading', { name: 'New to Forest?' }).count(), 0, 'no New to Forest? once a check is under way')
+  await button(page, 'Back').click()
+  assert.equal(await page.getByRole('radio', { name: /^Face/ }).getAttribute('aria-checked'), 'true', 'the face check still picked')
   unfinished = false
-  say('back: Get verified to Start, the ID check after a failed payment, and the face check waiting, each to Get verified')
+  say('back: Get verified to New to Forest? and Start, the ID check after a failed payment, and the face check waiting, each to Get verified; under way, Start to Get verified')
 })
 
-test("Get verified: Face picked again, then Continue; the face check in its own tab, back through /back, the seed dropped meanwhile, so Continue and one unlock; the gift in the wallet, the stamp in the Profiles folder; then Your first profile", async () => {
+test("Get verified: Face picked again, then Continue; the face check in its own tab, back through /back, the page hidden meanwhile, which keeps the seed, so the stamp kept with nothing asked; the gift in the wallet, the stamp in the Profiles folder; then Your first profile", async () => {
   const { page, context, counts } = first
   await page.getByRole('radio', { name: /^Face/ }).click()
-  // The check's tab hides the app's page, which drops the seed: the stamp is still asked for, with
-  // the seed's number worked out while it was held, and once it comes, Continue asks for the seed.
+  // The check's tab hides the app's page, which keeps the seed now, under 5 minutes since the last
+  // action: the stamp is asked for, and once it comes, kept at once, nothing asked.
   await away(page)
+  const asked = counts.asserted
   const tab = context.waitForEvent('page')
   await button(page, 'Continue').click()
   const didit = await tab
   await didit.waitForEvent('close')
   say(`the check's tab opened on the tap, went to ${new URL(didit.url()).pathname} and closed itself`)
-  const keep = button(page, 'Continue')
-  await keep.locator('.unlock').waitFor({ timeout: 60_000 })
-  await shot(page, 'face-signed')
-  const asked = counts.asserted
-  await keep.click()
   await page.getByRole('heading', { name: 'Your first profile' }).waitFor({ timeout: 60_000 })
-  assert.equal(counts.asserted - asked, 1, 'one unlock, to keep the stamp')
+  assert.equal(counts.asserted - asked, 0, 'nothing asked: the seed held through the check, the page hidden or not')
   await shot(page, 'first-profile')
   seed = await seedOn(page)
   const wallet = await mainKey(seed, '')
@@ -655,17 +714,17 @@ test("the first profile, in two steps: back to Profiles and in again; a search, 
   const asked = counts.asserted
   const started = Date.now()
   await pickFirst(page, 'Tutoring tutor')
-  assert.equal(counts.asserted - asked, 0, 'nothing asked: the seed held since the unlock that kept the stamp')
+  assert.equal(counts.asserted - asked, 0, 'nothing asked: the seed held since the unlock at Start')
   say(`a profile made in ${((Date.now() - started) / 1000).toFixed(1)} s, its proof in the worker`)
-  // Add a backup passkey, once: one line, Add a backup and Not now. Add a backup opens Add a backup, whose back comes back here.
-  assert.deepEqual(await page.getByRole('button').allTextContents(), ['Add a backup', 'Not now'])
-  assert.deepEqual(await page.locator('main p').allTextContents(), ['If you lose your only passkey, your profiles are gone.'])
-  await shot(page, 'backup-offer')
-  await button(page, 'Add a backup').click()
-  await page.getByRole('heading', { name: 'Add a backup', exact: true }).waitFor()
+  // Add a second passkey, once: its line, Add and Not now. Add opens Add a passkey, whose back comes back here.
+  assert.deepEqual(await page.getByRole('button').allTextContents(), ['Add', 'Not now'])
+  assert.deepEqual(await page.locator('main p').allTextContents(), ["Add a second, so losing one doesn't lose your profiles."])
+  await shot(page, 'second-passkey')
+  await button(page, 'Add').click()
+  await page.getByRole('heading', { name: 'Add a passkey', exact: true }).waitFor()
   assert.deepEqual(await page.locator('main p').allTextContents(), ['Save it in another password manager, on a second phone, or on a security key.'])
   assert.ok(await asks(button(page, 'Create a passkey')), 'Create a passkey shows the unlock icon, even with the seed held: it makes a passkey')
-  await shot(page, 'backup')
+  await shot(page, 'add-passkey')
   await button(page, 'Back').click()
   await button(page, 'Not now').click()
   // Use Forest from your AI, once: Connect opens Connect an AI, three steps and no links.
@@ -680,15 +739,16 @@ test("the first profile, in two steps: back to Profiles and in again; a search, 
   await button(page, 'Copied').waitFor()
   assert.equal(await page.evaluate(() => navigator.clipboard.readText()), mcp.origin, 'the address shown, in full')
   await shot(page, 'connect-ai')
-  // Back: Profiles, and Add a backup passkey and Use Forest from your AI never again.
+  // Back: Profiles, and Add a second passkey and Use Forest from your AI never again.
   await button(page, 'Back').click()
   await page.locator('button.card', { hasText: 'Tutoring tutor' }).locator('.named').click()
   await shield(page.getByRole('heading', { name: 'Tutoring tutor' })).waitFor()
   await named(page.getByRole('heading', { name: 'Tutoring tutor' }), 'Tutoring tutor')
   await page.getByRole('button', { name: /No reviews yet/ }).waitFor()
-  // Under the name, two lines, its reviews and its messages, nothing new on either; at the top right, Share alone.
-  assert.deepEqual(await page.locator('.lines button.link').allTextContents(), ['No reviews yet ›', 'Messages ›'])
-  assert.deepEqual(await page.locator('.top-right button').evaluateAll((b) => b.map((x) => x.textContent || x.getAttribute('aria-label'))), ['Share'])
+  // Under the name, one line, its reviews, nothing new; at the top right, Share, then the inbox, always there, with no number while nothing is new.
+  assert.deepEqual(await page.locator('.lines button.link').allTextContents(), ['No reviews yet ›'])
+  assert.deepEqual(await page.locator('.top-right button').evaluateAll((b) => b.map((x) => x.textContent || x.getAttribute('aria-label'))), ['Share', 'Messages'])
+  assert.deepEqual([await inbox(page).locator('.icon').count(), await inbox(page).locator('.count').count(), await inbox(page).locator('.unlock').count()], [1, 0, 0], 'its own icon, no number, no padlock')
   assert.equal(await filled(shield(page.getByRole('heading', { name: 'Tutoring tutor' }))), false, "the face check's shield, an outline")
   await shot(page, 'profile')
   const main = await mainKey(seed, 'tutoring/tutor')
@@ -715,6 +775,9 @@ test("the first profile, in two steps: back to Profiles and in again; a search, 
   await named(card, 'Tutoring tutor')
   assert.equal(await card.locator('.dot').count(), 0, 'nothing new')
   assert.deepEqual(JSON.parse((await kept(page))['forest.profiles']!), [{ label: 'tutoring/tutor', address: tutor }])
+  // At the top right of Profiles, the inbox too: every profile's messages, here none new.
+  await inbox(page).waitFor()
+  assert.equal(await inbox(page).locator('.count').count(), 0)
   await shot(page, 'profiles')
   // The shield, tapped on its card: its words, for a moment; the card stays shut.
   await shield(card).click()
@@ -770,7 +833,7 @@ const OFFER = 'Maths for secondary school, one hour online.'
 /** The live entries of a folder under `kind/`, as the host serves it now. */
 const entriesOf = async (address: string, kind: string) => [...liveContent(await readFolder([services.host], address, Date.now()))].filter(([path]) => path.startsWith(`${kind}/`))
 
-test('two people: one posts an offer, its price per hour, the place only for sessions in person, a contact, asking nothing while the seed is held; the other opens its link, messages it, gets the reply, and reviews it from the thread', async () => {
+test('two people: one posts an offer, its price per hour, the place only for sessions in person, a contact, asking nothing while the seed is held; the other opens its link, messages it, gets the reply, and reviews it from the thread; the inbox counts it, the bell does not', async () => {
   const { page, counts } = first
   // The offer, from the tutor's profile, in the market's own fields; a price per one of its field's values.
   await page.locator('button.card', { hasText: 'Tutoring tutor' }).locator('.named').click()
@@ -833,6 +896,7 @@ test('two people: one posts an offer, its price per hour, the place only for ses
   const second = await phone()
   await second.page.goto(`${APP}message?to=${tutor}`)
   await button(second.page, 'Create a passkey').click()
+  await imNew(second)
   await faceCheck(second)
   // The compose screen, all of it there: To filled with the link's address and who it is under it; From, the profile to make.
   await second.page.getByRole('heading', { name: 'New message' }).waitFor({ timeout: 60_000 })
@@ -858,36 +922,40 @@ test('two people: one posts an offer, its price per hour, the place only for ses
   assert.equal(second.counts.asserted - secondAsked, 0, 'the profile made and the message sent, nothing asked: the seed held since Start')
   const student = JSON.parse((await kept(second.page))['forest.profiles']!)[0].address as string
 
-  // The first: counted with nothing unlocked, on the card, the tab and Notifications, whose row
-  // opens the profile's own messages, as its Messages line does; after the page was hidden, one
+  // The first: counted with nothing unlocked, on the card, on the inbox at the top of Profiles, of
+  // the profile and of Notifications, never on the bell, which counts reviews; Notifications holds
+  // no message. After the page was closed, its inbox opens every profile's conversations, and one
   // unlock opens every inbox; who it is from; the reply.
   await button(page, 'Back').click()
   await page.locator('button.card', { hasText: 'Tutoring tutor' }).locator('.dot').waitFor({ timeout: 45_000 })
-  await page.locator('.places .count', { hasText: '1' }).waitFor({ timeout: 45_000 })
+  await inbox(page).locator('.count', { hasText: '1' }).waitFor({ timeout: 45_000 })
+  assert.equal(await inbox(page).getAttribute('aria-label'), 'Messages, 1 new')
+  assert.equal(await page.locator('.places .count').count(), 0, 'the bell counts reviews, vouches and reports alone')
+  await shot(page, 'profiles-message')
   await page.locator('button.card', { hasText: 'Tutoring tutor' }).locator('.named').click()
-  await page.getByRole('button', { name: 'Messages · 1 new ›' }).waitFor()
+  await inbox(page).locator('.count', { hasText: '1' }).waitFor()
+  assert.deepEqual(await page.locator('.lines button.link').allTextContents(), ['No reviews yet ›'], 'no Messages line')
   await shot(page, 'profile-message')
   await button(page, 'Back').click()
   await button(page, /Notifications$/).click()
   await page.getByRole('heading', { name: 'Notifications' }).waitFor()
-  const notice = page.locator('main .rows button.row').first()
-  await notice.waitFor()
-  assert.equal(await notice.locator('.notice').textContent(), 'New message · Tutoring tutor')
-  await named(notice, 'Tutoring tutor')
-  assert.equal(await notice.locator('.count').textContent(), '1', 'with how many')
+  await page.getByText('Nothing yet.').waitFor()
+  assert.equal(await page.locator('main .rows button.row').count(), 0, 'no message row')
+  await inbox(page).locator('.count', { hasText: '1' }).waitFor()
   await shot(page, 'notifications-message')
-  await notice.click()
-  await named(page.getByRole('heading', { name: 'Tutoring tutor' }), 'Tutoring tutor')
+  // The page closed and opened again (the seed dropped), then its inbox: every profile's conversations.
+  await closed(page)
+  await inbox(page).click()
+  await page.getByRole('heading', { name: 'Messages' }).waitFor()
   await page.locator('.messages-row', { hasText: '1 new message' }).getByRole('button', { name: 'Open' }).waitFor()
   assert.equal(await page.getByRole('tab').count(), 0, 'messages only: no filters')
   assert.deepEqual(await page.locator('.top button').evaluateAll((b) => b.map((x) => x.getAttribute('aria-label'))), ['Back'], 'nothing at the top but back: no pencil')
   const compose = button(page, 'New message')
   assert.match((await compose.getAttribute('class')) ?? '', /primary/, 'New message, a labeled button')
   assert.ok((await compose.boundingBox())!.y > (await page.locator('.messages-row').boundingBox())!.y, 'at the bottom')
-  // The page hidden a moment (another app, the phone locked): the seed dropped, so Open asks, and says so.
-  await away(page)
-  assert.equal(await iconsInTheirButtonsColor(page), 1, "Open's unlock icon, back, in its text color, on its row")
-  await shot(page, 'messages-profile')
+  // No seed held: Open asks, and says so.
+  assert.equal(await iconsInTheirButtonsColor(page), 1, "Open's unlock icon, in its text color, on its row")
+  await shot(page, 'messages-asking')
   asked = counts.asserted
   await button(page, 'Open').click()
   const row = page.locator('button.row', { hasText: 'Tutoring student' })
@@ -895,7 +963,8 @@ test('two people: one posts an offer, its price per hour, the place only for ses
   assert.equal(counts.asserted - asked, 1, 'one unlock opens every inbox')
   await named(row, 'Tutoring student')
   await row.locator('.dot').waitFor()
-  await shot(page, 'inbox')
+  assert.equal(await page.locator('.messages-row').count(), 0, 'opened: the row gone')
+  await shot(page, 'messages')
   await row.click()
   await page.getByText(ASK).waitFor()
   await page.getByText('Your Tutoring tutor').waitFor()
@@ -923,14 +992,16 @@ test('two people: one posts an offer, its price per hour, the place only for ses
   await button(page, 'Back').click()
   assert.equal(await row.locator('.dot').count(), 0, 'looked at: new no more')
   await button(page, 'Back').click()
-  await page.locator('.places .count').waitFor({ state: 'detached' })
-  assert.equal(await page.locator('main .rows button.row').count(), 0, 'nothing new, and nothing yet about the tutor')
+  await inbox(page).locator('.count').waitFor({ state: 'detached' })
+  assert.equal(await page.locator('main .rows button.row').count(), 0, 'nothing yet about the tutor')
   await page.getByText('Nothing yet.').waitFor()
   await shot(page, 'notifications-none')
 
-  // The second reads the reply beside what they sent, and reviews the tutor from the thread.
+  // The second reads the reply beside what they sent, and reviews the tutor from the thread; their
+  // page closed and opened again first, so Open asks.
   await button(second.page, 'Back').click()
-  await second.page.locator('.places .count', { hasText: '1' }).waitFor({ timeout: 45_000 })
+  await closed(second.page)
+  await inbox(second.page).locator('.count', { hasText: '1' }).waitFor({ timeout: 45_000 })
   await messagesOf(second.page, 'Tutoring student')
   await button(second.page, 'Open').click()
   await second.page.locator('button.row', { hasText: 'Tutoring tutor' }).click()
@@ -962,7 +1033,7 @@ test('two people: one posts an offer, its price per hour, the place only for ses
   say('two people: an offer per hour, found by its link, messaged, replied to, reviewed in tenths; nothing asked while the seed was held')
 })
 
-test("a second browser, the same passkey answering from the first, as a phone answers through the sheet's QR code: I already have one finds the profile and the stamp; a profile it makes, the first shows as New profiles from another device, read in one unlock", async () => {
+test("a second browser, the same passkey answering from the first, as a phone answers through the sheet's QR code: I already have one finds the profile and the stamp, after Save a passkey on this device?, Not now; a profile it makes, the first shows as New profiles from another device, read in one unlock", async () => {
   const second = await phone()
   // The second browser's own authenticator holds no Forest passkey. Asked with the sheet, the first
   // browser's answers, as a phone does through the QR code: its PRF secret for the same salt.
@@ -970,6 +1041,12 @@ test("a second browser, the same passkey answering from the first, as a phone an
   const asked = first.counts.asserted
   await second.page.goto(APP)
   await button(second.page, 'I already have one').click()
+  // From another device: once, Save a passkey on this device?, Save and Not now.
+  await second.page.getByRole('heading', { name: 'Save a passkey on this device?' }).waitFor({ timeout: 60_000 })
+  assert.deepEqual((await second.page.locator('main button').allTextContents()).map((t) => t.trim()), ['Save', 'Not now'])
+  assert.ok(await asks(button(second.page, 'Save')), 'Save shows the unlock icon: it makes a passkey')
+  await shot(second.page, 'save-passkey')
+  await button(second.page, 'Not now').click()
   await shield(second.page.locator('button.card', { hasText: 'Tutoring tutor' })).waitFor({ timeout: 60_000 })
   assert.equal(first.counts.asserted - asked, 1, "answered once, by the first browser's passkey")
   assert.equal(second.counts.created, 0, 'and no second passkey')
@@ -991,7 +1068,8 @@ test("a second browser, the same passkey answering from the first, as a phone an
   assert.equal(first.counts.asserted - asked, 1, 'told with nothing unlocked')
   await noLockOnRows(page)
   await shot(page, 'profiles-elsewhere')
-  await away(page)
+  await closed(page)
+  await row.waitFor({ timeout: 30_000 })
   const before = counts.asserted
   await row.click()
   await page.locator('button.card', { hasText: 'Tutoring student' }).waitFor({ timeout: 60_000 })
@@ -1006,9 +1084,14 @@ test("a second browser, the same passkey answering from the first, as a phone an
 
 const NOTE = 'Note to self: Tuesday at six.'
 
-test("a message to one of the person's own profiles: To their tutor, From their student; it arrives, and with the seed held since the last unlock, nothing more is asked to send it or open it", async () => {
+test("a message to one of the person's own profiles: To their tutor, From their student; with the seed held since the last unlock, the messages open by themselves, and it is sent and opens with nothing asked", async () => {
   const { page, counts } = first
+  const asked = counts.asserted
   await messagesOf(page, 'Tutoring tutor')
+  // The seed held: no Open, the conversations opened by themselves.
+  await page.locator('button.row', { hasText: 'Tutoring student' }).waitFor({ timeout: 60_000 })
+  assert.equal(await page.locator('.messages-row').count(), 0, 'no Open')
+  await shot(page, 'messages-held')
   await button(page, 'New message').click()
   await page.getByLabel('To').fill(tutor)
   await shield(page.locator('.who', { hasText: 'Tutoring tutor' })).waitFor()
@@ -1016,18 +1099,15 @@ test("a message to one of the person's own profiles: To their tutor, From their 
   assert.equal(await page.locator('main .line').count(), 0, 'not refused')
   assert.equal(await page.locator('.from button').count(), 0, 'from the student they have')
   await page.getByLabel('Message').fill(NOTE)
-  const asked = counts.asserted
   await button(page, 'Send').click()
   await page.locator('.said.mine', { hasText: NOTE }).waitFor({ timeout: 60_000 })
   await page.getByText('Your Tutoring student').waitFor()
   await button(page, 'Back').click()
-  // The tutor's messages: counted with nothing unlocked, opened with nothing asked, from the student.
-  await page.getByText('1 new message').waitFor({ timeout: 45_000 })
-  assert.equal(await asks(button(page, 'Open')), false, 'Open will ask nothing: no unlock icon')
-  await button(page, 'Open').click()
+  // The tutor's messages: it arrives, and with the seed held it opens by itself, from the student, new.
   const row = page.locator('button.row', { hasText: NOTE }).filter({ hasText: 'Tutoring student' })
-  await shield(row).waitFor({ timeout: 60_000 })
-  assert.equal(counts.asserted - asked, 0, 'sent and opened, nothing asked')
+  await shield(row).waitFor({ timeout: 90_000 })
+  assert.equal(await page.locator('.messages-row').count(), 0, 'never an Open row')
+  assert.equal(counts.asserted - asked, 0, 'opened, sent and opened again, nothing asked')
   await row.locator('.dot').waitFor()
   await row.click()
   await page.locator('.said:not(.mine)', { hasText: NOTE }).waitFor()
@@ -1073,31 +1153,38 @@ const backupsOn = async (wallet: string) => (await entriesOf(wallet, 'backup')).
 /** A passkey's id as the app keeps it, from the id the virtual authenticator gives. */
 const idOf = (credentialId: string) => Buffer.from(credentialId, 'base64').toString('base64url')
 
-test('backup passkeys: "1 passkey" and Add a backup, flagged; the same manager refused; a security key made the backup, two passkeys and no flag; a browser holding only the backup opens the same profiles; removed, it opens them no more; after Forget, Get verified offers Link, which refuses the same passkey and links this one to the Forest passkey', async () => {
+/** The rows of Settings' Passkeys, by their words. */
+const passkeyRows = (page: Page) => page.locator('section', { has: page.getByRole('heading', { name: 'Passkeys' }) }).locator('div.row > span')
+
+test("passkeys, every one alike: Your first passkey and the quiet line, no dots; the same manager refused; a security key made one, shown by the day it was added; a browser holding only that one opens the same profiles; removed, it opens them no more; after Forget, New to Forest?, whose I already use Forest refuses the same passkey and adds this one to the first", async () => {
   const { page, cdp, counts } = first
   const mainId = JSON.parse((await kept(page))['forest.passkey']!) as string
   const wallet = (await mainKey(seed, '')).address
   const passkeys = page.locator('section', { has: page.getByRole('heading', { name: 'Passkeys' }) })
-  const add = button(page, '+ Add a backup')
-  const tabDot = page.locator('nav.places button', { hasText: 'Settings' }).locator('.dot')
+  const add = button(page, '+ Add a passkey')
+  const why = passkeys.getByText("Add a second, so losing one doesn't lose your profiles.", { exact: true })
   await button(page, 'Settings').click()
-  await passkeys.getByText('1 passkey', { exact: true }).waitFor()
-  assert.equal(await add.locator('.dot').count(), 1, 'Add a backup flagged')
-  assert.equal(await tabDot.count(), 1, 'and the Settings tab')
+  await passkeys.getByText('Your first passkey', { exact: true }).waitFor()
+  assert.deepEqual(await passkeyRows(page).allTextContents(), ['Your first passkey'])
+  await why.waitFor()
+  assert.equal(await why.getAttribute('class'), 'line', 'a quiet line')
+  assert.equal(await add.locator('.dot').count(), 0, 'no dot on + Add a passkey')
+  assert.equal(await page.locator('nav.places .dot').count(), 0, 'nor on the Settings tab')
+  assert.equal(await page.getByText(/backup/i).count(), 0, 'no backup on the screen')
   await shot(page, 'settings-passkeys-one')
 
   // The phone's own manager keeps the Forest passkey, which the new one excludes: it refuses.
   const made = counts.created
   await add.click()
-  await page.getByRole('heading', { name: 'Add a backup', exact: true }).waitFor()
+  await page.getByRole('heading', { name: 'Add a passkey', exact: true }).waitFor()
   await button(page, 'Create a passkey').click()
-  const same = page.getByText('This password manager already has your Forest passkey. Save the backup in another.')
+  const same = page.getByText('This password manager already has your Forest passkey. Save the new one in another.')
   await same.waitFor()
   assert.equal(await same.getAttribute('class'), 'line red')
   assert.equal(counts.created, made, 'nothing made')
-  await shot(page, 'backup-same-manager')
+  await shot(page, 'add-passkey-same-manager')
 
-  // A security key, a second virtual authenticator: it makes the backup.
+  // A security key, a second virtual authenticator: it makes the new passkey.
   const { authenticatorId: key } = await cdp.send('WebAuthn.addVirtualAuthenticator', {
     options: { protocol: 'ctap2', ctap2Version: 'ctap2_1', transport: 'usb', hasResidentKey: true, hasUserVerification: true, isUserVerified: true, hasPrf: true, automaticPresenceSimulation: true },
   })
@@ -1106,40 +1193,41 @@ test('backup passkeys: "1 passkey" and Add a backup, flagged; the same manager r
   const onKey = (await cdp.send('WebAuthn.getCredentials', { authenticatorId: key })).credentials
   assert.deepEqual(onKey.map((c) => [c.rpId, c.isResidentCredential]), [['app.forest.foundation', true]], 'made on the security key')
   assert.equal((await cdp.send('WebAuthn.getCredentials', { authenticatorId: first.authenticator })).credentials.length, 1, "none more in the phone's own manager")
-  const backupId = idOf(onKey[0]!.credentialId)
-  await passkeys.getByText('2 passkeys', { exact: true }).waitFor()
-  const row = passkeys.locator('div.row', { hasText: 'Backup' })
+  const addedId = idOf(onKey[0]!.credentialId)
   const today = new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'short' })
-  assert.deepEqual(await row.locator('.two > *').allTextContents(), ['Backup', today], "the day it was added; no manager's name, since this one sends none")
-  assert.equal(await add.locator('.dot').count(), 0, 'no flag with two')
-  assert.equal(await tabDot.count(), 0, 'nor on the tab')
+  await passkeys.locator('div.row', { hasText: today }).waitFor()
+  assert.deepEqual(await passkeyRows(page).allTextContents(), ['Your first passkey', today], "the day it was added: no manager's name, since this one sends none")
+  const row = passkeys.locator('div.row', { hasText: today })
+  assert.equal(await why.count(), 0, 'two: no line')
   assert.equal(await row.locator('.unlock').count(), 0, 'no unlock icon on a row')
+  assert.equal(await page.getByText(/backup/i).count(), 0, 'no backup on the screen')
   await shot(page, 'settings-passkeys-two')
-  assert.equal((await backupsOn(wallet)).length, 1, 'its backup/<id> entry in the Profiles folder')
-  assert.ok((JSON.parse((await kept(page))['forest.passkeys']!) as string[]).includes(backupId), 'the device knows it')
+  assert.equal((await backupsOn(wallet)).length, 1, 'underneath, the standard\'s backup/<id> entry in the Profiles folder')
+  assert.ok((JSON.parse((await kept(page))['forest.passkeys']!) as string[]).includes(addedId), 'the device knows it')
 
-  // A browser holding only the backup, answered through the sheet's QR code: the same profiles.
+  // A browser holding only that passkey, answered through the sheet's QR code: Save a passkey on this device?, Not now, and the same profiles.
   const other = await phone()
-  let answering = backupId
+  let answering = addedId
   await answerFrom(other, first, () => answering)
   await other.page.goto(APP)
   await button(other.page, 'I already have one').click()
+  await button(other.page, 'Not now').click({ timeout: 60_000 })
   await shield(other.page.locator('button.card', { hasText: 'Tutoring tutor' })).waitFor({ timeout: 60_000 })
   const there = await kept(other.page)
-  assert.equal(JSON.parse(there['forest.passkey']!), backupId, 'the backup, the passkey in use there')
+  assert.equal(JSON.parse(there['forest.passkey']!), addedId, 'that passkey, the one in use there')
   assert.deepEqual((JSON.parse(there['forest.profiles']!) as Array<{ label: string }>).map((x) => x.label), ['tutoring/student', 'tutoring/tutor'])
-  assert.equal(JSON.parse(there['forest.folder']!).address, wallet, "the Forest passkey's Profiles folder")
+  assert.equal(JSON.parse(there['forest.folder']!).address, wallet, "the first passkey's Profiles folder")
 
-  // Removed, tapped twice: one passkey again, the flag back, and the backup opens the profiles no more.
+  // Removed, tapped twice: one passkey again, the line back, and that passkey opens the profiles no more.
   const remove = row.getByRole('button', { name: 'Remove' })
   await remove.click()
   assert.match((await remove.getAttribute('class')) ?? '', /solid/, 'tapped once, it fills red')
   await shot(page, 'settings-passkeys-remove')
   await remove.click()
-  await passkeys.getByText('1 passkey', { exact: true }).waitFor({ timeout: 30_000 })
-  assert.equal(await add.locator('.dot').count(), 1, 'flagged again')
+  await row.waitFor({ state: 'detached', timeout: 30_000 })
+  await why.waitFor()
   assert.equal((await backupsOn(wallet)).length, 0)
-  await away(other.page)
+  await closed(other.page)
   await messagesOf(other.page, 'Tutoring tutor')
   await button(other.page, 'Open').click()
   const gone = other.page.getByText('This passkey no longer opens your profiles.')
@@ -1147,50 +1235,93 @@ test('backup passkeys: "1 passkey" and Add a backup, flagged; the same manager r
   assert.equal(await gone.getAttribute('class'), 'line red')
   await shot(other.page, 'not-yours')
 
-  // After Forget, Start with it: its own seed, no stamp, so Get verified, and Link.
+  // After Forget, Start with it: its own seed, no stamp, nothing under way, so New to Forest?.
   await button(other.page, 'Back').click()
   await button(other.page, 'Back').click()
   await button(other.page, 'Settings').click()
   await button(other.page, 'Forget this device').click()
   await button(other.page, 'Forget').click()
   await button(other.page, 'Start').click()
-  await other.page.getByRole('heading', { name: 'Get verified' }).waitFor({ timeout: 60_000 })
-  const link = button(other.page, 'Link to my Forest passkey')
-  await shot(other.page, 'verify-link')
+  await other.page.getByRole('heading', { name: 'New to Forest?' }).waitFor({ timeout: 60_000 })
+  const using = button(other.page, 'I already use Forest')
   // The same passkey picked on the sheet: refused.
-  await link.click()
+  await using.click()
   const self = other.page.getByText("That's this passkey.")
   await self.waitFor({ timeout: 30_000 })
   assert.equal(await self.getAttribute('class'), 'line red')
-  await shot(other.page, 'link-same')
-  // The Forest passkey picked: linked, and in. The security key unplugged from the first phone first,
-  // since a virtual one asked for a passkey it doesn't hold answers at once that it has none, where a
-  // real sheet waits for the person's pick.
+  await shot(other.page, 'new-here-same')
+  // The first passkey picked: this one added to it, and straight in. The security key unplugged from
+  // the first phone first, since a virtual one asked for a passkey it doesn't hold answers at once
+  // that it has none, where a real sheet waits for the person's pick.
   await cdp.send('WebAuthn.removeVirtualAuthenticator', { authenticatorId: key })
   answering = mainId
-  await link.click()
+  await using.click()
   await shield(other.page.locator('button.card', { hasText: 'Tutoring tutor' })).waitFor({ timeout: 60_000 })
+  assert.equal(await other.page.getByRole('heading', { name: 'Get verified' }).count(), 0, 'straight to their profiles')
   const linked = await kept(other.page)
-  assert.equal(JSON.parse(linked['forest.passkey']!), backupId, 'this passkey stays the one in use here')
-  assert.ok((JSON.parse(linked['forest.passkeys']!) as string[]).includes(mainId), 'and the device knows the Forest passkey')
-  assert.equal((await backupsOn(wallet)).length, 1, 'a backup again')
+  assert.equal(JSON.parse(linked['forest.passkey']!), addedId, 'this passkey stays the one in use here')
+  assert.ok((JSON.parse(linked['forest.passkeys']!) as string[]).includes(mainId), 'and the device knows the first')
+  assert.equal((await backupsOn(wallet)).length, 1, 'added again')
   await other.context.close()
 
   await button(page, 'Profiles').click()
   await button(page, 'Settings').click()
-  await passkeys.getByText('2 passkeys', { exact: true }).waitFor({ timeout: 30_000 })
+  await passkeys.locator('div.row', { hasText: today }).waitFor({ timeout: 30_000 })
+  assert.equal(await passkeyRows(page).count(), 2)
   await button(page, 'Profiles').click()
-  say('backups: made on a security key, opened elsewhere, removed, then a passkey linked')
+  say('passkeys: one made on a security key, opened elsewhere, removed, then one added from New to Forest?')
+})
+
+test('signed in through the QR code: Save a passkey on this device? once; Save makes one here, added to the first, and the one in use here from then, so the next unlock asks this device, not the phone', async () => {
+  const third = await phone()
+  await answerFrom(third, first)
+  const asked = first.counts.asserted
+  await third.page.goto(APP)
+  await button(third.page, 'I already have one').click()
+  await third.page.getByRole('heading', { name: 'Save a passkey on this device?' }).waitFor({ timeout: 60_000 })
+  await button(third.page, 'Save').click()
+  await shield(third.page.locator('button.card', { hasText: 'Tutoring tutor' })).waitFor({ timeout: 60_000 })
+  assert.equal(first.counts.asserted - asked, 1, 'the phone asked once, to sign in')
+  assert.equal(third.counts.created, 1, 'one made here')
+  const { credentials } = await third.cdp.send('WebAuthn.getCredentials', { authenticatorId: third.authenticator })
+  assert.equal(credentials.length, 1)
+  const here = idOf(credentials[0]!.credentialId)
+  assert.equal(JSON.parse((await kept(third.page))['forest.passkey']!), here, 'the one in use here')
+  const wallet = (await mainKey(seed, '')).address
+  assert.equal((await backupsOn(wallet)).length, 2, 'added to the first')
+
+  // The page closed: the next unlock is this device's own, the phone left alone.
+  await closed(third.page)
+  const before = [first.counts.asserted, third.counts.asserted]
+  await messagesOf(third.page, 'Tutoring tutor')
+  await button(third.page, 'Open').click()
+  await third.page.locator('.messages-row').waitFor({ state: 'detached', timeout: 60_000 })
+  assert.deepEqual([first.counts.asserted - before[0]!, third.counts.asserted - before[1]!], [0, 1], 'this device asked, not the phone')
+  await third.context.close()
+
+  // On the first device, three passkeys alike; the one saved there removed again.
+  const { page } = first
+  await button(page, 'Settings').click()
+  await passkeyRows(page).nth(2).waitFor({ timeout: 30_000 })
+  assert.equal(await passkeyRows(page).count(), 3)
+  const last = page.locator('section', { has: page.getByRole('heading', { name: 'Passkeys' }) }).locator('div.row').nth(2)
+  await last.getByRole('button', { name: 'Remove' }).click()
+  await last.getByRole('button', { name: 'Remove' }).click()
+  await passkeyRows(page).nth(2).waitFor({ state: 'detached', timeout: 30_000 })
+  await button(page, 'Profiles').click()
+  say('signed in through the QR code: a passkey saved here, the next unlock asked here')
 })
 
 const COAT = 'A wool coat, worn twice.'
 
-test('clothing, with the index: a coat with two photos redrawn on the device, no per, for women, size XL, picked up or shipped, near Lavapiés, $40, listed; a buyer, with no location allowed, sees why a post needs it; the buyer messages, reviews, vouches and reports; the seller sees the rating, "3 new" on the profile, the tab counting all four, the three marked in Reviews and seen there; Notifications lists them with the message', async () => {
+test('clothing, with the index: a coat with two photos redrawn on the device, no per, for women, size XL, picked up or shipped, near Lavapiés, $40, listed; a buyer, with no location allowed, sees why a post needs it; the buyer messages, reviews, vouches and reports; the seller sees the rating, "3 new" on the profile, the bell counting the three and the inbox the message, the three marked in Reviews and seen there; Notifications lists them, and no message', async () => {
   const { page, counts } = first
   // The seller's profile, and the coat.
   await button(page, 'New profile').click()
   await pickProfile(page, 'Clothing seller')
   const seller = (await mainKey(seed, 'clothing/seller')).address
+  // The page closed and opened again on the profile: the seed dropped, so Post will ask, and show it.
+  await closed(page)
   await button(page, 'New offer').click()
   await page.getByLabel('Description').fill(COAT)
   await page.getByLabel('Price').fill('40')
@@ -1223,9 +1354,9 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   await location.getByLabel('Area').fill('Lavapiés, Madrid')
   await location.getByText('Lavapiés, Madrid, within 3 km of you', { exact: true }).waitFor()
   await page.getByLabel('Contact').fill('@coats')
-  // The page hidden a moment: the seed dropped, so Post asks again, and shows it.
+  // The page hidden a moment keeps the seed, which closing it dropped: Post asks, and shows it.
   await away(page)
-  assert.equal(await asks(button(page, 'Post')), true, 'the unlock icon back on Post')
+  assert.equal(await asks(button(page, 'Post')), true, 'the unlock icon on Post')
   assert.equal(await iconsInTheirButtonsColor(page), 1, "Post's unlock icon, in its text color")
   await shot(page, 'post-coat')
   const asked = counts.asserted
@@ -1300,8 +1431,9 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   await shot(buyer.page, 'post-request-no-location')
   await button(buyer.page, 'Back').click()
   await button(buyer.page, 'Back').click()
+  // The page closed and opened again, so no seed is held; before the unlock, how many are new, here none, with Open.
+  await closed(buyer.page)
   await messagesOf(buyer.page, 'Clothing buyer')
-  // Before the unlock, how many are new, here none, with Open.
   await buyer.page.locator('.messages-row', { hasText: 'No new messages' }).getByRole('button', { name: 'Open' }).waitFor()
   await shot(buyer.page, 'messages-none')
   await button(buyer.page, 'New message').click()
@@ -1385,13 +1517,14 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   const card = await untilCard(page, 'Clothing seller', '★ 10.0')
   await card.locator('.card-line', { hasText: '1 offer · ★ 10.0 · 1 review' }).waitFor()
   await card.locator('.dot').waitFor()
-  // The review, the vouch and the report: "3 new" on the profile's rating line, once the index counts all three; the message, "1 new" on its Messages line.
+  // The review, the vouch and the report: "3 new" on the profile's rating line, once the index counts all three; the message, 1 on its inbox.
   await untilLine(page, 'Clothing seller', '★ 10.0 · 1 review · 3 new ›')
-  await page.getByRole('button', { name: 'Messages · 1 new ›' }).waitFor({ timeout: 45_000 })
+  await inbox(page).locator('.count', { hasText: '1' }).waitFor({ timeout: 45_000 })
   await shot(page, 'profile-new')
-  // The tab counts all that is new: the message, the review, the vouch and the report.
+  // The bell counts the review, the vouch and the report; the inbox, the message.
   await button(page, 'Back').click()
-  await page.locator('.places .count', { hasText: '4' }).waitFor({ timeout: 45_000 })
+  await page.locator('.places .count', { hasText: '3' }).waitFor({ timeout: 45_000 })
+  await inbox(page).locator('.count', { hasText: '1' }).waitFor()
   await shot(page, 'profiles-rated')
   await page.locator('button.card', { hasText: 'Clothing seller' }).locator('.named').click()
   const line = page.locator('button.link').first()
@@ -1420,8 +1553,8 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   await button(page, 'Back').click()
   await button(page, '★ 10.0 · 1 review ›').waitFor()
   await button(page, 'Back').click()
-  await page.locator('.places .count', { hasText: '1' }).waitFor()
-  assert.equal(await page.locator('.places .count').textContent(), '1', 'the message alone now: the three seen in Reviews')
+  await page.locator('.places .count').waitFor({ state: 'detached' })
+  assert.equal(await inbox(page).locator('.count').textContent(), '1', 'the bell counting nothing now, the three seen in Reviews; the inbox, the message')
   await page.locator('button.card', { hasText: 'Clothing seller' }).locator('.named').click()
   await button(page, '★ 10.0 · 1 review ›').click()
   await received.waitFor()
@@ -1429,24 +1562,26 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   await button(page, 'Back').click()
   await button(page, 'Back').click()
 
-  // Notifications: the seller's new message first, then all that came to any profile, newest first,
-  // the three seen already, so with no dot; the message's row opens the seller's messages.
+  // Notifications: all that came to any profile, newest first, the three seen already, so with no
+  // dot, and no message; its inbox, counting the message, opens every profile's conversations.
   await button(page, /Notifications$/).click()
   const rows = page.locator('main .rows button.row')
-  await rows.nth(4).waitFor()
-  assert.equal(await rows.nth(0).locator('.notice').textContent(), 'New message · Clothing seller')
+  await rows.nth(3).waitFor()
+  assert.equal(await rows.count(), 4, 'no message row')
   assert.deepEqual(await rows.locator('.said-chip').allTextContents(), ['Report', 'Vouch', '10 ★', '9.4 ★'], "the coat's three, newest first, then the tutor's review")
   assert.equal(await rows.locator('.dot').count(), 0, 'seen in Reviews, or before this device forgot and started again')
-  assert.equal(await rows.nth(1).locator('.said-text').textContent(), 'Sold me the wrong size twice.', 'in full')
-  await named(rows.nth(1), 'Clothing seller')
+  assert.equal(await rows.nth(0).locator('.said-text').textContent(), 'Sold me the wrong size twice.', 'in full')
+  await named(rows.nth(0), 'Clothing seller')
+  await inbox(page).locator('.count', { hasText: '1' }).waitFor()
   await shot(page, 'notifications')
-  await rows.nth(0).click()
-  await named(page.getByRole('heading', { name: 'Clothing seller' }), 'Clothing seller')
+  await closed(page)
+  await inbox(page).click()
+  await page.getByRole('heading', { name: 'Messages' }).waitFor()
   await page.getByText('1 new message').waitFor()
   assert.equal(await page.locator('.said-chip').count(), 0, 'messages only: no review, vouch or report')
   await button(page, 'Back').click()
   await button(page, 'Profiles').click()
-  say('clothing: two photos redrawn and sent, a review, a vouch and a report; the rating, the dot, "3 new", the tab counting four, Reviews, and Notifications')
+  say('clothing: two photos redrawn and sent, a review, a vouch and a report; the rating, the dot, "3 new", the bell counting three and the inbox one, Reviews, and Notifications')
 })
 
 const TROUSERS = 'Linen trousers, worn once.'
@@ -1513,16 +1648,15 @@ test("for now, for testing, a review of one of the person's own profiles: from t
   await button(page, 'Review').waitFor({ timeout: 60_000 })
   await button(page, 'Back').click()
 
-  // Counted by the index, it is new: on the tab, and first of what came, with its dot, in full.
+  // Counted by the index, it is new: first of what came, with its dot, in full.
   const row = await untilNotice(page, OWN)
   await row.locator('.dot').waitFor()
   await named(row, 'Tutoring tutor')
   const rows = page.locator('main .rows button.row')
-  assert.equal(await rows.nth(0).locator('.notice').textContent(), 'New message · Clothing seller', 'the new message still first')
-  assert.equal(await rows.nth(1).textContent().then((t) => t?.includes(OWN)), true, 'then the newest')
+  assert.equal(await rows.nth(0).textContent().then((t) => t?.includes(OWN)), true, 'the newest first')
   await shot(page, 'notifications-new')
-  // Shown, it is seen: the tab counts the message alone again.
-  await page.locator('.places .count', { hasText: '1' }).waitFor()
+  // Shown, it is seen: the bell counts it no more.
+  await page.locator('.places .count').waitFor({ state: 'detached' })
   await row.click()
   await page.getByText(/^On your Tutoring tutor · /).waitFor()
   await shield(page.locator('.facts .who', { hasText: 'Tutoring student' })).waitFor()
@@ -1605,6 +1739,92 @@ test("an AI app's login: the connect page, its name and its redirect's host, the
   say('an AI app connected: one unlock, and its post on the profile')
 })
 
+const VISIT = 'Physics for the visit, one hour online.'
+const VISIT_NOTE = 'A note from the visit.'
+
+test('a whole visit asks exactly once: post, edit, message, open messages, review, tick an AI app, the page hidden between each, as a window another covers is', async () => {
+  const { page, counts } = first
+  await page.getByRole('heading', { name: 'Tutoring tutor' }).waitFor()
+  const asked = counts.asserted
+  // Post: the one unlock.
+  await button(page, 'New offer').click()
+  await page.getByLabel('Description').fill(VISIT)
+  await page.getByLabel('Price').fill('20')
+  await page.getByRole('group', { name: 'Per' }).getByRole('button', { name: 'per hour' }).click()
+  await page.getByRole('group', { name: 'Subjects' }).getByRole('button', { name: 'Physics' }).click()
+  await page.getByRole('group', { name: 'Mode' }).getByRole('button', { name: 'Online' }).click()
+  await page.getByLabel('Contact').fill('ada@example.com')
+  assert.equal(await asks(button(page, 'Post')), true, 'Post will ask: the one unlock of the visit')
+  await button(page, 'Post').click()
+  const posted = page.locator('.post-row', { hasText: '$20 per hour' })
+  await posted.waitFor({ timeout: 60_000 })
+  assert.equal(counts.asserted - asked, 1)
+  await away(page)
+  // Edit.
+  await posted.click()
+  await page.getByRole('heading', { name: 'Offer', exact: true }).waitFor()
+  await page.getByLabel('Price').fill('25')
+  assert.equal(await asks(button(page, 'Post')), false, 'hidden, and the seed still held')
+  await button(page, 'Post').click()
+  const edited = page.locator('.post-row', { hasText: '$25 per hour' })
+  await edited.waitFor({ timeout: 60_000 })
+  await away(page)
+  // Open messages: by themselves, the seed held.
+  await inbox(page).click()
+  await page.locator('button.row', { hasText: 'Tutoring student' }).first().waitFor({ timeout: 60_000 })
+  assert.equal(await page.locator('.messages-row').count(), 0, 'no Open')
+  await away(page)
+  // Message: from their student to their tutor.
+  await button(page, 'New message').click()
+  await page.getByLabel('To').fill(tutor)
+  await page.locator('.from', { hasText: 'Tutoring student' }).waitFor()
+  await page.getByLabel('Message').fill(VISIT_NOTE)
+  assert.equal(await asks(button(page, 'Send')), false)
+  await button(page, 'Send').click()
+  await page.locator('.said.mine', { hasText: VISIT_NOTE }).waitFor({ timeout: 60_000 })
+  await away(page)
+  // Review, from the thread.
+  await button(page, 'Review').click()
+  await shield(page.locator('.who', { hasText: 'Tutoring tutor' })).waitFor()
+  const score = page.getByLabel('Score')
+  await score.focus()
+  await score.press('End')
+  assert.equal(await asks(button(page, 'Post')), false)
+  await button(page, 'Post').click()
+  await page.getByLabel('Reply').waitFor({ timeout: 60_000 })
+  await away(page)
+  // The tutor's messages again: the note arrives and opens by itself.
+  await button(page, 'Back').click()
+  await page.locator('button.row', { hasText: VISIT_NOTE }).waitFor({ timeout: 90_000 })
+  await button(page, 'Back').click()
+  await button(page, 'Back').click()
+  // Tick an AI app: a profile given to it, and taken back.
+  await button(page, 'Settings').click()
+  await page.locator('button.row', { hasText: 'An AI app' }).click()
+  await page.getByRole('heading', { name: 'An AI app' }).waitFor()
+  for (const ticked of [true, false]) {
+    await page.getByRole('checkbox', { name: 'Clothing seller' }).click()
+    await page.getByRole('checkbox', { name: 'Clothing seller', checked: ticked }).waitFor({ timeout: 60_000 })
+    await button(page, 'Disconnect').and(page.locator(':enabled')).waitFor()
+    await away(page)
+  }
+  assert.equal(await page.locator('p.line').count(), 0, (await page.locator('p.line').allTextContents()).join(' '))
+  // The visit's post deleted, which asks nothing either.
+  await button(page, 'Back').click()
+  await button(page, 'Profiles').click()
+  await page.locator('button.card', { hasText: 'Tutoring tutor' }).locator('.named').click()
+  await edited.click()
+  await button(page, 'Delete').click()
+  await button(page, 'Delete').click()
+  await page.getByRole('heading', { name: 'Your offers' }).waitFor({ timeout: 60_000 })
+  await edited.waitFor({ state: 'detached' })
+  assert.equal(counts.asserted - asked, 1, 'the whole visit, one unlock')
+  // The page closed, as the next tests start: the seed dropped.
+  await page.goto(APP)
+  await page.locator('button.card', { hasText: 'Tutoring tutor' }).locator('.named').click()
+  say('a whole visit: post, edit, open messages, message, review, an AI app ticked and unticked, a post deleted, one unlock')
+})
+
 test('Settings, AI apps: the AI app, its day and its one profile, kept ticked while it is the last; another ticked, one unlock, then one unticked and ticked again, and Disconnect, nothing more asked, with no new login; its next call refused, its post kept', async () => {
   const { page, counts } = first
   await button(page, 'Back').click()
@@ -1662,6 +1882,7 @@ test('a new phone at a connect page, nothing set up: I already have one first; t
   assert.match((await button(p.page, 'I already have one').getAttribute('class')) ?? '', /primary/)
   await shot(p.page, 'start-connecting')
   await button(p.page, 'Create a passkey').click()
+  await imNew(p)
   await faceCheck(p)
   await p.page.getByRole('heading', { name: 'Your first profile' }).waitFor({ timeout: 60_000 })
   await p.page.getByLabel('Search').fill('tutoring')
@@ -1669,7 +1890,7 @@ test('a new phone at a connect page, nothing set up: I already have one first; t
   await button(p.page, 'Student').click()
   await p.page.getByRole('heading', { name: 'An AI app' }).waitFor({ timeout: 120_000 })
   assert.equal(await p.page.getByRole('heading', { name: 'Use Forest from your AI' }).count(), 0, 'no Use Forest from your AI')
-  assert.equal(await p.page.getByRole('heading', { name: 'Add a backup passkey' }).count(), 0, 'nor Add a backup passkey')
+  assert.equal(await p.page.getByRole('heading', { name: 'Add a second passkey' }).count(), 0, 'nor Add a second passkey')
   assert.deepEqual(await ticks(p.page), { 'Tutoring student': 'true' }, 'its one profile, ticked')
   const asked = p.counts.asserted
   const code = backToTheAiApp(p.page)
@@ -1701,7 +1922,7 @@ test("a connector that isn't ours: one line, nothing else; a request that ran ou
   await p.context.close()
 })
 
-test('held for review: Being reviewed, and the app keeps asking; approved, Continue, one unlock', async () => {
+test('held for review: Being reviewed, and the app keeps asking; the page hidden meanwhile keeps the seed; approved, Continue, nothing asked; after 5 minutes with nothing done, Continue asks once', async () => {
   const p = await phone()
   // Didit holds this person's check in review for the first two asks: the verifier answers 202.
   let held = 0
@@ -1714,14 +1935,38 @@ test('held for review: Being reviewed, and the app keeps asking; approved, Conti
   await newPerson(p)
   await p.page.getByText('Being reviewed').waitFor()
   await shot(p.page, 'review')
-  // Away from the app while a person reviews it: the seed dropped, so keeping the stamp asks once.
+  // Away from the app while a person reviews it: hidden is not closed, so the seed stays, and keeping the stamp asks nothing.
   await away(p.page)
   const asked = p.counts.asserted
-  await button(p.page, 'Continue').click({ timeout: 90_000 })
+  const keep = button(p.page, 'Continue')
+  await keep.waitFor({ timeout: 90_000 })
+  assert.equal(await asks(keep), false, 'Continue will ask nothing')
+  await keep.click()
   await p.page.getByRole('heading', { name: 'Your first profile' }).waitFor({ timeout: 60_000 })
-  assert.equal(p.counts.asserted - asked, 1, 'one unlock, to keep the stamp')
+  assert.equal(p.counts.asserted - asked, 0, 'nothing asked: the seed held')
   assert.ok(held >= 3, 'it kept asking')
   await p.context.close()
+
+  // The same, its clock run 5 minutes past the last action while the review waits: Continue asks once.
+  const q = await phone()
+  let waits = 0
+  await q.context.route(`${services.verifier}/face/stamp`, (route) => {
+    const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': 'content-type', 'access-control-allow-methods': 'POST' }
+    if (route.request().method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors })
+    if (waits++ < 1) return route.fulfill({ status: 202, headers: { ...cors, 'content-type': 'application/json' }, body: '{"waiting":"review"}' })
+    return route.continue()
+  })
+  await q.page.clock.install()
+  await newPerson(q)
+  await q.page.getByText('Being reviewed').waitFor()
+  await q.page.clock.fastForward('05:01')
+  const again = button(q.page, 'Continue')
+  await again.locator('.unlock').waitFor({ timeout: 90_000 })
+  const before = q.counts.asserted
+  await again.click()
+  await q.page.getByRole('heading', { name: 'Your first profile' }).waitFor({ timeout: 60_000 })
+  assert.equal(q.counts.asserted - before, 1, 'one unlock, to keep the stamp')
+  await q.context.close()
 })
 
 test('a manager that gives no PRF secret: its passkey dropped, and one red line names another; a browser that cannot ask for it: one quiet line', async () => {

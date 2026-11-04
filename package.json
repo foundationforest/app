@@ -2,7 +2,7 @@
   "name": "@forest/app",
   "version": "0.0.0",
   "private": true,
-  "description": "The Forest app: the person's control panel for Forest. It makes their profiles and gets them verified, storing nothing of theirs: the seed is their passkey's secret, held in the page for 5 minutes after an unlock and never stored on a device. A web app, from the standard, the markets and services' credits client at their pins.",
+  "description": "The Forest app: the person's control panel for Forest. It makes their profiles and gets them verified, storing nothing of theirs: the seed is their passkey's secret, held in the page 5 minutes since the last action, or until the page closes, and never stored on a device. A web app, from the standard, the markets and services' credits client at their pins.",
   "license": "Apache-2.0",
   "type": "module",
   "engines": {

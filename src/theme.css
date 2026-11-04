@@ -303,7 +303,7 @@ button.danger {
   display: inline-flex;
 }
 
-/* How many new messages there are. */
+/* How many are new: on the bell, reviews, vouches and reports; on the inbox, messages. */
 .count {
   position: absolute;
   top: -6px;
@@ -846,7 +846,7 @@ button.link {
   color: var(--ink-2);
 }
 
-/* A profile's two lines under its name: its rating, and its messages. */
+/* A profile's line under its name: its rating. */
 .lines {
   display: grid;
   justify-items: start;
@@ -1002,10 +1002,6 @@ button.solid .icon {
 }
 
 /* Notifications: a profile's new messages, in the ink, with how many; a review's text in full. */
-.two > .notice {
-  color: var(--ink);
-}
-
 .two > .said-text {
   white-space: pre-wrap;
   overflow: visible;

@@ -2,7 +2,8 @@
 // and AI apps as the device keeps them; how each is verified, as its profile entry at the host says; the new
 // entries in their inboxes; what the index says of each, read as a screen showing it opens and held
 // in the page meanwhile; what is new on each; whether a profile was made on another device; the
-// messages opened in this page; the backup passkeys the Profiles folder lists; whether a seed is held
+// messages opened in this page; the passkeys added to the Profiles folder (backups, as the standard
+// names them); whether a seed is held
 // in it; and whether a newer version of the app is live.
 
 import { useEffect, useState } from 'react'
@@ -116,22 +117,23 @@ export function useRated(list: Profile[]): Record<string, Held | undefined> {
 /** What is new on one profile: how many new messages, and the new reviews, vouches and reports. */
 export type News = { messages: number; received: Received[] }
 
-/** What is new on each profile in `list`, by address, and how many things are new in all, messages, reviews, vouches and reports: what Notifications counts. */
-export function useNews(list: Profile[]): { of: Record<string, News>; all: number } {
+/** What is new on each profile in `list`, by address; and in all, how many messages (what the inbox counts) and how many reviews, vouches and reports (what Notifications counts). */
+export function useNews(list: Profile[]): { of: Record<string, News>; messages: number; received: number } {
   useDevice()
   const messages = useNewMessages()
   const rated = useHeldRated(list)
   const marks = seen()
   const of: Record<string, News> = {}
-  let total = 0
+  let [allMessages, allReceived] = [0, 0]
   for (const p of list) {
     const held = rated[p.address]
     const received = held && 'rated' in held && p.address in marks ? newOf(held.rated, marks[p.address]!) : []
     const n = messages[p.address]?.length ?? 0
     of[p.address] = { messages: n, received }
-    total += n + received.length
+    allMessages += n
+    allReceived += received.length
   }
-  return { of, all: total }
+  return { of, messages: allMessages, received: allReceived }
 }
 
 /** Whether the Profiles folder holds a profile made on another device: its list read with nothing unlocked as the screen opens, and again whenever the page comes back into view. */
@@ -169,7 +171,7 @@ export const backupsChanged = () => dispatchEvent(new Event(BACKUPS))
 /** The last read of the backups, so a screen opening shows it at once. */
 let lastBackups: { address: string; list: Backup[] } | null = null
 
-/** The backup passkeys the Profiles folder lists, read with nothing unlocked as a screen opens, again when the page comes back into view, and after one is added or removed; null until read. */
+/** The passkeys added after the first, as the Profiles folder lists them, read with nothing unlocked as a screen opens, again when the page comes back into view, and after one is added or removed; null until read. */
 export function useBackups(): Backup[] | null {
   useDevice()
   const address = folder()?.address

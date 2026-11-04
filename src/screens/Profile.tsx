@@ -1,9 +1,9 @@
 // A profile, opened from its card: its market and role with the shield of its strongest check; at
-// the top, Share alone. Share hands out the profile's page on the index: the phone's share sheet
-// where there is one, else the page's link copied. A link, not a fetch: nothing here reaches the
-// index for it. Under the name, two lines: the index's rating, how many reviews it counted, and how
-// many reviews, vouches and reports are new, which opens Reviews; and Messages, with how many are
-// new, which opens the profile's messages. Then its posts,
+// the top right, Share, then the inbox, with how many of its messages are new, which opens its
+// conversations. Share hands out the profile's page on the index: the phone's share sheet where
+// there is one, else the page's link copied. A link, not a fetch: nothing here reaches the index for
+// it. Under the name, one line: the index's rating, how many reviews it counted, and how many
+// reviews, vouches and reports are new, which opens Reviews. Then its posts,
 // each a row with its first photo and its preview (PostRow.tsx), tapped to edit, one that no longer
 // fits its market saying Update this post; and at the bottom,
 // side by side, Review, which opens Review someone, and a new post in its role's word. Nothing here
@@ -18,7 +18,7 @@ import { fits } from '../form.ts'
 import { useCards, useNews, useProfiles, useRated } from '../hooks.ts'
 import { kindWords, markets, pairOf, yourPosts } from '../markets.ts'
 import { ratingText, reviewCount } from '../show.ts'
-import { Line, Named, type Note, Spinner, Top, Verified, noteOf } from '../ui.tsx'
+import { Inbox, Line, Named, type Note, Spinner, Top, Verified, noteOf } from '../ui.tsx'
 import { PostRow } from './PostRow.tsx'
 
 type Props = { address: string; onBack: () => void; onPost: (edit?: Posted) => void; onReviews: () => void; onReview: () => void; onMessages: () => void }
@@ -62,9 +62,12 @@ export function Profile({ address, onBack, onPost, onReviews, onReview, onMessag
       <Top
         onBack={onBack}
         right={
-          <button className="small" onClick={() => void share()}>
-            {copied ? 'Copied' : 'Share'}
-          </button>
+          <>
+            <button className="small" onClick={() => void share()}>
+              {copied ? 'Copied' : 'Share'}
+            </button>
+            <Inbox count={news?.messages ?? 0} onOpen={onMessages} />
+          </>
         }
       />
       <div className="stack">
@@ -76,10 +79,6 @@ export function Profile({ address, onBack, onPost, onReviews, onReview, onMessag
           <button className="link" onClick={onReviews}>
             {held && 'failed' in held ? 'Reviews' : rated?.rating != null ? `★ ${ratingText(rated.rating)} · ${reviewCount(rated.reviews)}` : 'No reviews yet'}
             <New n={news?.received.length ?? 0} /> ›
-          </button>
-          <button className="link" onClick={onMessages}>
-            Messages
-            <New n={news?.messages ?? 0} /> ›
           </button>
         </div>
         {held && 'failed' in held && <p className="line">Can't reach the index.</p>}

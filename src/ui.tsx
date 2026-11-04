@@ -3,13 +3,14 @@
 // the icons (the shield, drawn once here, is how a profile shows it is verified, by its strongest
 // check: an outline for a face check, filled for an ID check, an icon whose words show only when it
 // is tapped; the unlock icon goes beside the word on a labeled button that asks the passkey, only
-// while a tap will ask, never on a list row), a checkbox's box, the dot that marks what is new (and Add a backup, while there is one passkey), the chips of a review, vouch or
-// report, a profile's name (its market in bold, then its role, muted: Clothing seller), the bars,
-// how long ago something was, the day something happened, and the time of day.
+// while a tap will ask, never on a list row), the inbox tray, the way into messages, always there,
+// with how many are new once any is; a checkbox's box, the dot that marks what is new, the chips of
+// a review, vouch or report, a profile's name (its market in bold, then its role, muted: Clothing
+// seller), the bars, how long ago something was, the day something happened, and the time of day.
 
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 
-import { useBackups, useHeld, useNews, useProfiles, useRated } from './hooks.ts'
+import { useHeld, useNews, useProfiles, useRated } from './hooks.ts'
 import { marketWords, pairOf } from './markets.ts'
 import type { Check } from './services/verifier.ts'
 import { Reloading } from './version.ts'
@@ -145,6 +146,30 @@ export const MessageIcon = () => (
     <path d="M4 5h16v11H9l-5 4z" />
   </Icon>
 )
+/** The inbox tray: messages. */
+export const InboxIcon = () => (
+  <Icon>
+    <path d="M3 13l3-8h12l3 8" />
+    <path d="M3 13v6h18v-6h-5.5l-1.5 2.5h-4L8.5 13z" />
+  </Icon>
+)
+
+/** The way into messages, at a screen's top right: the inbox tray, always there, and how many are new once any is. An icon-only button shows its own icon. */
+export function Inbox({ count, onOpen }: { count: number; onOpen: () => void }) {
+  return (
+    <button className="plain inbox" aria-label={count > 0 ? `Messages, ${count} new` : 'Messages'} onClick={onOpen}>
+      <span className="place-icon">
+        <InboxIcon />
+        {count > 0 && (
+          <span className="count" aria-hidden>
+            {count}
+          </span>
+        )}
+      </span>
+    </button>
+  )
+}
+
 export const BellIcon = () => (
   <Icon>
     <path d="M6 16v-5a6 6 0 0 1 12 0v5l2 2H4z" />
@@ -211,9 +236,8 @@ export const DarkIcon = () => (
   </Icon>
 )
 
-/** Something new: a message, a review, a vouch or a report not yet looked at. */
-/** The dot: what is new, said as "New"; or, `flag`, a step still to take, drawn alone, since the words beside it say it (Settings' "1 passkey"). */
-export const Dot = ({ flag = false }: { flag?: boolean }) => (flag ? <span className="dot" aria-hidden /> : <span className="dot" role="img" aria-label="New" />)
+/** The dot: something new, a message, a review, a vouch or a report not yet looked at, said as "New". */
+export const Dot = () => <span className="dot" role="img" aria-label="New" />
 
 /** A review's score, a vouch or a report, as its chip. */
 export function SaidChip({ kind, score }: { kind: 'review' | 'vouch' | 'report'; score?: unknown }) {
@@ -266,12 +290,11 @@ const PLACES: Array<[Place, string, () => ReactNode]> = [
   ['settings', 'Settings', SettingsIcon],
 ]
 
-/** The places, at the bottom: Profiles, Notifications, with how many things are new (messages, reviews, vouches and reports), and Settings, with the dot while the person has one passkey alone. Opening one reads what the index says of every profile. */
+/** The places, at the bottom: Profiles, Notifications, with how many reviews, vouches and reports are new (messages count on the inbox), and Settings. Opening one reads what the index says of every profile. */
 export function Places({ at, go }: { at: Place; go: (to: Place) => void }) {
   const list = useProfiles()
   useRated(list)
-  const count = useNews(list).all
-  const alone = useBackups()?.length === 0
+  const count = useNews(list).received
   return (
     <nav className="places">
       {PLACES.map(([place, words, PlaceIcon]) => (
@@ -283,7 +306,6 @@ export function Places({ at, go }: { at: Place; go: (to: Place) => void }) {
                 {count}
               </span>
             )}
-            {place === 'settings' && alone && <Dot flag />}
           </span>
           {words}
         </button>

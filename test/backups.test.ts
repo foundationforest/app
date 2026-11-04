@@ -2,7 +2,7 @@
 // standard's example says (folders/README.md, The seed entry): a backup added, its two entries each
 // opening with seedOf alone, its folder funded from the wallet; Start through a backup, one step only;
 // the backups counted and dated with nothing unlocked; one removed, its passkey opening its own seed
-// again; a passkey made by mistake linked, or refused; a backup whose folder can't be written, its
+// again; a passkey made by mistake added to the person's first (New to Forest?), or refused; a backup whose folder can't be written, its
 // entry taken back; a passkey that no longer opens the device's profiles, stopped; and a manager's
 // name, from its AAGUID.
 
@@ -115,7 +115,7 @@ describe('a backup', () => {
     expect((await enter(w, again(b1), proveHere)).to).toBe('verify')
   })
 
-  test('a passkey made by mistake, linked to the Forest passkey: its seed entry and backup/<id>, as when one is added; the same passkey, or one not verified, refused', async () => {
+  test("a passkey made by mistake, added to the person's first on New to Forest?: its seed entry and backup/<id>, as when one is added, and its manager's name; the same passkey, or one not verified, refused", async () => {
     const p = await verifiedWith(w, 'tutoring/tutor')
     const x = person()
     expect((await enter(w, again(x), proveHere)).to, 'Start opened it: no stamp, no seed entry').toBe('verify')
@@ -129,10 +129,12 @@ describe('a backup', () => {
     expect(await backupsAt(w.host, (await walletKey(y)).address)).toEqual([])
     expect(await follow(w.host, copy(x.seed)), 'nothing written').toEqual(x.seed)
 
-    await linkTo(w, x.seed, p.seed)
+    await linkTo(w, x.seed, p.seed, 'bada5566-a7aa-401f-bd96-45619a55120d')
     expect(await follow(w.host, copy(x.seed))).toEqual(p.seed)
-    expect(await backupsAt(w.host, (await walletKey(p.seed)).address)).toHaveLength(1)
-    // As Get verified goes on: the first seed, for this passkey, which stays the one in use.
+    const listed = await backupsAt(w.host, (await walletKey(p.seed)).address)
+    expect(listed).toHaveLength(1)
+    expect(device.backupNames(), "its manager's name, by its entry, as Settings shows it").toEqual({ [listed[0]!.id]: '1Password' })
+    // As New to Forest? goes on: the first seed, for this passkey, which stays the one in use.
     expect(await enter(w, { id: x.id, seed: copy(p.seed) }, proveHere)).toEqual({ to: 'profiles' })
     expect(device.passkey()).toBe(x.id)
     expect(device.profiles().map((q) => q.label)).toEqual(['tutoring/tutor'])
@@ -158,7 +160,7 @@ describe("a backup whose folder can't be written", () => {
   beforeAll(async () => void (free = await world({ entryPerKb: '0' })))
   afterAll(() => free?.close())
 
-  test("its backup/<id> entry taken back, so the list never counts it, and one red line: the backup wasn't added", async () => {
+  test("its backup/<id> entry taken back, so the list never counts it, and one red line: the passkey wasn't added", async () => {
     free.decideAll('approved')
     const p = await verifiedWith(free)
     const wallet = await walletKey(p.seed)
@@ -169,7 +171,7 @@ describe("a backup whose folder can't be written", () => {
     const b = person()
     const failed = await addBackup(free, p.seed, again(b)).catch((err: unknown) => err)
     expect(failed).toBeInstanceOf(NotAdded)
-    expect((failed as NotAdded).message).toBe("The backup wasn't added.")
+    expect((failed as NotAdded).message).toBe("The passkey wasn't added.")
     expect((failed as NotAdded).red).toBe(true)
 
     expect(await backupsAt(free.host, wallet.address), 'nothing listed').toEqual([])

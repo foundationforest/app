@@ -1,8 +1,9 @@
 // Settings: how the person is verified, Face and ID each with its check's shield (an outline for the
 // face check, filled for the ID check), or the ID check's "+ $5" when they have only the face check;
-// their passkeys: how many, each backup with the day it was added and, on the device that added it,
-// its password manager's name, with Remove (tapped twice, then one unlock, though a row shows no
-// unlock icon), and + Add a backup, with the dot while there is one passkey alone, all read with
+// their passkeys, every one that opens their profiles alike: Your first passkey, then each added
+// after it (a backup, as the standard names it), by its password manager's name where this device
+// knows it, else the day it was added, with Remove (tapped twice, then one unlock, though a row shows
+// no unlock icon); with one alone, a quiet line on why a second; and + Add a passkey; all read with
 // nothing unlocked; their AI apps, each with the day it connected and how many profiles
 // it acts for, and + Connect an AI; the appearance, the device's, light or dark; and Forget this
 // device, in red. When a profile entry lists an access key this device doesn't know (made in
@@ -21,12 +22,12 @@ import { letGo } from '../opened.ts'
 import { withSeed } from '../passkey.ts'
 import { letGoRated } from '../rated.ts'
 import { applyTheme } from '../theme.ts'
-import { DarkIcon, DeviceIcon, Dot, LightIcon, Line, type Place, Places, Spinner, Top, Verified, day, useAction } from '../ui.tsx'
+import { DarkIcon, DeviceIcon, LightIcon, Line, type Place, Places, Spinner, Top, Verified, day, useAction } from '../ui.tsx'
+import { WHY_SECOND } from './SecondPasskey.tsx'
 
-type Props = { go: (to: Place) => void; onForgot: () => void; onIdCheck: () => void; onConnectAi: () => void; onAiApp: (address: string) => void; onBackup: () => void }
+type Props = { go: (to: Place) => void; onForgot: () => void; onIdCheck: () => void; onConnectAi: () => void; onAiApp: (address: string) => void; onAddPasskey: () => void }
 
 const profileCount = (n: number) => `${n} profile${n === 1 ? '' : 's'}`
-const passkeyCount = (n: number) => `${n} passkey${n === 1 ? '' : 's'}`
 
 const THEMES: Array<[Theme, string, () => ReactNode]> = [
   ['device', 'Device', DeviceIcon],
@@ -34,7 +35,7 @@ const THEMES: Array<[Theme, string, () => ReactNode]> = [
   ['dark', 'Dark', DarkIcon],
 ]
 
-export function Settings({ go, onForgot, onIdCheck, onConnectAi, onAiApp, onBackup }: Props) {
+export function Settings({ go, onForgot, onIdCheck, onConnectAi, onAiApp, onAddPasskey }: Props) {
   const list = useProfiles()
   const [found, setFound] = useState(0)
   const cards = useCards(list, found)
@@ -95,14 +96,11 @@ export function Settings({ go, onForgot, onIdCheck, onConnectAi, onAiApp, onBack
         {backups && (
           <div className="rows">
             <div className="row">
-              <span>{passkeyCount(backups.length + 1)}</span>
+              <span>Your first passkey</span>
             </div>
             {backups.map((b) => (
               <div key={b.id} className="row">
-                <span className="two">
-                  <strong>{names[b.id] ?? 'Backup'}</strong>
-                  <span>{day(b.time)}</span>
-                </span>
+                <span>{names[b.id] ?? day(b.time)}</span>
                 <button className={removing === b.id ? 'small danger solid' : 'small danger'} disabled={remove.busy} onClick={() => (removing === b.id ? remove.run(b.id) : setRemoving(b.id))}>
                   {remove.busy && removing === b.id ? <Spinner /> : 'Remove'}
                 </button>
@@ -110,11 +108,9 @@ export function Settings({ go, onForgot, onIdCheck, onConnectAi, onAiApp, onBack
             ))}
           </div>
         )}
+        {backups?.length === 0 && <p className="line">{WHY_SECOND}</p>}
         <Line note={remove.note} />
-        <button onClick={onBackup}>
-          + Add a backup
-          {backups?.length === 0 && <Dot flag />}
-        </button>
+        <button onClick={onAddPasskey}>+ Add a passkey</button>
       </section>
       <section className="stack">
         <h2>AI apps</h2>
