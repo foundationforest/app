@@ -1,18 +1,29 @@
-// How an entry's values read on screen, by their type (the markets manual's Types): a choice in
-// words, money as people write a price, in the device's own number format ($20, €30 per hour), a
-// place as its area or Online, a moment as a date and time, hours as
-// days and times; and a post's preview, the fields its market shows first. A contact opens with a
-// tap when it is a phone number, an email or a link.
+// How an entry's values read on screen, by their type (the markets manual's Types): a choice by its
+// label where its field has one, else in words, money as people write a price, in the device's own
+// number format ($20, €30 per hour), a place as its area and how far round it reaches, a moment as
+// a date and time, hours as days and times; and a post's preview, the fields its market shows first.
+// A contact opens with a tap when it is a phone number, an email or a link.
 
 import type { Body } from '@foundationforest/folders'
 
 import type { Field, Market } from './markets.ts'
 import { previewOf } from './markets.ts'
 
-/** A choice's value in words: `new-with-tags` is New with tags. */
+/** A value in words, hyphens as spaces and a capital first: `new-with-tags` is New with tags. */
 export const valueWords = (value: string) => {
   const words = value.replaceAll('-', ' ')
   return words.charAt(0).toUpperCase() + words.slice(1)
+}
+
+/** A choice's value as people read it: its label where its field has one (`xl` is XL), else in words. */
+export const choiceWords = (field: Pick<Field, 'labels'>, value: string) => (field.labels && Object.hasOwn(field.labels, value) ? field.labels[value]! : valueWords(value))
+
+/** A place: its area, then how far round it reaches; nothing more for radius 0, that exact spot. An older place, with no radius, as its area. */
+export function placeText(place: { area?: unknown; radiusKm?: unknown }): string {
+  const area = typeof place.area === 'string' ? place.area : ''
+  if (typeof place.radiusKm !== 'number') return area
+  if (place.radiusKm === 0) return area || 'An exact spot'
+  return area ? `${area}, within ${place.radiusKm} km` : `Within ${place.radiusKm} km`
 }
 
 const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v)
@@ -27,14 +38,13 @@ export function valueText(field: Field, value: unknown): string {
   if (value === undefined || value === null) return ''
   switch (field.type) {
     case 'choice':
-      return (Array.isArray(value) ? value : [value]).map((v) => valueWords(String(v))).join(', ')
+      return (Array.isArray(value) ? value : [value]).map((v) => choiceWords(field, String(v))).join(', ')
     case 'words':
       return Array.isArray(value) ? value.join(', ') : ''
     case 'money':
       return isObject(value) ? priceText(value) : ''
     case 'place':
-      if (!isObject(value)) return ''
-      return [value.area, value.online ? 'Online' : ''].filter(Boolean).join(' · ')
+      return isObject(value) ? placeText(value) : ''
     case 'moment':
       return isObject(value) ? `${when(value.from)} to ${when(value.to)}` : when(value)
     case 'hours':

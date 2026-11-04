@@ -3,7 +3,8 @@
 // does) and, for a review, a vouch or a report, against its subject's profile entry at the host;
 // paid from the profile's folder, topped up from the wallet; edited at its own path; deleted. A
 // post's photos: named in its files, then each sent to the host, paid the same way; a price's per
-// only from its field's list; a place an area alone.
+// only from its field's list; a place a point and a radius, never an area alone. And a post an
+// older market shaped: not fitting, so not listed, and posted again with what still fits.
 
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'vitest'
 
@@ -14,6 +15,7 @@ import * as device from '../src/device.ts'
 import { PHOTO_TYPE, newPhotos, sendPhotos, withFiles } from '../src/flows/photos.ts'
 import { walletKey } from '../src/flows/profiles.ts'
 import { addressIn, check, newPath, post, readPosts, subjectOf, unpost } from '../src/flows/posts.ts'
+import { fits, fitting } from '../src/form.ts'
 import { markets } from '../src/markets.ts'
 import { Said } from '../src/words.ts'
 import { type World, freshDevice, verifiedWith, world } from './world.ts'
@@ -31,7 +33,7 @@ const MATHS = {
   price: { amount: '30', currency: 'USD', per: 'hour' },
   subjects: ['maths'],
   levels: ['secondary'],
-  place: { online: true },
+  mode: ['online'],
   contact: 'ada@example.com',
 }
 
@@ -67,12 +69,13 @@ describe('a post', () => {
     expect(await w.balance(me.address), 'a delete is free').toBe(kept)
   })
 
-  test('before the unlock: a field that does not fit, in red, by its name; a required one left empty, quiet', async () => {
+  test('before the unlock: a field that does not fit, in red, by its name; a post with nothing in it, quiet; no field demanded', async () => {
     const p = await verifiedWith(w, 'home-repair/client')
     const me = p.profiles[0]!
     expect(await refusal(check(w, me, 'post', { description: 'A leak.', price: { amount: 'thirty', currency: 'USD' } }, [me]))).toEqual(["Price doesn't fit.", true])
     expect(await refusal(check(w, me, 'post', { description: 'A leak.', licences: 'none' }, [me])), "a field for the other role's posts").toEqual(["Licences doesn't fit.", true])
-    expect(await refusal(check(w, me, 'post', { repairs: ['plumbing'] }, [me]))).toEqual(['Description is empty.', false])
+    expect(await refusal(check(w, me, 'post', {}, [me]))).toEqual(['Add something first.', false])
+    await check(w, me, 'post', { repairs: ['plumbing'] }, [me])
     expect(await refusal(check(w, me, 'post', { description: 'A leak.', groupSize: '2' }, [me])), 'a field the market does not have').toEqual(["Group size doesn't fit.", true])
   })
 
@@ -86,6 +89,25 @@ describe('a post', () => {
     } finally {
       await pricey.close()
     }
+  })
+
+  test("an old post, as the app wrote it before the markets moved: it doesn't fit, so the index lists it no more; what still fits, posted again at its path, does", async () => {
+    const p = await verifiedWith(w, 'tutoring/tutor')
+    const me = p.profiles[0]!
+    const { mode: _, ...today } = MATHS
+    const old = { ...today, place: { online: true } }
+    // An older app's check let it through; post writes what it is given.
+    const path = await post(w, p.seed, me, 'post', old)
+    expect(await refusal(check(w, me, 'post', old, [me]))).toEqual(["Place doesn't fit.", true])
+    const [read] = await readPosts(w, me.address)
+    expect(fits('tutoring', 'tutor', read!.body)).toBe(false)
+    const kept = fitting('tutoring', 'tutor', read!.body)
+    expect(kept).toEqual(today)
+    const updated = { ...kept, mode: ['online'] }
+    await check(w, me, 'post', updated, [me])
+    expect(await post(w, p.seed, me, 'post', updated, path)).toBe(path)
+    const now = await readPosts(w, me.address)
+    expect(now.map((x) => [x.path, fits('tutoring', 'tutor', x.body)])).toEqual([[path, true]])
   })
 })
 
@@ -142,7 +164,7 @@ const photo = (size: number) => new Uint8Array(randomBytes(size))
 const shaOf = (bytes: Uint8Array) => createHash('sha256').update(bytes).digest('hex')
 
 describe('photos', () => {
-  test('a clothing post with two photos: named in its files, written, then each sent to the host, which serves it to anyone; no per, and an area alone', async () => {
+  test('a clothing post with two photos: named in its files, written, then each sent to the host, which serves it to anyone; no per; a place a point and a radius, never an area alone', async () => {
     const p = await verifiedWith(w, 'clothing/seller')
     const me = p.profiles[0]!
     const [a, b] = [photo(20_000), photo(30_000)]
@@ -150,7 +172,7 @@ describe('photos', () => {
       [shaOf(a), a],
       [shaOf(b), b],
     ])
-    const given = { description: 'A wool coat, worn twice.', price: { amount: '40', currency: 'EUR' }, location: { area: 'Lavapiés, Madrid' }, photos: [shaOf(a), shaOf(b)] }
+    const given = { description: 'A wool coat, worn twice.', price: { amount: '40', currency: 'EUR' }, location: { lat: '40.409', lon: '-3.701', radiusKm: 2, area: 'Lavapiés, Madrid' }, photos: [shaOf(a), shaOf(b)] }
     const body = withFiles(given, ['photos'], picked)
     expect(body.files).toEqual([
       { sha256: shaOf(a), type: PHOTO_TYPE, size: 20_000 },
@@ -158,7 +180,8 @@ describe('photos', () => {
     ])
     await check(w, me, 'post', body, [me])
     expect(await refusal(check(w, me, 'post', { ...body, price: { amount: '40', currency: 'EUR', per: 'hour' } }, [me])), 'a jacket takes no per').toEqual(["Price doesn't fit.", true])
-    expect(await refusal(check(w, me, 'post', { ...body, location: { online: true } }, [me])), 'an item is never online').toEqual(["Location doesn't fit.", true])
+    expect(await refusal(check(w, me, 'post', { ...body, location: { area: 'Lavapiés, Madrid' } }, [me])), 'an area alone').toEqual(["Location doesn't fit.", true])
+    expect(await refusal(check(w, me, 'post', { ...body, location: { online: true } }, [me])), 'online is never a place').toEqual(["Location doesn't fit.", true])
     const path = await post(w, p.seed, me, 'post', body, undefined, newPhotos(body, picked))
     for (const bytes of [a, b]) {
       const res = await fetch(`${w.host}/v1/files/${shaOf(bytes)}`)

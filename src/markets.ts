@@ -74,21 +74,22 @@ export function kindWords(kind: Kind, label: string): string {
 
 /**
  * The fields a `kind` entry by a `role` profile holds in `market`: a post's, those of the market's
- * post fields that are for its role; a review's, the shared ones and the market's own, those for the
+ * post fields that are for its role, and contact, which every post may hold and no market lists; a
+ * review's, the shared ones and the market's own, those for the
  * role of the profile it is about (`aboutRole`), all of them while that is not known; a vouch's and a
  * report's, the shared ones.
  */
 export function fieldsOf(market: Market, kind: Kind, role: string, aboutRole?: string): Fields {
   const forRole = (fields: Fields, who: string | undefined): Fields =>
     Object.fromEntries(Object.entries(fields).filter(([, f]) => !f.roles || who === undefined || f.roles.includes(who)))
-  if (kind === 'post') return forRole(market.post, role)
+  if (kind === 'post') return { ...forRole(market.post, role), ...SHARED.post }
   if (kind === 'review') return { ...SHARED.review, ...forRole(market.review ?? {}, aboutRole) }
   return SHARED[kind]
 }
 
-/** The post fields a preview shows first: the market's `preview`, else description, price, then its first place field, of those it has (the markets manual's Preview). */
+/** The post fields that matter first: the market's `preview`, else description, price, then its place fields, of those it has (the markets manual's Preview). */
 export function previewOf(market: Market): string[] {
   if (market.preview) return market.preview
-  const place = Object.keys(market.post).find((name) => market.post[name]!.type === 'place')
-  return ['description', 'price', place].filter((name): name is string => name !== undefined && name in market.post)
+  const post = market.post
+  return [...['description', 'price'].filter((name) => name in post), ...Object.keys(post).filter((name) => post[name]!.type === 'place')]
 }

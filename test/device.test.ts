@@ -65,9 +65,10 @@ test('Forget this device: everything but the ids of the passkeys it knows, so St
   device.knowKeys(['K'])
   device.readLabels('W', { a: 'tutoring/tutor' })
   device.nameBackup('b', 'Bitwarden')
+  device.keepPoint({ lat: '40.420', lon: '-3.700' })
   device.forget()
   expect({ ...localStorage }).toEqual({ 'forest.v': '"2"', 'forest.passkeys': JSON.stringify(['OtherPasskeyIdOtherPass', ID]) })
-  expect([device.passkey(), device.under(), device.theme(), device.checks(), device.cursors(), device.seen(), device.connections(), device.knownKeys(), device.folder(), device.backupNames()]).toEqual([null, null, 'device', [], {}, {}, [], [], null, {}])
+  expect([device.passkey(), device.under(), device.theme(), device.checks(), device.cursors(), device.seen(), device.connections(), device.knownKeys(), device.folder(), device.backupNames(), device.points()]).toEqual([null, null, 'device', [], {}, {}, [], [], null, {}, []])
 })
 
 test("the backups' names: each by its entry's id, one dropped alone, anything else dropped; kept through a start", () => {
