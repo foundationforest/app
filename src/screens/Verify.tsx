@@ -4,36 +4,29 @@
 // and, tapped open, the verifier's consent screen, word for word; Stripe sends the person back to
 // /id, where the payment, kept on the device, takes them on.
 //
-// Every step has a back. From Start, Get verified goes back to Start, and every later step to Get
-// verified, the check under way still picked: the asking stops, nothing under way changes, and
-// Continue picks it up where it was (flows/verify.ts, `choose`). From Settings, back is Settings.
+// Every step has a back. From Start, Get verified goes back to New to Forest? while nothing is under
+// way, else to Start (App.tsx), and every later step to Get verified, the check under way still
+// picked: the asking stops, nothing under way changes, and Continue picks it up where it was
+// (flows/verify.ts, `choose`). From Settings, back is Settings.
 //
-// The screen keeps no seed of its own: it uses the one held after an unlock (held.ts), which the
-// page drops when it is hidden, as it is while the check is open in its tab. So while a seed is
-// still held as the screen opens (from Start, or from an unlock a moment before), the seed's number
-// and the wallet are worked out at once, and the stamp is asked for with them, needing no seed,
-// until it comes. Once it does, it is kept at once if a seed is still held; else Continue asks for
-// one. With none held as the screen opened (from Settings, or after a review), opening the check
-// needs none, and one unlock at Continue asks for the stamp, collects its gift, keeps it and makes
-// every profile show it.
-//
-// From Start, with nothing under way for this passkey, the two checks also offer Link to my Forest
-// passkey, for a passkey made by mistake: the person's Forest passkey asked for, followed if it is a
-// backup itself, and this passkey made a backup of it (flows/backups.ts); then the seed it opens is
-// held for this passkey, which stays the one in use here, and the person is in, as from Start.
+// The screen keeps no seed of its own: it uses the one held after an unlock (held.ts), for 5
+// minutes since the last action, the check's own tab hiding the page meanwhile. So while a seed is
+// held as the screen opens (from Start, or from an unlock a moment before), the seed's number and
+// the wallet are worked out at once, and the stamp is asked for with them, needing no seed, until it
+// comes. Once it does, it is kept at once if a seed is still held; else Continue asks for one. With
+// none held as the screen opened (from Settings, or after a review), opening the check needs none,
+// and one unlock at Continue asks for the stamp, collects its gift, keeps it and makes every profile
+// show it.
 
 import { useEffect, useRef, useState } from 'react'
 
 import { config } from '../config.ts'
 import { CONSENT, TEST_CARD } from '../consent.ts'
-import { type Check, knowPasskey, under } from '../device.ts'
-import { linkTo } from '../flows/backups.ts'
-import { follow } from '../flows/seed.ts'
-import { enter } from '../flows/start.ts'
+import { type Check, under } from '../device.ts'
 import { type Step, NotFinished, NotPassed, advance, ask, checkOf, choose, collect, finish, open, pay, stampNumberAt, stepOf } from '../flows/verify.ts'
 import { walletKey } from '../flows/profiles.ts'
-import { hold, isHeldFor } from '../held.ts'
-import { ask as askPasskey, withSeed } from '../passkey.ts'
+import { isHeldFor } from '../held.ts'
+import { withSeed } from '../passkey.ts'
 import { proveInWorker } from '../proof/prove.ts'
 import { Line, Quiet, Spinner, Top, UnlockIcon, noteOf, useAction } from '../ui.tsx'
 
@@ -48,7 +41,7 @@ type Props = {
   id: string
   step: Step
   onVerified: () => void
-  /** Back from Get verified: to Start; for someone verified already, to Settings. */
+  /** Back from Get verified: to New to Forest? or Start; for someone verified already, to Settings. */
   onBack: () => void
 }
 
@@ -236,32 +229,6 @@ export function Verify({ fromStart, id, step: first, onVerified, onBack }: Props
     onVerified()
   })
 
-  /** Link to my Forest passkey: that passkey asked for, and this one made its backup; then the seed it opens is held for this one, and the person is in. */
-  const linking = useAction(async () => {
-    const seed = await withSeed(id, async (own) => {
-      const answered = await askPasskey()
-      const main = await follow(config.host, answered.seed)
-      try {
-        await linkTo(config, own, main)
-      } catch (err) {
-        main.fill(0)
-        throw err
-      }
-      knowPasskey(answered.id)
-      return main
-    })
-    hold(id, seed)
-    const to = await withSeed(id, (s) => enter(config, { id, seed: s }, proveInWorker))
-    if (to.to === 'profiles') return onVerified()
-    setStep(to.step)
-  })
-
-  /** Nothing under way for this passkey: no check's session, and no payment. */
-  const nothingUnderWay = () => {
-    const u = under()
-    return !u || u.passkey !== id || (!u.session && !u.payment)
-  }
-
   /** Back to the two checks, the one under way picked: the asking stops, and nothing under way changes. */
   const toChecks = () => {
     turn.current++
@@ -270,7 +237,7 @@ export function Verify({ fromStart, id, step: first, onVerified, onBack }: Props
     setAway(false)
     setStripe(null)
     setPicked(underWay() ?? picked)
-    for (const action of [start, paying, go, keep, linking]) action.setNote(null)
+    for (const action of [start, paying, go, keep]) action.setNote(null)
   }
 
   const title = check === 'id' && step.at !== 'choose' ? 'ID check' : 'Get verified'
@@ -305,15 +272,10 @@ export function Verify({ fromStart, id, step: first, onVerified, onBack }: Props
               </button>
             ))}
           </div>
-          <Line note={start.note ?? linking.note} />
-          <button className="primary" disabled={!picked || start.busy || linking.busy} onClick={() => picked && pick(picked)}>
+          <Line note={start.note} />
+          <button className="primary" disabled={!picked || start.busy} onClick={() => picked && pick(picked)}>
             {start.busy ? <Spinner /> : 'Continue'}
           </button>
-          {fromStart && nothingUnderWay() && (
-            <button className="quiet" disabled={start.busy || linking.busy} onClick={() => linking.run()}>
-              {linking.busy ? <Spinner /> : <><UnlockIcon always /> Link to my Forest passkey</>}
-            </button>
-          )}
         </>
       ) : step.at === 'consent' ? (
         <>

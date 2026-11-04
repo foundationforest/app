@@ -2,8 +2,8 @@
 // salt, which the person's password manager gives only after their device's unlock, the same 32
 // bytes every time for the same passkey, on every device it syncs to. That secret is the seed, used
 // as it is, or a backup's, which names the seed it backs up. After an unlock the seed is held in the
-// page's memory for 5 minutes, which each action restarts, and dropped at once when the page is
-// hidden or closed (held.ts); it is never stored on a device. No server checks these passkeys: the
+// page's memory for 5 minutes since the last action, or until the page closes (held.ts); it is never
+// stored on a device. No server checks these passkeys: the
 // challenge is random and nobody reads the signature; only the PRF secret is used.
 //
 // One seed per person, so Start makes one passkey at most. On a device that knows one, Start asks
@@ -13,9 +13,15 @@
 // no passkey, so a closed sheet says neither. A passkey whose manager gives no PRF secret is
 // dropped, and the person is told which one does.
 //
-// A backup is a passkey more, made from Settings (flows/backups.ts): one the passkeys this device
-// knows are excluded from, so the same manager doesn't keep a second one. Its own secret is a seed
-// whose Profiles folder holds the person's seed, which every unlock follows (flows/seed.ts).
+// Every passkey added after the first is a backup, as the standard names it (flows/backups.ts),
+// though the screens call them all passkeys: one made from Settings, or on Save a passkey on this
+// device, the passkeys this device knows excluded, so the same manager doesn't keep a second one;
+// or one made by mistake and added to the person's first, on New to Forest?. Its own secret is a
+// seed whose Profiles folder holds the person's seed, which every unlock follows (flows/seed.ts).
+//
+// A passkey that answers says where it was: on this device, or on another, a phone through the
+// sheet's QR code (its authenticatorAttachment, cross-platform), so Start can offer to save one
+// here.
 
 import { base64urlnopad } from '@scure/base'
 
@@ -57,10 +63,10 @@ export class NoPrf extends Said {
   }
 }
 
-/** A backup asked of a manager that already keeps one of the passkeys excluded: this device's. */
+/** A passkey more asked of a manager that already keeps one of the passkeys excluded: this device's. */
 export class SameManager extends Said {
   constructor() {
-    super('This password manager already has your Forest passkey. Save the backup in another.', true)
+    super('This password manager already has your Forest passkey. Save the new one in another.', true)
     this.name = 'SameManager'
   }
 }
@@ -73,8 +79,8 @@ export class NoAnswer extends Said {
   }
 }
 
-/** A passkey's answer: the seed it gave, and its id as the device keeps it. */
-export type Passkey = { seed: Uint8Array; id: string }
+/** A passkey's answer: the seed it gave, its id as the device keeps it, and, when the browser says, whether it answered from another device (a phone through the sheet's QR code, or a security key). */
+export type Passkey = { seed: Uint8Array; id: string; elsewhere?: boolean }
 
 /** A passkey just made: its answer, and its manager's AAGUID when the manager gives one. */
 export type Made = Passkey & { aaguid?: string }
@@ -125,15 +131,18 @@ export async function ask({ allow }: { allow?: string[] } = {}): Promise<Passkey
   if (!credential) throw new NoAnswer()
   const first = prfOf(credential)
   if (!first) throw new NoPrf(false)
-  return { seed: seedOf(first), id: idText(new Uint8Array((credential as PublicKeyCredential).rawId)) }
+  return { seed: seedOf(first), id: idText(new Uint8Array((credential as PublicKeyCredential).rawId)), ...(elsewhere(credential) && { elsewhere: true }) }
 }
+
+/** Whether a passkey answered from another device: its authenticatorAttachment is cross-platform, so it isn't on this one. */
+export const elsewhere = (credential: Credential): boolean => (credential as PublicKeyCredential).authenticatorAttachment === 'cross-platform'
 
 /**
  * A new passkey, named Forest, and its seed. Some managers give the PRF secret as the passkey is
  * made; the others (Safari's) only when it is asked for, so one ask follows, naming it. Where
  * neither gives it, the manager is asked to drop it, and the person is told to save it elsewhere.
- * Start calls it on a device that knows no passkey; a backup, with `exclude` the passkeys this
- * device knows, which a manager keeping one of them refuses.
+ * Start calls it on a device that knows no passkey; a passkey more, with `exclude` the passkeys
+ * this device knows, which a manager keeping one of them refuses.
  */
 export async function make({ exclude = [] }: { exclude?: string[] } = {}): Promise<Made> {
   if (await oldBrowser()) throw new OldBrowser()

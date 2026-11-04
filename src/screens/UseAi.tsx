@@ -1,4 +1,4 @@
-// Once the person's first profile is made, once, after Add a backup passkey: Connect opens Connect
+// Once the person's first profile is made, once, after Add a second passkey: Connect opens Connect
 // an AI; Not now, the profiles. It has no path of its own, so back or a reload lands on Profiles (App.tsx).
 
 export function UseAi({ onConnect, onNotNow }: { onConnect: () => void; onNotNow: () => void }) {

@@ -1,22 +1,21 @@
-// A profile's messages, from its Messages line or a row in Notifications; only messages (reviews,
-// vouches and reports about it show in Notifications and its Reviews). Before the unlock one row, how
-// many are new ("3 new messages", or "No new messages"), and Open; one unlock opens every profile's
-// inbox and what it sent, into threads that stay open while the page is, each with who it is from,
-// its last message, when, and a dot when it holds a new one. At the bottom, New message.
+// Messages: the conversations of every one of the person's profiles, from the inbox at the top of
+// Profiles and Notifications, or of one profile (`only`), from the inbox at its top; only messages
+// (reviews, vouches and reports show in Notifications and a profile's Reviews). Each conversation
+// shows who it is with, its last message, when, and a dot when it holds a new one, newest first.
+// With a seed held they open by themselves (opening.ts); with none, one row says how many are new
+// ("3 new messages", or "No new messages"), with Open: one unlock opens every profile's inbox and
+// what it sent, into threads that stay open while the page is. At the bottom, New message.
 
-import { config } from '../config.ts'
-import { passkey, profiles, saveCursors } from '../device.ts'
-import { type Thread, openAll } from '../flows/inbox.ts'
+import { type Thread } from '../flows/inbox.ts'
 import { useNewMessages, useOpened, useProfiles } from '../hooks.ts'
-import { hold, isFresh } from '../opened.ts'
-import { withSeed } from '../passkey.ts'
-import { checkInWorker } from '../proof/prove.ts'
-import { Dot, Line, MessageIcon, Named, Spinner, Top, UnlockIcon, ago, useAction } from '../ui.tsx'
+import { isFresh } from '../opened.ts'
+import { useOpening } from '../opening.ts'
+import { Dot, Line, MessageIcon, Named, Spinner, Top, UnlockIcon, ago } from '../ui.tsx'
 import { Who } from './Who.tsx'
 
 type Props = {
-  /** The profile whose messages these are. */
-  only: string
+  /** The profile whose messages these are; every profile's, when none is named. */
+  only?: string
   onBack: () => void
   onThread: (mine: string, them: string) => void
   onNew: () => void
@@ -26,26 +25,23 @@ type Props = {
 const newWords = (n: number) => (n === 0 ? 'No new messages' : `${n} new message${n === 1 ? '' : 's'}`)
 
 export function Messages({ only, onBack, onThread, onNew }: Props) {
-  const list = useProfiles().filter((p) => p.address === only)
+  const all = useProfiles()
+  const list = only ? all.filter((p) => p.address === only) : all
   const fresh = useNewMessages()
-  const held = useOpened()
-
-  const open = useAction(async () => {
-    const ids = Object.values(fresh).flat()
-    const got = await withSeed(passkey()!, (seed) => openAll(config, seed, profiles(), checkInWorker))
-    hold(got.threads, ids)
-    saveCursors(got.cursors)
-  })
+  const opened = useOpened()
+  const { open, need, held } = useOpening()
 
   const newCount = list.reduce((n, p) => n + (fresh[p.address]?.length ?? 0), 0)
-  const threads = (held?.threads ?? []).filter((t) => list.some((p) => p.address === t.mine))
+  const threads = (opened?.threads ?? []).filter((t) => list.some((p) => p.address === t.mine))
+  // Something still to open: with a seed held it opens by itself, unless that failed; else Open.
+  const asking = need && (!held || open.note !== null)
 
   return (
     <main>
       <Top onBack={onBack}>
-        <h1>{list[0] && <Named label={list[0].label} />}</h1>
+        <h1>{only ? list[0] && <Named label={list[0].label} /> : 'Messages'}</h1>
       </Top>
-      {list.length > 0 && (!held || newCount > 0) && (
+      {list.length > 0 && asking && (
         <div className="row messages-row">
           <span>{newWords(newCount)}</span>
           <button className="primary small" disabled={open.busy} onClick={() => open.run()}>
@@ -53,6 +49,7 @@ export function Messages({ only, onBack, onThread, onNew }: Props) {
           </button>
         </div>
       )}
+      {held && open.busy && <Spinner />}
       <Line note={open.note} />
       <div className="rows">
         {threads.map((t) => (

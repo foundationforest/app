@@ -69,6 +69,12 @@ const mine = (passkey: string): Under | null => {
   return u?.passkey === passkey ? u : null
 }
 
+/** Whether nothing is under way for `passkey`: no check's session and no payment, a check at most picked. A passkey that stands so may be one made by mistake, so Start asks first whether the person is new (New to Forest?). */
+export function nothingUnderWay(passkey: string): boolean {
+  const u = mine(passkey)
+  return !u || (!u.session && !u.payment)
+}
+
 /** The check a verification under way is on: the face check unless it says otherwise, as the earlier version kept it. */
 export const checkOf = (u: Under | null): Check => u?.check ?? 'face'
 

@@ -118,7 +118,7 @@ describe('what is new on a profile', () => {
   })
 })
 
-test("Notifications: each profile's new messages first, by how many; then every review, vouch and report about any of them, newest first, those after the marks new", async () => {
+test("Notifications: every review, vouch and report about any of the person's profiles, newest first, those after the marks new; no message among them", async () => {
   const p = await verifiedWith(w, 'clothing/seller', 'tutoring/tutor')
   const [seller, tutor] = p.profiles as [device.Profile, device.Profile]
   const other = (await verifiedWith(w, 'clothing/buyer', 'tutoring/student')).profiles
@@ -127,15 +127,14 @@ test("Notifications: each profile's new messages first, by how many; then every 
   const list = [seller, tutor]
   await rate(w.index, list)
   const rated = Object.fromEntries(list.map((x) => [x.address, ratedOf(x.address)]))
-  const rows = notices(list, { [seller.address]: [], [tutor.address]: ['m1', 'm2'] }, rated, { [seller.address]: 150, [tutor.address]: 200 })
-  expect(rows.map((n) => ('messages' in n ? ['messages', n.on, n.messages] : [n.received.kind, n.on, n.fresh]))).toEqual([
-    ['messages', tutor.address, 2],
+  const rows = notices(list, rated, { [seller.address]: 150, [tutor.address]: 200 })
+  expect(rows.map((n) => [n.received.kind, n.on, n.fresh])).toEqual([
     ['report', seller.address, true],
     ['vouch', tutor.address, false],
     ['review', seller.address, false],
   ])
-  expect(notices(list, {}, rated, {}).every((n) => 'received' in n && !n.fresh), 'a profile with no mark: nothing new').toBe(true)
-  expect(notices(list, {}, {}, {}), 'nothing read yet, nothing new: no rows').toEqual([])
+  expect(notices(list, rated, {}).every((n) => !n.fresh), 'a profile with no mark: nothing new').toBe(true)
+  expect(notices(list, {}, {}), 'nothing read yet: no rows').toEqual([])
 })
 
 test("what a profile gave: its reviews, vouches and reports, from its own folder, each naming who it is about", async () => {

@@ -9,10 +9,12 @@
 // the person almost always has a passkey already, and a second would be a second Forest.
 //
 // Every button here asks: nobody is in yet, so Start drops any seed still held (held.ts) as it opens.
-// The seed a passkey gives is held from then, as after any unlock, so the verification and the first
-// profile ask again only once the page was hidden or 5 minutes went by. A passkey that answers is
-// followed first: a backup's own seed names the person's in its seed entry, and that one is held
-// (flows/seed.ts). A passkey just made names none.
+// The seed a passkey gives is held from then, as after any unlock, so New to Forest?, the
+// verification and the first profile ask again only once 5 minutes went by with nothing done. A
+// passkey that answers is followed first: one added to a first names the person's seed in its seed
+// entry, and that one is held (flows/seed.ts). A passkey just made names none. What Start tells the
+// app besides where the person stands: whether the passkey was just made, with its manager's
+// AAGUID, and whether it answered from another device (passkey.ts).
 
 import { useEffect } from 'react'
 
@@ -26,7 +28,10 @@ import { NoAnswer, type Passkey, ask, make, withSeed } from '../passkey.ts'
 import { proveInWorker } from '../proof/prove.ts'
 import { Line, Spinner, UnlockIcon, useAction } from '../ui.tsx'
 
-type Props = { onEntered: (entered: Entered, passkey: string) => void; connecting?: boolean }
+/** How the passkey that let the person in came: just made here (with its manager's AAGUID when it sent one), or from another device. */
+export type How = { made?: { aaguid?: string }; elsewhere?: boolean }
+
+type Props = { onEntered: (entered: Entered, passkey: string, how: How) => void; connecting?: boolean }
 
 export function Start({ onEntered, connecting = false }: Props) {
   // Read at each draw: a passkey made here is known from the moment it answers (flows/start.ts).
@@ -34,20 +39,21 @@ export function Start({ onEntered, connecting = false }: Props) {
   useEffect(drop, [])
 
   /** A passkey answered: the seed it stands for held, and where the person stands. */
-  const entered = async (passkey: Passkey) => {
+  const entered = async (passkey: Passkey, how: How) => {
     hold(passkey.id, passkey.seed)
     const to = await withSeed(passkey.id, (seed) => enter(config, { id: passkey.id, seed }, proveInWorker))
-    onEntered(to, passkey.id)
+    onEntered(to, passkey.id, how)
   }
 
   const start = useAction(async () => {
     const answered = await ask(known.length ? { allow: known } : {})
-    await entered({ id: answered.id, seed: await follow(config.host, answered.seed) })
+    await entered({ id: answered.id, seed: await follow(config.host, answered.seed) }, answered.elsewhere ? { elsewhere: true } : {})
   })
 
   const makeOne = useAction(async () => {
     try {
-      await entered(await make())
+      const made = await make()
+      await entered(made, { made: made.aaguid ? { aaguid: made.aaguid } : {} })
     } catch (err) {
       if (!(err instanceof NoAnswer)) throw err
     }

@@ -1,5 +1,6 @@
-// The seed held in the page after an unlock (src/held.ts): 5 minutes, which each action restarts;
-// dropped at once when the page is hidden or closed; never zeroed under an action still using it.
+// The seed held in the page after an unlock (src/held.ts): 5 minutes since the last action, or until
+// the page closes; kept while the page is hidden; never zeroed under an action still using it; and
+// used by what the page does by itself without restarting the 5 minutes.
 
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 
@@ -56,25 +57,27 @@ test('after an unlock, the next actions ask nothing for 5 minutes; each action s
   expect(unlocks, 'the next action asks again').toBe(2)
 })
 
-test('dropped at once when the page is hidden, or closed; told each time', async () => {
+test('kept while the page is hidden, as a window another covers is, or a tab not in front; dropped at once when it closes; told each time', async () => {
   const held = await load()
   let told = 0
   held.onHeld(() => void told++)
   await held.withHeld('a', unlock, async () => undefined)
   expect(told).toBe(1)
   hide()
-  expect([held.isHeld(), told]).toEqual([false, 2])
-  page.document.visibilityState = 'visible'
+  expect([held.isHeld(), told], 'hidden: still held').toEqual([true, 1])
   await held.withHeld('a', unlock, async () => undefined)
+  expect(unlocks, 'an action on a hidden page asks nothing').toBe(1)
   page.window.dispatchEvent(new Event('pagehide'))
-  expect([held.isHeld(), unlocks]).toEqual([false, 2])
+  expect([held.isHeld(), told], 'closed: dropped').toEqual([false, 2])
+  await held.withHeld('a', unlock, async () => undefined)
+  expect(unlocks, 'the next action asks again').toBe(2)
 })
 
-test('an action running when the page is hidden finishes with the seed, zeroed only as it ends', async () => {
+test('an action running when the page closes finishes with the seed, zeroed only as it ends', async () => {
   const held = await load()
   let release!: () => void
   const running = held.withHeld('a', unlock, async (seed) => {
-    hide()
+    page.window.dispatchEvent(new Event('pagehide'))
     expect(held.isHeld(), 'held no more').toBe(false)
     await new Promise<void>((r) => (release = r))
     expect([...seed].every((b) => b === 7), 'its bytes untouched while it runs').toBe(true)
@@ -95,10 +98,21 @@ test('only the passkey in use: another one asks, and holds its own in its place'
   expect(held.isHeld(), 'Forget drops it').toBe(false)
 })
 
-test('a page already hidden as an unlock answers keeps the seed no longer than its action', async () => {
+test("what the page does by itself uses the seed held, asks nothing, and never restarts the 5 minutes; with none held, it does nothing", async () => {
   const held = await load()
-  page.document.visibilityState = 'hidden'
-  const seed = await held.withHeld('a', unlock, async (s) => s)
-  expect(held.isHeld()).toBe(false)
-  expect([...seed].every((b) => b === 0)).toBe(true)
+  expect(await held.ifHeld('a', async () => 'opened'), 'none held: nothing done').toBe(undefined)
+  await held.withHeld('a', unlock, async () => undefined)
+  await vi.advanceTimersByTimeAsync(4 * 60_000)
+  expect(await held.ifHeld('a', async () => 'opened')).toBe('opened')
+  expect(await held.ifHeld('b', async () => 'opened'), "another passkey's: nothing").toBe(undefined)
+  await vi.advanceTimersByTimeAsync(60_000 + 1)
+  expect([held.isHeld(), unlocks], '5 minutes after the last action, the page\'s own use counting for nothing: dropped').toEqual([false, 1])
+})
+
+test('moved to another passkey, the same seed: held for that one, asking nothing', async () => {
+  const held = await load()
+  await held.withHeld('a', unlock, async () => held.moveTo('b'))
+  expect([held.isHeldFor('a'), held.isHeldFor('b')]).toEqual([false, true])
+  await held.withHeld('b', unlock, async (seed) => expect([...seed].every((x) => x === 7)).toBe(true))
+  expect(unlocks).toBe(1)
 })

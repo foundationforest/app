@@ -1,7 +1,8 @@
 // The seed, held in this page's memory after an unlock, so the actions that follow ask nothing: for
-// 5 minutes, which each action restarts, as it starts and as it ends. It is dropped at once when the
-// page is hidden (another app, another tab, the phone locked) or closed, and on Forget; it is never
-// stored. Only the passkey in use is held, one at a time.
+// 5 minutes since the last action, each action restarting them as it starts and as it ends, or until
+// the page closes, and on Forget; it is never stored. Hidden is not closed: a page another window
+// covers, or one in another tab, keeps it, as a locked phone does, until the 5 minutes run out. Only
+// the passkey in use is held, one at a time.
 //
 // An action already running when the seed is dropped finishes with it: its bytes are zeroed as the
 // last action using them ends, never under one, which would make it mix the wrong keys.
@@ -25,8 +26,6 @@ function restart(): void {
   timer = setTimeout(drop, HOLD_MS)
 }
 
-const hidden = () => globalThis.document?.visibilityState === 'hidden'
-
 /** Whether a seed is held: an action now asks nothing. */
 export const isHeld = (): boolean => held !== null
 
@@ -42,6 +41,13 @@ export function hold(id: string, seed: Uint8Array): void {
   told()
 }
 
+/** The seed held now held for passkey `id` instead: the passkey in use here changed, and opens the same seed. */
+export function moveTo(id: string): void {
+  if (!held) return
+  held.id = id
+  told()
+}
+
 /** The seed dropped: held no more, and zeroed unless an action is still using it. */
 export function drop(): void {
   const was = held
@@ -52,25 +58,39 @@ export function drop(): void {
   told()
 }
 
-/**
- * `action` with the seed of passkey `id`: the one held, or, with none held, the one `unlock` gives,
- * held from now. Each action restarts the 5 minutes as it starts and as it ends. On a page already
- * hidden, it is held for no longer than this action.
- */
-export async function withHeld<T>(id: string, unlock: () => Promise<Uint8Array>, action: (seed: Uint8Array) => Promise<T>): Promise<T> {
-  if (held && held.id !== id) drop()
-  if (!held) hold(id, await unlock())
-  const h = held!
+/** `action` with the held seed `h`, which it keeps from being zeroed while it runs; the 5 minutes restarted as it starts and as it ends, unless `quiet`. */
+async function using<T>(h: Held, action: (seed: Uint8Array) => Promise<T>, quiet: boolean): Promise<T> {
   h.using++
-  restart()
-  if (hidden()) drop()
+  if (!quiet) restart()
   try {
     return await action(h.seed)
   } finally {
     h.using--
-    if (held === h) restart()
-    else if (h.using === 0) h.seed.fill(0)
+    if (held !== h) {
+      if (h.using === 0) h.seed.fill(0)
+    } else if (!quiet) restart()
   }
+}
+
+/**
+ * `action` with the seed of passkey `id`: the one held, or, with none held, the one `unlock` gives,
+ * held from now. Each action restarts the 5 minutes as it starts and as it ends.
+ */
+export async function withHeld<T>(id: string, unlock: () => Promise<Uint8Array>, action: (seed: Uint8Array) => Promise<T>): Promise<T> {
+  if (held && held.id !== id) drop()
+  if (!held) hold(id, await unlock())
+  return using(held!, action, false)
+}
+
+/**
+ * `action` with the seed of passkey `id` if it is held, else nothing: what the page does by itself
+ * while a seed is held (messages opened again as new ones come), never the person's own action, so
+ * it asks nothing and restarts nothing, and a screen left open never keeps the seed past its 5
+ * minutes.
+ */
+export async function ifHeld<T>(id: string, action: (seed: Uint8Array) => Promise<T>): Promise<T | undefined> {
+  if (held?.id !== id) return undefined
+  return using(held, action, true)
 }
 
 /** A listener told whenever a seed is held or dropped. */
@@ -79,6 +99,5 @@ export function onHeld(listener: () => void): () => void {
   return () => void listeners.delete(listener)
 }
 
-// Hidden or closed: dropped at once.
-globalThis.document?.addEventListener('visibilitychange', () => hidden() && drop())
+// Closed: dropped at once.
 globalThis.addEventListener?.('pagehide', drop)

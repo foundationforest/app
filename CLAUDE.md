@@ -1,8 +1,8 @@
 This repo is `app`: the Forest app, the person's control panel for Forest, a web app at
 https://app.forest.foundation. It stores nothing of the person's: their seed is their passkey's PRF
-secret, asked for at an unlock, then kept in the page's memory for 5 minutes, which each action
-restarts, and dropped at once when the page is hidden or closed; never stored on a device (a backup
-passkey's copy sits on the host, locked to that passkey). It is built on three
+secret, asked for at an unlock, then held in the page's memory 5 minutes since the last action, or
+until the page closes (a page only hidden keeps it); never stored on a device (each passkey added
+after the first keeps a copy on the host, locked to that passkey). It is built on three
 repos, each fetched by `./standard.sh` at the commit its file pins: the standard (`STANDARD`), the
 markets (`MARKETS`) and services (`SERVICES`), all at github.com/foundationforest.
 

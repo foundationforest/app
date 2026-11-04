@@ -5,7 +5,8 @@
 // device keeps which profiles are the person's, and all a card shows is public. Above them, when
 // the Profiles folder holds a profile made on another device, one row, New profiles from another
 // device: one unlock reads them, and their cards show (flows/elsewhere.ts); a row, so it shows no
-// unlock icon.
+// unlock icon. At the top right, the inbox, with how many messages are new on every profile, which
+// opens all their conversations.
 
 import { config } from '../config.ts'
 import { passkey } from '../device.ts'
@@ -16,15 +17,15 @@ import { Mark } from '../mark.tsx'
 import { pairOf, pairs, postCount } from '../markets.ts'
 import { withSeed } from '../passkey.ts'
 import { ratingText, reviewCount } from '../show.ts'
-import { Dot, Line, Named, type Place, Places, Spinner, Top, Verified, useAction } from '../ui.tsx'
+import { Dot, Inbox, Line, Named, type Place, Places, Spinner, Top, Verified, useAction } from '../ui.tsx'
 
-type Props = { onOpen: (address: string) => void; onNew: () => void; go: (to: Place) => void }
+type Props = { onOpen: (address: string) => void; onNew: () => void; onMessages: () => void; go: (to: Place) => void }
 
-export function Profiles({ onOpen, onNew, go }: Props) {
+export function Profiles({ onOpen, onNew, onMessages, go }: Props) {
   const list = useProfiles()
   const cards = useCards(list)
   const rated = useHeldRated(list)
-  const news = useNews(list).of
+  const { of: news, messages } = useNews(list)
   const shown = list.map((p) => ({ ...p, pair: pairOf(p.label) })).sort((a, b) => Number(b.pair.offers) - Number(a.pair.offers) || a.pair.words.localeCompare(b.pair.words))
   const held = new Set(list.map((p) => p.label))
   const unreached = list.some((p) => {
@@ -37,7 +38,7 @@ export function Profiles({ onOpen, onNew, go }: Props) {
   })
   return (
     <main>
-      <Top>
+      <Top right={<Inbox count={messages} onOpen={onMessages} />}>
         <Mark />
       </Top>
       <div className="cards">

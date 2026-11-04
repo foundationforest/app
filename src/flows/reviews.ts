@@ -6,9 +6,8 @@
 // newest its Reviews or Notifications has shown (device.ts). A profile the device has no time for yet
 // is marked at the newest the index holds now, so nothing old shows as new on a new device.
 //
-// Notifications lists, from every profile, first a row for each with new messages (a message has no
-// time until it is unlocked: an inbox entry holds only who it is for and its envelope), then every
-// review, vouch and report the index counted about any of them, newest first, each new one marked.
+// Notifications lists every review, vouch and report the index counted about any of the person's
+// profiles, newest first, each new one marked; messages are the inbox's.
 
 import type { Profile } from '../device.ts'
 import { saveSeen, seen } from '../device.ts'
@@ -42,21 +41,18 @@ export async function rate(index: string, list: Profile[]): Promise<void> {
 /** What a profile wrote about others, of its posts: its reviews, vouches and reports, newest first. */
 export const givenOf = (posts: Posted[]): Posted[] => posts.filter((p) => p.kind !== 'post')
 
-/** One of Notifications' rows: a profile's new messages, by how many; or a review, vouch or report about one of the person's profiles (`on`), and whether it is new. */
-export type Notice = { messages: number; on: string } | { received: Received; on: string; fresh: boolean }
+/** One of Notifications' rows: a review, vouch or report about one of the person's profiles (`on`), and whether it is new. */
+export type Notice = { received: Received; on: string; fresh: boolean }
 
 /**
- * Notifications' rows, from every profile in `list`: those with new messages first, in `list`'s
- * order; then every review, vouch and report the index counted about any of them, newest first,
- * each new when it came after `since`, the time the device kept for its profile as the screen
- * opened (none: nothing is new).
+ * Notifications' rows: every review, vouch and report the index counted about any profile in
+ * `list`, newest first, each new when it came after `since`, the time the device kept for its
+ * profile as the screen opened (none: nothing is new).
  */
-export function notices(list: Profile[], messages: Record<string, string[]>, rated: Record<string, Held | undefined>, since: Record<string, number>): Notice[] {
-  const rows: Notice[] = list.filter((p) => (messages[p.address]?.length ?? 0) > 0).map((p) => ({ messages: messages[p.address]!.length, on: p.address }))
+export function notices(list: Profile[], rated: Record<string, Held | undefined>, since: Record<string, number>): Notice[] {
   const said = list.flatMap((p) => {
     const held = rated[p.address]
     return held && 'rated' in held ? held.rated.received.map((r) => ({ received: r, on: p.address, fresh: (r.time ?? 0) > (since[p.address] ?? Infinity) })) : []
   })
-  said.sort((a, b) => (b.received.time ?? 0) - (a.received.time ?? 0))
-  return [...rows, ...said]
+  return said.sort((a, b) => (b.received.time ?? 0) - (a.received.time ?? 0))
 }

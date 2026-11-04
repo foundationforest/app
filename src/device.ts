@@ -6,7 +6,7 @@
 // of, where they left off in each profile's inbox, the time of the newest review, vouch or report
 // about each profile its Reviews has shown, their theme, and, while a verification is under way, its
 // check and session, the ID check's payment and the gift's buy, then an ID check's payment no stamp
-// has used yet (flows/verify.ts); and the password manager's name of each backup passkey it added,
+// has used yet (flows/verify.ts); and the password manager's name of each passkey it added,
 // by its entry in the Profiles folder (flows/backups.ts), which the entry itself can't hold; and the
 // point posts' places are centred on, one for each place a post's form read the device's location
 // at, moved a little from it (near.ts). Never the seed, a key, a stamp or a message.
