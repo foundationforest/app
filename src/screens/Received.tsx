@@ -1,7 +1,7 @@
-// A review, vouch or report about one of the person's profiles, opened from Reviews, as the index
+// A review, vouch or report about one of the person's profiles, opened from Feedback, as the index
 // counted it: which profile it is on and when, the score big, its text, then the market's review
-// fields it holds, the post it names (by its preview's first line, as the index keeps it, so even a
-// deleted one shows) and who wrote it. Message them, or Report them, in red.
+// fields it holds, the listing it names (by its preview's first line, as the index keeps it, so even
+// a deleted one shows) and who wrote it. Message them, or Report them, in red.
 
 import { useProfiles, useRated } from '../hooks.ts'
 import { kindWords, markets, pairOf } from '../markets.ts'
@@ -21,7 +21,7 @@ export function Received({ mine, at, onBack, onMessage, onReport }: Props) {
   const rated = held && 'rated' in held ? held.rated : null
   const r = rated?.received.find((x) => x.address === at)
   const body = r?.body ?? {}
-  const named = typeof body.post === 'string' ? rated?.posts[body.post] : undefined
+  const named = typeof body.listing === 'string' ? rated?.listings[body.listing] : undefined
   const rows: Array<[string, string]> = []
   if (r?.kind === 'review' && market?.review) {
     for (const [name, field] of Object.entries(market.review)) {
@@ -29,7 +29,7 @@ export function Received({ mine, at, onBack, onMessage, onReport }: Props) {
       if (text) rows.push([fieldWords(name), text])
     }
   }
-  if (named && market) rows.push([kindWords('post', me.label), previewLines(market, named)[0] ?? ''])
+  if (named && market) rows.push([kindWords('listing', me.label), previewLines(market, named)[0] ?? ''])
   return (
     <main>
       <Top onBack={onBack} />

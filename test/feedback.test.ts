@@ -1,13 +1,13 @@
-// Reviews, vouches and reports, against services' own host and a stand-in index (world.ts): what the
-// index counted about a profile, newest first, with its rating, read with nothing unlocked; what is
-// new on a profile, after the time the device keeps for it, and on a new device nothing already
-// there; and what a profile gave, from its own folder.
+// Feedback: reviews, vouches and reports, against services' own host and a stand-in index
+// (world.ts): what the index counted about a profile, newest first, with its rating, read with
+// nothing unlocked; what is new on a profile, after the time the device keeps for it, and on a new
+// device nothing already there; and what a profile gave, from its own folder.
 
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'vitest'
 
 import * as device from '../src/device.ts'
-import { post, readPosts } from '../src/flows/posts.ts'
-import { givenOf, newOf, newest, notices, rate } from '../src/flows/reviews.ts'
+import { post, readEntries } from '../src/flows/entries.ts'
+import { givenOf, newOf, newest, notices, rate } from '../src/flows/feedback.ts'
 import { ratedOf } from '../src/rated.ts'
 import { readRated } from '../src/services/index.ts'
 import { Unreachable } from '../src/services/http.ts'
@@ -25,7 +25,7 @@ beforeEach(() => {
 type Said = { writer: string; id: string; body: Record<string, unknown>; time: number; counted?: boolean }
 
 /** A profile's page as services' index writes it (index/src/pages/profile.ts), holding these. */
-function page(address: string, o: { rating?: number; reviews?: Said[]; vouches?: Said[]; reports?: Said[]; posts?: Array<{ id: string; body: Record<string, unknown> }> }): IndexPage {
+function page(address: string, o: { rating?: number; reviews?: Said[]; vouches?: Said[]; reports?: Said[]; listings?: Array<{ id: string; body: Record<string, unknown> }> }): IndexPage {
   const said = (kind: string, by: 'reviewer' | 'writer') => (list: Said[] = []) =>
     list.map((s) => ({ [by]: s.writer, address: `${s.writer}/${kind}/${s.id}`, body: { subject: address, ...s.body }, counted: s.counted ?? true, ...(s.counted === false && { why: 'its writer does not count here' }), time: s.time, ...(kind === 'review' && { weight: 0.28 }) }))
   return {
@@ -36,7 +36,7 @@ function page(address: string, o: { rating?: number; reviews?: Said[]; vouches?:
     ratings: { value: o.rating ?? null, count: o.reviews?.length ?? 0 },
     trust: 38,
     uniqueness: 75,
-    posts: (o.posts ?? []).map((p) => ({ address: `${address}/post/${p.id}`, body: p.body, listed: true, time: 1 })),
+    listings: (o.listings ?? []).map((l) => ({ address: `${address}/listing/${l.id}`, body: l.body, listed: true, time: 1 })),
     reviews: { received: said('review', 'reviewer')(o.reviews), given: [] },
     vouches: { received: said('vouch', 'writer')(o.vouches), given: [] },
     reports: { received: said('report', 'writer')(o.reports), given: [] },
@@ -46,7 +46,7 @@ function page(address: string, o: { rating?: number; reviews?: Said[]; vouches?:
 }
 
 describe('what the index says of a profile', () => {
-  test('what it counted, newest first, by kind; its rating and how many reviews; its posts by address; a 404 is nothing yet; down, one quiet line', async () => {
+  test('what it counted, newest first, by kind; its rating and how many reviews; its listings by address; a 404 is nothing yet; down, one quiet line', async () => {
     const seller = (await verifiedWith(w, 'clothing/seller')).profiles[0]!
     const buyer = (await verifiedWith(w, 'clothing/buyer')).profiles[0]!
     w.indexSays(
@@ -59,7 +59,7 @@ describe('what the index says of a profile', () => {
         ],
         vouches: [{ writer: buyer.address, id: 'c', body: { text: 'Real.' }, time: 300 }],
         reports: [{ writer: buyer.address, id: 'd', body: { text: 'Late.' }, time: 200 }],
-        posts: [{ id: 'coat', body: { description: 'A wool coat.' } }],
+        listings: [{ id: 'coat', body: { description: 'A wool coat.' } }],
       }),
     )
     const rated = await readRated(w.index, seller.address)
@@ -70,10 +70,10 @@ describe('what the index says of a profile', () => {
       ['report', buyer.address, 'Late.', 200],
       ['review', buyer.address, 'As described.', 100],
     ])
-    expect(rated.posts[`${seller.address}/post/coat`]?.description).toBe('A wool coat.')
+    expect(rated.listings[`${seller.address}/listing/coat`]?.description).toBe('A wool coat.')
     expect(newest(rated)).toBe(300)
 
-    expect(await readRated(w.index, buyer.address), 'nothing yet: the index holds no profile entry for it').toEqual({ rating: null, reviews: 0, received: [], posts: {} })
+    expect(await readRated(w.index, buyer.address), 'nothing yet: the index holds no profile entry for it').toEqual({ rating: null, reviews: 0, received: [], listings: {} })
     w.indexDown(true)
     const err = await readRated(w.index, seller.address).catch((e: unknown) => e)
     expect(err).toBeInstanceOf(Unreachable)
@@ -118,7 +118,7 @@ describe('what is new on a profile', () => {
   })
 })
 
-test("Notifications: every review, vouch and report about any of the person's profiles, newest first, those after the marks new; no message among them", async () => {
+test("the Feedback place: every review, vouch and report about any of the person's profiles, newest first, those after the marks new; no message among them", async () => {
   const p = await verifiedWith(w, 'clothing/seller', 'tutoring/tutor')
   const [seller, tutor] = p.profiles as [device.Profile, device.Profile]
   const other = (await verifiedWith(w, 'clothing/buyer', 'tutoring/student')).profiles
@@ -141,15 +141,15 @@ test("what a profile gave: its reviews, vouches and reports, from its own folder
   const seller = await verifiedWith(w, 'clothing/seller')
   const buyer = await verifiedWith(w, 'clothing/buyer')
   const [s, b] = [seller.profiles[0]!, buyer.profiles[0]!]
-  await post(w, seller.seed, s, 'post', { description: 'A wool coat.' })
+  await post(w, seller.seed, s, 'listing', { description: 'A wool coat.' })
   await post(w, buyer.seed, b, 'review', { subject: s.address, score: '9.5', asDescribed: 'yes' })
   await post(w, buyer.seed, b, 'vouch', { subject: s.address, text: 'Real.' })
   await post(w, buyer.seed, b, 'report', { subject: s.address, text: 'Late.' })
-  const given = givenOf(await readPosts(w, b.address))
+  const given = givenOf(await readEntries(w, b.address))
   expect(given.map((g) => [g.kind, g.body.subject]).sort()).toEqual([
     ['report', s.address],
     ['review', s.address],
     ['vouch', s.address],
   ])
-  expect(givenOf(await readPosts(w, s.address)), 'a post is no review').toEqual([])
+  expect(givenOf(await readEntries(w, s.address)), 'a listing is no review').toEqual([])
 })

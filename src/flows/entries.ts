@@ -1,10 +1,10 @@
-// A profile's posts, of every kind the markets define (the markets manual): a post at post/<id>, a
-// review at review/<id>, a vouch at vouch/<id> and a report at report/<id>, each at a random id.
-// Reading them needs nothing unlocked: a folder is public. Before the unlock, the app checks what is
-// to be written: a post holding something; the body against its market (checkEntry, the markets'
-// one checker), which demands no field but a subject; and for a review, a vouch or a report, its subject, read from the host: a profile's
-// address, not the writing profile's, in the same market, on the other side (the same role where the
-// market has one). For now, for testing, it may be another of the person's own profiles, which the
+// A profile's entries, of every kind the markets define (the markets manual): a listing at
+// listing/<id>, a review at review/<id>, a vouch at vouch/<id> and a report at report/<id>, each at
+// a random id. Reading them needs nothing unlocked: a folder is public. Before the unlock, the app
+// checks what is to be posted: a listing holding something; the body against its market
+// (checkEntry, the markets' one checker), which demands no field but a subject; and for a review, a
+// vouch or a report, its subject, read from the host: a profile's address, not the writing
+// profile's, in the same market, on the other side (the same role where the market has one). For now, for testing, it may be another of the person's own profiles, which the
 // index counts, since it can't tell; this may close before real users. Then the main key signs it,
 // at a new random id, or for an edit at its own path after what is there (nextTime); a delete is a
 // null body there, free at the host. Each write is paid from the profile's folder, topped up from
@@ -26,8 +26,8 @@ import { randomId, walletKey } from './profiles.ts'
 /** One entry a profile posted: its path, its kind, its body and time, and the access key that signed it, when one did. */
 export type Posted = { path: string; kind: Kind; body: Body; time: number; key?: string }
 
-/** The posts a folder holds now, of every kind, newest first. */
-export function postsOf(view: View): Posted[] {
+/** The entries a folder holds now, of every kind, newest first. */
+export function entriesOf(view: View): Posted[] {
   const out: Posted[] = []
   for (const [path, { entry: e }] of liveContent(view)) {
     const [kind, id, ...rest] = path.split('/')
@@ -37,9 +37,9 @@ export function postsOf(view: View): Posted[] {
   return out.sort((a, b) => b.time - a.time)
 }
 
-/** A profile's posts, as the host serves its folder. */
-export async function readPosts(s: Services, address: string): Promise<Posted[]> {
-  return postsOf(await readView(s.host, address))
+/** A profile's entries, as the host serves its folder. */
+export async function readEntries(s: Services, address: string): Promise<Posted[]> {
+  return entriesOf(await readView(s.host, address))
 }
 
 /**
@@ -57,8 +57,8 @@ export function addressIn(given: string): string {
   }
 }
 
-/** The profile a review, vouch or report is about, checked: its address, its role, and its posts. */
-export type Subject = { address: string; role: string; posts: Posted[] }
+/** The profile a review, vouch or report is about, checked: its address, its role, and its listings. */
+export type Subject = { address: string; role: string; listings: Posted[] }
 
 /**
  * The subject at `address` for an entry by `me`, read from the host and checked; else why not, in a
@@ -74,11 +74,11 @@ export async function subjectOf(s: Services, me: Profile, address: string, _mine
   const { market, role } = pairOf(me.label)
   if (body.market !== market) throw new Said("This profile isn't in this market.", true)
   if (typeof body.role !== 'string' || !otherSide(market, role).includes(body.role)) throw new Said("This profile isn't on the other side of this market.", true)
-  return { address, role: body.role, posts: postsOf(view).filter((p) => p.kind === 'post') }
+  return { address, role: body.role, listings: entriesOf(view).filter((p) => p.kind === 'listing') }
 }
 
 /**
- * Whether `body` can be posted as a `kind` entry by `me`: a post holding something, its subject
+ * Whether `body` can be posted as a `kind` entry by `me`: a listing holding something, its subject
  * checked, and the body fitting its market. Gives back nothing when it can; else throws why, in one
  * line (quiet for what is still missing, red for a field that does not fit).
  */
@@ -86,9 +86,9 @@ export async function check(s: Services, me: Profile, kind: Kind, body: Body, mi
   const { market: name, role } = pairOf(me.label)
   const market = markets.market(name)
   if (!market) throw new Said("This profile's market isn't in the directory.", true)
-  if (kind === 'post' && Object.keys(body).every((name) => name === 'files')) throw new Said('Add something first.')
-  if (kind !== 'post' && typeof body.subject !== 'string') throw new Said('Add their address.')
-  const subject = kind === 'post' ? undefined : await subjectOf(s, me, body.subject as string, mine)
+  if (kind === 'listing' && Object.keys(body).every((name) => name === 'files')) throw new Said('Add something first.')
+  if (kind !== 'listing' && typeof body.subject !== 'string') throw new Said('Add their address.')
+  const subject = kind === 'listing' ? undefined : await subjectOf(s, me, body.subject as string, mine)
   const why = markets.checkEntry(name, role, kind, body, subject?.role)
   if (why) throw entrySays(why, Object.keys(body))
 }

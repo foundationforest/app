@@ -1,7 +1,7 @@
 // The index (services' index/README.md, Its API): what it says of one profile, read from its JSON
 // page, /profiles/<address>.json, open to any origin and needing nothing unlocked. The app takes its
-// rating, the posts it holds of the profile (so a review's post shows even once deleted), and the
-// reviews, vouches and reports it counted about it, each with its time. What it says is its own
+// rating, the listings it holds of the profile (so a review's listing shows even once deleted), and
+// the reviews, vouches and reports it counted about it, each with its time. What it says is its own
 // word: another index may rate the same profile another way.
 
 import type { Body } from '@foundationforest/folders'
@@ -14,12 +14,12 @@ export type Said = 'review' | 'vouch' | 'report'
 /** A review, vouch or report the index counted about a profile: its kind, its address (`<writer>/<kind>/<id>`), who wrote it, its body, and when. */
 export type Received = { kind: Said; address: string; writer: string; body: Body; time?: number }
 
-/** What the index says of a profile: its rating, from 1 to 10 (null with none), how many reviews it counted, what it counted about it, newest first, and its posts by address. */
-export type Rated = { rating: number | null; reviews: number; received: Received[]; posts: Record<string, Body> }
+/** What the index says of a profile: its rating, from 1 to 10 (null with none), how many reviews it counted, what it counted about it, newest first, and its listings by address. */
+export type Rated = { rating: number | null; reviews: number; received: Received[]; listings: Record<string, Body> }
 
 const SERVICE = 'index'
 
-const NONE: Rated = { rating: null, reviews: 0, received: [], posts: {} }
+const NONE: Rated = { rating: null, reviews: 0, received: [], listings: {} }
 
 const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v)
 
@@ -46,7 +46,7 @@ export async function readRated(origin: string, address: string): Promise<Rated>
   const value = ratings?.value
   const received = [...counted('review', reviews?.received, 'reviewer'), ...counted('vouch', vouches?.received, 'writer'), ...counted('report', reports?.received, 'writer')]
   received.sort((a, b) => (b.time ?? 0) - (a.time ?? 0))
-  const posts: Record<string, Body> = {}
-  for (const p of Array.isArray(page.posts) ? page.posts : []) if (isObject(p) && typeof p.address === 'string' && isObject(p.body)) posts[p.address] = p.body as Body
-  return { rating: typeof value === 'number' ? value : null, reviews: received.filter((r) => r.kind === 'review').length, received, posts }
+  const listings: Record<string, Body> = {}
+  for (const l of Array.isArray(page.listings) ? page.listings : []) if (isObject(l) && typeof l.address === 'string' && isObject(l.body)) listings[l.address] = l.body as Body
+  return { rating: typeof value === 'number' ? value : null, reviews: received.filter((r) => r.kind === 'review').length, received, listings }
 }

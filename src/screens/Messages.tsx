@@ -1,6 +1,6 @@
 // Messages: the conversations of every one of the person's profiles, from the inbox at the top of
-// Profiles and Notifications, or of one profile (`only`), from the inbox at its top; only messages
-// (reviews, vouches and reports show in Notifications and a profile's Reviews). Each conversation
+// Profiles and Feedback, or of one profile (`only`), from the inbox at its top; only messages
+// (reviews, vouches and reports show in Feedback and a profile's Feedback). Each conversation
 // shows who it is with, its last message, when, and a dot when it holds a new one, newest first.
 // With a seed held they open by themselves (opening.ts); with none, one row says how many are new
 // ("3 new messages", or "No new messages"), with Open: one unlock opens every profile's inbox and

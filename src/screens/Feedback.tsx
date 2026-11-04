@@ -1,21 +1,21 @@
-// Notifications, the middle place: the reviews, vouches and reports that came to every one of the
+// Feedback, the middle place: the reviews, vouches and reports that came to every one of the
 // person's profiles, with nothing unlocked; messages are the inbox's, at the top right, with how
 // many are new, which opens all their conversations. Every review, vouch and report the index
 // counted about any of them, newest first, in full: its score or chip, its text, the profile it is
 // about, when, and a dot on those that came after what the device had seen as the screen opened; a
-// tap opens it. From now they are seen (device.ts), as Reviews marks them, so the tab, the card and
-// the rating line count them new no more.
+// tap opens it. From now they are seen (device.ts), as a profile's Feedback marks them, so the tab,
+// the card and the rating line count them new no more.
 
 import { useEffect, useState } from 'react'
 
 import { saveSeen, seen } from '../device.ts'
-import { newest, notices } from '../flows/reviews.ts'
+import { newest, notices } from '../flows/feedback.ts'
 import { useHeldRated, useNews, useProfiles } from '../hooks.ts'
 import { Dot, Inbox, Named, type Place, Places, SaidChip, Top, ago } from '../ui.tsx'
 
 type Props = { go: (to: Place) => void; onMessages: () => void; onReceived: (address: string, entry: string) => void }
 
-export function Notifications({ go, onMessages, onReceived }: Props) {
+export function Feedback({ go, onMessages, onReceived }: Props) {
   const list = useProfiles()
   const { messages } = useNews(list)
   // Read by the places below as the screen opens (Places), and held in the page meanwhile.
@@ -45,7 +45,7 @@ export function Notifications({ go, onMessages, onReceived }: Props) {
   return (
     <main>
       <Top right={<Inbox count={messages} onOpen={onMessages} />}>
-        <h1>Notifications</h1>
+        <h1>Feedback</h1>
       </Top>
       <div className="rows">
         {rows.map((n) => (
@@ -66,7 +66,7 @@ export function Notifications({ go, onMessages, onReceived }: Props) {
       </div>
       {unreached ? <p className="line">Can't reach the index.</p> : rows.length === 0 && newestOf.every((n) => n !== null) && <p className="line">Nothing yet.</p>}
       <div className="fill" />
-      <Places at="notifications" go={go} />
+      <Places at="feedback" go={go} />
     </main>
   )
 }

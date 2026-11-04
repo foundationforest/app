@@ -16,16 +16,28 @@ Read `README.md`, then the READMEs of the pinned repos at their pins: the front 
 
 ## Words
 
-Use the standard's and services' words: seed, profile, profile entry, entry, folder, host, verifier,
-stamp, verification, access key, connector, credits, wallet, unlock. Never: account (but "no
-account"), record, signer, permission, sealed, issuer, vault, registry, keeper, devnet. No
-em-dashes. A string baked into a recipe keeps its bytes even when its words grow old (the passkey's
-salt, `forest-seed-v1`): rename the code around it, never the string, and say why beside it.
+Use the standard's, the markets' and services' words: seed, profile, profile entry, entry, folder,
+host, verifier, stamp, verification, access key, connector, credits, wallet, unlock, listing,
+review, vouch, report, feedback. Never: account (but "no account"), record, signer, permission,
+sealed, issuer, vault, registry, keeper, devnet. No em-dashes. A string baked into a recipe keeps
+its bytes even when its words grow old (the passkey's salt, `forest-seed-v1`): rename the code
+around it, never the string, and say why beside it.
+
+- entry: anything in a folder, the standard's word.
+- listing: an offer or a request, at `listing/<id>`; the role's `listings` (`offers` or
+  `requests`) says which. Tennis players post requests. "listing" means only that: a host's list of
+  entries is a list.
+- review, vouch, report: the markets' kinds, each about one profile.
+- feedback: what people say about a profile, its reviews, vouches and reports. A word, never a
+  kind. On screen, Feedback is where they show together: the place, and a profile's.
+- post: only the everyday verb, to post a listing, a review, a vouch or a report.
 
 ## How to work
 
 - One session at a time. Plan mode first: read, post the plan, wait. Then one pull request; never
   push to `main`.
+- A pull request's title says what changed, in plain words, readable on its own; each lands as one
+  commit under its title.
 - Follow the reference app: every entry, path and note the app writes matches `mcp/test/app.ts`, so
   another app with the same seed finds the same profiles, stamps and connections. The standard's
   libraries do the protocol, and services' credits client (`host/client/client.ts`) the credits, both
@@ -35,10 +47,11 @@ salt, `forest-seed-v1`): rename the code around it, never the string, and say wh
 - Small modules, one job each. Service addresses live in `src/config.ts` only.
 - Keep `README.md` true. It describes the whole first version; each pull request lists the README
   lines not yet true.
-- Tests: `npm run check`, `npm test` (Vitest: the flows, against services' own host, and the
-  storage) and `npm run test:browser` (Chromium with a virtual PRF passkey, against services' own
-  verifier and host, after `./standard.sh services`). CI runs all three; a skipped test fails. Real
-  Didit checks cost money: only Carlos runs them, on his phone; every test uses the stand-ins.
+- Tests, all after `./standard.sh services`: `npm run check` (the types, tests included), `npm test`
+  (Vitest: the flows, against services' own verifier and host, and the storage) and `npm run
+  test:browser` (Chromium with a virtual PRF passkey, against services' own verifier, host, index
+  and connector). CI runs all three; a skipped test fails. Real Didit checks cost money: only Carlos
+  runs them, on his phone; every test uses the stand-ins.
 
 ## Design
 

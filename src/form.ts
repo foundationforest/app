@@ -1,19 +1,19 @@
-// The post form, read from the market file alone, never a field by name (the markets manual's The
-// file and Preview). Which fields a role's post asks, in the order a form asks them: the preview's
-// first, each after the fields its `when` names, and a field with `when` right after the last of
-// them; then the rest, in the file's order; contact last, which every post may hold. A field with
-// `when` applies only while each answer it names holds one of its values (a `many` answer, any of
-// them); an answer changed drops every field that no longer applies, through a chain too. And what
-// still fits of a post an older market shaped: the field checkEntry names, dropped, until the rest
-// fits.
+// The listing form, read from the market file alone, never a field by name (the markets manual's
+// The file and Preview). Which fields a role's listing asks, in the order a form asks them: the
+// preview's first, each after the fields its `when` names, and a field with `when` right after the
+// last of them; then the rest, in the file's order; contact last, which every listing may hold. A
+// field with `when` applies only while each answer it names holds one of its values (a `many`
+// answer, any of them); an answer changed drops every field that no longer applies, through a chain
+// too. And what still fits of a listing an older market shaped: the field checkEntry names,
+// dropped, until the rest fits.
 
 import type { Body } from '@foundationforest/folders'
 
 import { type Field, type Market, fieldsOf, markets, previewOf } from './markets.ts'
 
-/** A role's post fields, each with its name, in the order a form asks them. */
+/** A role's listing fields, each with its name, in the order a form asks them. */
 export function formFields(market: Market, role: string): Array<[string, Field]> {
-  const fields = fieldsOf(market, 'post', role)
+  const fields = fieldsOf(market, 'listing', role)
   const waits = (name: string) => Object.keys(fields[name]!.when ?? {}).filter((other) => other in fields)
   // The preview's first, then the rest, each after the fields it waits on.
   const first: string[] = []
@@ -55,17 +55,17 @@ export function settled(fields: Array<[string, Field]>, values: Body): Body {
   }
 }
 
-/** Whether a post's body fits its market as the file says today: what the index lists. */
-export const fits = (market: string, role: string, body: Body) => markets.checkEntry(market, role, 'post', body) === null
+/** Whether a listing's body fits its market as the file says today: what the index lists. */
+export const fits = (market: string, role: string, body: Body) => markets.checkEntry(market, role, 'listing', body) === null
 
 /**
- * What still fits of a post's body in its market today: the field checkEntry names, dropped, one at
- * a time, until the rest fits. Its files stay, which the post names its photos by.
+ * What still fits of a listing's body in its market today: the field checkEntry names, dropped, one
+ * at a time, until the rest fits. Its files stay, which the listing names its photos by.
  */
 export function fitting(market: string, role: string, body: Body): Body {
   const now: Body = { ...body }
   for (;;) {
-    const why = markets.checkEntry(market, role, 'post', now)
+    const why = markets.checkEntry(market, role, 'listing', now)
     if (!why) return now
     const named = Object.keys(now).find((name) => name !== 'files' && why.startsWith(`${name} `))
     if (!named) return {}

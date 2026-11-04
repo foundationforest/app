@@ -82,11 +82,11 @@ test('New profile: every market, in the directory\'s order, each with every role
   expect(marketList.flatMap((m) => m.roles)).toEqual(pairs)
 })
 
-test('the markets: each role\'s other side, and its post in its own word', () => {
+test('the markets: each role\'s other side, and its listing in its own word', () => {
   expect(otherSide('tutoring', 'tutor')).toEqual(['student'])
   expect(otherSide('tennis-matches', 'player'), 'one role: a player plays a player').toEqual(['player'])
   expect(otherSide('tutoring', 'nobody')).toEqual([])
-  expect([kindWords('post', 'tutoring/tutor'), kindWords('post', 'tutoring/student'), kindWords('post', 'tennis-matches/player'), kindWords('vouch', 'tutoring/tutor')]).toEqual(['Offer', 'Request', 'Post', 'Vouch'])
+  expect([kindWords('listing', 'tutoring/tutor'), kindWords('listing', 'tutoring/student'), kindWords('listing', 'tennis-matches/player'), kindWords('vouch', 'tutoring/tutor')]).toEqual(['Offer', 'Request', 'Request', 'Vouch'])
 })
 
 test("every code the verifier, the host and the standard list has its own plain line, and none reaches the screen", () => {
@@ -126,7 +126,7 @@ test("every colour the app writes outside theme.css: theme.css's paper and ink, 
 test("checkEntry's words, as one line naming the field by its name in words", () => {
   expect(fieldWords('groupSize')).toBe('Group size')
   expect(entrySays('subjects takes a list, each different, each one of maths, physics', ['subjects']).message).toBe("Subjects doesn't fit.")
-  expect(entrySays('a post in tutoring has no field colour', ['colour']).message).toBe("Colour doesn't fit.")
+  expect(entrySays('a listing in tutoring has no field colour', ['colour']).message).toBe("Colour doesn't fit.")
   expect(entrySays('tutoring is not a market in the directory', ['description']).message).toBe("This doesn't fit the market.")
 })
 

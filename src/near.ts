@@ -1,10 +1,10 @@
-// Where a post's place is centred (the markets manual's Types, place): near the person, never on
+// Where a listing's place is centred (the markets manual's Types, place): near the person, never on
 // them. The first time the device posts from somewhere, the app moves its spot once, about 0.2 to
-// 0.6 km in a random direction, and keeps that point on the device (device.ts); a post from within
-// 0.8 km of a kept point is centred on it again. So posts from one place share one centre and never
-// average out to the person's home, and their real spot stays inside even a 1 km circle. Radius 0,
-// an exact spot, is where the device is: with no map, the one spot a person can mean. And the radii a
-// place's slider offers.
+// 0.6 km in a random direction, and keeps that point on the device (device.ts); a listing from
+// within 0.8 km of a kept point is centred on it again. So listings from one place share one centre
+// and never average out to the person's home, and their real spot stays inside even a 1 km circle.
+// Radius 0, an exact spot, is where the device is: with no map, the one spot a person can mean. And
+// the radii a place's slider offers.
 
 import { type Point, keepPoint, points } from './device.ts'
 
@@ -16,7 +16,7 @@ export type Spot = { lat: number; lon: number }
 /** How far a new centre is moved from the device's spot, in kilometres. */
 export const MOVED = { least: 0.2, most: 0.6 }
 
-/** A post from within this many kilometres of a kept centre is centred on it again. */
+/** A listing from within this many kilometres of a kept centre is centred on it again. */
 export const SAME_PLACE_KM = 0.8
 
 /** The radii a place's slider offers, in kilometres: 0, that exact spot, then up to 50. */
@@ -53,7 +53,7 @@ function moved(spot: Spot, km: number, bearing: number): Spot {
 }
 
 /**
- * The centre of a post's place, for the device at `spot`: the point kept near it, else a new one,
+ * The centre of a listing's place, for the device at `spot`: the point kept near it, else a new one,
  * moved once and kept. To 3 decimals, about 100 m, since it is rough anyway.
  */
 export function pointFor(spot: Spot, random: () => number = Math.random): Point {

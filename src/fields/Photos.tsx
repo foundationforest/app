@@ -1,7 +1,8 @@
-// A post's photos: tiles, added from the device, up to eight (one for a field that holds one). Each
-// photo picked is redrawn on the device first (redraw.ts) and shown from its new bytes until it is
-// sent; one the post holds already shows from the host. The field holds each photo's SHA-256; the
-// form keeps the bytes of those not sent yet in `picked`, for the post to name and send.
+// A listing's photos: tiles, added from the device, up to eight (one for a field that holds one).
+// Each photo picked is redrawn on the device first (redraw.ts) and shown from its new bytes until
+// it is sent; one the listing holds already shows from the host. The field holds each photo's
+// SHA-256; the form keeps the bytes of those not sent yet in `picked`, for the listing to name and
+// send.
 
 import { useEffect, useRef, useState } from 'react'
 

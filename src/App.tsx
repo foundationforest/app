@@ -2,9 +2,9 @@
 // opens a seed with no stamp and nothing under way goes to New to Forest? first, then Get verified;
 // one that answered from another device, letting a verified person in, to Save a passkey on this
 // device?, once. Then a person with no profile yet makes their first, and once it is made, Add a
-// second passkey, then Use Forest from your AI; then Profiles, Notifications and Settings, and from
-// them New profile, every profile's messages (the inbox at the top of Profiles and Notifications),
-// a profile, its messages, its reviews, a review received, a post, Review someone, a thread, a new
+// second passkey, then Use Forest from your AI; then Profiles, Feedback and Settings, and from them
+// New profile, every profile's messages (the inbox at the top of Profiles and Feedback), a profile,
+// its messages, its Feedback, a review received, a listing, Review someone, a thread, a new
 // message, the ID check, an AI app, Connect an AI, or Add a passkey. Every setup step has a back:
 // New to Forest? to Start, Get verified to New to Forest? (or Start, once a check is under way),
 // Your first profile to Profiles.
@@ -23,7 +23,7 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react'
 
 import { passkey as inUse, profiles } from './device.ts'
-import type { Posted } from './flows/posts.ts'
+import type { Posted } from './flows/entries.ts'
 import { PATHS as SCREEN_PATHS } from './paths.ts'
 import type { Entered } from './flows/start.ts'
 import { type Step, choose, nothingUnderWay, stepOf } from './flows/verify.ts'
@@ -37,13 +37,13 @@ import { Message } from './screens/Message.tsx'
 import { Messages } from './screens/Messages.tsx'
 import { NewHere } from './screens/NewHere.tsx'
 import { NewProfile } from './screens/NewProfile.tsx'
-import { Notifications } from './screens/Notifications.tsx'
-import { Post } from './screens/Post.tsx'
+import { Feedback } from './screens/Feedback.tsx'
+import { Listing } from './screens/Listing.tsx'
 import { Profile } from './screens/Profile.tsx'
 import { Profiles } from './screens/Profiles.tsx'
 import { Received } from './screens/Received.tsx'
 import { Review } from './screens/Review.tsx'
-import { Reviews } from './screens/Reviews.tsx'
+import { ProfileFeedback } from './screens/ProfileFeedback.tsx'
 import { SavePasskey } from './screens/SavePasskey.tsx'
 import { SecondPasskey } from './screens/SecondPasskey.tsx'
 import { Settings } from './screens/Settings.tsx'
@@ -61,11 +61,11 @@ type Screen =
   | { at: 'profiles' }
   | { at: 'new'; market?: string }
   | { at: 'profile'; address: string }
-  | { at: 'reviews'; address: string }
+  | { at: 'profile-feedback'; address: string }
   | { at: 'received'; address: string; entry: string }
-  | { at: 'post'; address: string; edit?: Posted }
+  | { at: 'listing'; address: string; edit?: Posted }
   | { at: 'review'; address: string; subject?: string; edit?: Posted; report?: boolean }
-  | { at: 'notifications' }
+  | { at: 'feedback' }
   | { at: 'messages'; only?: string }
   | { at: 'thread'; mine: string; them: string }
   | { at: 'message'; to?: string }
@@ -129,8 +129,8 @@ function here(): Screen {
       return { at: 'new', ...(isText(now.market) && { market: now.market }) }
     case '/settings':
       return { at: 'settings' }
-    case '/notifications':
-      return { at: 'notifications' }
+    case '/feedback':
+      return { at: 'feedback' }
     // A profile's messages, or with none named every profile's.
     case '/messages':
       return { at: 'messages', ...(isText(now.only) && { only: now.only }) }
@@ -140,9 +140,9 @@ function here(): Screen {
       return { at: 'add-passkey', ...(now.offered && { offered: true }) }
   }
   if (path === '/profile' && isText(now.address)) return { at: 'profile', address: now.address }
-  if (path === '/reviews' && isText(now.address)) return { at: 'reviews', address: now.address }
+  if (path === '/profile-feedback' && isText(now.address)) return { at: 'profile-feedback', address: now.address }
   if (path === '/received' && isText(now.address) && isText(now.entry)) return { at: 'received', address: now.address, entry: now.entry }
-  if (path === '/post' && isText(now.address)) return { at: 'post', address: now.address, ...(now.edit && { edit: now.edit }) }
+  if (path === '/listing' && isText(now.address)) return { at: 'listing', address: now.address, ...(now.edit && { edit: now.edit }) }
   if (path === '/review' && isText(now.address)) return { at: 'review', address: now.address, ...(now.edit && { edit: now.edit }), ...(isText(now.subject) && { subject: now.subject }), ...(now.report && { report: true }) }
   if (path === '/thread' && isText(now.mine) && isText(now.them)) return { at: 'thread', mine: now.mine, them: now.them }
   if (path === '/ai' && isText(now.address)) return { at: 'ai', address: now.address }
@@ -156,11 +156,11 @@ function keptOf(to: Screen): Kept {
     case 'new':
       return to.market ? { market: to.market } : {}
     case 'profile':
-    case 'reviews':
+    case 'profile-feedback':
       return { address: to.address }
     case 'received':
       return { address: to.address, entry: to.entry }
-    case 'post':
+    case 'listing':
       return { address: to.address, ...(to.edit && { edit: to.edit }) }
     case 'review':
       return { address: to.address, ...(to.edit && { edit: to.edit }), ...(to.subject && { subject: to.subject }), ...(to.report && { report: true }) }
@@ -293,15 +293,15 @@ function Screens() {
         <Profile
           address={screen.address}
           onBack={back}
-          onPost={(edit) => go({ at: 'post', address: screen.address, ...(edit && { edit }) }, true)}
-          onReviews={() => go({ at: 'reviews', address: screen.address }, true)}
+          onListing={(edit) => go({ at: 'listing', address: screen.address, ...(edit && { edit }) }, true)}
+          onFeedback={() => go({ at: 'profile-feedback', address: screen.address }, true)}
           onReview={() => review(screen.address)}
           onMessages={() => go({ at: 'messages', only: screen.address }, true)}
         />
       )
-    case 'reviews':
+    case 'profile-feedback':
       return (
-        <Reviews
+        <ProfileFeedback
           address={screen.address}
           onBack={back}
           onOpen={(entry) => go({ at: 'received', address: screen.address, entry }, true)}
@@ -319,17 +319,17 @@ function Screens() {
           onReport={(subject) => review(screen.address, { subject, report: true })}
         />
       )
-    case 'post':
-      return <For address={screen.address}>{(me) => <Post me={me} {...(screen.edit && { edit: screen.edit })} onDone={back} onBack={back} />}</For>
+    case 'listing':
+      return <For address={screen.address}>{(me) => <Listing me={me} {...(screen.edit && { edit: screen.edit })} onDone={back} onBack={back} />}</For>
     case 'review':
       return (
         <For address={screen.address}>
           {(me) => <Review me={me} {...(screen.edit && { edit: screen.edit })} {...(screen.subject && { subject: screen.subject })} {...(screen.report && { report: true })} onDone={back} onBack={back} />}
         </For>
       )
-    case 'notifications':
+    case 'feedback':
       return (
-        <Notifications
+        <Feedback
           go={place}
           onMessages={() => go({ at: 'messages' }, true)}
           onReceived={(address, entry) => go({ at: 'received', address, entry }, true)}

@@ -1,8 +1,8 @@
-// The post form, from the market file alone (form.ts): its fields in the order a form asks them, the
-// preview's first, each after the fields its `when` names, the rest after, contact last; a field
-// shown only while the answers it depends on hold, and dropped, through a chain, when they no longer
-// do; contact on every post, though no market lists it; a choice by its label, else in words; and
-// what still fits of a post an older market shaped.
+// The listing form, from the market file alone (form.ts): its fields in the order a form asks them,
+// the preview's first, each after the fields its `when` names, the rest after, contact last; a
+// field shown only while the answers it depends on hold, and dropped, through a chain, when they no
+// longer do; contact on every listing, though no market lists it; a choice by its label, else in
+// words; and what still fits of a listing an older market shaped.
 
 import { expect, test } from 'vitest'
 
@@ -38,7 +38,7 @@ test('an answer changed drops each field that no longer applies, through a chain
   expect(settled(fields, { ...coat, kind: 'boots' })).toEqual({ wearer: ['women'], kind: 'boots' })
   expect(settled(fields, { ...coat, wearer: ['girls'] })).toEqual({ wearer: ['girls'], kind: 'coat' })
   expect(settled(fields, coat), 'what still applies stays').toEqual(coat)
-  expect(markets.checkEntry('clothing', 'seller', 'post', { ...coat, kind: 'boots' })).toMatch(/^size is only for/)
+  expect(markets.checkEntry('clothing', 'seller', 'listing', { ...coat, kind: 'boots' })).toMatch(/^size is only for/)
 })
 
 test('tutoring: the place only when sessions are in person, right after how they are held; dropped when that goes', () => {
@@ -50,30 +50,30 @@ test('tutoring: the place only when sessions are in person, right after how they
   const place = { lat: '40.420', lon: '-3.700', radiusKm: 5 }
   expect(settled(fields, { mode: ['online', 'in-person'], place })).toEqual({ mode: ['online', 'in-person'], place })
   expect(settled(fields, { mode: ['online'], place })).toEqual({ mode: ['online'] })
-  expect(markets.checkEntry('tutoring', 'tutor', 'post', { mode: ['online'], place })).toMatch(/^place is only for/)
+  expect(markets.checkEntry('tutoring', 'tutor', 'listing', { mode: ['online'], place })).toMatch(/^place is only for/)
 })
 
-test("contact on every post, in every market and role, the form's last field, though no market lists it", () => {
+test("contact on every listing, in every market and role, the form's last field, though no market lists it", () => {
   for (const p of pairs) {
     const market = markets.market(p.market)!
-    expect(market.post.contact, p.label).toBeUndefined()
+    expect(market.listing.contact, p.label).toBeUndefined()
     expect(formFields(market, p.role).at(-1)?.[0], p.label).toBe('contact')
   }
-  expect(markets.checkEntry('electronics', 'seller', 'post', { contact: '@ada' })).toBeNull()
+  expect(markets.checkEntry('electronics', 'seller', 'listing', { contact: '@ada' })).toBeNull()
 })
 
 test('a choice by its label where its field has one, else its value in words; a many choice holds several', () => {
-  expect(choiceWords(clothing.post.size!, 'xl')).toBe('XL')
-  expect(choiceWords(clothing.post.size!, 'm'), 'no label: in words').toBe('M')
-  expect(choiceWords(clothing.post.babySize!, '0-3m')).toBe('0-3 months')
-  expect(choiceWords(markets.market('electronics')!.post.kind!, 'tv')).toBe('TV')
-  expect(choiceWords(clothing.post.condition!, 'new-with-tags')).toBe('New with tags')
-  expect(valueText(clothing.post.size!, '4xl')).toBe('4XL')
-  expect(valueText(clothing.post.delivery!, ['pickup', 'shipping'])).toBe('Pickup, Shipping')
-  expect(markets.checkEntry('clothing', 'seller', 'post', { delivery: ['pickup', 'shipping'] })).toBeNull()
+  expect(choiceWords(clothing.listing.size!, 'xl')).toBe('XL')
+  expect(choiceWords(clothing.listing.size!, 'm'), 'no label: in words').toBe('M')
+  expect(choiceWords(clothing.listing.babySize!, '0-3m')).toBe('0-3 months')
+  expect(choiceWords(markets.market('electronics')!.listing.kind!, 'tv')).toBe('TV')
+  expect(choiceWords(clothing.listing.condition!, 'new-with-tags')).toBe('New with tags')
+  expect(valueText(clothing.listing.size!, '4xl')).toBe('4XL')
+  expect(valueText(clothing.listing.delivery!, ['pickup', 'shipping'])).toBe('Pickup, Shipping')
+  expect(markets.checkEntry('clothing', 'seller', 'listing', { delivery: ['pickup', 'shipping'] })).toBeNull()
 })
 
-test("an old post: what still fits its market today, kept, its photos' files among it; the rest dropped", () => {
+test("an old listing: what still fits its market today, kept, its photos' files among it; the rest dropped", () => {
   const sha = 'a'.repeat(64)
   const files = [{ sha256: sha, type: 'image/jpeg', size: 1000 }]
   const old = { description: 'A wool coat.', price: { amount: '40', currency: 'EUR' }, photos: [sha], files, kind: 'coat', wearer: 'women', size: 'EU 38', condition: 'new', delivery: 'either', location: { area: 'Lyon' }, contact: '@coats' }

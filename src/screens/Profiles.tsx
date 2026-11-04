@@ -1,6 +1,6 @@
 // Profiles, the person's home: one card per profile, those that offer first. Its market and role,
 // "Clothing seller" (the market in bold, the role muted), and the shield of its strongest check; a
-// dot when something is new on it, a message or a review; then its posts in its role's word, the index's rating and how many reviews
+// dot when something is new on it, a message or a review; then its listings in its role's word, the index's rating and how many reviews
 // the index counted, each left out when there is none. Nothing on a card asks the passkey: the
 // device keeps which profiles are the person's, and all a card shows is public. Above them, when
 // the Profiles folder holds a profile made on another device, one row, New profiles from another
@@ -14,7 +14,7 @@ import { strongest } from '../flows/cards.ts'
 import { takeElsewhere } from '../flows/elsewhere.ts'
 import { useCards, useElsewhere, useHeldRated, useNews, useProfiles } from '../hooks.ts'
 import { Mark } from '../mark.tsx'
-import { pairOf, pairs, postCount } from '../markets.ts'
+import { listingCount, pairOf, pairs } from '../markets.ts'
 import { withSeed } from '../passkey.ts'
 import { ratingText, reviewCount } from '../show.ts'
 import { Dot, Inbox, Line, Named, type Place, Places, Spinner, Top, Verified, useAction } from '../ui.tsx'
@@ -55,7 +55,7 @@ export function Profiles({ onOpen, onNew, onMessages, go }: Props) {
           const index = r && 'rated' in r ? r.rated : null
           const n = news[p.address]
           const check = card ? strongest(card.checks) : null
-          const line = [card?.posts ? postCount(card.posts, p.label) : '', index?.rating != null ? `★ ${ratingText(index.rating)}` : '', index?.reviews ? reviewCount(index.reviews) : ''].filter(Boolean)
+          const line = [card?.listings ? listingCount(card.listings, p.label) : '', index?.rating != null ? `★ ${ratingText(index.rating)}` : '', index?.reviews ? reviewCount(index.reviews) : ''].filter(Boolean)
           return (
             <button key={p.address} className="card" onClick={() => onOpen(p.address)}>
               <span className="card-head">

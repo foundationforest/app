@@ -1,8 +1,8 @@
-// The new inbox entries of every profile, listed with nothing unlocked: one listing for the whole
-// page, however many screens show what is new (the bottom bar, Profiles, Notifications, a profile,
-// Messages, a thread). It starts with the first that follows it and stops with the last; while it
-// runs, it lists now, every half minute, and whenever the device changes. A screen that starts
-// following while it runs is shown the last listing at once.
+// The new inbox entries of every profile, listed with nothing unlocked: one list for the whole page,
+// however many screens show what is new (the bottom bar, Profiles, Feedback, a profile, Messages, a
+// thread). It starts with the first that follows it and stops with the last; while it runs, it
+// lists now, every half minute, and whenever the device changes. A screen that starts following
+// while it runs is shown the last list at once.
 
 import { config } from './config.ts'
 import { CHANGED, profiles } from './device.ts'
@@ -14,8 +14,8 @@ export type Found = Record<string, string[]>
 /** How often the inboxes are listed while a screen shows what is new. */
 export const LIST_EVERY_MS = 30_000
 
-/** One listing by `list`, shared by all that follow it: now, every `every` ms, and whenever the device changes, while any does. */
-export function listing(list: () => Promise<Found>, every = LIST_EVERY_MS) {
+/** One list by `list`, shared by all that follow it: now, every `every` ms, and whenever the device changes, while any does. */
+export function sharedList(list: () => Promise<Found>, every = LIST_EVERY_MS) {
   let last: Found = {}
   const followers = new Set<(found: Found) => void>()
   let stop: (() => void) | null = null
@@ -37,9 +37,9 @@ export function listing(list: () => Promise<Found>, every = LIST_EVERY_MS) {
     }
   }
   return {
-    /** The last listing, so a screen opening shows it at once. */
+    /** The last list, so a screen opening shows it at once. */
     last: (): Found => last,
-    /** Each listing from now shown with `show`, the first to follow starting it. Gives back what stops following; the last to stop stops the listing. */
+    /** Each list from now shown with `show`, the first to follow starting it. Gives back what stops following; the last to stop stops the list. */
     follow(show: (found: Found) => void): () => void {
       followers.add(show)
       stop ??= start()
@@ -54,4 +54,4 @@ export function listing(list: () => Promise<Found>, every = LIST_EVERY_MS) {
 }
 
 /** Every profile's new inbox entries, as this device lists them at the host. */
-export const newMessagesListing = listing(() => newMessages(config.host, profiles()))
+export const newMessagesList = sharedList(() => newMessages(config.host, profiles()))

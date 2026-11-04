@@ -1,6 +1,6 @@
 // What the screens read from the device, the host and the index, kept fresh: the person's profiles
 // and AI apps as the device keeps them; how each is verified, as its profile entry at the host says;
-// the new entries in their inboxes, one listing for the page (listing.ts); what the index says of
+// the new entries in their inboxes, one list for the page (list.ts); what the index says of
 // each, read as a screen showing it opens and held in the page meanwhile; what is new on each;
 // whether a profile was made on another device; the messages opened in this page; the passkeys added
 // to the Profiles folder (backups, as the standard names them); whether a seed is held in it; and
@@ -13,9 +13,9 @@ import { CHANGED, type Connection, type Profile, connections, folder, profiles, 
 import { type Card, readCard } from './flows/cards.ts'
 import { type Backup, backupsAt } from './flows/backups.ts'
 import { anyNew, labelIds } from './flows/elsewhere.ts'
-import { type Received, newOf, rate } from './flows/reviews.ts'
+import { type Received, newOf, rate } from './flows/feedback.ts'
 import { isHeld, onHeld } from './held.ts'
-import { newMessagesListing } from './listing.ts'
+import { newMessagesList } from './list.ts'
 import { onOpened, opened } from './opened.ts'
 import { type Held, onRated, ratedOf } from './rated.ts'
 import { entryIn, newerLive } from './version.ts'
@@ -52,7 +52,7 @@ export function useConnections(): Connection[] {
   return list
 }
 
-/** Each profile's card, by address, as the host serves its folder: how it is verified and how many posts it holds; filled in as each answers. */
+/** Each profile's card, by address, as the host serves its folder: how it is verified and how many listings it holds; filled in as each answers. */
 export function useCards(list: Profile[], again = 0): Record<string, Card> {
   const [cards, setCards] = useState<Record<string, Card>>({})
   const addresses = list.map((p) => p.address).join(',')
@@ -69,10 +69,10 @@ export function useCards(list: Profile[], again = 0): Record<string, Card> {
   return cards
 }
 
-/** The new inbox entries of every profile, by address, listed with nothing unlocked: the page's one listing (listing.ts), followed while the screen is open, the last one shown at once. */
+/** The new inbox entries of every profile, by address, listed with nothing unlocked: the page's one list (list.ts), followed while the screen is open, the last one shown at once. */
 export function useNewMessages(): Record<string, string[]> {
-  const [found, setFound] = useState(newMessagesListing.last)
-  useEffect(() => newMessagesListing.follow(setFound), [])
+  const [found, setFound] = useState(newMessagesList.last)
+  useEffect(() => newMessagesList.follow(setFound), [])
   return found
 }
 
@@ -93,7 +93,7 @@ export function useRated(list: Profile[]): Record<string, Held | undefined> {
 /** What is new on one profile: how many new messages, and the new reviews, vouches and reports. */
 export type News = { messages: number; received: Received[] }
 
-/** What is new on each profile in `list`, by address; and in all, how many messages (what the inbox counts) and how many reviews, vouches and reports (what Notifications counts). */
+/** What is new on each profile in `list`, by address; and in all, how many messages (what the inbox counts) and how many reviews, vouches and reports (what Feedback's bell counts). */
 export function useNews(list: Profile[]): { of: Record<string, News>; messages: number; received: number } {
   useDevice()
   const messages = useNewMessages()

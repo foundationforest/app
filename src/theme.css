@@ -541,12 +541,6 @@ button:focus-visible {
   gap: 8px;
 }
 
-/* What a profile posted, on its card. */
-.posts {
-  display: grid;
-  gap: 8px;
-}
-
 .entry {
   display: grid;
   gap: 6px;
@@ -680,7 +674,7 @@ button:focus-visible {
 }
 
 .said-row,
-.post-row {
+.listing-row {
   min-height: 64px;
   padding: 10px 14px;
   justify-content: flex-start;
@@ -915,7 +909,7 @@ button.round {
   background: var(--paper);
 }
 
-/* A post's photos: tiles, and one to add more. */
+/* A listing's photos: tiles, and one to add more. */
 .tiles {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -1001,7 +995,7 @@ button.solid .icon {
   pointer-events: none;
 }
 
-/* Notifications: a profile's new messages, in the ink, with how many; a review's text in full. */
+/* Feedback: a profile's new messages, in the ink, with how many; a review's text in full. */
 .two > .said-text {
   white-space: pre-wrap;
   overflow: visible;

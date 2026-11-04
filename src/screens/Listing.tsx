@@ -1,11 +1,11 @@
-// A post, new or edited, from a profile: an offer, a request or a post, as the profile's role names
-// it, its form the market's own fields and contact, in the order form.ts reads from the market's
-// file, each shown once the answers it depends on hold and dropped when they no longer do, the
-// photos among them. An edit opens with what still fits its market today, so a post an older market
-// shaped is posted again in today's. Everything is checked before the unlock (flows/posts.ts); then one unlock signs
-// it, writes it and sends its new photos. Its path is set as the form opens, so posting again after
-// a photo did not go writes the same post, never a second. An edit's Delete is in red, asking once
-// more.
+// A listing, new or edited, from a profile: an offer or a request, as the profile's role names it,
+// its form the market's own fields and contact, in the order form.ts reads from the market's file,
+// each shown once the answers it depends on hold and dropped when they no longer do, the photos
+// among them. An edit opens with what still fits its market today, so a listing an older market
+// shaped is posted again in today's. Everything is checked before the unlock (flows/entries.ts);
+// then one unlock signs it, writes it and sends its new photos. Its path is set as the form opens,
+// so posting again after a photo did not go writes the same listing, never a second. An edit's
+// Delete is in red, asking once more.
 
 import { useRef, useState } from 'react'
 
@@ -16,7 +16,7 @@ import { type Profile, passkey } from '../device.ts'
 import { Field } from '../fields/Field.tsx'
 import type { Picked } from '../fields/Photos.tsx'
 import { newPhotos, withFiles } from '../flows/photos.ts'
-import { type Posted, check, newPath, post, unpost } from '../flows/posts.ts'
+import { type Posted, check, newPath, post, unpost } from '../flows/entries.ts'
 import { applies, fitting, formFields, settled } from '../form.ts'
 import { useProfiles } from '../hooks.ts'
 import { kindWords, markets, pairOf } from '../markets.ts'
@@ -28,13 +28,13 @@ type Props = { me: Profile; edit?: Posted; onDone: () => void; onBack: () => voi
 /** A body with what was left out left out. */
 export const clean = (body: Body): Body => Object.fromEntries(Object.entries(body).filter(([, v]) => v !== undefined)) as Body
 
-export function Post({ me, edit, onDone, onBack }: Props) {
+export function Listing({ me, edit, onDone, onBack }: Props) {
   const mine = useProfiles()
   const { market: name, role } = pairOf(me.label)
   const market = markets.market(name)
   const fields = market ? formFields(market, role) : []
   const [values, setValues] = useState<Body>(() => (edit ? fitting(name, role, edit.body) : {}))
-  const [path] = useState(() => edit?.path ?? newPath('post'))
+  const [path] = useState(() => edit?.path ?? newPath('listing'))
   const [sure, setSure] = useState(false)
   const picked = useRef<Picked>(new Map()).current
 
@@ -42,8 +42,8 @@ export function Post({ me, edit, onDone, onBack }: Props) {
   const send = useAction(async () => {
     const bytes = new Map([...picked].map(([sha, p]) => [sha, p.bytes]))
     const body = withFiles(clean(values), photoFields, bytes)
-    await check(config, me, 'post', body, mine)
-    await withSeed(passkey()!, (seed) => post(config, seed, me, 'post', body, path, newPhotos(body, bytes)))
+    await check(config, me, 'listing', body, mine)
+    await withSeed(passkey()!, (seed) => post(config, seed, me, 'listing', body, path, newPhotos(body, bytes)))
     onDone()
   })
   const remove = useAction(async () => {
@@ -53,7 +53,7 @@ export function Post({ me, edit, onDone, onBack }: Props) {
 
   if (!market) return null
   const set = (n: string, v: unknown) => setValues((was) => settled(fields, { ...was, [n]: v as Body[string] }))
-  const word = kindWords('post', me.label)
+  const word = kindWords('listing', me.label)
   return (
     <main>
       <Top onBack={onBack}>

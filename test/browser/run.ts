@@ -46,12 +46,12 @@
 //     opens its link with nothing set up, goes through Start, New to Forest? and the face check,
 //     makes the profile on the other side from the compose screen's From, and messages, nothing
 //     asked after Start; the first sees it counted with nothing unlocked, on the card and the inbox
-//     at the top of Profiles, of the profile and of Notifications, never on the bell, Notifications
+//     at the top of Profiles, of the profile and of Feedback, never on the bell, Feedback
 //     holding no message and the profile no Messages line; the page closed and opened again, the
 //     inbox opens every profile's conversations: "1 new message" and Open with its unlock icon, and
 //     New message at the bottom; every inbox opens in one unlock, who it is from with the shield;
 //     the reply in one row, the text box and a round Send with its own icon, each message with its
-//     time and the day above them; Notifications then says "Nothing yet.", its inbox no number; the
+//     time and the day above them; Feedback then says "Nothing yet.", its inbox no number; the
 //     second, their page closed and opened again, reads the reply beside what they sent, and reviews
 //     the tutor from the thread, the slider's thumb hidden until touched, naming the offer.
 //  7. A second browser, with the same passkey, answered from the first, as a phone answers through
@@ -90,27 +90,29 @@
 //     from the thread, then, from their profile's Review, vouches ("That's this profile." once) and
 //     reports, and Given lists all three; the seller sees the rating and the dot on the card, "3
 //     new" on the profile's rating line and 1 on its inbox, the bell counting the three and the
-//     inbox the message; Reviews marks the three, and once seen there they are new no more, the
-//     bell counting nothing; the review opened; Notifications lists all that came, newest first, in
-//     full, with no dot and no message, and its inbox opens the messages, which hold no review.
-//     Then a post an older market shaped, written to the host as the app wrote it before: its row
-//     says Update this post; opened, what still fits is filled in; posted, it fits, and the line goes.
+//     inbox the message; the profile's Feedback marks the three, and once seen there they are new
+//     no more, the bell counting nothing; the review opened; the Feedback place lists all that
+//     came, newest first, in full, with no dot and no message, and its inbox opens the messages,
+//     which hold no review.
+//     Then a listing an older market shaped, written to the host as the app wrote it before: its
+//     row says Update this listing; opened, what still fits is filled in; posted, it fits, and the
+//     line goes.
 //     Then, for testing, a review of one of the person's own profiles, from their student about
-//     their tutor: Notifications shows it first, new, and once shown it is seen, the bell counting
-//     it no more.
+//     their tutor: the Feedback place shows it first, new, and once shown it is seen, the bell
+//     counting it no more.
 //     Then the AI apps, with services' own mcp and an AI app as services' tests make one (the MCP
 //     SDK's client, mcp/test/setup.ts):
 //  a. its login comes to the connect page: the AI app's name, its redirect's host, the profiles
 //     unticked, each with its shield; one ticked, Connect, one unlock; the AI app gets its token,
-//     reads its profile and writes a post, which shows on the profile; the device keeps the AI app,
+//     reads its profile and writes a listing, which shows on the profile; the device keeps the AI app,
 //     never a key;
 //     Then a whole visit asks exactly once: from a page just opened, post, edit, open messages (by
 //     themselves), message, review from the thread, the note arriving and opening by itself, an AI
-//     app's profile ticked and unticked, and the post deleted, the page hidden between each;
+//     app's profile ticked and unticked, and the listing deleted, the page hidden between each;
 //  b. Settings' AI apps, between Passkeys and Appearance: the AI app, its day, its one profile, kept
 //     ticked while it is the last; another ticked, one unlock, then one unticked and ticked again
 //     with nothing asked, the AI's profiles following with no new login; Disconnect, nothing asked:
-//     the AI's next call refused, and its post stays;
+//     the AI's next call refused, and its listing stays;
 //  c. a new phone, nothing set up, at a connect page: I already have one first, then Create a
 //     passkey; New to Forest?, the face check and the first profile, then back to the connect page,
 //     its one profile ticked, no Add a second passkey nor Use Forest from your AI; Connect, nothing
@@ -291,18 +293,18 @@ async function closed(page: Page) {
   await page.locator('main').waitFor()
 }
 
-/** Notifications opened again and again, so it reads the index each time, until a row says `text`. */
+/** Feedback opened again and again, so it reads the index each time, until a row says `text`. */
 async function untilNotice(page: Page, text: string) {
   const until = Date.now() + 90_000
   for (;;) {
     await button(page, 'Settings').click()
-    await button(page, /Notifications$/).click()
+    await button(page, /Feedback$/).click()
     const row = page.locator('main .rows button.row', { hasText: text })
     try {
       await row.waitFor({ timeout: 5_000 })
       return row
     } catch {
-      if (Date.now() > until) throw new Error(`Notifications never said ${text}`)
+      if (Date.now() > until) throw new Error(`Feedback never said ${text}`)
     }
   }
 }
@@ -860,18 +862,18 @@ test('two people: one posts an offer, its price per hour, the place only for ses
   await place.getByText('Chamberí, within 10 km of you', { exact: true }).waitFor()
   await page.getByLabel('Contact').fill('ada@example.com')
   await page.getByText('Public.').waitFor()
-  await shot(page, 'post-offer-in-person')
+  await shot(page, 'listing-offer-in-person')
   // Online only: the place goes, and nothing of it is posted.
   await mode.getByRole('button', { name: 'In person' }).click()
   await place.waitFor({ state: 'detached' })
   await mode.getByRole('button', { name: 'Online' }).click()
   // Settings' reload dropped the seed: Post will ask, and says so.
   assert.equal(await iconsInTheirButtonsColor(page), 1, "Post's unlock icon, in its text color")
-  await shot(page, 'post-offer')
+  await shot(page, 'listing-offer')
   let asked = counts.asserted
   await button(page, 'Post').click()
   // Its row: its subjects, then its price, in every market its second line.
-  const offerRow = page.locator('.post-row', { hasText: '$30 per hour' })
+  const offerRow = page.locator('.listing-row', { hasText: '$30 per hour' })
   await offerRow.waitFor({ timeout: 60_000 })
   assert.deepEqual(await offerRow.locator('.two > *').allTextContents(), ['Maths', '$30 per hour'])
   assert.equal(counts.asserted - asked, 1, 'one unlock')
@@ -879,18 +881,18 @@ test('two people: one posts an offer, its price per hour, the place only for ses
   await offerRow.click()
   await page.getByRole('heading', { name: 'Offer', exact: true }).waitFor()
   assert.equal(await asks(button(page, 'Post')), false, 'no unlock icon: a tap will not ask')
-  await shot(page, 'post-offer-held')
+  await shot(page, 'listing-offer-held')
   asked = counts.asserted
   await button(page, 'Post').click()
   await page.getByRole('heading', { name: 'Your offers' }).waitFor({ timeout: 60_000 })
   assert.equal(counts.asserted - asked, 0, 'nothing asked')
-  const posts = await entriesOf(tutor, 'post')
-  assert.equal(posts.length, 1)
-  const [offerPath, offer] = posts[0]!
-  assert.match(offerPath, /^post\/[0-9a-f]{32}$/, 'at a random id')
+  const listings = await entriesOf(tutor, 'listing')
+  assert.equal(listings.length, 1)
+  const [offerPath, offer] = listings[0]!
+  assert.match(offerPath, /^listing\/[0-9a-f]{32}$/, 'at a random id')
   assert.deepEqual(offer.entry.body, { description: OFFER, price: { amount: '30', currency: 'USD', per: 'hour' }, subjects: ['maths'], mode: ['online'], contact: 'ada@example.com' })
   await page.getByRole('heading', { name: 'Your offers' }).waitFor()
-  await shot(page, 'profile-posts')
+  await shot(page, 'profile-listings')
 
   // The second person opens a message link with nothing set up: Start and the face check first, then the message.
   const second = await phone()
@@ -923,7 +925,7 @@ test('two people: one posts an offer, its price per hour, the place only for ses
   const student = JSON.parse((await kept(second.page))['forest.profiles']!)[0].address as string
 
   // The first: counted with nothing unlocked, on the card, on the inbox at the top of Profiles, of
-  // the profile and of Notifications, never on the bell, which counts reviews; Notifications holds
+  // the profile and of Feedback, never on the bell, which counts reviews; Feedback holds
   // no message. After the page was closed, its inbox opens every profile's conversations, and one
   // unlock opens every inbox; who it is from; the reply.
   await button(page, 'Back').click()
@@ -937,12 +939,12 @@ test('two people: one posts an offer, its price per hour, the place only for ses
   assert.deepEqual(await page.locator('.lines button.link').allTextContents(), ['No reviews yet ›'], 'no Messages line')
   await shot(page, 'profile-message')
   await button(page, 'Back').click()
-  await button(page, /Notifications$/).click()
-  await page.getByRole('heading', { name: 'Notifications' }).waitFor()
+  await button(page, /Feedback$/).click()
+  await page.getByRole('heading', { name: 'Feedback' }).waitFor()
   await page.getByText('Nothing yet.').waitFor()
   assert.equal(await page.locator('main .rows button.row').count(), 0, 'no message row')
   await inbox(page).locator('.count', { hasText: '1' }).waitFor()
-  await shot(page, 'notifications-message')
+  await shot(page, 'feedback-message')
   // The page closed and opened again (the seed dropped), then its inbox: every profile's conversations.
   await closed(page)
   await inbox(page).click()
@@ -995,7 +997,7 @@ test('two people: one posts an offer, its price per hour, the place only for ses
   await inbox(page).locator('.count').waitFor({ state: 'detached' })
   assert.equal(await page.locator('main .rows button.row').count(), 0, 'nothing yet about the tutor')
   await page.getByText('Nothing yet.').waitFor()
-  await shot(page, 'notifications-none')
+  await shot(page, 'feedback-none')
 
   // The second reads the reply beside what they sent, and reviews the tutor from the thread; their
   // page closed and opened again first, so Open asks.
@@ -1027,7 +1029,7 @@ test('two people: one posts an offer, its price per hour, the place only for ses
   const reviews = await entriesOf(student, 'review')
   assert.equal(reviews.length, 1)
   const [, review] = reviews[0]!
-  assert.deepEqual(review.entry.body, { subject: tutor, score: '9.4', text: 'Clear and patient.', post: `${tutor}/${offerPath}` }, 'about the tutor, naming the offer, in tenths')
+  assert.deepEqual(review.entry.body, { subject: tutor, score: '9.4', text: 'Clear and patient.', listing: `${tutor}/${offerPath}` }, 'about the tutor, naming the offer, in tenths')
   await second.context.close()
   await button(page, 'Profiles').click()
   say('two people: an offer per hour, found by its link, messaged, replied to, reviewed in tenths; nothing asked while the seed was held')
@@ -1314,7 +1316,7 @@ test('signed in through the QR code: Save a passkey on this device? once; Save m
 
 const COAT = 'A wool coat, worn twice.'
 
-test('clothing, with the index: a coat with two photos redrawn on the device, no per, for women, size XL, picked up or shipped, near Lavapiés, $40, listed; a buyer, with no location allowed, sees why a post needs it; the buyer messages, reviews, vouches and reports; the seller sees the rating, "3 new" on the profile, the bell counting the three and the inbox the message, the three marked in Reviews and seen there; Notifications lists them, and no message', async () => {
+test('clothing, with the index: a coat with two photos redrawn on the device, no per, for women, size XL, picked up or shipped, near Lavapiés, $40, listed; a buyer, with no location allowed, sees why a listing needs it; the buyer messages, reviews, vouches and reports; the seller sees the rating, "3 new" on the profile, the bell counting the three and the inbox the message, the three marked in the profile\'s Feedback and seen there; the Feedback place lists them, and no message', async () => {
   const { page, counts } = first
   // The seller's profile, and the coat.
   await button(page, 'New profile').click()
@@ -1358,20 +1360,20 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   await away(page)
   assert.equal(await asks(button(page, 'Post')), true, 'the unlock icon on Post')
   assert.equal(await iconsInTheirButtonsColor(page), 1, "Post's unlock icon, in its text color")
-  await shot(page, 'post-coat')
+  await shot(page, 'listing-coat')
   const asked = counts.asserted
   await button(page, 'Post').click()
-  const coatRow = page.locator('.post-row', { hasText: COAT })
+  const coatRow = page.locator('.listing-row', { hasText: COAT })
   await coatRow.waitFor({ timeout: 60_000 })
-  assert.equal(counts.asserted - asked, 1, 'one unlock: the post and its photos')
-  const [[coatPath, coat]] = (await entriesOf(seller, 'post')) as unknown as [[string, { entry: { body: any } }]]
+  assert.equal(counts.asserted - asked, 1, 'one unlock: the listing and its photos')
+  const [[coatPath, coat]] = (await entriesOf(seller, 'listing')) as unknown as [[string, { entry: { body: any } }]]
   const body = coat.entry.body
   assert.deepEqual([body.description, body.price, body.wearer, body.kind, body.size, body.delivery, body.contact], [COAT, { amount: '40', currency: 'USD' }, ['women'], 'coat', 'xl', ['pickup', 'shipping'], '@coats'], 'no per; who, the kind, the size by its value, several deliveries')
   assert.deepEqual([body.location.radiusKm, body.location.area], [3, 'Lavapiés, Madrid'])
   const km = kmFromSpot(body.location)
   assert.ok(km > 0.1 && km < 0.8, `its point moved a little from the phone's, ${km.toFixed(2)} km`)
   assert.deepEqual(JSON.parse((await kept(page))['forest.points']!), [{ lat: body.location.lat, lon: body.location.lon }], "the device's one kept point, which the offer's place took too: never a new one from the same spot")
-  assert.equal(loadMarkets().checkEntry('clothing', 'seller', 'post', body), null, 'it fits the market')
+  assert.equal(loadMarkets().checkEntry('clothing', 'seller', 'listing', body), null, 'it fits the market')
   assert.equal(body.photos.length, 2)
   assert.deepEqual(body.files.map((f: any) => [f.sha256, f.type]), body.photos.map((sha: string) => [sha, 'image/jpeg']), 'each photo named in its files, a JPEG')
   const sizes = []
@@ -1386,13 +1388,13 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   assert.equal(await coatRow.locator('img.thumb').getAttribute('src'), `${services.host}/v1/files/${body.photos[0]}`, 'its first photo, from the host')
   await coatRow.locator('img.thumb').evaluate((img: HTMLImageElement) => img.decode())
   await coatRow.getByText('$40', { exact: true }).waitFor()
-  assert.equal(await coatRow.getByText('Update this post').count(), 0, 'it fits: nothing to update')
+  assert.equal(await coatRow.getByText('Update this listing').count(), 0, 'it fits: nothing to update')
   await shot(page, 'profile-coat')
   // The index lists it: it fits the market as the index reads it.
   const onIndex = `${services.index}/profiles/${seller}/${coatPath}.json`
   for (const until = Date.now() + 45_000; ; ) {
     const res = await fetch(onIndex)
-    const listed = res.ok ? ((await res.json()) as { post: { listed: boolean; why?: string } }).post : null
+    const listed = res.ok ? ((await res.json()) as { listing: { listed: boolean; why?: string } }).listing : null
     if (listed?.listed) break
     if (Date.now() > until) throw new Error(`the index never listed the coat: ${listed?.why ?? res.status}`)
     await new Promise((r) => setTimeout(r, 1_000))
@@ -1409,8 +1411,8 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   await buyer.page.getByRole('heading', { name: 'Use Forest from your AI' }).waitFor()
   await button(buyer.page, 'Not now').click()
   // A phone that hasn't allowed its location. Its browser told no before (headless Chromium's
-  // answer for a site never granted): one line says why the post needs it, and nothing to tap.
-  const NO_LOCATION = 'Allow your location so people nearby find this post.'
+  // answer for a site never granted): one line says why the listing needs it, and nothing to tap.
+  const NO_LOCATION = 'Allow your location so people nearby find this listing.'
   await buyer.page.locator('button.card', { hasText: 'Clothing buyer' }).locator('.named').click()
   await button(buyer.page, 'New request').click()
   const where = buyer.page.getByRole('group', { name: 'Location' })
@@ -1424,11 +1426,11 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   await button(buyer.page, 'New request').click()
   await where.getByRole('button', { name: 'Use my location' }).waitFor()
   assert.equal(await where.getByRole('slider').count(), 0, 'no radius before a point')
-  await shot(buyer.page, 'post-request-location')
+  await shot(buyer.page, 'listing-request-location')
   await where.getByRole('button', { name: 'Use my location' }).click()
   await where.getByText(NO_LOCATION, { exact: true }).waitFor()
   assert.equal(await where.getByRole('button').count(), 0, 'refused: the line alone')
-  await shot(buyer.page, 'post-request-no-location')
+  await shot(buyer.page, 'listing-request-no-location')
   await button(buyer.page, 'Back').click()
   await button(buyer.page, 'Back').click()
   // The page closed and opened again, so no seed is held; before the unlock, how many are new, here none, with Open.
@@ -1465,7 +1467,7 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   await button(buyer.page, 'Post').click()
   await buyer.page.getByLabel('Reply').waitFor({ timeout: 60_000 })
   const [[, reviewed]] = (await entriesOf(buyerAddress, 'review')) as unknown as [[string, { entry: { body: any } }]]
-  assert.deepEqual(reviewed.entry.body, { asDescribed: 'yes', subject: seller, text: 'Just like the photos.', score: '10', post: `${seller}/${coatPath}` })
+  assert.deepEqual(reviewed.entry.body, { asDescribed: 'yes', subject: seller, text: 'Just like the photos.', score: '10', listing: `${seller}/${coatPath}` })
 
   // From the buyer's profile, Review beside New request: a vouch (no score), then a report, each about the seller by address; Given lists all three.
   await button(buyer.page, 'Back').click()
@@ -1508,7 +1510,7 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   await given.nth(2).waitFor()
   assert.deepEqual((await given.locator('.said-chip').allTextContents()).sort(), ['10 ★', 'Report', 'Vouch'])
   for (let i = 0; i < 3; i++) await given.nth(i).locator('.who', { hasText: 'Clothing seller' }).waitFor()
-  await shot(buyer.page, 'reviews-given')
+  await shot(buyer.page, 'profile-feedback-given')
   for (const kind of ['vouch', 'report']) assert.equal((await entriesOf(buyerAddress, kind)).length, 1, `one ${kind}, in the buyer's folder`)
   await buyer.context.close()
 
@@ -1528,7 +1530,7 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   await shot(page, 'profiles-rated')
   await page.locator('button.card', { hasText: 'Clothing seller' }).locator('.named').click()
   const line = page.locator('button.link').first()
-  // Reviews marks the new ones; seeing them, they are new no more.
+  // The profile's Feedback marks the new ones; seeing them, they are new no more.
   await line.click()
   await page.locator('.big', { hasText: '10.0' }).waitFor()
   await page.getByText(`Rated by ${new URL(services.index).host}`).waitFor()
@@ -1536,7 +1538,7 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   await received.waitFor({ timeout: 60_000 })
   assert.equal(await page.locator('button.said-row').count(), 3)
   assert.equal(await page.locator('button.said-row .dot').count(), 3, 'each with its dot')
-  await shot(page, 'reviews')
+  await shot(page, 'profile-feedback')
   await received.click()
   await page.getByText(/^On your Clothing seller · /).waitFor()
   await page.locator('.big', { hasText: '10 / 10' }).waitFor()
@@ -1554,7 +1556,7 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   await button(page, '★ 10.0 · 1 review ›').waitFor()
   await button(page, 'Back').click()
   await page.locator('.places .count').waitFor({ state: 'detached' })
-  assert.equal(await inbox(page).locator('.count').textContent(), '1', 'the bell counting nothing now, the three seen in Reviews; the inbox, the message')
+  assert.equal(await inbox(page).locator('.count').textContent(), '1', "the bell counting nothing now, the three seen in the profile's Feedback; the inbox, the message")
   await page.locator('button.card', { hasText: 'Clothing seller' }).locator('.named').click()
   await button(page, '★ 10.0 · 1 review ›').click()
   await received.waitFor()
@@ -1562,18 +1564,18 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   await button(page, 'Back').click()
   await button(page, 'Back').click()
 
-  // Notifications: all that came to any profile, newest first, the three seen already, so with no
+  // The Feedback place: all that came to any profile, newest first, the three seen already, so with no
   // dot, and no message; its inbox, counting the message, opens every profile's conversations.
-  await button(page, /Notifications$/).click()
+  await button(page, /Feedback$/).click()
   const rows = page.locator('main .rows button.row')
   await rows.nth(3).waitFor()
   assert.equal(await rows.count(), 4, 'no message row')
   assert.deepEqual(await rows.locator('.said-chip').allTextContents(), ['Report', 'Vouch', '10 ★', '9.4 ★'], "the coat's three, newest first, then the tutor's review")
-  assert.equal(await rows.locator('.dot').count(), 0, 'seen in Reviews, or before this device forgot and started again')
+  assert.equal(await rows.locator('.dot').count(), 0, "seen in the profile's Feedback, or before this device forgot and started again")
   assert.equal(await rows.nth(0).locator('.said-text').textContent(), 'Sold me the wrong size twice.', 'in full')
   await named(rows.nth(0), 'Clothing seller')
   await inbox(page).locator('.count', { hasText: '1' }).waitFor()
-  await shot(page, 'notifications')
+  await shot(page, 'feedback')
   await closed(page)
   await inbox(page).click()
   await page.getByRole('heading', { name: 'Messages' }).waitFor()
@@ -1581,27 +1583,27 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   assert.equal(await page.locator('.said-chip').count(), 0, 'messages only: no review, vouch or report')
   await button(page, 'Back').click()
   await button(page, 'Profiles').click()
-  say('clothing: two photos redrawn and sent, a review, a vouch and a report; the rating, the dot, "3 new", the bell counting three and the inbox one, Reviews, and Notifications')
+  say('clothing: two photos redrawn and sent, a review, a vouch and a report; the rating, the dot, "3 new", the bell counting three and the inbox one, the profile\'s Feedback, and the Feedback place')
 })
 
 const TROUSERS = 'Linen trousers, worn once.'
 
-test('a post an older market shaped: its row says Update this post; opened, what still fits is filled in; posted, it fits and the line is gone', async () => {
+test('a listing an older market shaped: its row says Update this listing; opened, what still fits is filled in; posted, it fits and the line is gone', async () => {
   const { page } = first
   // Written to the host as the app wrote it before the markets moved: one wearer, a size as text,
   // either for delivery, an area alone for its location.
   const main = await mainKey(seed, 'clothing/seller')
-  const path = 'post/0123456789abcdef0123456789abcdef'
+  const path = 'listing/0123456789abcdef0123456789abcdef'
   const old = { description: TROUSERS, price: { amount: '25', currency: 'USD' }, kind: 'trousers', wearer: 'women', size: 'EU 38', delivery: 'either', location: { area: 'Lavapiés, Madrid' }, contact: '@coats' }
-  assert.notEqual(loadMarkets().checkEntry('clothing', 'seller', 'post', old), null, "it doesn't fit the market today")
+  assert.notEqual(loadMarkets().checkEntry('clothing', 'seller', 'listing', old), null, "it doesn't fit the market today")
   const view = await readFolder([services.host], main.address, Date.now())
   const [outcome] = await write([services.host], [entry(main, path, old, nextTime(Date.now(), view, path))])
   assert.ok(outcome?.results.length === 1 && outcome.results[0]!.ok, 'written')
 
   await page.locator('button.card', { hasText: 'Clothing seller' }).locator('.named').click()
-  const row = page.locator('.post-row', { hasText: TROUSERS })
-  await row.getByText('Update this post', { exact: true }).waitFor()
-  assert.equal(await page.locator('.post-row', { hasText: COAT }).getByText('Update this post').count(), 0, 'the coat fits')
+  const row = page.locator('.listing-row', { hasText: TROUSERS })
+  await row.getByText('Update this listing', { exact: true }).waitFor()
+  assert.equal(await page.locator('.listing-row', { hasText: COAT }).getByText('Update this listing').count(), 0, 'the coat fits')
   await shot(page, 'profile-update')
   await row.click()
   await page.getByRole('heading', { name: 'Offer', exact: true }).waitFor()
@@ -1614,25 +1616,25 @@ test('a post an older market shaped: its row says Update this post; opened, what
   assert.equal(await page.getByRole('group', { name: 'Wearer' }).locator('[aria-pressed=true]').count(), 0)
   assert.equal(await page.getByRole('group', { name: 'Delivery' }).locator('[aria-pressed=true]').count(), 0)
   await page.getByRole('group', { name: 'Location' }).getByText('Within 2 km of you', { exact: true }).waitFor()
-  await shot(page, 'post-update')
+  await shot(page, 'listing-update')
   // For women: trousers then ask their waist, right after the kind.
   await page.getByRole('group', { name: 'Wearer' }).getByRole('button', { name: 'Women' }).click()
   await page.getByLabel('Waist', { exact: true }).selectOption({ label: 'W30' })
   await button(page, 'Post').click()
   await page.getByRole('heading', { name: 'Your offers' }).waitFor({ timeout: 60_000 })
-  await page.locator('.post-row', { hasText: TROUSERS }).waitFor()
-  assert.equal(await page.locator('.post-row', { hasText: TROUSERS }).getByText('Update this post').count(), 0, 'it fits now: the line is gone')
-  const body = (await entriesOf(main.address, 'post')).find(([p]) => p === path)![1].entry.body as any
-  assert.equal(loadMarkets().checkEntry('clothing', 'seller', 'post', body), null, 'it fits the market')
+  await page.locator('.listing-row', { hasText: TROUSERS }).waitFor()
+  assert.equal(await page.locator('.listing-row', { hasText: TROUSERS }).getByText('Update this listing').count(), 0, 'it fits now: the line is gone')
+  const body = (await entriesOf(main.address, 'listing')).find(([p]) => p === path)![1].entry.body as any
+  assert.equal(loadMarkets().checkEntry('clothing', 'seller', 'listing', body), null, 'it fits the market')
   assert.deepEqual([body.description, body.price, body.kind, body.wearer, body.waist, body.contact, body.location.radiusKm, body.location.area], [TROUSERS, { amount: '25', currency: 'USD' }, 'trousers', ['women'], 'w30', '@coats', 2, undefined])
   assert.deepEqual([body.size, body.delivery], [undefined, undefined], "what didn't fit, gone")
   await button(page, 'Back').click()
-  say('an old post: Update this post on its row, what fits filled in, posted in the market\'s shape today')
+  say('an old listing: Update this listing on its row, what fits filled in, posted in the market\'s shape today')
 })
 
 const OWN = 'Patient with my own questions.'
 
-test("for now, for testing, a review of one of the person's own profiles: from their student, about their tutor; Notifications shows it first, new; opened, it is seen", async () => {
+test("for now, for testing, a review of one of the person's own profiles: from their student, about their tutor; the Feedback place shows it first, new; opened, it is seen", async () => {
   const { page } = first
   await page.locator('button.card', { hasText: 'Tutoring student' }).locator('.named').click()
   await button(page, 'Review').click()
@@ -1654,7 +1656,7 @@ test("for now, for testing, a review of one of the person's own profiles: from t
   await named(row, 'Tutoring tutor')
   const rows = page.locator('main .rows button.row')
   assert.equal(await rows.nth(0).textContent().then((t) => t?.includes(OWN)), true, 'the newest first')
-  await shot(page, 'notifications-new')
+  await shot(page, 'feedback-new')
   // Shown, it is seen: the bell counts it no more.
   await page.locator('.places .count').waitFor({ state: 'detached' })
   await row.click()
@@ -1665,7 +1667,7 @@ test("for now, for testing, a review of one of the person's own profiles: from t
   assert.equal(await rows.locator('.dot').count(), 0, 'new no more')
   await button(page, 'Profiles').click()
   assert.equal(await page.locator('button.card', { hasText: 'Tutoring tutor' }).locator('.dot').count(), 0, 'nor on its card')
-  say("a review of one's own profile, for testing: posted, new in Notifications, seen once shown")
+  say("a review of one's own profile, for testing: posted, new in the Feedback place, seen once shown")
 })
 
 type AiApp = Awaited<ReturnType<typeof aiApp>>
@@ -1677,9 +1679,9 @@ async function tool(ai: AiApp, name: string, args: Record<string, unknown> = {})
   return JSON.parse(r.content[0]!.text)
 }
 const SWITCHES = ['read-inbox', 'read', 'write', 'message']
-/** The AI's own post, on the tutor's profile. */
+/** The AI's own listing, on the tutor's profile. */
 const BY_THE_AI = 'Physics for secondary school, written by the AI.'
-/** The AI's post as its row shows it: its subjects, then its price; its description shows when it is opened. */
+/** The AI's listing as its row shows it: its subjects, then its price; its description shows when it is opened. */
 const AI_ROW = 'Maths, Physics'
 
 /** An AI app, as services' tests make one (mcp/test/setup.ts): the MCP SDK's own client, whose first call that acts gets the challenge, and the address it sends the browser to, to log in. */
@@ -1700,7 +1702,7 @@ const ticks = async (page: Page) => Object.fromEntries(await Promise.all((await 
 
 let ai: AiApp
 
-test("an AI app's login: the connect page, its name and its redirect's host, the profiles unticked; one ticked, Connect, one unlock; the AI reads its profile and writes a post, which shows; the device keeps no key", async () => {
+test("an AI app's login: the connect page, its name and its redirect's host, the profiles unticked; one ticked, Connect, one unlock; the AI reads its profile and writes a listing, which shows; the device keeps no key", async () => {
   const { page, counts } = first
   ai = await aiLogin()
   await page.goto(ai.app.authorization!.href)
@@ -1720,15 +1722,15 @@ test("an AI app's login: the connect page, its name and its redirect's host, the
   await ai.transport.finishAuth(await code)
   assert.equal(counts.asserted - asked, 1, 'one unlock')
 
-  // The AI acts: its profiles, one, with every switch; it reads its profile entry and writes a post.
+  // The AI acts: its profiles, one, with every switch; it reads its profile entry and writes a listing.
   assert.deepEqual(await tool(ai, 'my_profiles'), { profiles: [{ label: 'tutoring/tutor', can: SWITCHES }] })
   const profile = await tool(ai, 'read', { label: 'tutoring/tutor', path: 'profile' })
   assert.deepEqual([profile.body.market, profile.body.role], ['tutoring', 'tutor'])
-  await tool(ai, 'write', { label: 'tutoring/tutor', path: 'post/by-the-ai', body: lesson(BY_THE_AI) })
+  await tool(ai, 'write', { label: 'tutoring/tutor', path: 'listing/by-the-ai', body: lesson(BY_THE_AI) })
   await page.goto(APP)
   await page.locator('button.card', { hasText: 'Tutoring tutor' }).locator('.named').click()
-  await page.locator('.post-row', { hasText: AI_ROW }).waitFor()
-  await shot(page, 'profile-ai-post')
+  await page.locator('.listing-row', { hasText: AI_ROW }).waitFor()
+  await shot(page, 'profile-ai-listing')
 
   // The device: the AI app's name, its day, its folder's address and its profile; no key.
   const local = await kept(page)
@@ -1736,7 +1738,7 @@ test("an AI app's login: the connect page, its name and its redirect's host, the
   assert.deepEqual(JSON.parse(local['forest.connections']!), [{ address: conn!.address, name: 'An AI app', time: conn!.view.current.get('connection')!.entry.time, labels: ['tutoring/tutor'] }])
   const all = JSON.stringify(local)
   for (const secret of [b64u.encode(conn!.key.secret), ...conn!.access.map((a) => a.body.key as string)]) assert.equal(all.includes(secret), false, 'never a key')
-  say('an AI app connected: one unlock, and its post on the profile')
+  say('an AI app connected: one unlock, and its listing on the profile')
 })
 
 const VISIT = 'Physics for the visit, one hour online.'
@@ -1756,7 +1758,7 @@ test('a whole visit asks exactly once: post, edit, message, open messages, revie
   await page.getByLabel('Contact').fill('ada@example.com')
   assert.equal(await asks(button(page, 'Post')), true, 'Post will ask: the one unlock of the visit')
   await button(page, 'Post').click()
-  const posted = page.locator('.post-row', { hasText: '$20 per hour' })
+  const posted = page.locator('.listing-row', { hasText: '$20 per hour' })
   await posted.waitFor({ timeout: 60_000 })
   assert.equal(counts.asserted - asked, 1)
   await away(page)
@@ -1766,7 +1768,7 @@ test('a whole visit asks exactly once: post, edit, message, open messages, revie
   await page.getByLabel('Price').fill('25')
   assert.equal(await asks(button(page, 'Post')), false, 'hidden, and the seed still held')
   await button(page, 'Post').click()
-  const edited = page.locator('.post-row', { hasText: '$25 per hour' })
+  const edited = page.locator('.listing-row', { hasText: '$25 per hour' })
   await edited.waitFor({ timeout: 60_000 })
   await away(page)
   // Open messages: by themselves, the seed held.
@@ -1809,7 +1811,7 @@ test('a whole visit asks exactly once: post, edit, message, open messages, revie
     await away(page)
   }
   assert.equal(await page.locator('p.line').count(), 0, (await page.locator('p.line').allTextContents()).join(' '))
-  // The visit's post deleted, which asks nothing either.
+  // The visit's listing deleted, which asks nothing either.
   await button(page, 'Back').click()
   await button(page, 'Profiles').click()
   await page.locator('button.card', { hasText: 'Tutoring tutor' }).locator('.named').click()
@@ -1822,10 +1824,10 @@ test('a whole visit asks exactly once: post, edit, message, open messages, revie
   // The page closed, as the next tests start: the seed dropped.
   await page.goto(APP)
   await page.locator('button.card', { hasText: 'Tutoring tutor' }).locator('.named').click()
-  say('a whole visit: post, edit, open messages, message, review, an AI app ticked and unticked, a post deleted, one unlock')
+  say('a whole visit: post, edit, open messages, message, review, an AI app ticked and unticked, a listing deleted, one unlock')
 })
 
-test('Settings, AI apps: the AI app, its day and its one profile, kept ticked while it is the last; another ticked, one unlock, then one unticked and ticked again, and Disconnect, nothing more asked, with no new login; its next call refused, its post kept', async () => {
+test('Settings, AI apps: the AI app, its day and its one profile, kept ticked while it is the last; another ticked, one unlock, then one unticked and ticked again, and Disconnect, nothing more asked, with no new login; its next call refused, its listing kept', async () => {
   const { page, counts } = first
   await button(page, 'Back').click()
   await button(page, 'Settings').click()
@@ -1867,10 +1869,10 @@ test('Settings, AI apps: the AI app, its day and its one profile, kept ticked wh
   assert.deepEqual(JSON.parse((await kept(page))['forest.connections']!), [])
   await button(page, 'Profiles').click()
   await page.locator('button.card', { hasText: 'Tutoring tutor' }).locator('.named').click()
-  await page.locator('.post-row', { hasText: AI_ROW }).waitFor()
+  await page.locator('.listing-row', { hasText: AI_ROW }).waitFor()
   await button(page, 'Back').click()
   await ai.client.close()
-  say('an AI app given a profile, one taken away and given back, and disconnected, one unlock each; its post kept')
+  say('an AI app given a profile, one taken away and given back, and disconnected, one unlock each; its listing kept')
 })
 
 test('a new phone at a connect page, nothing set up: I already have one first; the face check and the first profile, then back to the connect page, its one profile ticked; Connect', async () => {

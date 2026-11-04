@@ -1,12 +1,12 @@
-// Review someone, from a profile, Reviews, a thread or a review received: who it is about at the top
-// (their market and role, the shield, their address cut short), or a box for their address or Share
-// link when it is not known, with who it is under it as soon as it holds an address. A big score on
-// a slider, 1 to 10 in tenths, its thumb hidden until touched, so no score looks chosen; No score
-// makes it a vouch, "I know they're real". The market's review fields for their role, which of their
-// posts it is about, a comment, and Post. A red Report at the bottom turns it into a report: a
-// comment only, posted in red. Before the unlock, the app checks it as for any entry: they are on the
-// other side of the same market, and not this profile (flows/posts.ts); a refusal shows once. An
-// edit keeps its kind, and has Delete.
+// Review someone, from a profile, its Feedback, a thread or a review received: who it is about at
+// the top (their market and role, the shield, their address cut short), or a box for their address
+// or Share link when it is not known, with who it is under it as soon as it holds an address. A big
+// score on a slider, 1 to 10 in tenths, its thumb hidden until touched, so no score looks chosen;
+// No score makes it a vouch, "I know they're real". The market's review fields for their role,
+// which of their listings it is about, a comment, and Post. A red Report at the bottom turns it
+// into a report: a comment only, posted in red. Before the unlock, the app checks it as for any
+// entry: they are on the other side of the same market, and not this profile (flows/entries.ts); a
+// refusal shows once. An edit keeps its kind, and has Delete.
 
 import { useEffect, useState } from 'react'
 
@@ -16,13 +16,13 @@ import { config } from '../config.ts'
 import { type Profile, passkey } from '../device.ts'
 import { Field } from '../fields/Field.tsx'
 import type { Picked } from '../fields/Photos.tsx'
-import { type Posted, type Subject, addressIn, check, newPath, post, subjectOf, unpost } from '../flows/posts.ts'
+import { type Posted, type Subject, addressIn, check, newPath, post, subjectOf, unpost } from '../flows/entries.ts'
 import { useProfiles } from '../hooks.ts'
 import { type Kind, fieldsOf, kindWords, markets, pairOf } from '../markets.ts'
 import { withSeed } from '../passkey.ts'
 import { Line, type Note, Quiet, Spinner, Top, UnlockIcon, noteOf, useAction } from '../ui.tsx'
-import { clean } from './Post.tsx'
-import { PostRow } from './PostRow.tsx'
+import { clean } from './Listing.tsx'
+import { ListingRow } from './ListingRow.tsx'
 import { Who } from './Who.tsx'
 
 type Props = {
@@ -38,7 +38,7 @@ type Props = {
 }
 
 /** The shared fields, which this form asks for in its own way. */
-const SHARED = ['subject', 'score', 'text', 'post']
+const SHARED = ['subject', 'score', 'text', 'listing']
 
 /** A slider's value as a score: "9.4", or "9" for a whole one. */
 const scoreOf = (v: string) => Number(v).toFixed(1).replace(/\.0$/, '')
@@ -47,13 +47,13 @@ export function Review({ me, subject: given, edit, report = false, onDone, onBac
   const mine = useProfiles()
   const { market: name, role } = pairOf(me.label)
   const market = markets.market(name)
-  const [kind, setKind] = useState<Exclude<Kind, 'post'>>(edit && edit.kind !== 'post' ? edit.kind : report ? 'report' : 'review')
+  const [kind, setKind] = useState<Exclude<Kind, 'listing'>>(edit && edit.kind !== 'listing' ? edit.kind : report ? 'report' : 'review')
   const [about, setAbout] = useState(given ?? (typeof edit?.body.subject === 'string' ? edit.body.subject : ''))
   const [subject, setSubject] = useState<Subject | null>(null)
   const [subjectNote, setSubjectNote] = useState<Note | null>(null)
   const [score, setScore] = useState(typeof edit?.body.score === 'string' ? edit.body.score : '')
   const [values, setValues] = useState<Body>(() => (edit ? Object.fromEntries(Object.entries(edit.body).filter(([n]) => !SHARED.includes(n))) : {}))
-  const [their, setTheir] = useState(typeof edit?.body.post === 'string' ? edit.body.post : '')
+  const [their, setTheir] = useState(typeof edit?.body.listing === 'string' ? edit.body.listing : '')
   const [text, setText] = useState(typeof edit?.body.text === 'string' ? edit.body.text : '')
   const [sure, setSure] = useState(false)
   const [picked] = useState<Picked>(() => new Map())
@@ -78,7 +78,7 @@ export function Review({ me, subject: given, edit, report = false, onDone, onBac
     if (subjectNote) return
     if (kind === 'review' && !score) throw new Quiet('Add a score.')
     const said = { subject: address || undefined, text: text.trim() || undefined }
-    const body = clean((kind === 'review' ? { ...values, ...said, score, post: their || undefined } : said) as Body)
+    const body = clean((kind === 'review' ? { ...values, ...said, score, listing: their || undefined } : said) as Body)
     await check(config, me, kind, body, mine)
     await withSeed(passkey()!, (seed) => post(config, seed, me, kind, body, edit?.path ?? paths[kind]))
     onDone()
@@ -91,7 +91,7 @@ export function Review({ me, subject: given, edit, report = false, onDone, onBac
 
   if (!market) return null
   const fields = kind === 'review' ? Object.entries(fieldsOf(market, 'review', role, subject?.role)).filter(([n]) => !SHARED.includes(n)) : []
-  const theirPosts = kind === 'review' ? (subject?.posts ?? []) : []
+  const theirListings = kind === 'review' ? (subject?.listings ?? []) : []
   const busy = send.busy || remove.busy
   return (
     <main>
@@ -143,13 +143,13 @@ export function Review({ me, subject: given, edit, report = false, onDone, onBac
         {fields.map(([n, f]) => (
           <Field key={n} name={n} field={f} value={values[n]} onChange={(v) => setValues((was) => ({ ...was, [n]: v as Body[string] }))} picked={picked} />
         ))}
-        {theirPosts.length > 0 && (
+        {theirListings.length > 0 && (
           <div className="field">
-            <span className="label">{kindWords('post', `${name}/${subject!.role}`)}</span>
+            <span className="label">{kindWords('listing', `${name}/${subject!.role}`)}</span>
             <div className="rows">
-              {theirPosts.map((p) => {
-                const at = `${subject!.address}/${p.path}`
-                return <PostRow key={p.path} market={market} body={p.body} chosen={their === at} onClick={() => setTheir(their === at ? '' : at)} />
+              {theirListings.map((l) => {
+                const at = `${subject!.address}/${l.path}`
+                return <ListingRow key={l.path} market={market} body={l.body} chosen={their === at} onClick={() => setTheir(their === at ? '' : at)} />
               })}
             </div>
           </div>

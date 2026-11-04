@@ -1,8 +1,8 @@
-// A profile's reviews, from its rating line: the index's rating, big, how many reviews it counted,
+// A profile's Feedback, from its rating line: the index's rating, big, how many reviews it counted,
 // and, quietly, which index rated it. Received: what the index counted about the profile, each
 // review with its score, each vouch and report with its chip, its text and when, and a dot on those
-// that came after the newest Reviews had shown of it, as the screen opened; from now they are seen
-// (device.ts), so the profile's card and rating line count them new no more. A tap opens one.
+// that came after the newest its Feedback had shown of it, as the screen opened; from now they are
+// seen (device.ts), so the profile's card and rating line count them new no more. A tap opens one.
 // Given: the profile's own reviews, vouches and reports, from its folder, each with who it is
 // about; a tap edits it. Then Review someone. Nothing here asks the passkey.
 
@@ -10,8 +10,8 @@ import { useEffect, useState } from 'react'
 
 import { config } from '../config.ts'
 import { saveSeen, seen } from '../device.ts'
-import { type Posted, readPosts } from '../flows/posts.ts'
-import { givenOf, newest } from '../flows/reviews.ts'
+import { type Posted, readEntries } from '../flows/entries.ts'
+import { givenOf, newest } from '../flows/feedback.ts'
 import { useProfiles, useRated } from '../hooks.ts'
 import { ratingText, reviewCount } from '../show.ts'
 import { Dot, Line, type Note, SaidChip, Spinner, Top, ago, noteOf } from '../ui.tsx'
@@ -19,15 +19,15 @@ import { Who } from './Who.tsx'
 
 type Props = { address: string; onBack: () => void; onOpen: (at: string) => void; onEdit: (given: Posted) => void; onReview: () => void }
 
-export function Reviews({ address, onBack, onOpen, onEdit, onReview }: Props) {
+export function ProfileFeedback({ address, onBack, onOpen, onEdit, onReview }: Props) {
   const profile = useProfiles().find((p) => p.address === address)
   const held = useRated(profile ? [profile] : [])[address]
   const [tab, setTab] = useState<'received' | 'given'>('received')
   const [given, setGiven] = useState<Posted[] | null>(null)
   const [note, setNote] = useState<Note | null>(null)
-  // The newest Reviews had shown of this profile as it opened: what came after has its dot while the
+  // The newest its Feedback had shown of this profile as it opened: what came after has its dot while the
   // screen is open. A profile with no mark yet is marked at what the index holds when first read
-  // (flows/reviews.ts), so none is new.
+  // (flows/feedback.ts), so none is new.
   const [since] = useState(() => seen()[address] ?? Infinity)
   useEffect(() => {
     if (!held || !('rated' in held)) return
@@ -36,7 +36,7 @@ export function Reviews({ address, onBack, onOpen, onEdit, onReview }: Props) {
   }, [held])
   useEffect(() => {
     let live = true
-    readPosts(config, address).then(
+    readEntries(config, address).then(
       (p) => live && setGiven(givenOf(p)),
       (err: unknown) => live && setNote(noteOf(err)),
     )

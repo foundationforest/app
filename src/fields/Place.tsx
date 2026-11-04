@@ -1,11 +1,11 @@
 // A place: a point and a radius, and the area's name if wanted (the markets' types, `place`). The
 // point is the device's, moved a little once and kept (near.ts); radius 0, an exact spot, is the
-// device's own spot, and only when picked on the slider, which starts at the field's radiusKm. No map
-// yet: one line says where, "Within 5 km of you", after the area when there is one. The location is
-// asked on a tap, never as the form opens: where the browser allows it already, it is read at once;
-// otherwise one button, Use my location, asks. Refused, one quiet line says why the post needs it.
-// An edit keeps its post's point, and needs the location again only when the radius moves to or
-// from 0.
+// device's own spot, and only when picked on the slider, which starts at the field's radiusKm. No
+// map yet: one line says where, "Within 5 km of you", after the area when there is one. The
+// location is asked on a tap, never as the form opens: where the browser allows it already, it is
+// read at once; otherwise one button, Use my location, asks. Refused, one quiet line says why the
+// listing needs it. An edit keeps its listing's point, and needs the location again only when the
+// radius moves to or from 0.
 
 import { useEffect, useState } from 'react'
 
@@ -29,8 +29,8 @@ export function placeLine(area: string, radiusKm: number): string {
   return named ? `${named}, ${where}` : where.charAt(0).toUpperCase() + where.slice(1)
 }
 
-/** What the person is told when the location can't be had: refused, why the post needs it; else that it isn't there now. */
-export const NO_LOCATION = { refused: 'Allow your location so people nearby find this post.', unavailable: "Your location isn't available right now." }
+/** What the person is told when the location can't be had: refused, why the listing needs it; else that it isn't there now. */
+export const NO_LOCATION = { refused: 'Allow your location so people nearby find this listing.', unavailable: "Your location isn't available right now." }
 
 export function Place({ label, field, value, onChange }: { label: string; field: Pick<Field, 'radiusKm'>; value: unknown; onChange: (v: unknown) => void }) {
   const was = placeIn(value)
