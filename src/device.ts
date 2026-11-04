@@ -29,6 +29,7 @@
 
 import type { Pending } from '../services/host/client/client.ts'
 import type { Check } from './services/verifier.ts'
+import { RELOADED } from './version.ts'
 
 export type { Check }
 
@@ -69,7 +70,7 @@ const KEYS = {
 } as const
 
 /** The key this app keeps in sessionStorage, for one tab (version.ts). */
-export const SESSION_KEYS = ['forest.reloaded']
+export const SESSION_KEYS = [RELOADED]
 
 /** The event a change here sends, so what shows it reads it again. */
 export const CHANGED = 'forest:device'
