@@ -23,9 +23,8 @@
 // yet (on a new device, or after Forget) is marked at what it holds when first read, so nothing old
 // shows as new; one made here is marked at the start, so all that comes to it is.
 //
-// Anything else at this origin is the earlier app's, built on an architecture that is gone, and is
-// cleared at the first start (`cleanOld`): its passkey ids are kept, under the same name and in the
-// same form, so the passkeys made with it count here too.
+// Anything else in this origin's storage is not this app's, or no longer: each start clears it
+// (`cleanOld`).
 
 import type { Pending } from '../services/host/client/client.ts'
 import type { Check } from './services/verifier.ts'
@@ -40,20 +39,15 @@ export type Folder = { address: string; labels: Record<string, string> }
 export type Connection = { address: string; name: string; time: number; labels: string[] }
 export type Theme = 'device' | 'light' | 'dark'
 /**
- * A verification under way: its passkey; its check (the face check when absent, as the earlier
- * version of this app kept it); the ID check's payment, a Stripe Checkout Session's id, kept from
- * the moment it is made, since Stripe sends the person back with none; the check's session at the
- * verifier and its page, so a tab closed midway opens the same check again; the gift's buy, with its
+ * A verification under way: its passkey; its check; the ID check's payment, a Stripe Checkout
+ * Session's id, kept from the moment it is made, since Stripe sends the person back with none; the
+ * check's session at the verifier and its page, so a tab closed midway opens the same check again; the gift's buy, with its
  * ticket once the verifier signs one; and `kept`, once the stamp is in the Profiles folder and only
  * the profiles are left to show it.
  */
-export type Under = { passkey: string; check?: Check; payment?: string; session?: string; url?: string; gift?: { reference: string; pending: Pending; ticket?: string }; kept?: true }
-
-/** This app's storage, by the version of what it keeps. The earlier app kept none. */
-const VERSION = '2'
+export type Under = { passkey: string; check: Check; payment?: string; session?: string; url?: string; gift?: { reference: string; pending: Pending; ticket?: string }; kept?: true }
 
 const KEYS = {
-  version: 'forest.v',
   passkey: 'forest.passkey',
   passkeys: 'forest.passkeys',
   profiles: 'forest.profiles',
@@ -193,7 +187,11 @@ export const theme = (): Theme => {
 }
 export const saveTheme = (t: Theme) => write(KEYS.theme, t === 'device' ? undefined : t)
 
-export const under = (): Under | null => read<Under | null>(KEYS.under, null)
+/** The verification under way, if any: one kept without its passkey or its check is none. */
+export const under = (): Under | null => {
+  const u = read<Under | null>(KEYS.under, null)
+  return typeof u?.passkey === 'string' && (u.check === 'face' || u.check === 'id') ? u : null
+}
 export const keepUnder = (u: Under) => write(KEYS.under, u)
 export const endUnder = () => write(KEYS.under, undefined)
 
@@ -203,38 +201,11 @@ export function forget(): void {
   globalThis.dispatchEvent?.(new Event(CHANGED))
 }
 
-/**
- * Clears what this origin keeps that the app does not know: at the first start, all the earlier
- * app kept but its passkey ids; at every start, any key in localStorage or sessionStorage that is
- * not one of this app's.
- */
+/** Clears, at every start, any key in localStorage or sessionStorage that is not one of this app's, so one it stops using goes too. */
 export function cleanOld(): void {
   const s = store()
-  if (s.getItem(KEYS.version) !== JSON.stringify(VERSION)) {
-    const ids = passkeys()
-    s.clear()
-    if (ids.length) s.setItem(KEYS.passkeys, JSON.stringify(ids))
-    s.setItem(KEYS.version, JSON.stringify(VERSION))
-  }
   const known: string[] = Object.values(KEYS)
   for (const key of Object.keys(s)) if (!known.includes(key)) s.removeItem(key)
   const session = globalThis.sessionStorage
   if (session) for (const key of Object.keys(session)) if (!SESSION_KEYS.includes(key)) session.removeItem(key)
-}
-
-/** The caches the service worker keeps (vite.config.ts): the precache, the shell and the proving files. */
-const isOurCache = (name: string) => name === 'shell' || name === 'proofs' || name.startsWith('workbox-precache')
-
-/** Clears the caches and databases this origin keeps that the app does not: the earlier app's proving files among them. */
-export async function cleanOldCaches(): Promise<void> {
-  try {
-    for (const name of await caches.keys()) if (!isOurCache(name)) await caches.delete(name)
-  } catch {
-    // No caches here.
-  }
-  try {
-    for (const db of await indexedDB.databases()) if (db.name && !db.name.startsWith('workbox')) indexedDB.deleteDatabase(db.name)
-  } catch {
-    // No IndexedDB here, or it cannot list its databases.
-  }
 }

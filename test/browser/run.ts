@@ -575,7 +575,7 @@ test("Start, on a device that knows no passkey: two buttons at once, nothing ask
   const { credentials } = await cdp.send('WebAuthn.getCredentials', { authenticatorId: authenticator })
   assert.deepEqual(credentials.map((c) => [c.rpId, c.isResidentCredential]), [['app.forest.foundation', true]])
   const local = await kept(page)
-  assert.deepEqual(Object.keys(local).sort(), ['forest.folder', 'forest.passkeys', 'forest.v'], 'the passkey known, not yet in use: no one is verified here yet')
+  assert.deepEqual(Object.keys(local).sort(), ['forest.folder', 'forest.passkeys'], 'the passkey known, not yet in use: no one is verified here yet')
   assert.deepEqual(JSON.parse(local['forest.folder']!).labels, {}, 'its Profiles folder looked at, with no profile in it')
   const asked = counts.asserted
   await button(page, "Yes, I'm new").click()
@@ -681,7 +681,7 @@ test("Get verified: Face picked again, then Continue; the face check in its own 
   const stamp = stampFromJson(JSON.parse((await openLocked(body, identity)).stamp as string))
   assert.equal(stamp.verifier, services.faceKey, "the stamp from the verifier's face key")
   const local = await kept(page)
-  assert.deepEqual(Object.keys(local).sort(), ['forest.checks', 'forest.folder', 'forest.passkey', 'forest.passkeys', 'forest.v'])
+  assert.deepEqual(Object.keys(local).sort(), ['forest.checks', 'forest.folder', 'forest.passkey', 'forest.passkeys'])
   assert.deepEqual(JSON.parse(local['forest.checks']!), ['face'], 'how the person is verified')
   assert.deepEqual(JSON.parse(local['forest.folder']!), { address: wallet.address, labels: {} }, "the Profiles folder's address, never a key")
   for (const secret of [Buffer.from(seed).toString('hex'), Buffer.from(seed).toString('base64url'), String(stamp.signature.S)]) assert.ok(!JSON.stringify(local).includes(secret), 'nothing of the seed or the stamp kept')

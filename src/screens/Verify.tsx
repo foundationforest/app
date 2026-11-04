@@ -23,7 +23,7 @@ import { useEffect, useRef, useState } from 'react'
 
 import { config } from '../config.ts'
 import { type Check, under } from '../device.ts'
-import { type Step, NotFinished, NotPassed, advance, ask, checkOf, choose, collect, consentOf, finish, open, pay, stampNumberAt, stepOf } from '../flows/verify.ts'
+import { type Step, NotFinished, NotPassed, advance, ask, choose, collect, consentOf, finish, open, pay, stampNumberAt, stepOf } from '../flows/verify.ts'
 import { walletKey } from '../flows/profiles.ts'
 import { isHeldFor } from '../held.ts'
 import { withSeed } from '../passkey.ts'
@@ -79,9 +79,12 @@ export function Verify({ fromStart, id, step: first, onVerified, onBack }: Props
   const [away, setAway] = useState(first.at === 'away' && !known.current)
   const [stripe, setStripe] = useState<string | null>(null)
   /** The check under way for this passkey, if any. */
-  const underWay = (): Check | null => (under()?.passkey === id ? checkOf(under()) : null)
+  const underWay = (): Check | null => {
+    const u = under()
+    return u?.passkey === id ? u.check : null
+  }
   const [picked, setPicked] = useState<Check | null>(underWay)
-  const check = checkOf(under())
+  const check = under()?.check
   // The consent screen, as the verifier serves it: Pay shows only once it has come.
   const [consent, setConsent] = useState<string | null>(null)
   const [noConsent, setNoConsent] = useState<Note | null>(null)

@@ -131,8 +131,7 @@ function here(): Screen {
       return { at: 'settings' }
     case '/notifications':
       return { at: 'notifications' }
-    // A profile's messages, or with none named every profile's, as the Inbox's path from before was.
-    case '/inbox':
+    // A profile's messages, or with none named every profile's.
     case '/messages':
       return { at: 'messages', ...(isText(now.only) && { only: now.only }) }
     case '/message':
