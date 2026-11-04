@@ -46,7 +46,6 @@
     "vite.config.ts"
   ],
   "exclude": [
-    "test/browser",
-    "test/verifier"
+    "test/browser"
   ]
 }

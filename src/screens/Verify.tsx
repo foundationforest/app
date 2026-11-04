@@ -1,8 +1,9 @@
 // Get verified: two rows to pick from, the face check, free, or the ID check, $5, then Continue. Each
 // check in a tab of its own, opened on the tap itself (iPhone Safari blocks a tab opened after an
 // await). The ID check is paid first, on Stripe's page in this tab: before it, its price and tries,
-// and, tapped open, the verifier's consent screen, word for word; Stripe sends the person back to
-// /id, where the payment, kept on the device, takes them on.
+// and, tapped open, the consent screen the verifier serves (GET /), word for word, without which
+// there is no Pay; Stripe sends the person back to /id, where the payment, kept on the device, takes
+// them on.
 //
 // Every step has a back. From Start, Get verified goes back to New to Forest? while nothing is under
 // way, else to Start (App.tsx), and every later step to Get verified, the check under way still
@@ -21,19 +22,21 @@
 import { useEffect, useRef, useState } from 'react'
 
 import { config } from '../config.ts'
-import { CONSENT, TEST_CARD } from '../consent.ts'
 import { type Check, under } from '../device.ts'
-import { type Step, NotFinished, NotPassed, advance, ask, checkOf, choose, collect, finish, open, pay, stampNumberAt, stepOf } from '../flows/verify.ts'
+import { type Step, NotFinished, NotPassed, advance, ask, choose, collect, consentOf, finish, open, pay, stampNumberAt, stepOf } from '../flows/verify.ts'
 import { walletKey } from '../flows/profiles.ts'
 import { isHeldFor } from '../held.ts'
 import { withSeed } from '../passkey.ts'
 import { proveInWorker } from '../proof/prove.ts'
-import { Line, Quiet, Spinner, Top, UnlockIcon, noteOf, useAction } from '../ui.tsx'
+import { Line, type Note, Quiet, Spinner, Top, UnlockIcon, noteOf, useAction } from '../ui.tsx'
 
 /** How often the stamp is asked for while the check is open, and for how long; and while it is held for review. */
 const AWAY_EVERY_MS = 3_000
 const AWAY_FOR_MS = 20 * 60_000
 const REVIEW_EVERY_MS = 20_000
+
+/** While the verifier's Stripe key is a test one (a payment id `cs_test_…`), the card that pays: Stripe's test card. */
+const TEST_CARD = 'Test mode: pay with the card 4242 4242 4242 4242.'
 
 type Props = {
   /** Opened from Start, whose back goes there. */
@@ -76,9 +79,25 @@ export function Verify({ fromStart, id, step: first, onVerified, onBack }: Props
   const [away, setAway] = useState(first.at === 'away' && !known.current)
   const [stripe, setStripe] = useState<string | null>(null)
   /** The check under way for this passkey, if any. */
-  const underWay = (): Check | null => (under()?.passkey === id ? checkOf(under()) : null)
+  const underWay = (): Check | null => {
+    const u = under()
+    return u?.passkey === id ? u.check : null
+  }
   const [picked, setPicked] = useState<Check | null>(underWay)
-  const check = checkOf(under())
+  const check = under()?.check
+  // The consent screen, as the verifier serves it: Pay shows only once it has come.
+  const [consent, setConsent] = useState<string | null>(null)
+  const [noConsent, setNoConsent] = useState<Note | null>(null)
+  useEffect(() => {
+    if (step.at !== 'consent' || consent) return
+    let on = true
+    setNoConsent(null)
+    consentOf(config).then(
+      (text) => on && setConsent(text),
+      (err: unknown) => on && setNoConsent(noteOf(err)),
+    )
+    return () => void (on = false)
+  }, [step.at])
 
   /** A pause in the asking, cut short by back. */
   const pause = (ms: number) =>
@@ -252,10 +271,12 @@ export function Verify({ fromStart, id, step: first, onVerified, onBack }: Props
       {step.at === 'consent' && (
         <>
           <p>$5 · up to three tries</p>
-          <details>
-            <summary>What the check keeps</summary>
-            <p className="consent">{CONSENT}</p>
-          </details>
+          {consent && (
+            <details>
+              <summary>What the check keeps</summary>
+              <p className="consent">{consent}</p>
+            </details>
+          )}
         </>
       )}
       <div className="fill" />
@@ -279,7 +300,7 @@ export function Verify({ fromStart, id, step: first, onVerified, onBack }: Props
         </>
       ) : step.at === 'consent' ? (
         <>
-          <Line note={paying.note} />
+          <Line note={paying.note ?? noConsent} />
           {stripe ? (
             <>
               <p className="line">{TEST_CARD}</p>
@@ -287,10 +308,16 @@ export function Verify({ fromStart, id, step: first, onVerified, onBack }: Props
                 Go to Stripe
               </a>
             </>
-          ) : (
+          ) : consent ? (
             <button className="primary" disabled={paying.busy} onClick={() => paying.run()}>
               {paying.busy ? <Spinner /> : 'Pay $5'}
             </button>
+          ) : (
+            !noConsent && (
+              <button className="primary" disabled>
+                <Spinner />
+              </button>
+            )
           )}
         </>
       ) : step.at === 'review' ? (

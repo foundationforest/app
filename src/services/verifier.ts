@@ -12,7 +12,7 @@ import { Refused, call } from './http.ts'
  */
 export const stamps = () => lazy(() => import('@foundationforest/proofs'))
 
-/** A stamp as the Profiles folder keeps it: the standard's JSON of it, as text, checked as the standard reads it. The fields a verifier adds beside it (the ID check's name and birth date among them) are not kept. */
+/** A stamp as the Profiles folder keeps it: the standard's JSON of it, as text, checked as the standard reads it. The fields a verifier adds beside it (the ID check's name and birth date among them) are kept too: the standard's stampToJson passes them through, so the person keeps what the facts were made from. */
 export async function stampText(json: unknown): Promise<string> {
   const { stampFromJson, stampToJson } = await stamps()
   return JSON.stringify(stampToJson(stampFromJson(json)))
@@ -23,8 +23,8 @@ const SERVICE = 'verifier'
 /** The two checks: the face check, free, and the ID check, paid. */
 export type Check = 'face' | 'id'
 
-/** What the verifier says of itself in GET /: its name, its two keys, and its gifts, credits at one host. */
-export type About = { name: string; face: { key: string }; id: { key: string }; gift?: { face: number; id: number; host: string; sponsor: string } }
+/** What the verifier says of itself in GET /: its name, its two keys, the consent screen an app shows before the ID check, and its gifts, credits at one host. */
+export type About = { name: string; face: { key: string }; id: { key: string }; consent?: string; gift?: { face: number; id: number; host: string; sponsor: string } }
 
 const known = new Map<string, Promise<About>>()
 

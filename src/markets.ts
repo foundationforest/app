@@ -1,14 +1,16 @@
 // The markets, from their files as the build hands them over (build/markets.ts), through the markets'
-// browser entry, which takes them as data and runs no eval: the directory, each market file, and
-// checkEntry. As the app shows them: each market and role a pair, in the market's own words,
+// browser entry, which takes them as data and runs no eval: the directory, each market file,
+// checkEntry and previewOf. As the app shows them: each market and role a pair, in the market's own words,
 // "Tutoring tutor", no symbol between (on screen, the market in bold and the role muted: Named, in
 // ui.tsx); every market with its roles, as New profile lists them; each kind of entry's fields for
 // a role; and the other side of a market.
 
-import { type Field, type Fields, type Kind, type Market, SHARED, loadMarkets } from '@foundationforest/markets/browser'
+import { type Field, type Fields, type Kind, type Market, SHARED, loadMarkets, previewOf } from '@foundationforest/markets/browser'
 import files from 'virtual:markets'
 
 export type { Field, Fields, Kind, Market }
+/** The post fields that matter first, as the markets manual's Preview says: the markets' own. */
+export { previewOf }
 
 export const markets = loadMarkets(files)
 
@@ -85,11 +87,4 @@ export function fieldsOf(market: Market, kind: Kind, role: string, aboutRole?: s
   if (kind === 'post') return { ...forRole(market.post, role), ...SHARED.post }
   if (kind === 'review') return { ...SHARED.review, ...forRole(market.review ?? {}, aboutRole) }
   return SHARED[kind]
-}
-
-/** The post fields that matter first: the market's `preview`, else description, price, then its place fields, of those it has (the markets manual's Preview). */
-export function previewOf(market: Market): string[] {
-  if (market.preview) return market.preview
-  const post = market.post
-  return [...['description', 'price'].filter((name) => name in post), ...Object.keys(post).filter((name) => post[name]!.type === 'place')]
 }

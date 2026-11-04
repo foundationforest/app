@@ -11,8 +11,8 @@
 
 /** This version: the main module's own address, which every build names anew. */
 const VERSION = import.meta.url
-/** The version this tab last reloaded from, to take a newer one. */
-const RELOADED = 'forest.reloaded'
+/** The version this tab last reloaded from, to take a newer one: the one key the app keeps in sessionStorage (device.ts). */
+export const RELOADED = 'forest.reloaded'
 
 /** The page is reloading to take the new version: nothing to say, and nothing more to do here. */
 export class Reloading extends Error {

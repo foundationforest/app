@@ -75,16 +75,20 @@ export function nothingUnderWay(passkey: string): boolean {
   return !u || (!u.session && !u.payment)
 }
 
-/** The check a verification under way is on: the face check unless it says otherwise, as the earlier version kept it. */
-export const checkOf = (u: Under | null): Check => u?.check ?? 'face'
-
 /** Where the verification under way for `passkey` stands, from the device alone: no seed asked. */
 export function stepOf(passkey: string): Step {
   const u = mine(passkey)
   if (!u) return { at: 'choose' }
   if (u.kept) return { at: 'kept' }
-  if (checkOf(u) === 'id' && !u.payment) return { at: 'consent' }
+  if (u.check === 'id' && !u.payment) return { at: 'consent' }
   return u.session ? { at: 'away' } : { at: 'start' }
+}
+
+/** The consent screen the verifier serves in GET /, shown before the ID check word for word; a verifier that serves none isn't answering as one. */
+export async function consentOf(s: Services): Promise<string> {
+  const { consent } = await about(s.verifier)
+  if (typeof consent !== 'string' || !consent) throw verifierSays('not_a_verifier')
+  return consent
 }
 
 /** The person's stamp number at the verifier: the only thing mixed from the seed it ever sees. */
@@ -108,12 +112,12 @@ async function withGift(s: Services, u: Under, check: Check): Promise<Under> {
  */
 export function choose(passkey: string, check: Check): void {
   const was = mine(passkey)
-  if (was && checkOf(was) === check) return
+  if (was?.check === check) return
   keepUnder({ passkey, check, ...(was?.gift && { gift: was.gift }), ...(was?.payment && { payment: was.payment }) })
 }
 
 /** The ID check's payment under way that no stamp has used: paid for, then left for the face check. */
-const unused = (u: Under | null): string | undefined => (u && checkOf(u) === 'face' ? u.payment : undefined)
+const unused = (u: Under | null): string | undefined => (u?.check === 'face' ? u.payment : undefined)
 
 /** The verification over: nothing of it left on the device but a payment no stamp used, so the ID check opens paid. */
 function over(passkey: string): void {
@@ -156,7 +160,7 @@ const noSession = (u: Under): Under => {
 export async function open(s: Services, passkey: string, returnUrl?: string): Promise<string> {
   let u: Under = mine(passkey) ?? { passkey, check: 'face' }
   if (u.session && u.url) return u.url
-  const check = checkOf(u)
+  const check = u.check
   if (check === 'id' && !u.payment) throw new Said('Pay first.')
   u = await withGift(s, u, check)
   keepUnder(u)
@@ -176,7 +180,7 @@ export async function open(s: Services, passkey: string, returnUrl?: string): Pr
 export async function ask(s: Services, passkey: string, stampNumber: bigint): Promise<Step> {
   const u = mine(passkey)
   if (!u?.session) return u ? stepOf(passkey) : { at: 'choose' }
-  const check = checkOf(u)
+  const check = u.check
   const got = await askStamp(s.verifier, check, { sessionId: u.session, stampNumber, gift: u.gift?.reference, payment: u.payment })
   if (got.signed) {
     if (u.gift && got.ticket) keepUnder({ ...u, gift: { ...u.gift, ticket: got.ticket } })
@@ -238,7 +242,7 @@ export async function finish(s: Services, passkey: string, seed: Uint8Array, sta
   await noteChecks(s, held)
   const u = mine(passkey)
   const payment = unused(u)
-  if (u) keepUnder({ passkey, check: checkOf(u), kept: true, ...(payment && { payment }) })
+  if (u) keepUnder({ passkey, check: u.check, kept: true, ...(payment && { payment }) })
   await showStamps(s, seed, { labels: folder.labels, stamps: held }, prove)
   over(passkey)
   usePasskey(passkey)
@@ -278,7 +282,7 @@ export async function resume(s: Services, passkey: string, seed: Uint8Array, pro
   if (folder.stamps.length) {
     await noteChecks(s, folder.stamps)
     if (u?.kept) await finishShowing(s, passkey, seed, prove)
-    else if (u && checkOf(u) === 'face') {
+    else if (u?.check === 'face') {
       // The face stamp is kept: only its gift may be left to collect.
       await collect(s, passkey, folder.key.address)
       over(passkey)
@@ -290,7 +294,8 @@ export async function resume(s: Services, passkey: string, seed: Uint8Array, pro
   if (step.at === 'start' || step.at === 'choose') {
     // A stamp signed and never kept, for this check or the other: a device lost after the signing.
     const back = await stampsBack(s.verifier, stampNumber)
-    const first = checkOf(mine(passkey))
+    // The check under way first, else the face check.
+    const first = mine(passkey)?.check ?? 'face'
     const stamp = back[first] ?? back[first === 'face' ? 'id' : 'face']
     if (stamp) step = { at: 'signed', stamp }
   }

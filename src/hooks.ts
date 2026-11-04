@@ -1,10 +1,10 @@
 // What the screens read from the device, the host and the index, kept fresh: the person's profiles
-// and AI apps as the device keeps them; how each is verified, as its profile entry at the host says; the new
-// entries in their inboxes; what the index says of each, read as a screen showing it opens and held
-// in the page meanwhile; what is new on each; whether a profile was made on another device; the
-// messages opened in this page; the passkeys added to the Profiles folder (backups, as the standard
-// names them); whether a seed is held
-// in it; and whether a newer version of the app is live.
+// and AI apps as the device keeps them; how each is verified, as its profile entry at the host says;
+// the new entries in their inboxes, one listing for the page (listing.ts); what the index says of
+// each, read as a screen showing it opens and held in the page meanwhile; what is new on each;
+// whether a profile was made on another device; the messages opened in this page; the passkeys added
+// to the Profiles folder (backups, as the standard names them); whether a seed is held in it; and
+// whether a newer version of the app is live.
 
 import { useEffect, useState } from 'react'
 
@@ -13,9 +13,9 @@ import { CHANGED, type Connection, type Profile, connections, folder, profiles, 
 import { type Card, readCard } from './flows/cards.ts'
 import { type Backup, backupsAt } from './flows/backups.ts'
 import { anyNew, labelIds } from './flows/elsewhere.ts'
-import { newMessages } from './flows/inbox.ts'
 import { type Received, newOf, rate } from './flows/reviews.ts'
 import { isHeld, onHeld } from './held.ts'
+import { newMessagesListing } from './listing.ts'
 import { onOpened, opened } from './opened.ts'
 import { type Held, onRated, ratedOf } from './rated.ts'
 import { entryIn, newerLive } from './version.ts'
@@ -69,34 +69,10 @@ export function useCards(list: Profile[], again = 0): Record<string, Card> {
   return cards
 }
 
-/** How often the inboxes are listed while the app is open. */
-const LIST_EVERY_MS = 30_000
-
-/** The last listing, so a screen opening shows it at once. */
-let lastMessages: Record<string, string[]> = {}
-
-/** The new inbox entries of every profile, by address, listed with nothing unlocked: now, every half minute, and whenever the device changes. */
+/** The new inbox entries of every profile, by address, listed with nothing unlocked: the page's one listing (listing.ts), followed while the screen is open, the last one shown at once. */
 export function useNewMessages(): Record<string, string[]> {
-  const list = useProfiles()
-  const [found, setFound] = useState(lastMessages)
-  const addresses = list.map((p) => p.address).join(',')
-  useEffect(() => {
-    let live = true
-    const list = profiles()
-    const look = () =>
-      newMessages(config.host, list).then(
-        (ids) => live && setFound((lastMessages = ids)),
-        () => undefined,
-      )
-    void look()
-    const every = setInterval(look, LIST_EVERY_MS)
-    addEventListener(CHANGED, look)
-    return () => {
-      live = false
-      clearInterval(every)
-      removeEventListener(CHANGED, look)
-    }
-  }, [addresses])
+  const [found, setFound] = useState(newMessagesListing.last)
+  useEffect(() => newMessagesListing.follow(setFound), [])
   return found
 }
 

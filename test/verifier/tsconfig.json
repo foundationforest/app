@@ -1,5 +1,0 @@
-{
-  "extends": "../../tsconfig.json",
-  "include": [".", "../world.ts"],
-  "exclude": []
-}

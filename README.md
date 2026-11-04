@@ -48,7 +48,7 @@ Three places: your **Profiles**, your **Notifications** and **Settings**.
 
 ## Run your own
 
-Run `./standard.sh`, which fetches the standard, the markets and the host's credits client at the commits in `STANDARD`, `MARKETS` and `SERVICES`; then `npm ci` and `npm run dev`. `npm run check && npm test` checks it; `npm run test:browser` runs the whole app in Chromium, with a virtual passkey, against services' own verifier, host, index and connector running on your machine, the way services' loop does (`./standard.sh services` readies them). Node 22.18 or later.
+Run `./standard.sh`, which fetches the standard, the markets and the host's credits client at the commits in `STANDARD`, `MARKETS` and `SERVICES`; then `npm ci` and `npm run dev`. To check it, run `./standard.sh services` instead, which also readies services' own verifier, host, index and connector to run on your machine, the way services' loop does: then `npm run check && npm test` checks it, against them, and `npm run test:browser` runs the whole app in Chromium, with a virtual passkey, against them too. Node 22.18 or later.
 
 To host a copy, serve the build from any static host with the security headers in `vercel.json`, and set the services it talks to in its one config file. A copy at another address makes its own passkeys, so its own seeds.
 

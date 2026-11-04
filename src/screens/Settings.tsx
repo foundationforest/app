@@ -47,10 +47,10 @@ export function Settings({ go, onForgot, onIdCheck, onConnectAi, onAiApp, onAddP
     setFound((n) => n + 1)
   })
   // How the person is verified: the stamps their Profiles folder holds, as this device last saw
-  // them, and what their profiles' entries show. With neither yet, the face check, the way past
-  // Start the earlier version knew.
+  // them (every way a passkey comes into use here notes them first), and what their profiles'
+  // entries show.
   const shown = new Set<Check>([...heldChecks(), ...Object.values(cards).flatMap((c) => c.checks)])
-  const has = (c: Check) => shown.has(c) || (c === 'face' && shown.size === 0)
+  const has = (c: Check) => shown.has(c)
   const backups = useBackups()
   const names = backupNames()
   // The backup whose Remove was tapped once: tapped again, it is removed.
