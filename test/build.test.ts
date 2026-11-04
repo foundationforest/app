@@ -13,7 +13,7 @@ import { files } from '../build/markets.ts'
 import { proofFiles } from '../build/proofs.ts'
 import { config } from '../src/config.ts'
 import { CONSENT } from '../src/consent.ts'
-import { placeOf, rounded } from '../src/fields/Place.tsx'
+import { placeLine } from '../src/fields/Place.tsx'
 import { rfc3339 } from '../src/fields/Moment.tsx'
 import { kindWords, marketList, marketWords, otherSide, pairOf, pairs, roleWords } from '../src/markets.ts'
 import { contactHref } from '../src/show.ts'
@@ -124,19 +124,11 @@ test('a contact opens with a tap: a phone, an email, a link; a handle shows as i
   expect(contactHref('@ada')).toBeUndefined()
 })
 
-test('a place: an area alone, with online when picked, or with the point Near me adds; online alone; nothing', () => {
-  expect(placeOf(' Lavapiés ', null, 5, false)).toEqual({ area: 'Lavapiés' })
-  expect(placeOf('Lavapiés', null, 5, true)).toEqual({ area: 'Lavapiés', online: true })
-  expect(placeOf('Lavapiés', { lat: 40.4089, lon: -3.7007 }, 1, false)).toEqual({ ...rounded({ lat: 40.4089, lon: -3.7007 }, 1), precisionKm: 1, area: 'Lavapiés' })
-  expect(placeOf('', { lat: 40.4, lon: -3.7 }, 5, true), 'no area: a point is never written alone').toEqual({ online: true })
-  expect(placeOf('', null, 5, false)).toBeUndefined()
-})
-
-test('a place: a point rounded to the kilometres picked, as decimal text; a moment with its offset', () => {
-  const near = rounded({ lat: 40.41678, lon: -3.70379 }, 5)
-  const again = rounded({ lat: 40.4201, lon: -3.7012 }, 5)
-  expect(near, 'two points a few hundred metres apart round to one').toEqual(again)
-  expect(near.lat).toMatch(/^-?\d+\.\d{4}$/)
+test("a place's one line in its form: how far round it reaches from you, after the area when there is one; a moment with its offset", () => {
+  expect(placeLine('', 5)).toBe('Within 5 km of you')
+  expect(placeLine(' Lavapiés ', 2)).toBe('Lavapiés, within 2 km of you')
+  expect(placeLine('', 0), 'radius 0, picked on the slider: the exact spot').toBe('Right where you are')
+  expect(placeLine('Court 3', 0)).toBe('Court 3, right where you are')
   expect(rfc3339('2026-11-02T18:00')).toMatch(/^2026-11-02T18:00:00[+-]\d\d:\d\d$/)
   expect(rfc3339('')).toBeUndefined()
 })

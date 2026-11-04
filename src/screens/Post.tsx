@@ -1,6 +1,8 @@
 // A post, new or edited, from a profile: an offer, a request or a post, as the profile's role names
-// it, its form the market's own fields in the market's order (the markets' browser entry), the
-// photos among them. Everything is checked before the unlock (flows/posts.ts); then one unlock signs
+// it, its form the market's own fields and contact, in the order form.ts reads from the market's
+// file, each shown once the answers it depends on hold and dropped when they no longer do, the
+// photos among them. An edit opens with what still fits its market today, so a post an older market
+// shaped is posted again in today's. Everything is checked before the unlock (flows/posts.ts); then one unlock signs
 // it, writes it and sends its new photos. Its path is set as the form opens, so posting again after
 // a photo did not go writes the same post, never a second. An edit's Delete is in red, asking once
 // more.
@@ -15,8 +17,9 @@ import { Field } from '../fields/Field.tsx'
 import type { Picked } from '../fields/Photos.tsx'
 import { newPhotos, withFiles } from '../flows/photos.ts'
 import { type Posted, check, newPath, post, unpost } from '../flows/posts.ts'
+import { applies, fitting, formFields, settled } from '../form.ts'
 import { useProfiles } from '../hooks.ts'
-import { fieldsOf, kindWords, markets, pairOf } from '../markets.ts'
+import { kindWords, markets, pairOf } from '../markets.ts'
 import { withSeed } from '../passkey.ts'
 import { Line, Spinner, Top, UnlockIcon, useAction } from '../ui.tsx'
 
@@ -29,12 +32,12 @@ export function Post({ me, edit, onDone, onBack }: Props) {
   const mine = useProfiles()
   const { market: name, role } = pairOf(me.label)
   const market = markets.market(name)
-  const [values, setValues] = useState<Body>(() => (edit ? { ...edit.body } : {}))
+  const fields = market ? formFields(market, role) : []
+  const [values, setValues] = useState<Body>(() => (edit ? fitting(name, role, edit.body) : {}))
   const [path] = useState(() => edit?.path ?? newPath('post'))
   const [sure, setSure] = useState(false)
   const picked = useRef<Picked>(new Map()).current
 
-  const fields = market ? Object.entries(fieldsOf(market, 'post', role)) : []
   const photoFields = fields.filter(([, f]) => f.type === 'file').map(([n]) => n)
   const send = useAction(async () => {
     const bytes = new Map([...picked].map(([sha, p]) => [sha, p.bytes]))
@@ -49,7 +52,7 @@ export function Post({ me, edit, onDone, onBack }: Props) {
   })
 
   if (!market) return null
-  const set = (n: string, v: unknown) => setValues((was) => ({ ...was, [n]: v as Body[string] }))
+  const set = (n: string, v: unknown) => setValues((was) => settled(fields, { ...was, [n]: v as Body[string] }))
   const word = kindWords('post', me.label)
   return (
     <main>
@@ -63,7 +66,7 @@ export function Post({ me, edit, onDone, onBack }: Props) {
           void send.run()
         }}
       >
-        {fields.map(([n, f]) => (
+        {fields.filter(([, f]) => applies(f, values)).map(([n, f]) => (
           <Field key={n} name={n} field={f} value={values[n]} onChange={(v) => set(n, v)} picked={picked} />
         ))}
         <Line note={send.note} />

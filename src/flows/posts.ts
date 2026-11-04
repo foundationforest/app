@@ -1,8 +1,8 @@
 // A profile's posts, of every kind the markets define (the markets manual): a post at post/<id>, a
 // review at review/<id>, a vouch at vouch/<id> and a report at report/<id>, each at a random id.
 // Reading them needs nothing unlocked: a folder is public. Before the unlock, the app checks what is
-// to be written: its required fields given; the body against its market (checkEntry, the markets'
-// one checker); and for a review, a vouch or a report, its subject, read from the host: a profile's
+// to be written: a post holding something; the body against its market (checkEntry, the markets'
+// one checker), which demands no field but a subject; and for a review, a vouch or a report, its subject, read from the host: a profile's
 // address, not the writing profile's, in the same market, on the other side (the same role where the
 // market has one). For now, for testing, it may be another of the person's own profiles, which the
 // index counts, since it can't tell; this may close before real users. Then the main key signs it,
@@ -16,9 +16,9 @@ import { mainKey } from '@foundationforest/keys'
 
 import type { Services } from '../config.ts'
 import type { Profile } from '../device.ts'
-import { KINDS, type Kind, fieldsOf, markets, otherSide, pairOf } from '../markets.ts'
+import { KINDS, type Kind, markets, otherSide, pairOf } from '../markets.ts'
 import { readView, writeAll } from '../services/host.ts'
-import { Said, entrySays, fieldWords } from '../words.ts'
+import { Said, entrySays } from '../words.ts'
 import { paid } from './paid.ts'
 import { sendPhotos } from './photos.ts'
 import { randomId, walletKey } from './profiles.ts'
@@ -78,19 +78,17 @@ export async function subjectOf(s: Services, me: Profile, address: string, _mine
 }
 
 /**
- * Whether `body` can be posted as a `kind` entry by `me`: its required fields given, its subject
+ * Whether `body` can be posted as a `kind` entry by `me`: a post holding something, its subject
  * checked, and the body fitting its market. Gives back nothing when it can; else throws why, in one
- * line (quiet for a field still empty, red for one that does not fit).
+ * line (quiet for what is still missing, red for a field that does not fit).
  */
 export async function check(s: Services, me: Profile, kind: Kind, body: Body, mine: Profile[]): Promise<void> {
   const { market: name, role } = pairOf(me.label)
   const market = markets.market(name)
   if (!market) throw new Said("This profile's market isn't in the directory.", true)
+  if (kind === 'post' && Object.keys(body).every((name) => name === 'files')) throw new Said('Add something first.')
   if (kind !== 'post' && typeof body.subject !== 'string') throw new Said('Add their address.')
   const subject = kind === 'post' ? undefined : await subjectOf(s, me, body.subject as string, mine)
-  for (const [field, f] of Object.entries(fieldsOf(market, kind, role, subject?.role))) {
-    if (f.required && field !== 'subject' && body[field] === undefined) throw new Said(`${fieldWords(field)} is empty.`)
-  }
   const why = markets.checkEntry(name, role, kind, body, subject?.role)
   if (why) throw entrySays(why, Object.keys(body))
 }

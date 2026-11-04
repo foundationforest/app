@@ -7,8 +7,9 @@
 // about each profile its Reviews has shown, their theme, and, while a verification is under way, its
 // check and session, the ID check's payment and the gift's buy, then an ID check's payment no stamp
 // has used yet (flows/verify.ts); and the password manager's name of each backup passkey it added,
-// by its entry in the Profiles folder (flows/backups.ts), which the entry itself can't hold. Never the
-// seed, a key, a stamp or a message.
+// by its entry in the Profiles folder (flows/backups.ts), which the entry itself can't hold; and the
+// point posts' places are centred on, one for each place a post's form read the device's location
+// at, moved a little from it (near.ts). Never the seed, a key, a stamp or a message.
 //
 // A label entry in the Profiles folder that this device never read, or whose label it doesn't list,
 // is a profile made elsewhere, on another device with the same seed: Profiles offers to read them
@@ -64,6 +65,7 @@ const KEYS = {
   known: 'forest.known',
   folder: 'forest.folder',
   backups: 'forest.backups',
+  points: 'forest.points',
 } as const
 
 /** The key this app keeps in sessionStorage, for one tab (version.ts). */
@@ -176,6 +178,14 @@ export function unnameBackup(id: string): void {
   write(KEYS.backups, rest)
 }
 
+/** A post's place's centre, kept: a point near a place the device posted from, in degrees as decimal text, as a place holds them. */
+export type Point = { lat: string; lon: string }
+const isPoint = (v: unknown): v is Point => typeof (v as Point | null)?.lat === 'string' && typeof (v as Point).lon === 'string'
+
+/** The points kept for posts' places, oldest first: one for each place a post's form read the device's location at (near.ts). */
+export const points = (): Point[] => read<unknown[]>(KEYS.points, []).filter(isPoint)
+export const keepPoint = (p: Point) => write(KEYS.points, [...points(), { lat: p.lat, lon: p.lon }])
+
 export const theme = (): Theme => {
   const t = read<string>(KEYS.theme, 'device')
   return t === 'light' || t === 'dark' ? t : 'device'
@@ -186,9 +196,9 @@ export const under = (): Under | null => read<Under | null>(KEYS.under, null)
 export const keepUnder = (u: Under) => write(KEYS.under, u)
 export const endUnder = () => write(KEYS.under, undefined)
 
-/** Forget this device: the profiles and the Profiles folder, how they are verified, the AI apps and the keys it knows of, what was new on each, the backups' names, the theme, the passkey in use and any verification under way. The ids of the passkeys it knows stay, so Start asks for them and never makes a second one. */
+/** Forget this device: the profiles and the Profiles folder, how they are verified, the AI apps and the keys it knows of, what was new on each, the backups' names, the points kept for places, the theme, the passkey in use and any verification under way. The ids of the passkeys it knows stay, so Start asks for them and never makes a second one. */
 export function forget(): void {
-  for (const key of [KEYS.passkey, KEYS.profiles, KEYS.folder, KEYS.checks, KEYS.connections, KEYS.known, KEYS.read, KEYS.seen, KEYS.backups, KEYS.theme, KEYS.under]) store().removeItem(key)
+  for (const key of [KEYS.passkey, KEYS.profiles, KEYS.folder, KEYS.checks, KEYS.connections, KEYS.known, KEYS.read, KEYS.seen, KEYS.backups, KEYS.points, KEYS.theme, KEYS.under]) store().removeItem(key)
   globalThis.dispatchEvent?.(new Event(CHANGED))
 }
 

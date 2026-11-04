@@ -1,5 +1,6 @@
 // How the screens say things that are not words: a price as people write it, in the device's own
-// number format; the time of day a message was sent, and whether a day line goes before it.
+// number format; a place as its area and how far round it reaches; the time of day a message was
+// sent, and whether a day line goes before it.
 
 import { expect, test } from 'vitest'
 
@@ -25,14 +26,23 @@ test("every price on screen reads so: a money field's value", () => {
 
 test("a post's row in every market: with a price, its preview's first other line, then the price; with none, its preview's first two", () => {
   const tutoring = markets.market('tutoring')!
-  const lesson = { description: 'Maths, one hour online.', subjects: ['maths'], price: { amount: '30', currency: 'USD', per: 'hour' }, place: { online: true } }
+  const lesson = { description: 'Maths, one hour online.', subjects: ['maths'], price: { amount: '30', currency: 'USD', per: 'hour' }, mode: ['online'] }
   expect(rowLines(tutoring, lesson), 'tutoring puts subjects first, and the price after the description: here second').toEqual(['Maths', priceText(lesson.price)])
   const { price: _, ...free } = lesson
   expect(rowLines(tutoring, free), 'no price: as the preview runs').toEqual(['Maths', 'Maths, one hour online.'])
   const clothing = markets.market('clothing')!
   const coat = { amount: '40', currency: 'USD' }
-  expect(rowLines(clothing, { description: 'A wool coat.', price: coat, location: { area: 'Lyon' } })).toEqual(['A wool coat.', priceText(coat)])
+  expect(rowLines(clothing, { description: 'A wool coat.', price: coat, location: { lat: '45.764', lon: '4.836', radiusKm: 2, area: 'Lyon' } })).toEqual(['A wool coat.', priceText(coat)])
   expect(rowLines(clothing, { price: coat }), 'the price alone').toEqual([priceText(coat)])
+})
+
+test('a place: its area, then how far round it reaches; radius 0, that exact spot; an older place, its area', () => {
+  const field = markets.market('clothing')!.post.location!
+  expect(valueText(field, { lat: '45.764', lon: '4.836', radiusKm: 2, area: 'Lyon' })).toBe('Lyon, within 2 km')
+  expect(valueText(field, { lat: '45.764', lon: '4.836', radiusKm: 2 })).toBe('Within 2 km')
+  expect(valueText(field, { lat: '45.76412', lon: '4.83601', radiusKm: 0, area: 'Court 3' })).toBe('Court 3')
+  expect(valueText(field, { lat: '45.76412', lon: '4.83601', radiusKm: 0 })).toBe('An exact spot')
+  expect([valueText(field, { area: 'Lyon' }), valueText(field, { online: true })]).toEqual(['Lyon', ''])
 })
 
 test("a day line before a thread's first message, and wherever the day changes on the device's calendar", () => {

@@ -1,13 +1,14 @@
 // One field of a post, as suits its type on a phone (the markets manual's Types): text in a line (a
 // box for a description), a number on the number keys, words in a line with commas between them, a
-// choice as chips (a long list of one as a menu), money as an amount with its currency and, only
+// choice as chips, any number of them for a `many` one (a long list of one as a menu), each value
+// by its label where the field has one, else in words; money as an amount with its currency and, only
 // when the field lists what its amount may be for, a pick of exactly those; photos as tiles; and
 // place, moment and hours in their own modules. A contact says, beside its name, that it is public.
 
 import { useState } from 'react'
 
 import type { Field as MarketField } from '../markets.ts'
-import { valueWords } from '../show.ts'
+import { choiceWords } from '../show.ts'
 import { fieldWords } from '../words.ts'
 import { Hours } from './Hours.tsx'
 import { Moment } from './Moment.tsx'
@@ -76,7 +77,7 @@ function Input({ name, field, value, onChange, picked }: FieldProps) {
 }
 
 /** A choice: chips, any number of them for `many`; one, or a menu when the list is long. */
-export function Choice({ label, field, value, onChange }: { label: string; field: Pick<MarketField, 'values' | 'many'>; value: unknown; onChange: (v: unknown) => void }) {
+export function Choice({ label, field, value, onChange }: { label: string; field: Pick<MarketField, 'values' | 'many' | 'labels'>; value: unknown; onChange: (v: unknown) => void }) {
   const values = field.values ?? []
   const [picked, setPicked] = useState<string[]>(Array.isArray(value) ? value : typeof value === 'string' ? [value] : [])
   const set = (next: string[]) => {
@@ -89,7 +90,7 @@ export function Choice({ label, field, value, onChange }: { label: string; field
         <option value="" />
         {values.map((v) => (
           <option key={v} value={v}>
-            {valueWords(v)}
+            {choiceWords(field, v)}
           </option>
         ))}
       </select>
@@ -101,7 +102,7 @@ export function Choice({ label, field, value, onChange }: { label: string; field
         const on = picked.includes(v)
         return (
           <button key={v} type="button" className={on ? 'chip here' : 'chip'} aria-pressed={on} onClick={() => set(field.many ? (on ? picked.filter((p) => p !== v) : [...picked, v]) : on ? [] : [v])}>
-            {valueWords(v)}
+            {choiceWords(field, v)}
           </button>
         )
       })}

@@ -4,7 +4,8 @@
 // index for it. Under the name, two lines: the index's rating, how many reviews it counted, and how
 // many reviews, vouches and reports are new, which opens Reviews; and Messages, with how many are
 // new, which opens the profile's messages. Then its posts,
-// each a row with its first photo and its preview (PostRow.tsx), tapped to edit; and at the bottom,
+// each a row with its first photo and its preview (PostRow.tsx), tapped to edit, one that no longer
+// fits its market saying Update this post; and at the bottom,
 // side by side, Review, which opens Review someone, and a new post in its role's word. Nothing here
 // asks the passkey: its folder is public, and so is what the index says.
 
@@ -13,6 +14,7 @@ import { useEffect, useState } from 'react'
 import { config } from '../config.ts'
 import { type Posted, readPosts } from '../flows/posts.ts'
 import { strongest } from '../flows/cards.ts'
+import { fits } from '../form.ts'
 import { useCards, useNews, useProfiles, useRated } from '../hooks.ts'
 import { kindWords, markets, pairOf, yourPosts } from '../markets.ts'
 import { ratingText, reviewCount } from '../show.ts'
@@ -88,7 +90,7 @@ export function Profile({ address, onBack, onPost, onReviews, onReview, onMessag
         !note && <Spinner />
       ) : (
         <div className="rows">
-          {market && posts.map((p) => <PostRow key={p.path} market={market} body={p.body} onClick={() => onPost(p)} />)}
+          {market && posts.map((p) => <PostRow key={p.path} market={market} body={p.body} update={!fits(pair.market, pair.role, p.body)} onClick={() => onPost(p)} />)}
         </div>
       )}
       <div className="foot pair">

@@ -34,8 +34,11 @@
 //     roles show a + or, made, Yours, quietly, which opens its profile, and no row anywhere shows the
 //     unlock icon.
 //  5. Settings: Face with its shield, ID with + $5, the appearance; no About.
-//  6. Two people: the first posts an offer from their profile, its price per hour, which its row
-//     shows second, asking nothing, the seed still held, so Post shows no unlock icon; the second
+//  6. Two people: the first, whose phone allows its location, posts an offer from their profile,
+//     its price per hour, which its row shows second, its form the market's: no place until sessions
+//     are In person, then the place right after, filled in with no button, "Within 5 km of you", the
+//     slider moved to 10 and an area named, gone again with In person; a contact, which no market
+//     lists; asking nothing, the seed still held, so Post shows no unlock icon; the second
 //     opens its link with nothing set up, goes through Start and the face check, makes the profile on
 //     the other side from the compose screen's From, and messages, nothing asked after Start; the
 //     first sees it counted with nothing unlocked, on the card, the tab, the profile's Messages line
@@ -64,9 +67,13 @@
 //     then links it to the Forest passkey, and the profiles show.
 //  9. Clothing, with the index: the first, the page hidden a moment so Post shows its unlock icon
 //     again, posts a coat with two photos in one unlock, redrawn on the device as JPEGs no longer
-//     than 1600 pixels, their notes gone, no per to pick, an area alone, its row's price reading
-//     $40, as on the buyer's pick of it in their review; a buyer, whose profile's messages say "No
-//     new messages", writes with New message (their own address taken, From the other side; the
+//     than 1600 pixels, their notes gone, no per to pick; for women, then a coat, and only then one
+//     size question, right after them, its values by their labels (XL); picked up and shipped, a
+//     choice of several; its location the offer's kept point, moved a little from the phone's, within
+//     3 km of Lavapiés; its row's price reading $40, as on the buyer's pick of it in their review;
+//     the index lists it. A buyer, whose phone hasn't allowed its location: told no before, a
+//     request's place is one line saying why it needs it; never asked, Use my location, and the
+//     prompt refused, that line; their profile's messages say "No new messages"; they write with New message (their own address taken, From the other side; the
 //     seller's page on the index taken as the seller's address) and reviews the coat from the
 //     thread, then, from their profile's Review, vouches ("That's this profile." once) and reports,
 //     and Given lists all three; the seller sees the rating and the dot on the card, "3 new" on the
@@ -74,6 +81,8 @@
 //     marks the three, and once seen there they are new no more; the review opened; Notifications
 //     lists the message first, then all that came, newest first, in full, with no dot, and its
 //     message row opens the seller's messages, which hold no review.
+//     Then a post an older market shaped, written to the host as the app wrote it before: its row
+//     says Update this post; opened, what still fits is filled in; posted, it fits, and the line goes.
 //     Then, for testing, a review of one of the person's own profiles, from their student about
 //     their tutor: Notifications shows it after the message, new, and once opened it is seen.
 //     Then the AI apps, with services' own mcp and an AI app as services' tests make one (the MCP
@@ -125,10 +134,11 @@ import { Resvg } from '@resvg/resvg-js'
 import { type Browser, type BrowserContext, type CDPSession, type Locator, type Page, chromium } from 'playwright'
 import { build } from 'vite'
 
-import { b64u, liveContent, proofsOf, readFolder, verificationCheck } from '../../standard/folders/dist/index.js'
+import { b64u, entry, liveContent, nextTime, proofsOf, readFolder, verificationCheck, write } from '../../standard/folders/dist/index.js'
 import { isLocked, openLocked } from '../../standard/folders/dist/locked.js'
 import { mainKey, openingHalf } from '../../standard/keys/dist/index.js'
 import { checkVerification, stampFromJson } from '../../standard/proofs/dist/index.js'
+import { loadMarkets } from '../../markets/build/dist/index.js'
 import { type Served, serve } from '../../services/mcp/src/server.ts'
 import { App } from '../../services/mcp/test/app.ts'
 import { REDIRECT, aiApp, lesson } from '../../services/mcp/test/setup.ts'
@@ -171,13 +181,29 @@ async function shot(page: Page, name: string) {
   await page.emulateMedia({ colorScheme: 'light' })
 }
 
+/** Where a phone that allows its location is: Madrid's Puerta del Sol. */
+const SPOT = { latitude: 40.41678, longitude: -3.70379 }
+
+/** The distance between a place's point and SPOT, in kilometres. */
+function kmFromSpot(p: { lat: string; lon: string }): number {
+  const rad = (d: number) => (d * Math.PI) / 180
+  const h = Math.sin(rad(Number(p.lat) - SPOT.latitude) / 2) ** 2 + Math.cos(rad(SPOT.latitude)) * Math.cos(rad(Number(p.lat))) * Math.sin(rad(Number(p.lon) - SPOT.longitude) / 2) ** 2
+  return 2 * 6371 * Math.asin(Math.sqrt(h))
+}
+
 /**
  * A browser of its own, a phone's size, with a virtual passkey authenticator on the device (face
- * or fingerprint checked), with PRF unless `prf` is false; its passkeys made and asserted, counted.
+ * or fingerprint checked), with PRF unless `prf` is false; its passkeys made and asserted, counted;
+ * at SPOT, its location allowed, when `located`, and otherwise never allowed.
  * What the CSP refuses on any of its pages is reported.
  */
-async function phone({ prf = true }: { prf?: boolean } = {}): Promise<Phone> {
-  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, locale: 'en-US', permissions: ['clipboard-read', 'clipboard-write'] })
+async function phone({ prf = true, located = false }: { prf?: boolean; located?: boolean } = {}): Promise<Phone> {
+  const context = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    locale: 'en-US',
+    permissions: ['clipboard-read', 'clipboard-write', ...(located ? ['geolocation'] : [])],
+    ...(located && { geolocation: SPOT }),
+  })
   await context.exposeFunction('cspRefused', (what: string) => void refused.push(what))
   await context.addInitScript(() => addEventListener('securitypolicyviolation', (e) => (globalThis as any).cspRefused(`${e.violatedDirective} ${e.blockedURI}`)))
   // Didit's page, for the stand-in Didit's sessions: done at once, it sends the person back, as Didit does to the verifier's callback.
@@ -467,7 +493,7 @@ before(async () => {
   // Chromium itself, not its headless shell, which does not take an insecure origin as secure; and WebAuthn wants a secure one.
   CHROME_ARGS = ['--host-resolver-rules=MAP *.forest.foundation 127.0.0.1', `--unsafely-treat-insecure-origin-as-secure=${[APP, OTHER].map((o) => o.slice(0, -1)).join(',')}`]
   browser = await chromium.launch({ channel: 'chromium', args: CHROME_ARGS })
-  first = await phone()
+  first = await phone({ located: true })
   say(`Chromium ${browser.version()}, the app at ${APP}, services' verifier at ${services.verifier}, host at ${services.host}, index at ${services.index} and mcp at ${mcp.origin}`)
 })
 
@@ -744,7 +770,7 @@ const OFFER = 'Maths for secondary school, one hour online.'
 /** The live entries of a folder under `kind/`, as the host serves it now. */
 const entriesOf = async (address: string, kind: string) => [...liveContent(await readFolder([services.host], address, Date.now()))].filter(([path]) => path.startsWith(`${kind}/`))
 
-test('two people: one posts an offer, its price per hour, asking nothing while the seed is held; the other opens its link, messages it, gets the reply, and reviews it from the thread', async () => {
+test('two people: one posts an offer, its price per hour, the place only for sessions in person, a contact, asking nothing while the seed is held; the other opens its link, messages it, gets the reply, and reviews it from the thread', async () => {
   const { page, counts } = first
   // The offer, from the tutor's profile, in the market's own fields; a price per one of its field's values.
   await page.locator('button.card', { hasText: 'Tutoring tutor' }).locator('.named').click()
@@ -755,9 +781,27 @@ test('two people: one posts an offer, its price per hour, asking nothing while t
   assert.deepEqual(await page.getByRole('group', { name: 'Per' }).getByRole('button').allTextContents(), ['per hour', 'per session'], "exactly the field's per values")
   await page.getByRole('group', { name: 'Per' }).getByRole('button', { name: 'per hour' }).click()
   await page.getByRole('group', { name: 'Subjects' }).getByRole('button', { name: 'Maths' }).click()
-  await page.getByRole('group', { name: 'Place' }).getByRole('button', { name: 'Online' }).click()
+  // How sessions are held: no place until they are in person; then the place, right after, filled
+  // in from the phone's location with no button, since this phone allows it.
+  const mode = page.getByRole('group', { name: 'Mode' })
+  const place = page.getByRole('group', { name: 'Place' })
+  assert.equal(await place.count(), 0, 'no place before In person')
+  await mode.getByRole('button', { name: 'In person' }).click()
+  await place.getByText('Within 5 km of you', { exact: true }).waitFor()
+  assert.equal(await place.getByRole('button', { name: 'Use my location' }).count(), 0, 'allowed already: no button')
+  const labels = async () => (await page.locator('form > .field > .label').allTextContents()).map((l) => l.replace('Public.', ''))
+  assert.deepEqual(await labels(), ['Subjects', 'Description', 'Price', 'Mode', 'Place', 'Levels', 'Minutes', 'Hours', 'Contact'], "the preview's fields first, the place right after how sessions are held, contact last")
+  // The radius on a slider, from the field's 5 km: 10 km is its sixth step (0, 1, 2, 3, 5, 10).
+  await place.getByRole('slider', { name: 'Within' }).fill('5')
+  await place.getByLabel('Area').fill('Chamberí')
+  await place.getByText('Chamberí, within 10 km of you', { exact: true }).waitFor()
   await page.getByLabel('Contact').fill('ada@example.com')
   await page.getByText('Public.').waitFor()
+  await shot(page, 'post-offer-in-person')
+  // Online only: the place goes, and nothing of it is posted.
+  await mode.getByRole('button', { name: 'In person' }).click()
+  await place.waitFor({ state: 'detached' })
+  await mode.getByRole('button', { name: 'Online' }).click()
   // Settings' reload dropped the seed: Post will ask, and says so.
   assert.equal(await iconsInTheirButtonsColor(page), 1, "Post's unlock icon, in its text color")
   await shot(page, 'post-offer')
@@ -781,7 +825,7 @@ test('two people: one posts an offer, its price per hour, asking nothing while t
   assert.equal(posts.length, 1)
   const [offerPath, offer] = posts[0]!
   assert.match(offerPath, /^post\/[0-9a-f]{32}$/, 'at a random id')
-  assert.deepEqual(offer.entry.body, { description: OFFER, price: { amount: '30', currency: 'USD', per: 'hour' }, subjects: ['maths'], place: { online: true }, contact: 'ada@example.com' })
+  assert.deepEqual(offer.entry.body, { description: OFFER, price: { amount: '30', currency: 'USD', per: 'hour' }, subjects: ['maths'], mode: ['online'], contact: 'ada@example.com' })
   await page.getByRole('heading', { name: 'Your offers' }).waitFor()
   await shot(page, 'profile-posts')
 
@@ -1141,7 +1185,7 @@ test('backup passkeys: "1 passkey" and Add a backup, flagged; the same manager r
 
 const COAT = 'A wool coat, worn twice.'
 
-test('clothing, with the index: a coat with two photos redrawn on the device, no per, an area alone, $40; a buyer messages, reviews, vouches and reports; the seller sees the rating, "3 new" on the profile, the tab counting all four, the three marked in Reviews and seen there; Notifications lists them with the message', async () => {
+test('clothing, with the index: a coat with two photos redrawn on the device, no per, for women, size XL, picked up or shipped, near Lavapiés, $40, listed; a buyer, with no location allowed, sees why a post needs it; the buyer messages, reviews, vouches and reports; the seller sees the rating, "3 new" on the profile, the tab counting all four, the three marked in Reviews and seen there; Notifications lists them with the message', async () => {
   const { page, counts } = first
   // The seller's profile, and the coat.
   await button(page, 'New profile').click()
@@ -1160,10 +1204,24 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   await page.locator('.tile img').nth(1).waitFor()
   assert.equal(await page.locator('.tile img').count(), 2)
   assert.match((await page.locator('.tile img').first().getAttribute('src')) ?? '', /^blob:/, 'shown from the device until sent')
+  // Who it's for, then the kind, and only then one size question, right after them, by its labels.
+  await page.getByRole('group', { name: 'Wearer' }).getByRole('button', { name: 'Women' }).click()
+  assert.equal(await page.getByLabel('Size', { exact: true }).count(), 0, 'no size before the kind')
+  await page.getByLabel('Kind', { exact: true }).selectOption({ label: 'Coat' })
+  const coatLabels = (await page.locator('form > .field > .label').allTextContents()).map((l) => l.replace('Public.', ''))
+  assert.deepEqual(coatLabels, ['Photos', 'Description', 'Price', 'Wearer', 'Kind', 'Size', 'Brand', 'Condition', 'Location', 'Delivery', 'Contact'], 'one size question, right after who and the kind')
+  assert.deepEqual((await page.getByLabel('Size', { exact: true }).locator('option').allTextContents()).slice(1), ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL', 'One size'], 'each value by its label, else in words')
+  await page.getByLabel('Size', { exact: true }).selectOption({ label: 'XL' })
+  // A choice of several: picked up and shipped.
+  const delivery = page.getByRole('group', { name: 'Delivery' })
+  await delivery.getByRole('button', { name: 'Pickup' }).click()
+  await delivery.getByRole('button', { name: 'Shipping' }).click()
+  // Where the coat is: from the phone's location, with no button; the slider from the field's 2 km to 3.
   const location = page.getByRole('group', { name: 'Location' })
-  assert.equal(await location.getByRole('button', { name: 'Online' }).count(), 0, 'an item is never online')
+  await location.getByText('Within 2 km of you', { exact: true }).waitFor()
+  await location.getByRole('slider', { name: 'Within' }).fill('3')
   await location.getByLabel('Area').fill('Lavapiés, Madrid')
-  assert.ok(await location.getByRole('button', { name: 'Near me' }).isVisible(), 'Near me, if wanted')
+  await location.getByText('Lavapiés, Madrid, within 3 km of you', { exact: true }).waitFor()
   await page.getByLabel('Contact').fill('@coats')
   // The page hidden a moment: the seed dropped, so Post asks again, and shows it.
   await away(page)
@@ -1177,7 +1235,12 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   assert.equal(counts.asserted - asked, 1, 'one unlock: the post and its photos')
   const [[coatPath, coat]] = (await entriesOf(seller, 'post')) as unknown as [[string, { entry: { body: any } }]]
   const body = coat.entry.body
-  assert.deepEqual([body.description, body.price, body.location, body.contact], [COAT, { amount: '40', currency: 'USD' }, { area: 'Lavapiés, Madrid' }, '@coats'], 'no per, and an area alone')
+  assert.deepEqual([body.description, body.price, body.wearer, body.kind, body.size, body.delivery, body.contact], [COAT, { amount: '40', currency: 'USD' }, ['women'], 'coat', 'xl', ['pickup', 'shipping'], '@coats'], 'no per; who, the kind, the size by its value, several deliveries')
+  assert.deepEqual([body.location.radiusKm, body.location.area], [3, 'Lavapiés, Madrid'])
+  const km = kmFromSpot(body.location)
+  assert.ok(km > 0.1 && km < 0.8, `its point moved a little from the phone's, ${km.toFixed(2)} km`)
+  assert.deepEqual(JSON.parse((await kept(page))['forest.points']!), [{ lat: body.location.lat, lon: body.location.lon }], "the device's one kept point, which the offer's place took too: never a new one from the same spot")
+  assert.equal(loadMarkets().checkEntry('clothing', 'seller', 'post', body), null, 'it fits the market')
   assert.equal(body.photos.length, 2)
   assert.deepEqual(body.files.map((f: any) => [f.sha256, f.type]), body.photos.map((sha: string) => [sha, 'image/jpeg']), 'each photo named in its files, a JPEG')
   const sizes = []
@@ -1192,7 +1255,17 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   assert.equal(await coatRow.locator('img.thumb').getAttribute('src'), `${services.host}/v1/files/${body.photos[0]}`, 'its first photo, from the host')
   await coatRow.locator('img.thumb').evaluate((img: HTMLImageElement) => img.decode())
   await coatRow.getByText('$40', { exact: true }).waitFor()
+  assert.equal(await coatRow.getByText('Update this post').count(), 0, 'it fits: nothing to update')
   await shot(page, 'profile-coat')
+  // The index lists it: it fits the market as the index reads it.
+  const onIndex = `${services.index}/profiles/${seller}/${coatPath}.json`
+  for (const until = Date.now() + 45_000; ; ) {
+    const res = await fetch(onIndex)
+    const listed = res.ok ? ((await res.json()) as { post: { listed: boolean; why?: string } }).post : null
+    if (listed?.listed) break
+    if (Date.now() > until) throw new Error(`the index never listed the coat: ${listed?.why ?? res.status}`)
+    await new Promise((r) => setTimeout(r, 1_000))
+  }
 
   // A buyer: verified, their first profile, a message with the pencil, and a review from the thread.
   const buyer = await phone()
@@ -1204,6 +1277,29 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   await button(buyer.page, 'Not now').click()
   await buyer.page.getByRole('heading', { name: 'Use Forest from your AI' }).waitFor()
   await button(buyer.page, 'Not now').click()
+  // A phone that hasn't allowed its location. Its browser told no before (headless Chromium's
+  // answer for a site never granted): one line says why the post needs it, and nothing to tap.
+  const NO_LOCATION = 'Allow your location so people nearby find this post.'
+  await buyer.page.locator('button.card', { hasText: 'Clothing buyer' }).locator('.named').click()
+  await button(buyer.page, 'New request').click()
+  const where = buyer.page.getByRole('group', { name: 'Location' })
+  await where.getByText(NO_LOCATION, { exact: true }).waitFor()
+  assert.equal(await where.getByRole('button').count(), 0, 'told no before: the line alone')
+  await button(buyer.page, 'Back').click()
+  // Never asked: one button, Use my location, and the browser's own prompt only on its tap; here
+  // the prompt is refused, so the same line.
+  const { targetInfo } = await buyer.cdp.send('Target.getTargetInfo')
+  await buyer.cdp.send('Browser.setPermission', { permission: { name: 'geolocation' }, setting: 'prompt', origin: APP.slice(0, -1), browserContextId: targetInfo.browserContextId! })
+  await button(buyer.page, 'New request').click()
+  await where.getByRole('button', { name: 'Use my location' }).waitFor()
+  assert.equal(await where.getByRole('slider').count(), 0, 'no radius before a point')
+  await shot(buyer.page, 'post-request-location')
+  await where.getByRole('button', { name: 'Use my location' }).click()
+  await where.getByText(NO_LOCATION, { exact: true }).waitFor()
+  assert.equal(await where.getByRole('button').count(), 0, 'refused: the line alone')
+  await shot(buyer.page, 'post-request-no-location')
+  await button(buyer.page, 'Back').click()
+  await button(buyer.page, 'Back').click()
   await messagesOf(buyer.page, 'Clothing buyer')
   // Before the unlock, how many are new, here none, with Open.
   await buyer.page.locator('.messages-row', { hasText: 'No new messages' }).getByRole('button', { name: 'Open' }).waitFor()
@@ -1351,6 +1447,52 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   await button(page, 'Back').click()
   await button(page, 'Profiles').click()
   say('clothing: two photos redrawn and sent, a review, a vouch and a report; the rating, the dot, "3 new", the tab counting four, Reviews, and Notifications')
+})
+
+const TROUSERS = 'Linen trousers, worn once.'
+
+test('a post an older market shaped: its row says Update this post; opened, what still fits is filled in; posted, it fits and the line is gone', async () => {
+  const { page } = first
+  // Written to the host as the app wrote it before the markets moved: one wearer, a size as text,
+  // either for delivery, an area alone for its location.
+  const main = await mainKey(seed, 'clothing/seller')
+  const path = 'post/0123456789abcdef0123456789abcdef'
+  const old = { description: TROUSERS, price: { amount: '25', currency: 'USD' }, kind: 'trousers', wearer: 'women', size: 'EU 38', delivery: 'either', location: { area: 'Lavapiés, Madrid' }, contact: '@coats' }
+  assert.notEqual(loadMarkets().checkEntry('clothing', 'seller', 'post', old), null, "it doesn't fit the market today")
+  const view = await readFolder([services.host], main.address, Date.now())
+  const [outcome] = await write([services.host], [entry(main, path, old, nextTime(Date.now(), view, path))])
+  assert.ok(outcome?.results.length === 1 && outcome.results[0]!.ok, 'written')
+
+  await page.locator('button.card', { hasText: 'Clothing seller' }).locator('.named').click()
+  const row = page.locator('.post-row', { hasText: TROUSERS })
+  await row.getByText('Update this post', { exact: true }).waitFor()
+  assert.equal(await page.locator('.post-row', { hasText: COAT }).getByText('Update this post').count(), 0, 'the coat fits')
+  await shot(page, 'profile-update')
+  await row.click()
+  await page.getByRole('heading', { name: 'Offer', exact: true }).waitFor()
+  // What still fits, filled in: the description, the price, the kind and the contact. Who it's for
+  // and the delivery asked again; the location from the phone, its old area gone with it.
+  assert.equal(await page.getByLabel('Description').inputValue(), TROUSERS)
+  assert.equal(await page.getByLabel('Price').inputValue(), '25')
+  assert.equal(await page.getByLabel('Kind', { exact: true }).inputValue(), 'trousers')
+  assert.equal(await page.getByLabel('Contact').inputValue(), '@coats')
+  assert.equal(await page.getByRole('group', { name: 'Wearer' }).locator('[aria-pressed=true]').count(), 0)
+  assert.equal(await page.getByRole('group', { name: 'Delivery' }).locator('[aria-pressed=true]').count(), 0)
+  await page.getByRole('group', { name: 'Location' }).getByText('Within 2 km of you', { exact: true }).waitFor()
+  await shot(page, 'post-update')
+  // For women: trousers then ask their waist, right after the kind.
+  await page.getByRole('group', { name: 'Wearer' }).getByRole('button', { name: 'Women' }).click()
+  await page.getByLabel('Waist', { exact: true }).selectOption({ label: 'W30' })
+  await button(page, 'Post').click()
+  await page.getByRole('heading', { name: 'Your offers' }).waitFor({ timeout: 60_000 })
+  await page.locator('.post-row', { hasText: TROUSERS }).waitFor()
+  assert.equal(await page.locator('.post-row', { hasText: TROUSERS }).getByText('Update this post').count(), 0, 'it fits now: the line is gone')
+  const body = (await entriesOf(main.address, 'post')).find(([p]) => p === path)![1].entry.body as any
+  assert.equal(loadMarkets().checkEntry('clothing', 'seller', 'post', body), null, 'it fits the market')
+  assert.deepEqual([body.description, body.price, body.kind, body.wearer, body.waist, body.contact, body.location.radiusKm, body.location.area], [TROUSERS, { amount: '25', currency: 'USD' }, 'trousers', ['women'], 'w30', '@coats', 2, undefined])
+  assert.deepEqual([body.size, body.delivery], [undefined, undefined], "what didn't fit, gone")
+  await button(page, 'Back').click()
+  say('an old post: Update this post on its row, what fits filled in, posted in the market\'s shape today')
 })
 
 const OWN = 'Patient with my own questions.'
