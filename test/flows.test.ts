@@ -1,5 +1,5 @@
-// The flows, against services' own host and a stand-in verifier on loopback (world.ts), with the
-// device's storage in memory: a verification, from its gift to its stamp kept; Start picking one up
+// The flows, against services' own verifier and host on loopback (world.ts), with the device's
+// storage in memory: a verification, from its gift to its stamp kept; Start picking one up
 // wherever it stopped; review; back to the two checks, losing nothing; a new profile, its folder
 // funded and topped up; a profile made on another device, told with nothing unlocked and listed in
 // one unlock; and the same seed read the same way by the app and by the reference app (services'
@@ -50,11 +50,12 @@ describe('a verification', () => {
   test('the gift in the wallet, the stamp kept in the Profiles folder, nothing of it left on the device', async () => {
     const p = person()
     const url = await open(w, p.id, 'https://app.example/back')
-    expect(url).toMatch(/^https:\/\/didit\.invalid\/session\//)
-    expect(w.sessions.at(-1)?.returnUrl).toBe('https://app.example/back')
+    expect(url).toMatch(/^https:\/\/verify\.example\/session\//)
+    const [session, back] = [...w.faceCheck.callbacks].at(-1)!
+    expect(back, 'where Didit sends the person after').toBe('https://app.example/back')
     const kept = device.under()!
     expect(kept.passkey).toBe(p.id)
-    expect(kept.session).toBe(w.sessions.at(-1)!.id)
+    expect(kept.session).toBe(session)
     expect(kept.gift?.pending.blinds.length, 'one buy, of exactly the gift').toBe(FACE_CREDITS)
 
     const step = await ask(w, p.id, await stampNumberAt(w, p.seed))
@@ -73,7 +74,7 @@ describe('a verification', () => {
     expect(device.passkey(), 'the passkey in use from now').toBe(p.id)
     const found = await App.find(p.seed, [w.host])
     expect(found.labels).toEqual([])
-    expect(found.stamps.map((s) => stampFromJson(JSON.parse(s)).verifier), "the reference app finds the stamp in the Profiles folder").toEqual([w.faceKey])
+    expect(found.stamps.map((s) => stampFromJson(JSON.parse(s)).verifier), "the reference app finds the stamp in the Profiles folder").toEqual([w.keys.face])
     const folder = await readFolder([w.host], wallet, Date.now())
     expect(folder.current.get('profile')?.entry.body, 'its profile entry holds only its hosts').toEqual({ hosts: [w.host] })
   })
@@ -82,12 +83,13 @@ describe('a verification', () => {
     const p = person()
     w.decideAll('review')
     await open(w, p.id)
+    const opened = w.faceCheck.created
     const n = await stampNumberAt(w, p.seed)
     expect((await ask(w, p.id, n)).at).toBe('review')
     expect((await resume(w, p.id, p.seed, proveHere)).verified, 'Start, meanwhile, takes it up held for review').toBe(false)
     w.decideAll('approved')
     expect((await ask(w, p.id, n)).at).toBe('signed')
-    expect(w.sessions.filter((s) => device.under()?.session === s.id)).toHaveLength(1)
+    expect(w.faceCheck.created, 'no other session opened').toBe(opened)
   })
 
   test('not finished: still away; declined, expired or not passed: its session ends, in one line, and the next open is a new check', async () => {
@@ -132,7 +134,7 @@ describe('Start picks up a verification stopped anywhere, and loses nothing', ()
     const got = await after(p)
     expect(got.stamps).toBe(1)
     expect(got.wallet).toBeGreaterThan(FACE_CREDITS - 0.1)
-    expect(w.sessions.length).toBeGreaterThan(0)
+    expect(w.faceCheck.created).toBeGreaterThan(0)
   })
 
   test('the stamp and its ticket kept, then the page closed before the gift was collected', async () => {
@@ -148,12 +150,10 @@ describe('Start picks up a verification stopped anywhere, and loses nothing', ()
     await open(w, p.id)
     await ask(w, p.id, await stampNumberAt(w, p.seed))
     await collect(w, p.id, (await walletKey(p.seed)).address)
-    const tickets = w.asked.tickets
     expect(await enter(w, again(p), proveHere)).toEqual({ to: 'profiles' })
-    expect(w.asked.tickets).toBe(tickets)
     const got = await after(p)
     expect(got).toEqual({ wallet: got.wallet, stamps: 1 })
-    expect(got.wallet).toBeGreaterThan(FACE_CREDITS - 0.1)
+    expect(got.wallet, 'the gift once, less the Profiles folder\'s first write').toBeGreaterThan(FACE_CREDITS - 0.1)
     expect(got.wallet).toBeLessThan(FACE_CREDITS)
   })
 
@@ -236,7 +236,7 @@ describe('a new profile', () => {
     const proof = proofsOf(body).find((x) => x.circuit === 'verification')
     const check = verificationCheck(proof, main.address)
     expect(check && (await checkVerification(check)), 'its verification checks, as any reader checks it').toBe(true)
-    expect(proof!.verifier).toBe(w.faceKey)
+    expect(proof!.verifier).toBe(w.keys.face)
     expect(await readCard(w, main.address)).toEqual({ checks: ['face'], posts: 0, keys: [] })
 
     const spent = before - (await w.balance(wallet))

@@ -1,14 +1,13 @@
 // What the flows are tested against, on loopback, in this process:
 //
+//   the verifier   services' own (services/verifier/src), with its own stand-ins for Didit and for
+//                  Stripe and its embedder that knows faces by name (verifier/test/fakes.ts), so the
+//                  verifier's own code says what each decision, payment, try and refusal comes to.
+//                  Didit approves every face check session it opens unless a test says it is
+//                  unfinished, held for review, declined, expired, not passed, or past its hour; an
+//                  ID check's session comes to what a test sets;
 //   the host       services' own host (services/host/src), as `npm start` runs it, the plug and the
-//                  credits, taking the stand-in verifier's sponsor's tickets;
-//   the verifier   a stand-in answering the routes the app calls as services' verifier does
-//                  (verifier/README.md, Its API): real stamps, signed with a service key by the
-//                  standard's signStamp, and real tickets, signed by services' own ticket code; each
-//                  check approved unless a test says it is unfinished, held for review, declined,
-//                  expired, not passed, or past its hour. Services' verifier itself runs in the ID
-//                  check's tests (id.test.ts) and the browser test, with its stand-ins; here a test
-//                  says what Didit decided.
+//                  credits, taking the verifier's sponsor's tickets;
 //   the index      a stand-in answering /profiles/<address>.json in the shape services' index
 //                  answers it (index/src/pages/profile.ts), each page what a test says the index made
 //                  of the profile; 404 for any other, and down when a test says so. Services' index
@@ -17,11 +16,12 @@
 //                  connection), its identity kept so a test opens what is locked to it as the mcp
 //                  would. Services' mcp itself runs in the browser test.
 //
-// The ID check's tests run in another world, services' own verifier (verifier/services.ts).
-//
 // And the device's storage, in memory, as a fresh browser has it.
+//
+// The verifier's code needs its own packages, which only `./standard.sh services` installs, so the
+// app's build (Vercel's, with `./standard.sh` alone) never type-checks this (tsconfig.build.json);
+// `npm run check` does.
 
-import { randomUUID } from 'node:crypto'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { type Server, createServer } from 'node:http'
 import type { AddressInfo } from 'node:net'
@@ -29,12 +29,13 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 import { b64u } from '@foundationforest/folders'
-import { newAccessKey, newSeed, serviceKey } from '@foundationforest/keys'
-import { checkVerification, proofBytes, proveVerification, signStamp, stampFromJson, stampToJson } from '@foundationforest/proofs'
+import { newAccessKey, newSeed } from '@foundationforest/keys'
+import { checkVerification, proofBytes, proveVerification, stampFromJson } from '@foundationforest/proofs'
 
 import { readConfig, startHost } from '../services/host/src/host.ts'
-import { ticketFor } from '../services/verifier/src/gift.ts'
-import { ed25519 } from '../services/verifier/src/seed.ts'
+import type { Decision as Decided } from '../services/verifier/src/didit.ts'
+import { readConfig as verifierConfig, startVerifier } from '../services/verifier/src/service.ts'
+import { FACE_WORKFLOW, FakeFaceCheck, FakePayments, ID_WORKFLOW, namedFaces, passed } from '../services/verifier/test/fakes.ts'
 import type { Services } from '../src/config.ts'
 import type { CheckProofs } from '../src/flows/inbox.ts'
 import { type Prove, makeProfile } from '../src/flows/profile.ts'
@@ -76,17 +77,69 @@ export async function freePort(): Promise<number> {
   return port
 }
 
-/** What the stand-in Didit decided for a session. */
+/** What Didit decided for a face check's session, as a test says it. */
 export type Decision = 'approved' | 'unfinished' | 'review' | 'declined' | 'expired' | 'not_passed' | 'past_its_hour'
 
-export const VERIFIER_NAME = 'verifier.stand-in.invalid'
+/** The face every face check here takes a selfie of: the embedder knows it by name. */
+const FACE = 'ada'
+
+/** Each decision but the hour's, as Didit gives it to the verifier, in services' own fakes' words. */
+const AS_DIDIT: Record<Exclude<Decision, 'past_its_hour'>, Decided> = {
+  approved: passed(FACE),
+  unfinished: passed(FACE, { status: 'In Progress' }),
+  review: passed(FACE, { status: 'In Review' }),
+  declined: passed(FACE, { status: 'Declined' }),
+  expired: passed(FACE, { status: 'Expired' }),
+  not_passed: passed(FACE, { liveness: [{ status: 'Declined' }] }),
+}
+
+/** Services' stand-in Didit for the face check, deciding every session it opens as `decideAll` says, but each one `decide` names. */
+export class FaceDidit extends FakeFaceCheck {
+  #all: Decision = 'approved'
+  readonly #alone = new Set<string>()
+
+  override async createSession(options: { callback?: string } = {}) {
+    const session = await super.createSession(options)
+    this.#apply(session.sessionId, this.#all)
+    return session
+  }
+
+  decideAll(d: Decision): void {
+    this.#all = d
+    for (const id of [...this.sessions.keys()]) if (!this.#alone.has(id)) this.#apply(id, d)
+  }
+
+  decide(session: string, d: Decision): void {
+    this.#alone.add(session)
+    this.#apply(session, d)
+  }
+
+  /** Past its hour, the session is deleted at Didit, as the verifier's sweep does then: the verifier answers that it was used. */
+  #apply(session: string, d: Decision): void {
+    if (d === 'past_its_hour') this.sessions.delete(session)
+    else this.set(session, AS_DIDIT[d])
+  }
+}
+
+/** The verifier's name here, its gifts' credits (its own defaults: the ID check's ten times the face check's), and where Didit and Stripe may send a person back. */
+export const VERIFIER_NAME = 'verifier.app-vitest.invalid'
 export const FACE_CREDITS = 10
+export const ID_CREDITS = 100
+export const APP = 'https://app.example'
 
 /** What a stand-in index page holds of a profile: the index's own JSON for it, as services' index writes it. */
 export type IndexPage = { [key: string]: unknown }
 
 export type World = Services & {
-  faceKey: string
+  /** The verifier's two keys, as its GET / gives them. */
+  keys: { face: string; id: string }
+  /** Didit for each check, as the verifier sees it; and Stripe, where a test pays a payment with `pay`, absent when the ID check is not for sale. */
+  faceCheck: FaceDidit
+  idCheck: FakeFaceCheck
+  payments?: FakePayments
+  /** What Didit decides for every face check session from now, unless `decide` names one. */
+  decideAll(d: Decision): void
+  decide(session: string, d: Decision): void
   /** The stand-in index's origin. */
   index: string
   /** What the stand-in index answers for the profile at `address`, from now; null, a 404. */
@@ -96,100 +149,45 @@ export type World = Services & {
   /** The stand-in connector's origin, and the identity its open key opens with. */
   connector: string
   connectorIdentity: string
-  /** What Didit decides for every session from now, unless `decide` names one. */
-  decideAll(d: Decision): void
-  decide(session: string, d: Decision): void
-  /** The sessions opened, in order, with the return address each was opened with. */
-  sessions: Array<{ id: string; returnUrl?: string }>
-  /** How many stamp requests carried a gift's reference, and how many tickets were signed. */
-  asked: { stamps: number; tickets: number }
   /** A folder's balance at the host, in credits. */
   balance(folder: string): Promise<number>
   close(): Promise<void>
 }
 
 /**
- * The host, a stand-in verifier and a stand-in index, on loopback. `entryPerKb` and `filePerKb` are
- * the host's price of a kilobyte of an entry and of a file, in credits; its own defaults unless a
- * test sets them.
+ * Services' verifier and host, a stand-in index and a stand-in connector, on loopback.
+ * `entryPerKb` and `filePerKb` are the host's price of a kilobyte of an entry and of a file, in
+ * credits, its own defaults unless a test sets them; `forSale: false` is a verifier with no Stripe.
  */
-export async function world({ entryPerKb, filePerKb }: { entryPerKb?: string; filePerKb?: string } = {}): Promise<World> {
+export async function world({ entryPerKb, filePerKb, forSale = true }: { entryPerKb?: string; filePerKb?: string; forSale?: boolean } = {}): Promise<World> {
   const dir = mkdtempSync(join(tmpdir(), 'forest-app-'))
-  const sponsor = ed25519(newSeed())
-  const face = serviceKey(newSeed())
-  const id = serviceKey(newSeed())
   const hostPort = await freePort()
   const host = `http://127.0.0.1:${hostPort}`
-  const running = await startHost(readConfig({ DATA_DIR: join(dir, 'host'), PUBLIC_ORIGIN: host, PORT: String(hostPort), SPONSORS: sponsor.address, ...(entryPerKb && { ENTRY_PER_KB: entryPerKb }), ...(filePerKb && { FILE_PER_KB: filePerKb }) }))
-
-  let all: Decision = 'approved'
-  const decided = new Map<string, Decision>()
-  const sessions: World['sessions'] = []
-  /** Each session's stamp number, once it gave its stamp; each stamp number's stamp and gift. */
-  const usedBy = new Map<string, string>()
-  const stamps = new Map<string, unknown>()
-  const gifts = new Map<string, string>()
-  const asked = { stamps: 0, tickets: 0 }
-  const gift = { origin: host, credits: { face: FACE_CREDITS, id: 100 } }
+  const faceCheck = new FaceDidit()
+  const idCheck = new FakeFaceCheck()
+  const payments = forSale ? new FakePayments() : undefined
+  const verifier = await startVerifier(
+    verifierConfig({
+      VERIFIER_NAME,
+      DIDIT_API_KEY: 'stand-in',
+      DIDIT_FACE_WORKFLOW_ID: FACE_WORKFLOW,
+      DIDIT_ID_WORKFLOW_ID: ID_WORKFLOW,
+      DIDIT_BASE_URL: 'http://127.0.0.1:9',
+      FACE_MODEL: 'stand-in',
+      HOST_URL: host,
+      FACE_CREDITS: String(FACE_CREDITS),
+      ID_CREDITS: String(ID_CREDITS),
+      APP_ORIGINS: APP,
+      DATABASE_PATH: join(dir, 'verifier', 'verifier.sqlite'),
+      PORT: '0',
+    }),
+    { faceCheck, idCheck, embedder: namedFaces(), ...(payments && { payments }), log: () => undefined },
+  )
+  const running = await startHost(readConfig({ DATA_DIR: join(dir, 'host'), PUBLIC_ORIGIN: host, PORT: String(hostPort), SPONSORS: verifier.sponsor!, ...(entryPerKb && { ENTRY_PER_KB: entryPerKb }), ...(filePerKb && { FILE_PER_KB: filePerKb }) }))
 
   const answer = (status: number, body: unknown, res: import('node:http').ServerResponse) => {
     res.writeHead(status, { 'content-type': 'application/json', 'access-control-allow-origin': '*' }).end(JSON.stringify(body))
   }
-  const verifier: Server = createServer((req, res) => {
-    const chunks: Buffer[] = []
-    req.on('data', (c: Buffer) => chunks.push(c))
-    req.on('end', () => {
-      const body = chunks.length ? JSON.parse(Buffer.concat(chunks).toString('utf8')) : {}
-      if (req.method === 'GET' && req.url === '/') {
-        return answer(200, { name: VERIFIER_NAME, face: { key: face.address, facts: 'stand-in' }, id: { key: id.address, facts: 'stand-in' }, gift: { face: FACE_CREDITS, host, id: 100, sponsor: sponsor.address } }, res)
-      }
-      if (req.url === '/face/session') {
-        const sessionId = randomUUID()
-        sessions.push({ id: sessionId, ...(body.returnUrl && { returnUrl: body.returnUrl }) })
-        return answer(201, { sessionId, url: `https://didit.invalid/session/${sessionId}` }, res)
-      }
-      if (req.url === '/face/stamp') {
-        const { sessionId, stampNumber, gift: reference, ...rest } = body
-        if (Object.keys(rest).length) return answer(400, { error: 'expected_exactly_sessionId_and_stampNumber' }, res)
-        if (!sessions.some((s) => s.id === sessionId)) return answer(403, { error: 'unknown_session' }, res)
-        const d = decided.get(sessionId) ?? all
-        if (d === 'review') return answer(202, { waiting: 'review' }, res)
-        if (d === 'unfinished') return answer(403, { error: 'not_approved' }, res)
-        if (d === 'not_passed') return answer(403, { error: 'liveness_not_passed' }, res)
-        if (d === 'declined' || d === 'expired') return answer(403, { error: d }, res)
-        const was = usedBy.get(sessionId)
-        if (d === 'past_its_hour' || (was && was !== stampNumber)) return answer(409, { error: 'session_used' }, res)
-        usedBy.set(sessionId, stampNumber)
-        if (!stamps.has(stampNumber)) {
-          const signed = signStamp(face.secret, { stampNumber: BigInt(stampNumber), facts: 7n, verifierName: VERIFIER_NAME, model: 'stand-in', embedding: 'AAAA' })
-          stamps.set(stampNumber, stampToJson(signed))
-        }
-        const out: Record<string, unknown> = { stamp: stamps.get(stampNumber) }
-        if (reference !== undefined) {
-          asked.stamps++
-          const given = gifts.get(stampNumber)
-          if (given && given !== reference) out.gift = { error: 'given' }
-          else {
-            const ticket = ticketFor(gift, 'face', reference, sponsor)
-            if (ticket === 'bad_gift') out.gift = { error: ticket }
-            else {
-              gifts.set(stampNumber, reference)
-              asked.tickets++
-              out.gift = { ticket }
-            }
-          }
-        }
-        return answer(200, out, res)
-      }
-      if (req.url === '/stamp') {
-        const kept = stamps.get(body.stampNumber)
-        return kept ? answer(200, { face: kept, id: null }, res) : answer(404, { error: 'not_found' }, res)
-      }
-      if (req.url?.startsWith('/id/')) return answer(503, { error: 'not_for_sale' }, res)
-      answer(404, { error: 'not_found' }, res)
-    })
-  })
-  await new Promise<void>((resolve) => verifier.listen(0, '127.0.0.1', resolve))
 
   const pages = new Map<string, IndexPage>()
   let down = false
@@ -212,21 +210,22 @@ export async function world({ entryPerKb, filePerKb }: { entryPerKb?: string; fi
   await new Promise<void>((resolve) => connector.listen(0, '127.0.0.1', resolve))
 
   return {
-    verifier: `http://127.0.0.1:${(verifier.address() as AddressInfo).port}`,
+    verifier: verifier.url,
     host,
+    keys: verifier.keys,
+    faceCheck,
+    idCheck,
+    ...(payments && { payments }),
+    decideAll: (d) => faceCheck.decideAll(d),
+    decide: (session, d) => faceCheck.decide(session, d),
     index: `http://127.0.0.1:${(index.address() as AddressInfo).port}`,
     indexSays: (address, page) => void (page ? pages.set(address, page) : pages.delete(address)),
     indexDown: (d) => void (down = d),
     connector: `http://127.0.0.1:${(connector.address() as AddressInfo).port}`,
     connectorIdentity: opening.identity,
-    faceKey: face.address,
-    decideAll: (d) => void (all = d),
-    decide: (session, d) => void decided.set(session, d),
-    sessions,
-    asked,
     balance: async (folder) => ((await (await fetch(`${host}/credits/balance/${folder}`)).json()) as { credits: number }).credits,
     close: async () => {
-      await new Promise<void>((resolve) => verifier.close(() => resolve()))
+      await verifier.close()
       await new Promise<void>((resolve) => index.close(() => resolve()))
       await new Promise<void>((resolve) => connector.close(() => resolve()))
       await running.close()
@@ -250,7 +249,7 @@ export const proveHere: Prove = async (seed, stamp, label) => {
 /** A person: a seed, and the id of the passkey that gave it. */
 export const person = () => ({ seed: newSeed(), id: `passkey-${crypto.randomUUID()}` })
 
-/** A person verified by the face check as the app verifies them, at the stand-in verifier, with a profile for each of `labels`. */
+/** A person verified by the face check as the app verifies them, Didit approving it, with a profile for each of `labels`. */
 export async function verifiedWith(w: Services, ...labels: string[]) {
   const p = person()
   await open(w, p.id)

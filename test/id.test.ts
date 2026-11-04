@@ -1,5 +1,5 @@
 // The ID check, against services' own verifier and host in this process, with the verifier's own
-// stand-ins for Didit and for Stripe (services.ts): its consent screen as the verifier serves it;
+// stand-ins for Didit and for Stripe (world.ts): its consent screen as the verifier serves it;
 // paid on Stripe's page, the payment's id kept on the device from the moment it is made; the check
 // in its session, each one of the payment's three tries; its stamp and its gift; then every profile showing it, in one unlock. And
 // every way it stops: not paid, declined, expired, its tries used up, not for sale, an ID already
@@ -11,22 +11,21 @@ import { proofsOf, readFolder, verificationCheck } from '@foundationforest/folde
 import { newSeed } from '@foundationforest/keys'
 import { checkVerification, stampFromJson } from '@foundationforest/proofs'
 
-import { App } from '../../services/mcp/test/app.ts'
-import { CONSENT } from '../../services/verifier/src/service.ts'
-import { doc, passed, passedId } from '../../services/verifier/test/fakes.ts'
-import * as device from '../../src/device.ts'
-import { readCard, strongest } from '../../src/flows/cards.ts'
-import { whoIs } from '../../src/flows/inbox.ts'
-import { makeProfile } from '../../src/flows/profile.ts'
-import { walletKey } from '../../src/flows/profiles.ts'
-import { NotPassed, advance, ask, consentOf, finish, open, pay, resume, stampNumberAt, stepOf } from '../../src/flows/verify.ts'
-import { Refused } from '../../src/services/http.ts'
-import { Said } from '../../src/words.ts'
-import { checkHere, freshDevice, proveHere } from '../world.ts'
-import { ID_CREDITS, type ServicesWorld, services } from './services.ts'
+import { App } from '../services/mcp/test/app.ts'
+import { CONSENT } from '../services/verifier/src/service.ts'
+import { doc, passed, passedId } from '../services/verifier/test/fakes.ts'
+import * as device from '../src/device.ts'
+import { readCard, strongest } from '../src/flows/cards.ts'
+import { whoIs } from '../src/flows/inbox.ts'
+import { makeProfile } from '../src/flows/profile.ts'
+import { walletKey } from '../src/flows/profiles.ts'
+import { NotPassed, advance, ask, consentOf, finish, open, pay, resume, stampNumberAt, stepOf } from '../src/flows/verify.ts'
+import { Refused } from '../src/services/http.ts'
+import { Said } from '../src/words.ts'
+import { ID_CREDITS, type World, checkHere, freshDevice, proveHere, world } from './world.ts'
 
-let w: ServicesWorld
-beforeAll(async () => void (w = await services()))
+let w: World
+beforeAll(async () => void (w = await world()))
 afterAll(() => w?.close())
 beforeEach(freshDevice)
 
@@ -215,7 +214,7 @@ describe('the ID check', () => {
 })
 
 test('a verifier with no Stripe: the ID check is not for sale, in one quiet line', async () => {
-  const off = await services({ forSale: false })
+  const off = await world({ forSale: false })
   try {
     const err = await pay(off, 'passkey-x', RETURN).catch((e: unknown) => e)
     expect([(err as Said).message, (err as Said).red]).toEqual(["The ID check isn't available yet.", false])

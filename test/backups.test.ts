@@ -1,4 +1,4 @@
-// Backup passkeys, against services' own host and a stand-in verifier on loopback (world.ts), as the
+// Backup passkeys, against services' own verifier and host on loopback (world.ts), as the
 // standard's example says (folders/README.md, The seed entry): a backup added, its two entries each
 // opening with seedOf alone, its folder funded from the wallet; Start through a backup, one step only;
 // the backups counted and dated with nothing unlocked; one removed, its passkey opening its own seed
