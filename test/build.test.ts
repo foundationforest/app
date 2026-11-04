@@ -9,6 +9,10 @@ import { readFileSync } from 'node:fs'
 
 import { expect, test } from 'vitest'
 
+import { CODES as STANDARD_CODES } from '@foundationforest/folders'
+
+import { CODES as HOST_LIST } from '../services/host/src/codes.ts'
+import { CODES as VERIFIER_LIST } from '../services/verifier/src/codes.ts'
 import { files } from '../build/markets.ts'
 import { proofFiles } from '../build/proofs.ts'
 import { config } from '../src/config.ts'
@@ -16,9 +20,7 @@ import { placeLine } from '../src/fields/Place.tsx'
 import { rfc3339 } from '../src/fields/Moment.tsx'
 import { kindWords, marketList, marketWords, otherSide, pairOf, pairs, roleWords } from '../src/markets.ts'
 import { contactHref } from '../src/show.ts'
-import { HOST_CODES, SOMETHING, VERIFIER_CODES, entrySays, fieldWords, verifierSays } from '../src/words.ts'
-
-const readme = (path: string) => readFileSync(new URL(path, import.meta.url), 'utf8')
+import { HOST_CODES, SOMETHING, VERIFIER_CODES, entrySays, fieldWords, hostSays, verifierSays } from '../src/words.ts'
 
 const vercel = JSON.parse(readFileSync(new URL('../vercel.json', import.meta.url), 'utf8'))
 const csp: string = vercel.headers.find((h: any) => h.source === '/(.*)').headers.find((h: any) => h.key === 'Content-Security-Policy').value
@@ -81,22 +83,11 @@ test('the markets: each role\'s other side, and its post in its own word', () =>
   expect([kindWords('post', 'tutoring/tutor'), kindWords('post', 'tutoring/student'), kindWords('post', 'tennis-matches/player'), kindWords('vouch', 'tutoring/tutor')]).toEqual(['Offer', 'Request', 'Post', 'Vouch'])
 })
 
-test('every code the verifier and the host answer has its own plain line, and none reaches the screen', () => {
-  const verifier = readme('../services/verifier/README.md')
-  const errors = verifier.slice(verifier.indexOf('Errors are `{"error": "<code>"}`'), verifier.indexOf('## How we run it'))
-  const listed = [...errors.matchAll(/`(?:\d{3} )?([a-zA-Z_]+)`/g)].map(([, code]) => code!)
-  expect(listed.length, 'the README lists them').toBeGreaterThan(30)
-  for (const code of listed) expect(VERIFIER_CODES, code).toContain(code)
-  const folders = readme('../standard/folders/README.md')
-  const plug = [...folders.matchAll(/\[`[a-z_]+`(?:,\s+`[a-z_]+`)*\]/g)].flatMap((m) => m[0].match(/[a-z_]+/g)!)
-  expect(plug, "the standard's checks, every one").toEqual(expect.arrayContaining(['canonical', 'signature', 'future', 'older', 'no_inbox', 'hash']))
-  const host = readme('../services/host/README.md')
-  const front = [...host.slice(host.indexOf('## Its API'), host.indexOf('## How we run it')).matchAll(/`([a-z_]+)`(?: \(\d{3})?/g)].map(([, c]) => c!).filter((c) => !/^(profile|after|to|folder|credits|ticket|balance|key|signature|id)$/.test(c) || HOST_CODES.includes(c))
-  for (const code of [...plug, ...front]) expect(HOST_CODES, code).toContain(code)
-  for (const code of VERIFIER_CODES) {
-    const said = verifierSays(code, 'id')
-    expect(said.message, code).not.toMatch(/[a-z]+_[a-z]+|\{check\}/)
-  }
+test("every code the verifier, the host and the standard list has its own plain line, and none reaches the screen", () => {
+  for (const code of VERIFIER_LIST) expect(VERIFIER_CODES, code).toContain(code)
+  for (const code of [...STANDARD_CODES, ...HOST_LIST]) expect(HOST_CODES, code).toContain(code)
+  for (const code of VERIFIER_CODES) expect(verifierSays(code, 'id').message, code).not.toMatch(/[a-z]+_[a-z]+|\{check\}/)
+  for (const code of HOST_CODES) expect(hostSays(code).message, code).not.toMatch(/[a-z]+_[a-z]+/)
   expect(verifierSays('face_check_unavailable').message).toBe("The face check isn't available right now. Try again in a minute.")
   expect([verifierSays('duplicate_document').message, verifierSays('duplicate_document').red]).toEqual(['This ID was already used to verify someone else.', true])
   expect(verifierSays('not_for_sale').message).toBe("The ID check isn't available yet.")

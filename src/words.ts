@@ -1,7 +1,8 @@
 // What the app says when something can't be done: one plain line, red when what was given is wrong,
-// quiet when something is still missing or busy. Every code a service answers maps to one line here
-// (services' verifier/README.md, Its API; the host's and the standard's refusals), so no code ever
-// reaches the screen. Any other error shows the one line `SOMETHING`.
+// quiet when something is still missing or busy. Every code a service answers maps to one line here,
+// from each one's own list (services' verifier/src/codes.ts and host/src/codes.ts, and the
+// standard's CODES, which the host answers with), so no code ever reaches the screen. Any other
+// error shows the one line `SOMETHING`.
 
 /** An error the app says in its own words: `red` when what was given is wrong, else a quiet line. */
 export class Said extends Error {
@@ -116,7 +117,11 @@ const HOST: Record<string, Line> = {
   credit: HOST_DOWN,
   spent: HOST_DOWN,
   method: HOST_DOWN,
+  invalid: HOST_DOWN,
   no_credits: HOST_DOWN,
+  // A reader's, never a host's answer: what the app's own reading throws, which says SOMETHING (ui.tsx, noteOf).
+  locked: OURS,
+  to: OURS,
 }
 
 /** The codes the host and the standard's plug answer that the app has its own line for. */
