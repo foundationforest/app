@@ -1,11 +1,11 @@
-// The new inbox entries' listing, one for the page: started by the first screen that follows it and
+// The new inbox entries' list, one for the page: started by the first screen that follows it and
 // stopped with the last; now, every half minute, and whenever the device changes, however many
 // screens follow it.
 
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 
 import { CHANGED } from '../src/device.ts'
-import { LIST_EVERY_MS, listing } from '../src/listing.ts'
+import { LIST_EVERY_MS, sharedList } from '../src/list.ts'
 
 /** The page's events, as a browser's window has them. */
 const page = new EventTarget()
@@ -18,13 +18,13 @@ afterEach(() => {
   for (const name of ['addEventListener', 'removeEventListener']) delete (globalThis as Record<string, unknown>)[name]
 })
 
-test('two screens, one listing: now, every half minute and on a change; still with one left, none with none, and now again for the next first', async () => {
+test('two screens, one list: now, every half minute and on a change; still with one left, none with none, and now again for the next first', async () => {
   let lists = 0
-  const l = listing(async () => ({ A: [`entry-${++lists}`] }))
+  const l = sharedList(async () => ({ A: [`entry-${++lists}`] }))
   const shown: string[][] = [[], []]
   const leaveA = l.follow((f) => shown[0]!.push(f.A![0]!))
   const leaveB = l.follow((f) => shown[1]!.push(f.A![0]!))
-  expect(lists, 'one listing now, for both').toBe(1)
+  expect(lists, 'one list now, for both').toBe(1)
   await vi.advanceTimersByTimeAsync(0)
   expect(shown, 'each shown it').toEqual([['entry-1'], ['entry-1']])
 

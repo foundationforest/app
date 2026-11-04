@@ -1,4 +1,4 @@
-// One field of a post, as suits its type on a phone (the markets manual's Types): text in a line (a
+// One field of an entry, as suits its type on a phone (the markets manual's Types): text in a line (a
 // box for a description), a number on the number keys, words in a line with commas between them, a
 // choice as chips, any number of them for a `many` one (a long list of one as a menu), each value
 // by its label where the field has one, else in words; money as an amount with its currency and, only

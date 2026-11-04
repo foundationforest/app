@@ -1,8 +1,8 @@
-// A post as a row: its first photo, from the host, then two lines: its preview's first (the market's
-// `preview` fields, those it holds), and its price when it has one, else its preview's next
+// A listing as a row: its first photo, from the host, then two lines: its preview's first (the
+// market's `preview` fields, those it holds), and its price when it has one, else its preview's next
 // (show.ts, rowLines). On a profile, a tap edits it, and one of the person's own that no longer fits
-// its market, which the index doesn't list, says Update this post under them; in Review someone, a
-// tap picks it.
+// its market, which the index doesn't list, says Update this listing under them; in Review someone,
+// a tap picks it.
 
 import type { Body } from '@foundationforest/folders'
 
@@ -11,9 +11,9 @@ import { photoUrl, photosIn } from '../flows/photos.ts'
 import type { Market } from '../markets.ts'
 import { rowLines } from '../show.ts'
 
-/** A post's first photo: the first its market's file fields hold, in the order the market lists them. */
+/** A listing's first photo: the first its market's file fields hold, in the order the market lists them. */
 export function firstPhoto(market: Market, body: Body): string | undefined {
-  for (const [name, field] of Object.entries(market.post)) {
+  for (const [name, field] of Object.entries(market.listing)) {
     const first = field.type === 'file' ? photosIn(body[name])[0] : undefined
     if (first) return first
   }
@@ -22,15 +22,15 @@ export function firstPhoto(market: Market, body: Body): string | undefined {
 
 type Props = { market: Market; body: Body; onClick: () => void; chosen?: boolean; update?: boolean }
 
-export function PostRow({ market, body, onClick, chosen, update }: Props) {
+export function ListingRow({ market, body, onClick, chosen, update }: Props) {
   const photo = firstPhoto(market, body)
   const lines = rowLines(market, body)
   return (
-    <button type="button" className={chosen ? 'row post-row chosen' : 'row post-row'} {...(chosen !== undefined && { 'aria-pressed': chosen })} onClick={onClick}>
+    <button type="button" className={chosen ? 'row listing-row chosen' : 'row listing-row'} {...(chosen !== undefined && { 'aria-pressed': chosen })} onClick={onClick}>
       {photo ? <img className="thumb" src={photoUrl(config.host, photo)} alt="" loading="lazy" /> : null}
       <span className="two">
         {lines.slice(0, 2).map((l, i) => (i === 0 ? <strong key={i}>{l}</strong> : <span key={i}>{l}</span>))}
-        {update && <strong>Update this post</strong>}
+        {update && <strong>Update this listing</strong>}
       </span>
     </button>
   )

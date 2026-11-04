@@ -1,10 +1,10 @@
-// A post's photos, as the standard's Files says (folders/README.md, Files) and the markets manual's
-// Photos: each `file` field holds the SHA-256 of a photo, and the body's `files` names each one, by
-// its SHA-256, type and size. The entry is written first; then each new photo's bytes go to the
-// host (PUT /v1/files/<sha256>), which takes them only while a current entry names them, paid from
-// the profile's folder and topped up from the wallet when the host refuses for price (paid.ts).
-// Every photo is a JPEG the device redrew (redraw.ts). The host serves them to anyone, by their
-// SHA-256, so the page shows them from there.
+// A listing's photos, as the standard's Files says (folders/README.md, Files) and the markets
+// manual's Photos: each `file` field holds the SHA-256 of a photo, and the body's `files` names
+// each one, by its SHA-256, type and size. The entry is written first; then each new photo's bytes
+// go to the host (PUT /v1/files/<sha256>), which takes them only while a current entry names them,
+// paid from the profile's folder and topped up from the wallet when the host refuses for price
+// (paid.ts). Every photo is a JPEG the device redrew (redraw.ts). The host serves them to anyone,
+// by their SHA-256, so the page shows them from there.
 
 import { type Body, type FileName, fileOf, filesOf } from '@foundationforest/folders'
 import type { MainKey } from '@foundationforest/keys'

@@ -1,19 +1,20 @@
-// Reviews, vouches and reports. Those about the person's profiles come from the index, which counted
-// them, read with nothing unlocked: it is asked about each profile from this device, so it can tell
-// they are one person's, as the host already can. Those a profile wrote come from its own folder.
+// Feedback: reviews, vouches and reports. Those about the person's profiles come from the index,
+// which counted them, read with nothing unlocked: it is asked about each profile from this device,
+// so it can tell they are one person's, as the host already can. Those a profile wrote come from
+// its own folder.
 //
 // What is new about a profile is what the index counted after the time the device keeps for it, the
-// newest its Reviews or Notifications has shown (device.ts). A profile the device has no time for yet
-// is marked at the newest the index holds now, so nothing old shows as new on a new device.
+// newest its Feedback or the Feedback place has shown (device.ts). A profile the device has no time
+// for yet is marked at the newest the index holds now, so nothing old shows as new on a new device.
 //
-// Notifications lists every review, vouch and report the index counted about any of the person's
-// profiles, newest first, each new one marked; messages are the inbox's.
+// The Feedback place lists every review, vouch and report the index counted about any of the
+// person's profiles, newest first, each new one marked; messages are the inbox's.
 
 import type { Profile } from '../device.ts'
 import { saveSeen, seen } from '../device.ts'
 import { type Held, holdRated } from '../rated.ts'
 import { type Rated, type Received, readRated } from '../services/index.ts'
-import type { Posted } from './posts.ts'
+import type { Posted } from './entries.ts'
 
 export type { Rated, Received }
 
@@ -38,14 +39,14 @@ export async function rate(index: string, list: Profile[]): Promise<void> {
   )
 }
 
-/** What a profile wrote about others, of its posts: its reviews, vouches and reports, newest first. */
-export const givenOf = (posts: Posted[]): Posted[] => posts.filter((p) => p.kind !== 'post')
+/** What a profile wrote about others, of its entries: its reviews, vouches and reports, newest first. */
+export const givenOf = (entries: Posted[]): Posted[] => entries.filter((e) => e.kind !== 'listing')
 
-/** One of Notifications' rows: a review, vouch or report about one of the person's profiles (`on`), and whether it is new. */
+/** One of the Feedback place's rows: a review, vouch or report about one of the person's profiles (`on`), and whether it is new. */
 export type Notice = { received: Received; on: string; fresh: boolean }
 
 /**
- * Notifications' rows: every review, vouch and report the index counted about any profile in
+ * The Feedback place's rows: every review, vouch and report the index counted about any profile in
  * `list`, newest first, each new when it came after `since`, the time the device kept for its
  * profile as the screen opened (none: nothing is new).
  */

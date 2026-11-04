@@ -3,30 +3,30 @@
 // conversations. Share hands out the profile's page on the index: the phone's share sheet where
 // there is one, else the page's link copied. A link, not a fetch: nothing here reaches the index for
 // it. Under the name, one line: the index's rating, how many reviews it counted, and how many
-// reviews, vouches and reports are new, which opens Reviews. Then its posts,
-// each a row with its first photo and its preview (PostRow.tsx), tapped to edit, one that no longer
-// fits its market saying Update this post; and at the bottom,
-// side by side, Review, which opens Review someone, and a new post in its role's word. Nothing here
-// asks the passkey: its folder is public, and so is what the index says.
+// reviews, vouches and reports are new, which opens its Feedback. Then its listings, each a row with
+// its first photo and its preview (ListingRow.tsx), tapped to edit, one that no longer fits its
+// market saying Update this listing; and at the bottom, side by side, Review, which opens Review
+// someone, and a new listing in its role's word. Nothing here asks the passkey: its folder is
+// public, and so is what the index says.
 
 import { useEffect, useState } from 'react'
 
 import { config } from '../config.ts'
-import { type Posted, readPosts } from '../flows/posts.ts'
+import { type Posted, readEntries } from '../flows/entries.ts'
 import { strongest } from '../flows/cards.ts'
 import { fits } from '../form.ts'
 import { useCards, useNews, useProfiles, useRated } from '../hooks.ts'
-import { kindWords, markets, pairOf, yourPosts } from '../markets.ts'
+import { kindWords, markets, pairOf, yourListings } from '../markets.ts'
 import { ratingText, reviewCount } from '../show.ts'
 import { Inbox, Line, Named, type Note, Spinner, Top, Verified, noteOf } from '../ui.tsx'
-import { PostRow } from './PostRow.tsx'
+import { ListingRow } from './ListingRow.tsx'
 
-type Props = { address: string; onBack: () => void; onPost: (edit?: Posted) => void; onReviews: () => void; onReview: () => void; onMessages: () => void }
+type Props = { address: string; onBack: () => void; onListing: (edit?: Posted) => void; onFeedback: () => void; onReview: () => void; onMessages: () => void }
 
 /** A profile's page on the index: what Share hands out. */
 const pageOf = (address: string) => `${config.index}/profiles/${address}`
 
-export function Profile({ address, onBack, onPost, onReviews, onReview, onMessages }: Props) {
+export function Profile({ address, onBack, onListing, onFeedback, onReview, onMessages }: Props) {
   const list = useProfiles()
   const profile = list.find((p) => p.address === address)
   const mine = profile ? [profile] : []
@@ -34,12 +34,12 @@ export function Profile({ address, onBack, onPost, onReviews, onReview, onMessag
   const held = useRated(mine)[address]
   const news = useNews(mine).of[address]
   const [copied, setCopied] = useState(false)
-  const [posts, setPosts] = useState<Posted[] | null>(null)
+  const [listings, setListings] = useState<Posted[] | null>(null)
   const [note, setNote] = useState<Note | null>(null)
   useEffect(() => {
     let live = true
-    readPosts(config, address).then(
-      (p) => live && setPosts(p.filter((x) => x.kind === 'post')),
+    readEntries(config, address).then(
+      (p) => live && setListings(p.filter((x) => x.kind === 'listing')),
       (err: unknown) => live && setNote(noteOf(err)),
     )
     return () => void (live = false)
@@ -76,26 +76,26 @@ export function Profile({ address, onBack, onPost, onReviews, onReview, onMessag
           {check && <Verified check={check} />}
         </h1>
         <div className="lines">
-          <button className="link" onClick={onReviews}>
-            {held && 'failed' in held ? 'Reviews' : rated?.rating != null ? `★ ${ratingText(rated.rating)} · ${reviewCount(rated.reviews)}` : 'No reviews yet'}
+          <button className="link" onClick={onFeedback}>
+            {held && 'failed' in held ? 'Feedback' : rated?.rating != null ? `★ ${ratingText(rated.rating)} · ${reviewCount(rated.reviews)}` : 'No reviews yet'}
             <New n={news?.received.length ?? 0} /> ›
           </button>
         </div>
         {held && 'failed' in held && <p className="line">Can't reach the index.</p>}
       </div>
-      <h2>{yourPosts(profile.label)}</h2>
+      <h2>{yourListings(profile.label)}</h2>
       <Line note={note} />
-      {posts === null ? (
+      {listings === null ? (
         !note && <Spinner />
       ) : (
         <div className="rows">
-          {market && posts.map((p) => <PostRow key={p.path} market={market} body={p.body} update={!fits(pair.market, pair.role, p.body)} onClick={() => onPost(p)} />)}
+          {market && listings.map((l) => <ListingRow key={l.path} market={market} body={l.body} update={!fits(pair.market, pair.role, l.body)} onClick={() => onListing(l)} />)}
         </div>
       )}
       <div className="foot pair">
         <button onClick={onReview}>Review</button>
-        <button className="primary" onClick={() => onPost()}>
-          New {kindWords('post', profile.label).toLowerCase()}
+        <button className="primary" onClick={() => onListing()}>
+          New {kindWords('listing', profile.label).toLowerCase()}
         </button>
       </div>
     </main>

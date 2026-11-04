@@ -282,15 +282,15 @@ export function Top({ onBack, children, right }: { onBack?: () => void; children
   )
 }
 
-export type Place = 'profiles' | 'notifications' | 'settings'
+export type Place = 'profiles' | 'feedback' | 'settings'
 
 const PLACES: Array<[Place, string, () => ReactNode]> = [
   ['profiles', 'Profiles', ProfilesIcon],
-  ['notifications', 'Notifications', BellIcon],
+  ['feedback', 'Feedback', BellIcon],
   ['settings', 'Settings', SettingsIcon],
 ]
 
-/** The places, at the bottom: Profiles, Notifications, with how many reviews, vouches and reports are new (messages count on the inbox), and Settings. Opening one reads what the index says of every profile. */
+/** The places, at the bottom: Profiles, Feedback, with how many reviews, vouches and reports are new (messages count on the inbox), and Settings. Opening one reads what the index says of every profile. */
 export function Places({ at, go }: { at: Place; go: (to: Place) => void }) {
   const list = useProfiles()
   useRated(list)
@@ -301,7 +301,7 @@ export function Places({ at, go }: { at: Place; go: (to: Place) => void }) {
         <button key={place} className={at === place ? 'here' : ''} aria-current={at === place ? 'page' : undefined} onClick={() => go(place)}>
           <span className="place-icon">
             <PlaceIcon />
-            {place === 'notifications' && count > 0 && (
+            {place === 'feedback' && count > 0 && (
               <span className="count" aria-label={`${count} new`}>
                 {count}
               </span>

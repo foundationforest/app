@@ -1,7 +1,7 @@
-// Where a post's place is centred (near.ts): near the device's spot, never on it; moved once per
-// place and kept, so posts from one place share one centre, the real spot inside even a 1 km circle;
-// another place, another centre, and the first again back there; radius 0, the device's spot itself;
-// and the radii the slider offers.
+// Where a listing's place is centred (near.ts): near the device's spot, never on it; moved once per
+// place and kept, so listings from one place share one centre, the real spot inside even a 1 km
+// circle; another place, another centre, and the first again back there; radius 0, the device's
+// spot itself; and the radii the slider offers.
 
 import { beforeEach, expect, test } from 'vitest'
 

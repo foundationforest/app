@@ -12,7 +12,7 @@
 // doesn't open. Linking a passkey made by mistake (New to Forest?, I already use Forest) is the
 // same, with a seed that has answered already.
 //
-// Listing them needs nothing unlocked: the `backup/<id>` entries, and when each was written. The
+// Their list needs nothing unlocked: the `backup/<id>` entries, and when each was written. The
 // entry holds the seed and nothing else, so the device that added a backup keeps its manager's name
 // (device.ts). Removing one deletes its seed entry, signed by its own Profiles folder's key, then its
 // `backup/<id>` entry. Whoever opened the seed entry before keeps the seed: removing takes nothing

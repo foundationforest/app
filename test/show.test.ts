@@ -24,7 +24,7 @@ test("every price on screen reads so: a money field's value", () => {
   expect(valueText(field, { amount: '30', currency: 'EUR', per: 'hour' })).toMatch(/30.*per hour$/)
 })
 
-test("a post's row in every market: with a price, its preview's first other line, then the price; with none, its preview's first two", () => {
+test("a listing's row in every market: with a price, its preview's first other line, then the price; with none, its preview's first two", () => {
   const tutoring = markets.market('tutoring')!
   const lesson = { description: 'Maths, one hour online.', subjects: ['maths'], price: { amount: '30', currency: 'USD', per: 'hour' }, mode: ['online'] }
   expect(rowLines(tutoring, lesson), 'tutoring puts subjects first, and the price after the description: here second').toEqual(['Maths', priceText(lesson.price)])
@@ -37,7 +37,7 @@ test("a post's row in every market: with a price, its preview's first other line
 })
 
 test('a place: its area, then how far round it reaches; radius 0, that exact spot; an older place, its area', () => {
-  const field = markets.market('clothing')!.post.location!
+  const field = markets.market('clothing')!.listing.location!
   expect(valueText(field, { lat: '45.764', lon: '4.836', radiusKm: 2, area: 'Lyon' })).toBe('Lyon, within 2 km')
   expect(valueText(field, { lat: '45.764', lon: '4.836', radiusKm: 2 })).toBe('Within 2 km')
   expect(valueText(field, { lat: '45.76412', lon: '4.83601', radiusKm: 0, area: 'Court 3' })).toBe('Court 3')

@@ -179,11 +179,11 @@ describe('a connection changed', () => {
       return typeof read === 'string' || 'unreached' in read ? read : read.profiles.map((x) => x.label)
     }
 
-    // The student's key writes a post, as the AI would; then the student is taken away.
+    // The student's key writes a listing, as the AI would; then the student is taken away.
     const read = await asTheConnectorReads(pointer)
     if (typeof read === 'string' || 'unreached' in read) throw new Error('no connection')
     const studentKey = await accessKey(b64u.decode(read.profiles.find((x) => x.label === STUDENT)!.key))
-    const [wrote] = await write([w.host], [entry({ profile: own[STUDENT]!, key: studentKey }, 'post/by-the-ai', { description: 'Maths, from the AI.' }, Date.now())])
+    const [wrote] = await write([w.host], [entry({ profile: own[STUDENT]!, key: studentKey }, 'listing/by-the-ai', { description: 'Maths, from the AI.' }, Date.now())])
     expect(wrote?.results.every((x) => x.ok)).toBe(true)
     await removeFrom(w, p.seed, pointer.folder, STUDENT)
     const ended = await keysOf(own[STUDENT]!)
@@ -194,8 +194,8 @@ describe('a connection changed', () => {
     expect(await labels()).toEqual([TUTOR])
     expect(device.connections()[0]!.labels).toEqual([TUTOR])
     const view = await readFolder([w.host], own[STUDENT]!, Date.now())
-    expect(view.current.get('post/by-the-ai')?.entry.body, 'what it wrote stays').toEqual({ description: 'Maths, from the AI.' })
-    const [refused] = await write([w.host], [entry({ profile: own[STUDENT]!, key: studentKey }, 'post/again', { description: 'Again.' }, Date.now())])
+    expect(view.current.get('listing/by-the-ai')?.entry.body, 'what it wrote stays').toEqual({ description: 'Maths, from the AI.' })
+    const [refused] = await write([w.host], [entry({ profile: own[STUDENT]!, key: studentKey }, 'listing/again', { description: 'Again.' }, Date.now())])
     expect(refused?.results.some((x) => x.ok), 'and it writes nothing more').toBe(false)
 
     // Given back: a new key, with no new login.
@@ -214,7 +214,7 @@ describe('a connection changed', () => {
     expect([...liveContent(folder)].map(([path]) => path)).toEqual(['profile'])
     expect(await reference(p.seed).connections()).toEqual([])
     expect(device.connections()).toEqual([])
-    expect((await readFolder([w.host], own[STUDENT]!, Date.now())).current.get('post/by-the-ai')?.entry.body, 'what the AI wrote stays').toEqual({ description: 'Maths, from the AI.' })
+    expect((await readFolder([w.host], own[STUDENT]!, Date.now())).current.get('listing/by-the-ai')?.entry.body, 'what the AI wrote stays').toEqual({ description: 'Maths, from the AI.' })
   })
 
   test("its last profile taken away, no note names the connection: nothing finds it from the seed again, which is why an AI app keeps one ticked", async () => {

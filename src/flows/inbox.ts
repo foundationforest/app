@@ -1,6 +1,6 @@
 // The person's messages: one inbox for all their profiles.
 //
-// Listing needs nothing unlocked: anyone lists any inbox, and only the envelopes protect it
+// An inbox's list needs nothing unlocked: anyone lists any inbox, and only the envelopes protect it
 // (folders/README.md, The inbox). So the app lists what each profile's inbox holds after where the
 // person left off there (device.ts), with no seed: those are new. A profile the device has no mark
 // for yet is marked at the end of its inbox, so nothing old shows as new on a new device.

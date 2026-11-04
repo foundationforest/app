@@ -4,12 +4,12 @@
 // has read there, how they are verified, their AI apps (each one's name, when it connected, its
 // connection folder's address and its profiles' labels), the addresses of the access keys it knows
 // of, where they left off in each profile's inbox, the time of the newest review, vouch or report
-// about each profile its Reviews has shown, their theme, and, while a verification is under way, its
-// check and session, the ID check's payment and the gift's buy, then an ID check's payment no stamp
-// has used yet (flows/verify.ts); and the password manager's name of each passkey it added,
-// by its entry in the Profiles folder (flows/backups.ts), which the entry itself can't hold; and the
-// point posts' places are centred on, one for each place a post's form read the device's location
-// at, moved a little from it (near.ts). Never the seed, a key, a stamp or a message.
+// about each profile its Feedback has shown, their theme, and, while a verification is under way,
+// its check and session, the ID check's payment and the gift's buy, then an ID check's payment no
+// stamp has used yet (flows/verify.ts); and the password manager's name of each passkey it added,
+// by its entry in the Profiles folder (flows/backups.ts), which the entry itself can't hold; and
+// the point listings' places are centred on, one for each place a listing's form read the device's
+// location at, moved a little from it (near.ts). Never the seed, a key, a stamp or a message.
 //
 // A label entry in the Profiles folder that this device never read, or whose label it doesn't list,
 // is a profile made elsewhere, on another device with the same seed: Profiles offers to read them
@@ -149,7 +149,7 @@ export const cursors = (): Record<string, number> => {
 }
 export const saveCursors = (more: Record<string, number>) => write(KEYS.read, { ...cursors(), ...more })
 
-/** The time of the newest review, vouch or report about each profile, by its address, that its Reviews has shown. */
+/** The time of the newest review, vouch or report about each profile, by its address, that its Feedback has shown. */
 export const seen = (): Record<string, number> => {
   const kept = read<Record<string, unknown>>(KEYS.seen, {})
   return Object.fromEntries(Object.entries(kept).filter((e): e is [string, number] => Number.isSafeInteger(e[1])))
@@ -173,11 +173,11 @@ export function unnameBackup(id: string): void {
   write(KEYS.backups, rest)
 }
 
-/** A post's place's centre, kept: a point near a place the device posted from, in degrees as decimal text, as a place holds them. */
+/** A listing's place's centre, kept: a point near a place the device posted from, in degrees as decimal text, as a place holds them. */
 export type Point = { lat: string; lon: string }
 const isPoint = (v: unknown): v is Point => typeof (v as Point | null)?.lat === 'string' && typeof (v as Point).lon === 'string'
 
-/** The points kept for posts' places, oldest first: one for each place a post's form read the device's location at (near.ts). */
+/** The points kept for listings' places, oldest first: one for each place a listing's form read the device's location at (near.ts). */
 export const points = (): Point[] => read<unknown[]>(KEYS.points, []).filter(isPoint)
 export const keepPoint = (p: Point) => write(KEYS.points, [...points(), { lat: p.lat, lon: p.lon }])
 

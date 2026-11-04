@@ -1,7 +1,8 @@
 // How an entry's values read on screen, by their type (the markets manual's Types): a choice by its
 // label where its field has one, else in words, money as people write a price, in the device's own
 // number format ($20, €30 per hour), a place as its area and how far round it reaches, a moment as
-// a date and time, hours as days and times; and a post's preview, the fields its market shows first.
+// a date and time, hours as days and times; and a listing's preview, the fields its market shows
+// first.
 // A contact opens with a tap when it is a phone number, an email or a link.
 
 import type { Body } from '@foundationforest/folders'
@@ -78,23 +79,23 @@ export function priceText(money: { amount?: unknown; currency?: unknown; per?: u
   return typeof money.per === 'string' && money.per ? `${text} per ${money.per}` : text
 }
 
-/** A post's preview: the fields its market shows first, those it has, in one line each. */
+/** A listing's preview: the fields its market shows first, those it has, in one line each. */
 export function previewLines(market: Market, body: Body): string[] {
   return previewOf(market)
-    .map((name) => (market.post[name] ? valueText(market.post[name], body[name]) : ''))
+    .map((name) => (market.listing[name] ? valueText(market.listing[name], body[name]) : ''))
     .filter(Boolean)
 }
 
 /**
- * A post's two lines on its row, in every market: with a price, the first of its preview's other
+ * A listing's two lines on its row, in every market: with a price, the first of its preview's other
  * lines, then the price ($20, €30 per hour), wherever the market's preview puts it, or leaves it
  * out; with none, its preview's first two lines.
  */
 export function rowLines(market: Market, body: Body): string[] {
-  const price = market.post.price ? valueText(market.post.price, body.price) : ''
+  const price = market.listing.price ? valueText(market.listing.price, body.price) : ''
   const lines = previewOf(market)
     .filter((name) => name !== 'price')
-    .map((name) => (market.post[name] ? valueText(market.post[name], body[name]) : ''))
+    .map((name) => (market.listing[name] ? valueText(market.listing[name], body[name]) : ''))
     .filter(Boolean)
   return price ? [...lines.slice(0, 1), price] : lines.slice(0, 2)
 }
