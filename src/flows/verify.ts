@@ -87,6 +87,13 @@ export function stepOf(passkey: string): Step {
   return u.session ? { at: 'away' } : { at: 'start' }
 }
 
+/** The consent screen the verifier serves in GET /, shown before the ID check word for word; a verifier that serves none isn't answering as one. */
+export async function consentOf(s: Services): Promise<string> {
+  const { consent } = await about(s.verifier)
+  if (typeof consent !== 'string' || !consent) throw verifierSays('not_a_verifier')
+  return consent
+}
+
 /** The person's stamp number at the verifier: the only thing mixed from the seed it ever sees. */
 export async function stampNumberAt(s: Services, seed: Uint8Array): Promise<bigint> {
   return stampNumberOf(seedNumber(seed), (await about(s.verifier)).name)

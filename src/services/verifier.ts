@@ -23,8 +23,8 @@ const SERVICE = 'verifier'
 /** The two checks: the face check, free, and the ID check, paid. */
 export type Check = 'face' | 'id'
 
-/** What the verifier says of itself in GET /: its name, its two keys, and its gifts, credits at one host. */
-export type About = { name: string; face: { key: string }; id: { key: string }; gift?: { face: number; id: number; host: string; sponsor: string } }
+/** What the verifier says of itself in GET /: its name, its two keys, the consent screen an app shows before the ID check, and its gifts, credits at one host. */
+export type About = { name: string; face: { key: string }; id: { key: string }; consent?: string; gift?: { face: number; id: number; host: string; sponsor: string } }
 
 const known = new Map<string, Promise<About>>()
 

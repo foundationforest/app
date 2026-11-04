@@ -2075,10 +2075,9 @@ test('the ID check through the stand-in Stripe: consent word for word, paid, che
   await page.goto(APP)
   await button(page, 'Settings').click()
   await button(page, '+ $5').click()
-  const verifier = readFileSync(`${app}services/verifier/README.md`, 'utf8')
-  const consent = verifier.slice(verifier.indexOf('**The consent screen.**')).split('\n\n')[1]!.split('\n').map((l) => l.replace(/^> /, '')).join(' ')
+  const { consent } = (await (await fetch(`${services.verifier}/`)).json()) as { consent: string }
   await page.getByText('What the check keeps').click()
-  assert.equal(await page.locator('.consent').textContent(), consent, "the verifier's consent screen, word for word")
+  assert.equal(await page.locator('.consent').textContent(), consent, "the consent screen the verifier serves, word for word")
   await shot(page, 'consent')
   await button(page, 'Pay $5').click()
   await page.getByText('Test mode: pay with the card 4242 4242 4242 4242.').waitFor()

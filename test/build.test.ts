@@ -3,7 +3,7 @@
 // and show photos only from the host, its bucket, and those picked on the device;
 // a missing chunk is a 404, never the page, so a page left open across a deploy reloads; the markets
 // come from the directory, in each market's words, through the browser entry; and what the app says
-// is the verifier's consent screen word for word, and its own line for every code a service answers.
+// is its own line for every code a service answers.
 
 import { readFileSync } from 'node:fs'
 
@@ -12,7 +12,6 @@ import { expect, test } from 'vitest'
 import { files } from '../build/markets.ts'
 import { proofFiles } from '../build/proofs.ts'
 import { config } from '../src/config.ts'
-import { CONSENT } from '../src/consent.ts'
 import { placeLine } from '../src/fields/Place.tsx'
 import { rfc3339 } from '../src/fields/Moment.tsx'
 import { kindWords, marketList, marketWords, otherSide, pairOf, pairs, roleWords } from '../src/markets.ts'
@@ -80,12 +79,6 @@ test('the markets: each role\'s other side, and its post in its own word', () =>
   expect(otherSide('tennis-matches', 'player'), 'one role: a player plays a player').toEqual(['player'])
   expect(otherSide('tutoring', 'nobody')).toEqual([])
   expect([kindWords('post', 'tutoring/tutor'), kindWords('post', 'tutoring/student'), kindWords('post', 'tennis-matches/player'), kindWords('vouch', 'tutoring/tutor')]).toEqual(['Offer', 'Request', 'Post', 'Vouch'])
-})
-
-test("the ID check's consent screen: the verifier's, word for word, at SERVICES", () => {
-  const text = readme('../services/verifier/README.md')
-  const block = text.slice(text.indexOf('**The consent screen.**')).split('\n\n')[1]!
-  expect(CONSENT).toBe(block.split('\n').map((l) => l.replace(/^> /, '')).join(' '))
 })
 
 test('every code the verifier and the host answer has its own plain line, and none reaches the screen', () => {
