@@ -1,10 +1,12 @@
 // The app in headless Chromium, through Playwright, with Chrome's virtual passkey authenticator,
 // which has PRF, against services' own verifier (its stand-in Didit and stand-in face model), host
 // and index on loopback (services.ts), and services' own mcp, its APP_URL this app's /connect, as
-// services' tests run it (mcp/test/setup.ts: its host reached with plain fetch, on loopback). The app is built with its config pointed at them, served as
-// Vercel serves it (vercel.ts: vercel.json's headers, its files, its rewrites, else 404) under
-// vercel.json's CSP, its connect-src and img-src naming these services, at app.forest.foundation
-// mapped to loopback and taken as a secure origin, so its passkeys are made for that address.
+// services' tests run it (mcp/test/setup.ts: its host reached with plain fetch, on loopback), and
+// OpenFreeMap's stand-in for the map's tiles (tiles.ts). The app is built with its config pointed at
+// them, served as Vercel serves it (vercel.ts: vercel.json's headers, its files, its rewrites, else
+// 404) under vercel.json's CSP, its connect-src and img-src naming these services, at
+// app.forest.foundation mapped to loopback and taken as a secure origin, so its passkeys are made
+// for that address.
 //
 //   ./standard.sh services && npm run test:browser
 //
@@ -41,8 +43,11 @@
 //  5. Settings: Face with its shield, ID with + $5, the appearance; no About.
 //  6. Two people: the first, whose phone allows its location, posts an offer from their profile,
 //     its price per hour, which its row shows second, its form the market's: no place until sessions
-//     are In person, then the place right after, filled in with no button, "Within 5 km of you", the
-//     slider moved to 10 and an area named, gone again with In person; a contact, which no market
+//     are In person, then the place right after, one row, Choose on the map, and nothing of the map
+//     asked for yet; its screen: Area, the map from OpenFreeMap's stand-in with its attribution, a
+//     circle round the phone at the market's 5 km, its centre kept a few hundred metres from it, the
+//     slider moved to 10 and a place name given, Done, and the row says so; opened again, the
+//     phone's back closes it, keeping the form; the place gone again with In person; a contact, which no market
 //     lists; asking nothing, the seed still held, so Post shows no unlock icon; the second
 //     opens its link with nothing set up, goes through Start, New to Forest? and the face check,
 //     makes the profile on the other side from the compose screen's From, and messages, nothing
@@ -88,11 +93,15 @@
 //     icon, a moment hidden keeping it so, posts a coat with two photos in one unlock, redrawn on the device as JPEGs no longer
 //     than 1600 pixels, their notes gone, no per to pick; for women, then a coat, and only then one
 //     size question, right after them, its values by their labels (XL); picked up and shipped, a
-//     choice of several; its location the offer's kept point, moved a little from the phone's, within
-//     3 km of Lavapiés; its row's price reading $40, as on the buyer's pick of it in their review;
-//     the index lists it. A buyer, whose phone hasn't allowed its location: told no before, a
-//     request's place is one line saying why it needs it; never asked, Use my location, and the
-//     prompt refused, that line; their page closed and opened again, their profile's messages say
+//     choice of several; its location the offer's kept point, the circle the map opens on, moved a
+//     little from the phone's, within 3 km of Lavapiés, an exact spot showing no pin and no Done
+//     until one is dropped; its row's price reading $40, as on the buyer's pick of it in their
+//     review; the index lists it. A buyer, whose phone hasn't allowed its location: told no before,
+//     the map opens on the whole world, with no circle and no button for the location; a tap puts
+//     the circle there and the map fits it, a drag carries it east and keeps a second centre; then
+//     an exact spot, a tap on the map's middle, its one quiet line, posted exactly there; never
+//     asked, the map's button asks, and the prompt refused, one quiet line, the button gone; the
+//     map's code never in the service worker's install; their page closed and opened again, their profile's messages say
 //     "No new messages" with Open; they write with New message (their own address taken, From the
 //     other side; the seller's page on the index taken as the seller's address) and reviews the coat
 //     from the thread, then, from their profile's Review, vouches ("That's this profile." once) and
@@ -134,7 +143,8 @@
 // 11. A manager that gives no PRF secret: its passkey dropped, the line naming another. A browser
 //     that cannot ask for PRF: one quiet line.
 // 12. The passkey belongs to app.forest.foundation: another page under forest.foundation is refused.
-// 13. The build: its manifest, its service worker in control, installable.
+// 13. The build: its manifest, its service worker in control, installable, and nothing of the map
+//     precached: its code comes with the place screen alone.
 // 14. A deploy while the app is open: back in view, the page says nothing while its version is the
 //     one live, then "A new version is ready." with Reload, above the screen; the next version takes
 //     over and the old proof worker is gone; the page reloads once, back on a market's roles, and the
@@ -173,6 +183,7 @@ import { type Served, serve } from '../../services/mcp/src/server.ts'
 import { App } from '../../services/mcp/test/app.ts'
 import { REDIRECT, aiApp, lesson } from '../../services/mcp/test/setup.ts'
 import { type Running, freePort, startServices } from './services.ts'
+import { type Tiles, standInTiles } from './tiles.ts'
 import { serveLikeVercel } from './vercel.ts'
 
 const app = fileURLToPath(new URL('../../', import.meta.url))
@@ -183,6 +194,8 @@ const shots = process.env.SHOTS
 const say = (line: string) => console.log(`  ${line}`)
 
 let services: Running
+/** OpenFreeMap's stand-in, for the place screen's map. */
+let tiles: Tiles
 /** Services' own mcp, and the directory it keeps its two keys in. */
 let mcp: Served
 let mcpDir: string
@@ -216,11 +229,40 @@ async function shot(page: Page, name: string) {
 /** Where a phone that allows its location is: Madrid's Puerta del Sol. */
 const SPOT = { latitude: 40.41678, longitude: -3.70379 }
 
-/** The distance between a place's point and SPOT, in kilometres. */
-function kmFromSpot(p: { lat: string; lon: string }): number {
+/** A point as a place holds it, in degrees as decimal text. */
+type Point = { lat: string; lon: string }
+
+/** The distance between two points, in kilometres. */
+function kmApart(a: Point, b: Point): number {
   const rad = (d: number) => (d * Math.PI) / 180
-  const h = Math.sin(rad(Number(p.lat) - SPOT.latitude) / 2) ** 2 + Math.cos(rad(SPOT.latitude)) * Math.cos(rad(Number(p.lat))) * Math.sin(rad(Number(p.lon) - SPOT.longitude) / 2) ** 2
+  const h = Math.sin(rad(Number(b.lat) - Number(a.lat)) / 2) ** 2 + Math.cos(rad(Number(a.lat))) * Math.cos(rad(Number(b.lat))) * Math.sin(rad(Number(b.lon) - Number(a.lon)) / 2) ** 2
   return 2 * 6371 * Math.asin(Math.sqrt(h))
+}
+
+/** The distance between a place's point and SPOT, in kilometres. */
+const kmFromSpot = (p: Point) => kmApart(p, { lat: String(SPOT.latitude), lon: String(SPOT.longitude) })
+
+/** A place's screen, opened from its row in the form, named by its field, once its map is drawn. */
+async function placeScreen(page: Page, field: string) {
+  await page.getByRole('group', { name: field }).getByRole('button').click()
+  const screen = page.getByRole('dialog', { name: field })
+  await screen.locator('.maplibregl-canvas').waitFor()
+  return screen
+}
+
+/** The middle of a place screen's map, on the page. */
+async function middleOf(screen: Locator) {
+  const box = (await screen.locator('.map').boundingBox())!
+  return { x: box.x + box.width / 2, y: box.y + box.height / 2 }
+}
+
+/** The centres this device keeps for areas, once there are `n`. */
+async function keptPoints(page: Page, n: number): Promise<Point[]> {
+  for (const until = Date.now() + 10_000; ; await page.waitForTimeout(100)) {
+    const points = JSON.parse((await kept(page))['forest.points'] ?? '[]') as Point[]
+    if (points.length === n) return points
+    if (Date.now() > until) throw new Error(`the device keeps ${points.length} points, not ${n}`)
+  }
 }
 
 /**
@@ -534,10 +576,11 @@ before(async () => {
   APP = `http://app.forest.foundation:${port}/`
   OTHER = `http://other.forest.foundation:${port}/`
   services = await startServices({ appOrigin: APP.slice(0, -1), say })
+  tiles = await standInTiles()
   mcpDir = mkdtempSync(join(tmpdir(), 'forest-app-mcp-'))
   mcp = await serve({ appUrl: `${APP}connect`, dataDir: mcpDir, read: { index: services.index }, hostFetch: fetch }, '127.0.0.1', 0)
   // The app's one config file, pointed at these services (src/config.ts).
-  process.env.VITE_FOREST_CONFIG = JSON.stringify({ app: APP.slice(0, -1), verifier: services.verifier, host: services.host, connector: mcp.origin, index: services.index })
+  process.env.VITE_FOREST_CONFIG = JSON.stringify({ app: APP.slice(0, -1), verifier: services.verifier, host: services.host, connector: mcp.origin, index: services.index, tiles: tiles.origin })
   await build({ root: app, configFile: `${app}vite.config.ts`, logLevel: 'warn', build: { outDir, emptyOutDir: true } })
   const renamed = { entryFileNames: 'assets/[name]-next-[hash].js', chunkFileNames: 'assets/[name]-next-[hash].js' }
   await build({ root: app, configFile: `${app}vite.config.ts`, logLevel: 'warn', build: { outDir: nextDir, emptyOutDir: true, rolldownOptions: { output: renamed } }, worker: { rolldownOptions: { output: renamed } } })
@@ -546,7 +589,7 @@ before(async () => {
   const real: string = vercel.headers.find((h: any) => h.source === '/(.*)').headers.find((h: any) => h.key === 'Content-Security-Policy').value
   csp = real
     .split('; ')
-    .map((d) => (d.startsWith('connect-src ') ? `connect-src 'self' ${services.verifier} ${services.host} ${mcp.origin} ${services.index}` : d.startsWith('img-src ') ? d.replace('https://host.forest.foundation', services.host) : d))
+    .map((d) => (d.startsWith('connect-src ') ? `connect-src 'self' ${services.verifier} ${services.host} ${mcp.origin} ${services.index} ${tiles.origin}` : d.startsWith('img-src ') ? d.replace('https://host.forest.foundation', services.host) : d))
     .join('; ')
   server = await serveLikeVercel({ root: outDir, port, override: { 'Content-Security-Policy': csp } })
   // Chromium itself, not its headless shell, which does not take an insecure origin as secure; and WebAuthn wants a secure one.
@@ -560,6 +603,7 @@ after(async () => {
   await browser?.close()
   await server?.close()
   await mcp?.close()
+  await tiles?.close()
   if (mcpDir) rmSync(mcpDir, { recursive: true, force: true })
   await services?.stop()
 })
@@ -859,20 +903,49 @@ test('two people: one posts an offer, its price per hour, the place only for ses
   assert.deepEqual(await page.getByRole('group', { name: 'Per' }).getByRole('button').allTextContents(), ['per hour', 'per session'], "exactly the field's per values")
   await page.getByRole('group', { name: 'Per' }).getByRole('button', { name: 'per hour' }).click()
   await page.getByRole('group', { name: 'Subjects' }).getByRole('button', { name: 'Maths' }).click()
-  // How sessions are held: no place until they are in person; then the place, right after, filled
-  // in from the phone's location with no button, since this phone allows it.
+  // How sessions are held: no place until they are in person; then the place, right after, one row,
+  // and nothing of the map asked for yet: its code and its tiles come with its screen alone.
   const mode = page.getByRole('group', { name: 'Mode' })
   const place = page.getByRole('group', { name: 'Place' })
+  const mapCode: string[] = []
+  const watch = (r: { url: () => string }) => void (/\/assets\/(PlaceMap|maplibre-gl-worker)-/.test(r.url()) && mapCode.push(r.url()))
+  page.on('request', watch)
   assert.equal(await place.count(), 0, 'no place before In person')
   await mode.getByRole('button', { name: 'In person' }).click()
-  await place.getByText('Within 5 km of you', { exact: true }).waitFor()
-  assert.equal(await place.getByRole('button', { name: 'Use my location' }).count(), 0, 'allowed already: no button')
+  await place.getByRole('button', { name: 'Choose on the map' }).waitFor()
   const labels = async () => (await page.locator('form > .field > .label').allTextContents()).map((l) => l.replace('Public.', ''))
   assert.deepEqual(await labels(), ['Subjects', 'Description', 'Price', 'Mode', 'Place', 'Levels', 'Minutes', 'Hours', 'Contact'], "the preview's fields first, the place right after how sessions are held, contact last")
-  // The radius on a slider, from the field's 5 km: 10 km is its sixth step (0, 1, 2, 3, 5, 10).
-  await place.getByRole('slider', { name: 'Within' }).fill('5')
-  await place.getByLabel('Area').fill('Chamberí')
-  await place.getByText('Chamberí, within 10 km of you', { exact: true }).waitFor()
+  assert.deepEqual([mapCode, tiles.asked], [[], { styles: [], tilejson: 0, tiles: 0 }], 'nothing of the map yet')
+  // Its screen: an area, on OpenFreeMap's tiles (the stand-in's), its attribution shown; the map's
+  // own button for the location; a circle round the phone at the market's 5 km, its centre kept, a
+  // few hundred metres from the phone.
+  const placing = await placeScreen(page, 'Place')
+  assert.equal(await placing.getByRole('button', { name: 'Area' }).getAttribute('aria-pressed'), 'true')
+  await placing.locator('.maplibregl-ctrl-attrib', { hasText: 'OpenFreeMap stand-in' }).waitFor()
+  assert.ok(mapCode.some((u) => u.includes('/PlaceMap-')) && tiles.asked.styles[0] === 'positron' && tiles.asked.tiles > 0, "the map's code, its style and its tiles, now")
+  page.off('request', watch)
+  await placing.getByRole('button', { name: 'Your location' }).waitFor()
+  await placing.getByText('Within 5 km', { exact: true }).waitFor()
+  const [centre] = await keptPoints(page, 1)
+  const fromPhone = kmFromSpot(centre!)
+  assert.ok(fromPhone > 0.1 && fromPhone < 0.8, `the circle's centre moved a little from the phone's spot, ${fromPhone.toFixed(2)} km`)
+  // The radius on a slider, from the field's 5 km: 10 km is its fifth step (1, 2, 3, 5, 10).
+  await placing.getByRole('slider', { name: 'Within' }).fill('4')
+  await placing.getByText('Within 10 km', { exact: true }).waitFor()
+  await placing.getByLabel('Place name').fill('Chamberí')
+  await shot(page, 'place-area')
+  await placing.getByRole('button', { name: 'Done' }).click()
+  await placing.waitFor({ state: 'detached' })
+  await place.getByRole('button', { name: 'Chamberí, within 10 km' }).waitFor()
+  // Opened again, on that circle; the phone's back closes it, keeping nothing changed there, and the form keeps all it holds.
+  await placeScreen(page, 'Place')
+  await placing.getByText('Within 10 km', { exact: true }).waitFor()
+  await placing.getByRole('slider', { name: 'Within' }).fill('0')
+  await page.goBack()
+  await placing.waitFor({ state: 'detached' })
+  await place.getByRole('button', { name: 'Chamberí, within 10 km' }).waitFor()
+  assert.equal(await page.getByLabel('Description').inputValue(), OFFER)
+  assert.equal(new URL(page.url()).pathname, '/listing', 'still the offer')
   await page.getByLabel('Contact').fill('ada@example.com')
   await page.getByText('Public.').waitFor()
   await shot(page, 'listing-offer-in-person')
@@ -1422,8 +1495,10 @@ test("24 words: Settings shows them after an unlock, the seed held or not, with 
 })
 
 const COAT = 'A wool coat, worn twice.'
+/** What the buyer asks for, at an exact spot. */
+const WANTED = 'A warm winter coat, size M.'
 
-test('clothing, with the index: a coat with two photos redrawn on the device, no per, for women, size XL, picked up or shipped, near Lavapiés, $40, listed; a buyer, with no location allowed, sees why a listing needs it; the buyer messages, reviews, vouches and reports; the seller sees the rating, "3 new" on the profile, the bell counting the three and the inbox the message, the three marked in the profile\'s Feedback and seen there; Notifications lists them, and no message', async () => {
+test('clothing, with the index: a coat with two photos redrawn on the device, no per, for women, size XL, picked up or shipped, near Lavapiés, $40, listed; a buyer, with no location allowed, puts an area on the map and asks for a coat at an exact spot; the buyer messages, reviews, vouches and reports; the seller sees the rating, "3 new" on the profile, the bell counting the three and the inbox the message, the three marked in the profile\'s Feedback and seen there; Notifications lists them, and no message', async () => {
   const { page, counts } = first
   // The seller's profile, and the coat.
   await button(page, 'New profile').click()
@@ -1456,12 +1531,23 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   const delivery = page.getByRole('group', { name: 'Delivery' })
   await delivery.getByRole('button', { name: 'Pickup' }).click()
   await delivery.getByRole('button', { name: 'Shipping' }).click()
-  // Where the coat is: from the phone's location, with no button; the slider from the field's 2 km to 3.
+  // Where the coat is: on its screen, the circle round the phone's one kept point, the offer's; the
+  // slider from the field's 2 km to 3. An exact spot: its one quiet line, and no pin, so no Done, until
+  // one is dropped; back to the area, Done.
   const location = page.getByRole('group', { name: 'Location' })
-  await location.getByText('Within 2 km of you', { exact: true }).waitFor()
-  await location.getByRole('slider', { name: 'Within' }).fill('3')
-  await location.getByLabel('Area').fill('Lavapiés, Madrid')
-  await location.getByText('Lavapiés, Madrid, within 3 km of you', { exact: true }).waitFor()
+  await location.getByRole('button', { name: 'Choose on the map' }).waitFor()
+  const where = await placeScreen(page, 'Location')
+  await where.getByText('Within 2 km', { exact: true }).waitFor()
+  await where.getByRole('slider', { name: 'Within' }).fill('2')
+  await where.getByText('Within 3 km', { exact: true }).waitFor()
+  await where.getByLabel('Place name').fill('Lavapiés, Madrid')
+  await where.getByRole('button', { name: 'Exact spot' }).click()
+  await where.getByText('Anyone can see this exact spot.', { exact: true }).waitFor()
+  assert.equal(await where.locator('.maplibregl-marker').count(), 0, 'no pin until one is dropped')
+  assert.ok(await where.getByRole('button', { name: 'Done' }).isDisabled(), 'so no Done')
+  await where.getByRole('button', { name: 'Area' }).click()
+  await where.getByRole('button', { name: 'Done' }).click()
+  await location.getByRole('button', { name: 'Lavapiés, Madrid, within 3 km' }).waitFor()
   await page.getByLabel('Contact').fill('@coats')
   // The page hidden a moment keeps the seed, which closing it dropped: Post asks, and shows it.
   await away(page)
@@ -1519,26 +1605,57 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   await buyer.page.getByRole('heading', { name: 'Use Forest from your AI' }).waitFor()
   await button(buyer.page, 'Not now').click()
   // A phone that hasn't allowed its location. Its browser told no before (headless Chromium's
-  // answer for a site never granted): one line says why the listing needs it, and nothing to tap.
-  const NO_LOCATION = 'Allow your location so people nearby find this listing.'
+  // answer for a site never granted): the map opens on the whole world, with no circle, no Done, no
+  // button for the location and no line. A tap puts the circle there, round the centre it keeps, and
+  // the map fits it; a drag carries it east, more than a kept centre's reach, so a second is kept.
   await buyer.page.locator('button.card', { hasText: 'Clothing buyer' }).locator('.named').click()
   await button(buyer.page, 'New request').click()
-  const where = buyer.page.getByRole('group', { name: 'Location' })
-  await where.getByText(NO_LOCATION, { exact: true }).waitFor()
-  assert.equal(await where.getByRole('button').count(), 0, 'told no before: the line alone')
-  await button(buyer.page, 'Back').click()
-  // Never asked: one button, Use my location, and the browser's own prompt only on its tap; here
-  // the prompt is refused, so the same line.
+  const map = await placeScreen(buyer.page, 'Location')
+  assert.equal(await map.getByRole('button', { name: 'Your location' }).count(), 0, 'told no before: no button')
+  assert.equal(await map.locator('.line').count(), 0, 'and no line')
+  assert.ok(await map.getByRole('button', { name: 'Done' }).isDisabled(), 'no circle yet')
+  const middle = await middleOf(map)
+  await buyer.page.mouse.click(middle.x, middle.y)
+  const [tapped] = await keptPoints(buyer.page, 1)
+  await buyer.page.waitForTimeout(1_000)
+  await buyer.page.mouse.move(middle.x, middle.y)
+  await buyer.page.mouse.down()
+  for (let step = 1; step <= 10; step++) await buyer.page.mouse.move(middle.x + step * 12, middle.y)
+  await buyer.page.mouse.up()
+  const [, carried] = await keptPoints(buyer.page, 2)
+  assert.ok(Number(carried!.lon) > Number(tapped!.lon) && kmApart(tapped!, carried!) > 0.8, `carried east, ${kmApart(tapped!, carried!).toFixed(2)} km`)
+  await shot(buyer.page, 'place-carried')
+  // An exact spot, a tap on the map's middle, where the first circle put it, the map the same size
+  // as for the area: posted exactly there.
+  await map.getByRole('button', { name: 'Exact spot' }).click()
+  await map.getByText('Anyone can see this exact spot.', { exact: true }).waitFor()
+  assert.deepEqual(await middleOf(map), middle, 'the map kept its size')
+  await buyer.page.mouse.click(middle.x, middle.y)
+  await map.locator('.maplibregl-marker').waitFor()
+  await shot(buyer.page, 'place-spot')
+  await map.getByRole('button', { name: 'Done' }).click()
+  await buyer.page.getByRole('group', { name: 'Location' }).getByRole('button', { name: 'An exact spot' }).waitFor()
+  await buyer.page.getByLabel('Description').fill(WANTED)
+  await button(buyer.page, 'Post').click()
+  await buyer.page.locator('.listing-row', { hasText: WANTED }).waitFor({ timeout: 60_000 })
+  const [[, wanted]] = (await entriesOf(buyerAddress, 'listing')) as unknown as [[string, { entry: { body: any } }]]
+  const spot = wanted.entry.body.location
+  assert.equal(spot.radiusKm, 0, 'an exact spot')
+  assert.match(spot.lat, /^-?\d+\.\d{5}$/, 'to about a metre')
+  assert.ok(kmApart(spot, tapped!) < 0.05, `where the pin was dropped, ${(kmApart(spot, tapped!) * 1000).toFixed(0)} m from the map's middle`)
+  assert.equal(loadMarkets().checkEntry('clothing', 'buyer', 'listing', wanted.entry.body), null, 'it fits the market')
+  // Never asked: the map's own button asks, and the browser's own prompt only on its tap; here the
+  // prompt is refused: one quiet line, and the button goes.
   const { targetInfo } = await buyer.cdp.send('Target.getTargetInfo')
   await buyer.cdp.send('Browser.setPermission', { permission: { name: 'geolocation' }, setting: 'prompt', origin: APP.slice(0, -1), browserContextId: targetInfo.browserContextId! })
   await button(buyer.page, 'New request').click()
-  await where.getByRole('button', { name: 'Use my location' }).waitFor()
-  assert.equal(await where.getByRole('slider').count(), 0, 'no radius before a point')
-  await shot(buyer.page, 'listing-request-location')
-  await where.getByRole('button', { name: 'Use my location' }).click()
-  await where.getByText(NO_LOCATION, { exact: true }).waitFor()
-  assert.equal(await where.getByRole('button').count(), 0, 'refused: the line alone')
-  await shot(buyer.page, 'listing-request-no-location')
+  const asking = await placeScreen(buyer.page, 'Location')
+  await asking.getByRole('button', { name: 'Your location' }).click()
+  await asking.getByText("Your location isn't allowed.", { exact: true }).waitFor()
+  assert.equal(await asking.getByRole('button', { name: 'Your location' }).count(), 0, 'refused: the line alone')
+  await shot(buyer.page, 'place-refused')
+  await asking.getByRole('button', { name: 'Back' }).click()
+  await asking.waitFor({ state: 'detached' })
   await button(buyer.page, 'Back').click()
   await button(buyer.page, 'Back').click()
   // The page closed and opened again, so no seed is held; before the unlock, how many are new, here none, with Open.
@@ -1730,14 +1847,19 @@ test('a listing an older market shaped: its row says Update this listing, and No
   await notice.click()
   await page.getByRole('heading', { name: 'Offer', exact: true }).waitFor()
   // What still fits, filled in: the description, the price, the kind and the contact. Who it's for
-  // and the delivery asked again; the location from the phone, its old area gone with it.
+  // and the delivery asked again; the location set again on its screen, round the phone's kept
+  // point at the field's 2 km, its old area gone with it.
   assert.equal(await page.getByLabel('Description').inputValue(), TROUSERS)
   assert.equal(await page.getByLabel('Price').inputValue(), '25')
   assert.equal(await page.getByLabel('Kind', { exact: true }).inputValue(), 'trousers')
   assert.equal(await page.getByLabel('Contact').inputValue(), '@coats')
   assert.equal(await page.getByRole('group', { name: 'Wearer' }).locator('[aria-pressed=true]').count(), 0)
   assert.equal(await page.getByRole('group', { name: 'Delivery' }).locator('[aria-pressed=true]').count(), 0)
-  await page.getByRole('group', { name: 'Location' }).getByText('Within 2 km of you', { exact: true }).waitFor()
+  await page.getByRole('group', { name: 'Location' }).getByRole('button', { name: 'Choose on the map' }).waitFor()
+  const again = await placeScreen(page, 'Location')
+  await again.getByText('Within 2 km', { exact: true }).waitFor()
+  await again.getByRole('button', { name: 'Done' }).click()
+  await page.getByRole('group', { name: 'Location' }).getByRole('button', { name: 'Within 2 km' }).waitFor()
   await shot(page, 'listing-update')
   // For women: trousers then ask their waist, right after the kind.
   await page.getByRole('group', { name: 'Wearer' }).getByRole('button', { name: 'Women' }).click()
@@ -2215,6 +2337,9 @@ test('the build: its manifest, its service worker in control, installable', asyn
     await page.evaluate(() => navigator.serviceWorker.ready)
     await page.reload()
     assert.ok(await page.evaluate(() => !!navigator.serviceWorker.controller), 'the service worker controls the page')
+    const cached = await page.evaluate(async () => (await Promise.all((await caches.keys()).map(async (name) => (await (await caches.open(name)).keys()).map((r) => r.url)))).flat())
+    assert.ok(cached.some((url) => /\/assets\/index-[\w-]+\.js/.test(url)), "the app's code, precached")
+    assert.deepEqual(cached.filter((url) => /PlaceMap|maplibre/.test(url)), [], "nothing of the map's: it comes with the place screen alone")
     const manifest = await (await fetch(`http://127.0.0.1:${new URL(APP).port}/manifest.webmanifest`)).json()
     assert.deepEqual([manifest.name, manifest.display, manifest.start_url, manifest.icons.length], ['Forest', 'standalone', '/', 3])
     const cdp = await context.newCDPSession(page)

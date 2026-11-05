@@ -15,7 +15,7 @@
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; img-src 'self' blob: https://host.forest.foundation https://t3.storageapi.dev https://reserved-basket-15it-i6omre.t3.storageapi.dev; font-src 'self'; worker-src 'self'; manifest-src 'self'; connect-src 'self' https://verifier.forest.foundation https://host.forest.foundation https://mcp.forest.foundation https://index.forest.foundation; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
+          "value": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; img-src 'self' blob: https://host.forest.foundation https://t3.storageapi.dev https://reserved-basket-15it-i6omre.t3.storageapi.dev; font-src 'self'; worker-src 'self'; manifest-src 'self'; connect-src 'self' https://verifier.forest.foundation https://host.forest.foundation https://mcp.forest.foundation https://index.forest.foundation https://tiles.openfreemap.org; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
         }
       ]
     },

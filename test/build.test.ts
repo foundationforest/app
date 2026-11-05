@@ -1,6 +1,7 @@
 // How the app is built and served: Vercel runs ./standard.sh, then the build; the strict content
 // security policy lets the page reach only its own origin and the services in its one config file,
-// and show photos only from the host, its bucket, and those picked on the device; every screen's
+// the map's tiles among them, and show photos only from the host, its bucket, and those picked on
+// the device; every screen's
 // path is the page, and a missing chunk is a 404, never the page, so a page left open across a
 // deploy reloads; the markets come from the directory, in each market's words, through the browser
 // entry; what the app says is its own line for every code a service answers; the host's credits
@@ -19,7 +20,6 @@ import { files } from '../build/markets.ts'
 import { proofFiles } from '../build/proofs.ts'
 import { INK, PAPER } from '../build/shell.ts'
 import { config } from '../src/config.ts'
-import { placeLine } from '../src/fields/Place.tsx'
 import { rfc3339 } from '../src/fields/Moment.tsx'
 import { kindWords, marketList, marketWords, otherSide, pairOf, pairs, roleWords } from '../src/markets.ts'
 import { PATHS } from '../src/paths.ts'
@@ -37,9 +37,9 @@ test('Vercel installs, then runs ./standard.sh, then the build', () => {
   expect(vercel.outputDirectory).toBe('dist')
 })
 
-test('the CSP: the page reaches its own origin and its verifier, host, connector and index, and nothing else; it shows photos from the host and its bucket, and those picked here', () => {
-  expect(config).toEqual({ app: 'https://app.forest.foundation', verifier: 'https://verifier.forest.foundation', host: 'https://host.forest.foundation', connector: 'https://mcp.forest.foundation', index: 'https://index.forest.foundation' })
-  expect(directive('connect-src')).toEqual(["'self'", config.verifier, config.host, config.connector, config.index])
+test("the CSP: the page reaches its own origin, its verifier, host, connector and index, and the map's tiles, and nothing else; it shows photos from the host and its bucket, and those picked here", () => {
+  expect(config).toEqual({ app: 'https://app.forest.foundation', verifier: 'https://verifier.forest.foundation', host: 'https://host.forest.foundation', connector: 'https://mcp.forest.foundation', index: 'https://index.forest.foundation', tiles: 'https://tiles.openfreemap.org' })
+  expect(directive('connect-src')).toEqual(["'self'", config.verifier, config.host, config.connector, config.index, config.tiles])
   // The host answers a photo with a redirect to its bucket, at either address its FILES_STYLE gives.
   expect(directive('img-src')).toEqual(["'self'", 'blob:', config.host, 'https://t3.storageapi.dev', 'https://reserved-basket-15it-i6omre.t3.storageapi.dev'])
   for (const name of ['default-src', 'style-src', 'font-src', 'worker-src', 'manifest-src']) expect(directive(name), name).toEqual(["'self'"])
@@ -137,11 +137,7 @@ test('a contact opens with a tap: a phone, an email, a link; a handle shows as i
   expect(contactHref('@ada')).toBeUndefined()
 })
 
-test("a place's one line in its form: how far round it reaches from you, after the area when there is one; a moment with its offset", () => {
-  expect(placeLine('', 5)).toBe('Within 5 km of you')
-  expect(placeLine(' Lavapiés ', 2)).toBe('Lavapiés, within 2 km of you')
-  expect(placeLine('', 0), 'radius 0, picked on the slider: the exact spot').toBe('Right where you are')
-  expect(placeLine('Court 3', 0)).toBe('Court 3, right where you are')
+test('a moment with its offset', () => {
   expect(rfc3339('2026-11-02T18:00')).toMatch(/^2026-11-02T18:00:00[+-]\d\d:\d\d$/)
   expect(rfc3339('')).toBeUndefined()
 })

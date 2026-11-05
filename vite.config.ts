@@ -25,6 +25,9 @@ export const standard = [
 /** The markets' browser entry, from the checkout standard.sh builds (markets/ at MARKETS): it takes the files as data and runs no eval. */
 export const marketsEntry = [{ find: /^@foundationforest\/markets\/browser$/, replacement: here('./markets/build/dist/browser.js') }]
 
+/** The map's chunks: the place screen's map with MapLibre (src/fields/PlaceMap.tsx), and MapLibre's worker. */
+export const MAP_CODE = ['assets/PlaceMap-*', 'assets/maplibre-gl-worker-*']
+
 export default defineConfig({
   plugins: [
     react(),
@@ -55,7 +58,9 @@ export default defineConfig({
       workbox: {
         // Precached, and served from there first: the files named by a hash of their content, so a
         // cached copy is always the right one. The proof's worker carries snarkjs; it is one of them.
+        // The map's code (MapLibre, and its worker) is not: it comes with the place screen alone.
         globPatterns: ['assets/**/*.{js,css,woff2}'],
+        globIgnores: [...MAP_CODE],
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
         navigateFallback: null,
         runtimeCaching: [
@@ -65,6 +70,8 @@ export default defineConfig({
           // Named by their SHA-256 (build/proofs.ts), so a cached copy is always the right one. Fetched
           // the first time a proof is made, not at install: most visits make none.
           { urlPattern: /\/proofs\/[0-9a-f]{64}\.(wasm|zkey)$/, handler: 'CacheFirst', options: { cacheName: 'proofs' } },
+          // The map's code, named by a hash of its content too: fetched the first time a place screen opens, then kept.
+          { urlPattern: /\/assets\/(PlaceMap|maplibre-gl-worker)-[\w-]+\.js$/, handler: 'CacheFirst', options: { cacheName: 'map' } },
         ],
       },
     }),

@@ -1,4 +1,4 @@
-// The theme on the page: light or dark as the person chose, else the device's.
+// The theme on the page: light or dark as the person chose, else the device's; and whether it is dark now.
 
 import type { Theme } from './device.ts'
 
@@ -13,4 +13,10 @@ export function applyTheme(theme: Theme): void {
     const own = meta.media.includes('dark') ? 'dark' : 'light'
     meta.content = PAPER[theme === 'device' ? own : theme]
   }
+}
+
+/** Whether the page is dark now: as the person chose, else as the device is. */
+export function isDark(): boolean {
+  const chosen = document.documentElement.dataset.theme
+  return chosen ? chosen === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches
 }
