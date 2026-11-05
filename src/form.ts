@@ -4,12 +4,12 @@
 // last of them; then the rest, in the file's order; contact last, which every listing may hold. A
 // field with `when` applies only while each answer it names holds one of its values (a `many`
 // answer, any of them); an answer changed drops every field that no longer applies, through a chain
-// too. And what still fits of a listing an older market shaped: the field checkEntry names,
-// dropped, until the rest fits.
+// too. And what still fits of an entry an older market shaped, a listing or a review: the field
+// checkEntry names, dropped, until the rest fits.
 
 import type { Body } from '@foundationforest/folders'
 
-import { type Field, type Market, fieldsOf, markets, previewOf } from './markets.ts'
+import { type Field, type Kind, type Market, fieldsOf, markets, previewOf } from './markets.ts'
 
 /** A role's listing fields, each with its name, in the order a form asks them. */
 export function formFields(market: Market, role: string): Array<[string, Field]> {
@@ -59,15 +59,17 @@ export function settled(fields: Array<[string, Field]>, values: Body): Body {
 export const fits = (market: string, role: string, body: Body) => markets.checkEntry(market, role, 'listing', body) === null
 
 /**
- * What still fits of a listing's body in its market today: the field checkEntry names, dropped, one
- * at a time, until the rest fits. Its files stay, which the listing names its photos by.
+ * What still fits of an entry's body in its market today, a listing's unless `kind` says: the field
+ * checkEntry names, dropped, one at a time, until the rest fits; a review's checked against the role
+ * of the profile it is about (`aboutRole`). Its files stay, which a listing names its photos by.
  */
-export function fitting(market: string, role: string, body: Body): Body {
+export function fitting(market: string, role: string, body: Body, kind: Kind = 'listing', aboutRole?: string): Body {
   const now: Body = { ...body }
   for (;;) {
-    const why = markets.checkEntry(market, role, 'listing', now)
+    const why = markets.checkEntry(market, role, kind, now, aboutRole)
     if (!why) return now
-    const named = Object.keys(now).find((name) => name !== 'files' && why.startsWith(`${name} `))
+    // The field it names: first, as most lines say it, or last, for a field the market has no more.
+    const named = Object.keys(now).find((name) => name !== 'files' && (why.startsWith(`${name} `) || why.endsWith(` has no field ${name}`)))
     if (!named) return {}
     delete now[named]
   }

@@ -1,7 +1,8 @@
-// A review, vouch or report about one of the person's profiles, opened from Feedback, as the index
-// counted it: which profile it is on and when, the score big, its text, then the market's review
-// fields it holds, the listing it names (by its preview's first line, as the index keeps it, so even
-// a deleted one shows) and who wrote it. Message them, or Report them, in red.
+// A review, vouch or report about one of the person's profiles, opened from Notifications or its
+// profile's Feedback, as the index counted it: which profile it is on and when, the score big, its
+// text, then the market's review fields it holds, the listing it names (by its preview's first
+// line, as the index keeps it, so even a deleted one shows) and who wrote it. Message them, or
+// Report them, in red.
 
 import { useProfiles, useRated } from '../hooks.ts'
 import { kindWords, markets, pairOf } from '../markets.ts'

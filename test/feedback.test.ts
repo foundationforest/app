@@ -118,7 +118,7 @@ describe('what is new on a profile', () => {
   })
 })
 
-test("the Feedback place: every review, vouch and report about any of the person's profiles, newest first, those after the marks new; no message among them", async () => {
+test("Notifications: every review, vouch and report about any of the person's profiles, newest first, those after the marks new; no message among them", async () => {
   const p = await verifiedWith(w, 'clothing/seller', 'tutoring/tutor')
   const [seller, tutor] = p.profiles as [device.Profile, device.Profile]
   const other = (await verifiedWith(w, 'clothing/buyer', 'tutoring/student')).profiles

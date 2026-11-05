@@ -2,7 +2,7 @@
 // the preview's first, each after the fields its `when` names, the rest after, contact last; a
 // field shown only while the answers it depends on hold, and dropped, through a chain, when they no
 // longer do; contact on every listing, though no market lists it; a choice by its label, else in
-// words; and what still fits of a listing an older market shaped.
+// words; and what still fits of a listing or a review an older market shaped.
 
 import { expect, test } from 'vitest'
 
@@ -82,4 +82,11 @@ test("an old listing: what still fits its market today, kept, its photos' files 
   expect(kept).toEqual({ description: 'A wool coat.', price: { amount: '40', currency: 'EUR' }, photos: [sha], files, kind: 'coat', contact: '@coats' })
   expect(fits('clothing', 'seller', kept)).toBe(true)
   expect(fitting('tutoring', 'tutor', { description: 'Maths.', subjects: ['maths', 'literature'], place: { online: true } }), 'a list with one value gone, dropped whole').toEqual({ description: 'Maths.' })
+  expect(fitting('clothing', 'seller', { description: 'A wool coat.', colour: 'red' }), 'a field the market has no more, dropped, the rest kept').toEqual({ description: 'A wool coat.' })
+})
+
+test("an old review: what still fits, checked against the role of whom it is about", () => {
+  const old = { subject: 'TheirAddress', score: '8', text: 'Quick.', asDescribed: 'yes', speed: 'fast' }
+  expect(fitting('clothing', 'buyer', old, 'review', 'seller')).toEqual({ subject: 'TheirAddress', score: '8', text: 'Quick.', asDescribed: 'yes' })
+  expect(fitting('clothing', 'seller', old, 'review', 'buyer'), 'asDescribed is for reviews of sellers').toEqual({ subject: 'TheirAddress', score: '8', text: 'Quick.' })
 })

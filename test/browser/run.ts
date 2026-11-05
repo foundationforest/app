@@ -8,7 +8,8 @@
 //
 //   ./standard.sh services && npm run test:browser
 //
-//  1. Start, on a device that knows no passkey: two buttons at once, nothing asked; a closed sheet
+//  1. Start, on a device that knows no passkey: two ways in at once, and I have 24 words quietly
+//     under them, nothing asked; a closed sheet
 //     claims neither none nor one; Create a passkey made it for app.forest.foundation; then New to
 //     Forest?, its back and two answers, I already use Forest with the unlock icon, and Yes, I'm new
 //     opening Get verified, nothing asked. Here and on every screen below with a filled button, its
@@ -46,12 +47,12 @@
 //     opens its link with nothing set up, goes through Start, New to Forest? and the face check,
 //     makes the profile on the other side from the compose screen's From, and messages, nothing
 //     asked after Start; the first sees it counted with nothing unlocked, on the card and the inbox
-//     at the top of Profiles, of the profile and of Feedback, never on the bell, Feedback
+//     at the top of Profiles, of the profile and of Notifications, never on the bell, Notifications
 //     holding no message and the profile no Messages line; the page closed and opened again, the
 //     inbox opens every profile's conversations: "1 new message" and Open with its unlock icon, and
 //     New message at the bottom; every inbox opens in one unlock, who it is from with the shield;
 //     the reply in one row, the text box and a round Send with its own icon, each message with its
-//     time and the day above them; Feedback then says "Nothing yet.", its inbox no number; the
+//     time and the day above them; Notifications then says "Nothing yet.", its inbox no number; the
 //     second, their page closed and opened again, reads the reply beside what they sent, and reviews
 //     the tutor from the thread, the slider's thumb hidden until touched, naming the offer.
 //  7. A second browser, with the same passkey, answered from the first, as a phone answers through
@@ -76,6 +77,13 @@
 //     Then a browser signed in through the QR code saves a passkey: Save makes one there, added to
 //     the first, the one in use there, so its next unlock asks it and not the phone; the first lists
 //     three passkeys, and removes that one again.
+//     Then 24 words: Settings' Show my 24 words, its warning, Show asking the passkey though the seed
+//     is held, the standard's words for the seed, and nothing keeping them; another browser, which
+//     lists a Forest of its own (a passkey just made, New to Forest?, back), types them on Start's I
+//     have 24 words: some missing, a quiet line; a word wrong, a red one; then "These words open a
+//     different Forest." with Forget this device in place of Create a passkey, and no passkey made;
+//     forgotten, Create a passkey makes one, and it opens the same profiles; its next unlock shows the
+//     same words; the first lists one passkey more.
 //  9. Clothing, with the index: the first, the page closed and opened again so Post shows its unlock
 //     icon, a moment hidden keeping it so, posts a coat with two photos in one unlock, redrawn on the device as JPEGs no longer
 //     than 1600 pixels, their notes gone, no per to pick; for women, then a coat, and only then one
@@ -91,15 +99,16 @@
 //     reports, and Given lists all three; the seller sees the rating and the dot on the card, "3
 //     new" on the profile's rating line and 1 on its inbox, the bell counting the three and the
 //     inbox the message; the profile's Feedback marks the three, and once seen there they are new
-//     no more, the bell counting nothing; the review opened; the Feedback place lists all that
-//     came, newest first, in full, with no dot and no message, and its inbox opens the messages,
-//     which hold no review.
+//     no more, the bell counting nothing; the review opened; Notifications lists all that came,
+//     newest first, in full, with no dot and no message, and its inbox opens the messages, which
+//     hold no review.
 //     Then a listing an older market shaped, written to the host as the app wrote it before: its
-//     row says Update this listing; opened, what still fits is filled in; posted, it fits, and the
-//     line goes.
-//     Then, for testing, a review of one of the person's own profiles, from their student about
-//     their tutor: the Feedback place shows it first, new, and once shown it is seen, the bell
-//     counting it no more.
+//     row says Update this listing, and Notifications holds a notice for it, the bell counting it;
+//     opened there, what still fits is filled in; posted, it fits, and both go. Then a review an
+//     older market shaped: its notice, Update this review; opened, what still fits; posted, gone.
+//     Then a review of one of the person's own profiles, from their student about their tutor:
+//     refused before the unlock, in one red line, nothing asked. Someone else vouches for the tutor:
+//     Notifications shows it first, new, and once shown it is seen, the bell counting it no more.
 //     Then the AI apps, with services' own mcp and an AI app as services' tests make one (the MCP
 //     SDK's client, mcp/test/setup.ts):
 //  a. its login comes to the connect page: the AI app's name, its redirect's host, the profiles
@@ -107,8 +116,9 @@
 //     reads its profile and writes a listing, which shows on the profile; the device keeps the AI app,
 //     never a key;
 //     Then a whole visit asks exactly once: from a page just opened, post, edit, open messages (by
-//     themselves), message, review from the thread, the note arriving and opening by itself, an AI
-//     app's profile ticked and unticked, and the listing deleted, the page hidden between each;
+//     themselves), message, review from a thread with someone else, the note arriving and opening
+//     by itself, an AI app's profile ticked and unticked, and the listing deleted, the page hidden
+//     between each;
 //  b. Settings' AI apps, between Passkeys and Appearance: the AI app, its day, its one profile, kept
 //     ticked while it is the last; another ticked, one unlock, then one unticked and ticked again
 //     with nothing asked, the AI's profiles following with no new login; Disconnect, nothing asked:
@@ -156,7 +166,7 @@ import { build } from 'vite'
 
 import { b64u, entry, liveContent, nextTime, proofsOf, readFolder, verificationCheck, write } from '../../standard/folders/dist/index.js'
 import { isLocked, openLocked } from '../../standard/folders/dist/locked.js'
-import { mainKey, openingHalf } from '../../standard/keys/dist/index.js'
+import { exportWords, mainKey, openingHalf } from '../../standard/keys/dist/index.js'
 import { checkVerification, stampFromJson } from '../../standard/proofs/dist/index.js'
 import { loadMarkets } from '../../markets/build/dist/index.js'
 import { type Served, serve } from '../../services/mcp/src/server.ts'
@@ -190,6 +200,8 @@ type Phone = { context: BrowserContext; page: Page; cdp: CDPSession; authenticat
 let first: Phone
 let seed: Uint8Array
 let tutor: string
+/** The clothing buyer's profile, another person's. */
+let buyerAt: string
 
 async function shot(page: Page, name: string) {
   if (!shots) return
@@ -293,18 +305,18 @@ async function closed(page: Page) {
   await page.locator('main').waitFor()
 }
 
-/** Feedback opened again and again, so it reads the index each time, until a row says `text`. */
+/** Notifications opened again and again, so it reads the index each time, until a row says `text`. */
 async function untilNotice(page: Page, text: string) {
   const until = Date.now() + 90_000
   for (;;) {
     await button(page, 'Settings').click()
-    await button(page, /Feedback$/).click()
+    await button(page, /Notifications$/).click()
     const row = page.locator('main .rows button.row', { hasText: text })
     try {
       await row.waitFor({ timeout: 5_000 })
       return row
     } catch {
-      if (Date.now() > until) throw new Error(`Feedback never said ${text}`)
+      if (Date.now() > until) throw new Error(`Notifications never said ${text}`)
     }
   }
 }
@@ -552,12 +564,13 @@ after(async () => {
   await services?.stop()
 })
 
-test("Start, on a device that knows no passkey: two buttons at once, nothing asked; a closed sheet claims neither; Create a passkey made it for app.forest.foundation; then New to Forest?, and Yes, I'm new opens Get verified", async () => {
+test("Start, on a device that knows no passkey: two ways in at once, and I have 24 words, nothing asked; a closed sheet claims neither; Create a passkey made it for app.forest.foundation; then New to Forest?, and Yes, I'm new opens Get verified", async () => {
   const { page, counts, cdp, authenticator } = first
   const res = await page.goto(APP)
   assert.equal(res?.headers()['content-security-policy'], csp, 'the page comes with the CSP')
   await button(page, 'Create a passkey').waitFor()
   assert.ok(await button(page, 'I already have one').isVisible(), 'and the sheet, with its QR code, one tap away')
+  assert.match((await button(page, 'I have 24 words').getAttribute('class')) ?? '', /quiet/, 'and the 24 words, quietly, last')
   assert.equal(await button(page, 'Start').count(), 0, 'no sheet first')
   assert.equal(counts.asserted + counts.created, 0, 'nothing asked')
   assert.equal(await iconsInTheirButtonsColor(page), 1, "Create a passkey's unlock icon, in its text color")
@@ -584,7 +597,7 @@ test("Start, on a device that knows no passkey: two buttons at once, nothing ask
   await page.getByRole('heading', { name: 'Get verified' }).waitFor()
   assert.equal(counts.asserted, asked, 'nothing asked')
   await shot(page, 'verify')
-  say("Start: two buttons, nothing asked first; Create a passkey made it for app.forest.foundation; New to Forest?, then Get verified")
+  say("Start: two ways in and I have 24 words, nothing asked first; Create a passkey made it for app.forest.foundation; New to Forest?, then Get verified")
 })
 
 test("back on each setup step: Get verified to New to Forest?, then to Start, which asks for the passkey made alone and comes back to New to Forest?; the ID check to Get verified, even after a payment that failed; the face check's wait to Get verified; a check under way, Start goes straight to Get verified", async () => {
@@ -925,8 +938,8 @@ test('two people: one posts an offer, its price per hour, the place only for ses
   const student = JSON.parse((await kept(second.page))['forest.profiles']!)[0].address as string
 
   // The first: counted with nothing unlocked, on the card, on the inbox at the top of Profiles, of
-  // the profile and of Feedback, never on the bell, which counts reviews; Feedback holds
-  // no message. After the page was closed, its inbox opens every profile's conversations, and one
+  // the profile and of Notifications, never on the bell, which counts reviews; Notifications
+  // holds no message. After the page was closed, its inbox opens every profile's conversations, and one
   // unlock opens every inbox; who it is from; the reply.
   await button(page, 'Back').click()
   await page.locator('button.card', { hasText: 'Tutoring tutor' }).locator('.dot').waitFor({ timeout: 45_000 })
@@ -939,12 +952,12 @@ test('two people: one posts an offer, its price per hour, the place only for ses
   assert.deepEqual(await page.locator('.lines button.link').allTextContents(), ['No reviews yet ›'], 'no Messages line')
   await shot(page, 'profile-message')
   await button(page, 'Back').click()
-  await button(page, /Feedback$/).click()
-  await page.getByRole('heading', { name: 'Feedback' }).waitFor()
+  await button(page, /Notifications$/).click()
+  await page.getByRole('heading', { name: 'Notifications' }).waitFor()
   await page.getByText('Nothing yet.').waitFor()
   assert.equal(await page.locator('main .rows button.row').count(), 0, 'no message row')
   await inbox(page).locator('.count', { hasText: '1' }).waitFor()
-  await shot(page, 'feedback-message')
+  await shot(page, 'notifications-message')
   // The page closed and opened again (the seed dropped), then its inbox: every profile's conversations.
   await closed(page)
   await inbox(page).click()
@@ -997,7 +1010,7 @@ test('two people: one posts an offer, its price per hour, the place only for ses
   await inbox(page).locator('.count').waitFor({ state: 'detached' })
   assert.equal(await page.locator('main .rows button.row').count(), 0, 'nothing yet about the tutor')
   await page.getByText('Nothing yet.').waitFor()
-  await shot(page, 'feedback-none')
+  await shot(page, 'notifications-none')
 
   // The second reads the reply beside what they sent, and reviews the tutor from the thread; their
   // page closed and opened again first, so Open asks.
@@ -1314,9 +1327,103 @@ test('signed in through the QR code: Save a passkey on this device? once; Save m
   say('signed in through the QR code: a passkey saved here, the next unlock asked here')
 })
 
+/** What Your 24 words warns. */
+const WARNING = 'Anyone with these words can act as you. Never type them anywhere but an app you trust.'
+
+/** The 24 words Your 24 words shows, in order, without their numbers. */
+const wordsShown = async (page: Page) => (await page.locator('.words li').allTextContents()).map((t) => t.replace(/^\d+\s*/, '').trim())
+
+test("24 words: Settings shows them after an unlock, the seed held or not, with the warning, and keeps none; another browser types them on Start: refused while it lists a different Forest, until Forget; then a new passkey opens the same profiles, and the first lists it", async () => {
+  const { page, counts } = first
+  await button(page, 'Settings').click()
+  const before = await passkeyRows(page).count()
+  await button(page, 'Show my 24 words').click()
+  await page.getByRole('heading', { name: 'Your 24 words' }).waitFor()
+  await page.getByText(WARNING, { exact: true }).waitFor()
+  const show = button(page, 'Show')
+  assert.ok(await asks(show), 'Show asks the passkey, even with the seed held')
+  assert.equal(await page.locator('.words li').count(), 0, 'no word before the unlock')
+  const asked = counts.asserted
+  await show.click()
+  await page.locator('.words li').nth(23).waitFor()
+  assert.equal(counts.asserted, asked + 1, 'one unlock')
+  const words = await wordsShown(page)
+  assert.equal(words.join(' '), exportWords(seed), "the standard's 24 words for the seed")
+  assert.equal(await button(page, 'Show').count(), 0, 'the words, and nothing to tap but back')
+  await shot(page, 'words')
+  const stored = JSON.stringify({ local: await kept(page), session: await page.evaluate(() => ({ ...sessionStorage })), history: await page.evaluate(() => history.state) })
+  for (let i = 0; i + 3 <= 24; i++) assert.ok(!stored.includes(words.slice(i, i + 3).join(' ')), 'nothing keeps them')
+  await button(page, 'Back').click()
+  await button(page, 'Show my 24 words').click()
+  await button(page, 'Show').waitFor()
+  assert.equal(await page.locator('.words li').count(), 0, 'gone once the screen closed')
+  await button(page, 'Back').click()
+  await button(page, 'Profiles').click()
+  await page.locator('button.card').first().waitFor()
+  const cards = (await page.locator('button.card .named').allTextContents()).sort()
+
+  // Another browser, which lists a Forest of its own: a passkey just made, New to Forest?, and back.
+  const other = await phone()
+  await other.page.goto(APP)
+  await button(other.page, 'Create a passkey').click()
+  await other.page.getByRole('heading', { name: 'New to Forest?' }).waitFor({ timeout: 60_000 })
+  await button(other.page, 'Back').click()
+  await button(other.page, 'Start').waitFor()
+  assert.match((await button(other.page, 'I have 24 words').getAttribute('class')) ?? '', /quiet/, 'on every Start, where a passkey is known too')
+  await button(other.page, 'I have 24 words').click()
+  await other.page.getByRole('heading', { name: 'Your 24 words' }).waitFor()
+  const box = other.page.getByLabel('Your 24 words')
+  const create = button(other.page, 'Create a passkey')
+  assert.ok(await asks(create), 'Create a passkey shows the unlock icon')
+  await shot(other.page, 'words-in')
+  const made = other.counts.created
+  const line = other.page.locator('main .line')
+  // Some missing: a quiet line; a word wrong: a red one; neither makes a passkey.
+  await box.fill(words.slice(0, 23).join(' '))
+  await create.click()
+  await line.getByText('Add all 24 words.', { exact: true }).waitFor()
+  assert.equal(await line.getAttribute('class'), 'line')
+  await box.fill([...words.slice(0, 23), 'forest1'].join(' '))
+  await create.click()
+  await line.getByText('A word is wrong, or in the wrong place.', { exact: true }).waitFor()
+  assert.equal(await line.getAttribute('class'), 'line red')
+  // The person's words, on a browser that lists another Forest: never two seeds on one device.
+  await box.fill(words.join('  ').toUpperCase())
+  await create.click()
+  await line.getByText('These words open a different Forest.', { exact: true }).waitFor()
+  assert.equal(await line.getAttribute('class'), 'line red')
+  assert.equal(await button(other.page, 'Create a passkey').count(), 0, 'Forget this device in its place')
+  assert.equal(other.counts.created, made, 'no passkey made')
+  await shot(other.page, 'words-different')
+  await button(other.page, 'Forget this device').click()
+  await line.waitFor({ state: 'detached' })
+  assert.deepEqual(Object.keys(await kept(other.page)), ['forest.passkeys'], 'forgotten: only the passkeys it knows')
+  await button(other.page, 'Create a passkey').click()
+  await other.page.locator('button.card').first().waitFor({ timeout: 60_000 })
+  assert.equal(other.counts.created, made + 1, 'one passkey made')
+  assert.deepEqual((await other.page.locator('button.card .named').allTextContents()).sort(), cards, 'the same profiles')
+  const there = JSON.stringify({ local: await kept(other.page), session: await other.page.evaluate(() => ({ ...sessionStorage })), history: await other.page.evaluate(() => history.state) })
+  for (let i = 0; i + 3 <= 24; i++) assert.ok(!there.includes(words.slice(i, i + 3).join(' ')), 'nothing keeps them there either')
+  // Its next unlock follows the new passkey's seed entry to the seed: the same words.
+  await closed(other.page)
+  await button(other.page, 'Settings').click()
+  await button(other.page, 'Show my 24 words').click()
+  await button(other.page, 'Show').click()
+  await other.page.locator('.words li').nth(23).waitFor()
+  assert.deepEqual(await wordsShown(other.page), words, 'the same seed')
+  await other.context.close()
+
+  // The first lists one passkey more.
+  await button(page, 'Settings').click()
+  await passkeyRows(page).nth(before).waitFor({ timeout: 30_000 })
+  assert.equal(await passkeyRows(page).count(), before + 1)
+  await button(page, 'Profiles').click()
+  say('24 words: shown after an unlock and kept nowhere; typed in another browser, refused while it lists another Forest, then a passkey there opening the same profiles')
+})
+
 const COAT = 'A wool coat, worn twice.'
 
-test('clothing, with the index: a coat with two photos redrawn on the device, no per, for women, size XL, picked up or shipped, near Lavapiés, $40, listed; a buyer, with no location allowed, sees why a listing needs it; the buyer messages, reviews, vouches and reports; the seller sees the rating, "3 new" on the profile, the bell counting the three and the inbox the message, the three marked in the profile\'s Feedback and seen there; the Feedback place lists them, and no message', async () => {
+test('clothing, with the index: a coat with two photos redrawn on the device, no per, for women, size XL, picked up or shipped, near Lavapiés, $40, listed; a buyer, with no location allowed, sees why a listing needs it; the buyer messages, reviews, vouches and reports; the seller sees the rating, "3 new" on the profile, the bell counting the three and the inbox the message, the three marked in the profile\'s Feedback and seen there; Notifications lists them, and no message', async () => {
   const { page, counts } = first
   // The seller's profile, and the coat.
   await button(page, 'New profile').click()
@@ -1407,6 +1514,7 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   await pickFirst(buyer.page, 'Clothing buyer')
   const buying = (await kept(buyer.page))['forest.profiles']!
   const buyerAddress = JSON.parse(buying)[0].address as string
+  buyerAt = buyerAddress
   await button(buyer.page, 'Not now').click()
   await buyer.page.getByRole('heading', { name: 'Use Forest from your AI' }).waitFor()
   await button(buyer.page, 'Not now').click()
@@ -1564,9 +1672,9 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   await button(page, 'Back').click()
   await button(page, 'Back').click()
 
-  // The Feedback place: all that came to any profile, newest first, the three seen already, so with no
+  // Notifications: all that came to any profile, newest first, the three seen already, so with no
   // dot, and no message; its inbox, counting the message, opens every profile's conversations.
-  await button(page, /Feedback$/).click()
+  await button(page, /Notifications$/).click()
   const rows = page.locator('main .rows button.row')
   await rows.nth(3).waitFor()
   assert.equal(await rows.count(), 4, 'no message row')
@@ -1575,7 +1683,7 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   assert.equal(await rows.nth(0).locator('.said-text').textContent(), 'Sold me the wrong size twice.', 'in full')
   await named(rows.nth(0), 'Clothing seller')
   await inbox(page).locator('.count', { hasText: '1' }).waitFor()
-  await shot(page, 'feedback')
+  await shot(page, 'notifications')
   await closed(page)
   await inbox(page).click()
   await page.getByRole('heading', { name: 'Messages' }).waitFor()
@@ -1583,12 +1691,15 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   assert.equal(await page.locator('.said-chip').count(), 0, 'messages only: no review, vouch or report')
   await button(page, 'Back').click()
   await button(page, 'Profiles').click()
-  say('clothing: two photos redrawn and sent, a review, a vouch and a report; the rating, the dot, "3 new", the bell counting three and the inbox one, the profile\'s Feedback, and the Feedback place')
+  say('clothing: two photos redrawn and sent, a review, a vouch and a report; the rating, the dot, "3 new", the bell counting three and the inbox one, the profile\'s Feedback, and Notifications')
 })
 
 const TROUSERS = 'Linen trousers, worn once.'
 
-test('a listing an older market shaped: its row says Update this listing; opened, what still fits is filled in; posted, it fits and the line is gone', async () => {
+/** The notice Notifications holds for an entry a market outgrew, by what it needs and a line of it. */
+const noticeOf = (page: Page, needs: string, line: string) => page.locator('main .rows button.row', { hasText: needs }).filter({ hasText: line })
+
+test('a listing an older market shaped: its row says Update this listing, and Notifications holds a notice for it, the bell counting it; opened there, what still fits is filled in; posted, it fits and both are gone', async () => {
   const { page } = first
   // Written to the host as the app wrote it before the markets moved: one wearer, a size as text,
   // either for delivery, an area alone for its location.
@@ -1605,7 +1716,18 @@ test('a listing an older market shaped: its row says Update this listing; opened
   await row.getByText('Update this listing', { exact: true }).waitFor()
   assert.equal(await page.locator('.listing-row', { hasText: COAT }).getByText('Update this listing').count(), 0, 'the coat fits')
   await shot(page, 'profile-update')
-  await row.click()
+  await button(page, 'Back').click()
+
+  // Notifications: a notice for it, the listing's first line and its profile, the bell counting it.
+  await button(page, /Notifications$/).click()
+  await page.getByRole('heading', { name: 'Notifications' }).waitFor()
+  const notice = noticeOf(page, 'Update this listing', TROUSERS)
+  await notice.waitFor()
+  await named(notice, 'Clothing seller')
+  await page.locator('.places .count', { hasText: '1' }).waitFor()
+  assert.equal(await page.locator('main .rows button.row', { hasText: 'Update this' }).count(), 1, 'the coat fits: no notice')
+  await shot(page, 'notifications-update')
+  await notice.click()
   await page.getByRole('heading', { name: 'Offer', exact: true }).waitFor()
   // What still fits, filled in: the description, the price, the kind and the contact. Who it's for
   // and the delivery asked again; the location from the phone, its old area gone with it.
@@ -1621,42 +1743,109 @@ test('a listing an older market shaped: its row says Update this listing; opened
   await page.getByRole('group', { name: 'Wearer' }).getByRole('button', { name: 'Women' }).click()
   await page.getByLabel('Waist', { exact: true }).selectOption({ label: 'W30' })
   await button(page, 'Post').click()
-  await page.getByRole('heading', { name: 'Your offers' }).waitFor({ timeout: 60_000 })
-  await page.locator('.listing-row', { hasText: TROUSERS }).waitFor()
-  assert.equal(await page.locator('.listing-row', { hasText: TROUSERS }).getByText('Update this listing').count(), 0, 'it fits now: the line is gone')
+  // Back on Notifications: posted, it fits, so the notice and the bell's count are gone.
+  await page.getByRole('heading', { name: 'Notifications' }).waitFor({ timeout: 60_000 })
+  await notice.waitFor({ state: 'detached', timeout: 30_000 })
+  await page.locator('.places .count').waitFor({ state: 'detached' })
   const body = (await entriesOf(main.address, 'listing')).find(([p]) => p === path)![1].entry.body as any
   assert.equal(loadMarkets().checkEntry('clothing', 'seller', 'listing', body), null, 'it fits the market')
   assert.deepEqual([body.description, body.price, body.kind, body.wearer, body.waist, body.contact, body.location.radiusKm, body.location.area], [TROUSERS, { amount: '25', currency: 'USD' }, 'trousers', ['women'], 'w30', '@coats', 2, undefined])
   assert.deepEqual([body.size, body.delivery], [undefined, undefined], "what didn't fit, gone")
+  await button(page, 'Profiles').click()
+  await page.locator('button.card', { hasText: 'Clothing seller' }).locator('.named').click()
+  await page.locator('.listing-row', { hasText: TROUSERS }).waitFor()
+  assert.equal(await page.locator('.listing-row', { hasText: TROUSERS }).getByText('Update this listing').count(), 0, 'nor on its row')
   await button(page, 'Back').click()
-  say('an old listing: Update this listing on its row, what fits filled in, posted in the market\'s shape today')
+  say("an old listing: Update this listing on its row and in Notifications, what fits filled in, posted in the market's shape today")
+})
+
+const PAID = 'Paid on time, picked it up as agreed.'
+
+test('a review an older market shaped: Notifications holds a notice for it, Update this review; opened, what still fits is filled in; posted, it fits and the notice is gone', async () => {
+  const { page } = first
+  // Written to the host from the seller about the buyer, as an older app might have: whether it
+  // was as described is a field for reviews of sellers only.
+  const main = await mainKey(seed, 'clothing/seller')
+  const path = 'review/0123456789abcdef0123456789abcdef'
+  const old = { subject: buyerAt, score: '8', text: PAID, asDescribed: 'yes' }
+  assert.notEqual(loadMarkets().checkEntry('clothing', 'seller', 'review', old, 'buyer'), null, "it doesn't fit the market today")
+  const view = await readFolder([services.host], main.address, Date.now())
+  const [outcome] = await write([services.host], [entry(main, path, old, nextTime(Date.now(), view, path))])
+  assert.ok(outcome?.results.length === 1 && outcome.results[0]!.ok, 'written')
+
+  await button(page, /Notifications$/).click()
+  const notice = noticeOf(page, 'Update this review', PAID)
+  await notice.waitFor({ timeout: 30_000 })
+  await named(notice, 'Clothing seller')
+  await page.locator('.places .count', { hasText: '1' }).waitFor()
+  await notice.click()
+  await page.getByRole('heading', { name: 'Review', exact: true }).waitFor()
+  await shield(page.locator('.who', { hasText: 'Clothing buyer' })).waitFor()
+  assert.equal(await page.getByLabel('Comment').inputValue(), PAID)
+  assert.equal(await page.locator('.score .big').textContent(), '8')
+  await shot(page, 'review-update')
+  await button(page, 'Post').click()
+  await page.getByRole('heading', { name: 'Notifications' }).waitFor({ timeout: 60_000 })
+  await notice.waitFor({ state: 'detached', timeout: 30_000 })
+  await page.locator('.places .count').waitFor({ state: 'detached' })
+  const body = (await entriesOf(main.address, 'review')).find(([p]) => p === path)![1].entry.body as any
+  assert.equal(loadMarkets().checkEntry('clothing', 'seller', 'review', body, 'buyer'), null, 'it fits the market')
+  assert.deepEqual(body, { subject: buyerAt, score: '8', text: PAID }, "what didn't fit, gone")
+  await button(page, 'Profiles').click()
+  say('an old review: Update this review in Notifications, what fits filled in, posted in the shape today')
 })
 
 const OWN = 'Patient with my own questions.'
+const VOUCH = 'Real, and there every week.'
 
-test("for now, for testing, a review of one of the person's own profiles: from their student, about their tutor; the Feedback place shows it first, new; opened, it is seen", async () => {
-  const { page } = first
+test("no review of one's own profiles: from their student, about their tutor, refused before the unlock in one red line; someone else's vouch shows first in Notifications, new; opened, it is seen", async () => {
+  const { page, counts } = first
   await page.locator('button.card', { hasText: 'Tutoring student' }).locator('.named').click()
   await button(page, 'Review').click()
   await page.getByLabel('Their address').fill(tutor)
-  await shield(page.locator('.who', { hasText: 'Tutoring tutor' })).waitFor()
-  assert.equal(await page.locator('main .line').count(), 0, 'not refused')
+  const line = page.getByText("That's one of your profiles.", { exact: true })
+  await line.waitFor()
+  assert.equal(await line.getAttribute('class'), 'line red')
   const score = page.getByLabel('Score')
   await score.focus()
   await score.press('End')
   await page.getByLabel('Comment').fill(OWN)
-  await shot(page, 'review-own')
+  const asked = counts.asserted
   await button(page, 'Post').click()
-  await button(page, 'Review').waitFor({ timeout: 60_000 })
+  await page.waitForTimeout(1_000)
+  assert.equal(counts.asserted, asked, 'refused before the unlock: nothing asked')
+  assert.equal(await page.locator('main .line').count(), 1, 'said once')
+  assert.equal((await entriesOf((await mainKey(seed, 'tutoring/student')).address, 'review')).length, 0, 'nothing written')
+  await shot(page, 'review-own')
+  await button(page, 'Back').click()
   await button(page, 'Back').click()
 
+  // Someone else, a student, vouches for the tutor.
+  const other = await phone()
+  await newPerson(other)
+  await other.page.getByRole('heading', { name: 'Your first profile' }).waitFor({ timeout: 60_000 })
+  await pickFirst(other.page, 'Tutoring student')
+  await button(other.page, 'Not now').click()
+  await other.page.getByRole('heading', { name: 'Use Forest from your AI' }).waitFor()
+  await button(other.page, 'Not now').click()
+  await other.page.locator('button.card', { hasText: 'Tutoring student' }).locator('.named').click()
+  await button(other.page, 'Review').click()
+  await other.page.getByLabel('Their address').fill(tutor)
+  await shield(other.page.locator('.who', { hasText: 'Tutoring tutor' })).waitFor()
+  assert.equal(await other.page.locator('main .line').count(), 0, 'not refused')
+  await button(other.page, 'No score').click()
+  await other.page.getByLabel('Comment').fill(VOUCH)
+  await button(other.page, 'Post').click()
+  await button(other.page, 'Review').waitFor({ timeout: 60_000 })
+  await other.context.close()
+
   // Counted by the index, it is new: first of what came, with its dot, in full.
-  const row = await untilNotice(page, OWN)
+  const row = await untilNotice(page, VOUCH)
   await row.locator('.dot').waitFor()
   await named(row, 'Tutoring tutor')
   const rows = page.locator('main .rows button.row')
-  assert.equal(await rows.nth(0).textContent().then((t) => t?.includes(OWN)), true, 'the newest first')
-  await shot(page, 'feedback-new')
+  assert.equal(await rows.nth(0).textContent().then((t) => t?.includes(VOUCH)), true, 'the newest first')
+  await shot(page, 'notifications-new')
   // Shown, it is seen: the bell counts it no more.
   await page.locator('.places .count').waitFor({ state: 'detached' })
   await row.click()
@@ -1667,7 +1856,7 @@ test("for now, for testing, a review of one of the person's own profiles: from t
   assert.equal(await rows.locator('.dot').count(), 0, 'new no more')
   await button(page, 'Profiles').click()
   assert.equal(await page.locator('button.card', { hasText: 'Tutoring tutor' }).locator('.dot').count(), 0, 'nor on its card')
-  say("a review of one's own profile, for testing: posted, new in the Feedback place, seen once shown")
+  say("one's own profile: refused before the unlock; someone else's vouch, new in Notifications, seen once shown")
 })
 
 type AiApp = Awaited<ReturnType<typeof aiApp>>
@@ -1696,6 +1885,12 @@ async function aiLogin(): Promise<AiApp> {
  * the AI app's redirect: no page answers there, since the AI app is the test's own client.
  */
 const backToTheAiApp = (page: Page) => page.waitForRequest((r) => r.url().startsWith(REDIRECT), { timeout: 60_000 }).then((r) => new URL(r.url()).searchParams.get('code')!)
+
+/** The app opened again after the AI app's redirect, which loads nowhere here: once its error page is in, so it never cuts the app's own load short. */
+async function backToTheApp(page: Page) {
+  await page.waitForURL((url) => url.protocol === 'chrome-error:', { waitUntil: 'commit', timeout: 30_000 })
+  await page.goto(APP)
+}
 
 /** The profiles' checkboxes, by their words, and whether each is ticked. */
 const ticks = async (page: Page) => Object.fromEntries(await Promise.all((await page.getByRole('checkbox').all()).map(async (c) => [await c.textContent(), await c.getAttribute('aria-checked')])))
@@ -1727,7 +1922,7 @@ test("an AI app's login: the connect page, its name and its redirect's host, the
   const profile = await tool(ai, 'read', { label: 'tutoring/tutor', path: 'profile' })
   assert.deepEqual([profile.body.market, profile.body.role], ['tutoring', 'tutor'])
   await tool(ai, 'write', { label: 'tutoring/tutor', path: 'listing/by-the-ai', body: lesson(BY_THE_AI) })
-  await page.goto(APP)
+  await backToTheApp(page)
   await page.locator('button.card', { hasText: 'Tutoring tutor' }).locator('.named').click()
   await page.locator('.listing-row', { hasText: AI_ROW }).waitFor()
   await shot(page, 'profile-ai-listing')
@@ -1785,9 +1980,12 @@ test('a whole visit asks exactly once: post, edit, message, open messages, revie
   await button(page, 'Send').click()
   await page.locator('.said.mine', { hasText: VISIT_NOTE }).waitFor({ timeout: 60_000 })
   await away(page)
-  // Review, from the thread.
+  // Review, from a thread: the tutor's with the other person's student, never one of their own.
+  await button(page, 'Back').click()
+  await page.locator('button.row', { hasText: YES }).filter({ hasText: 'Tutoring student' }).click()
+  await page.getByLabel('Reply').waitFor()
   await button(page, 'Review').click()
-  await shield(page.locator('.who', { hasText: 'Tutoring tutor' })).waitFor()
+  await shield(page.locator('.who', { hasText: 'Tutoring student' })).waitFor()
   const score = page.getByLabel('Score')
   await score.focus()
   await score.press('End')
@@ -1880,7 +2078,7 @@ test('a new phone at a connect page, nothing set up: I already have one first; t
   const login = await aiLogin()
   await p.page.goto(login.app.authorization!.href)
   await button(p.page, 'I already have one').waitFor()
-  assert.deepEqual((await p.page.getByRole('button').allTextContents()).map((t) => t.trim()), ['I already have one', 'Create a passkey'], 'I already have one, the primary, first')
+  assert.deepEqual((await p.page.getByRole('button').allTextContents()).map((t) => t.trim()), ['I already have one', 'Create a passkey', 'I have 24 words'], 'I already have one, the primary, first')
   assert.match((await button(p.page, 'I already have one').getAttribute('class')) ?? '', /primary/)
   await shot(p.page, 'start-connecting')
   await button(p.page, 'Create a passkey').click()

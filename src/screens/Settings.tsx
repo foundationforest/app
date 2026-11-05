@@ -3,29 +3,28 @@
 // their passkeys, every one that opens their profiles alike: Your first passkey, then each added
 // after it (a backup, as the standard names it), by its password manager's name where this device
 // knows it, else the day it was added, with Remove (tapped twice, then one unlock, though a row shows
-// no unlock icon); with one alone, a quiet line on why a second; and + Add a passkey; all read with
-// nothing unlocked; their AI apps, each with the day it connected and how many profiles
-// it acts for, and + Connect an AI; the appearance, the device's, light or dark; and Forget this
-// device, in red. When a profile entry lists an access key this device doesn't know (made in
-// another browser with the same seed), one row more, Find AI apps, finds them from the seed: one
-// unlock, though a row shows no unlock icon.
+// no unlock icon); with one alone, a quiet line on why a second; + Add a passkey; all read with
+// nothing unlocked; and Show my 24 words, which opens Your 24 words (Words.tsx); their AI apps,
+// each with the day it connected and how many profiles it acts for, and + Connect an AI; the
+// appearance, the device's, light or dark; and Forget this device, in red (forget.ts). When a
+// profile entry lists an access key this device doesn't know (made in another browser with the
+// same seed), one row more, Find AI apps, finds them from the seed: one unlock, though a row shows
+// no unlock icon.
 
 import { type ReactNode, useState } from 'react'
 
 import { config } from '../config.ts'
-import { type Check, type Theme, backupNames, checks as heldChecks, forget, knownKeys, passkey, saveTheme, theme as savedTheme } from '../device.ts'
+import { type Check, type Theme, backupNames, checks as heldChecks, knownKeys, passkey, saveTheme, theme as savedTheme } from '../device.ts'
 import { removeBackup } from '../flows/backups.ts'
 import { findConnections } from '../flows/connections.ts'
-import { drop } from '../held.ts'
+import { forgetDevice } from '../forget.ts'
 import { backupsChanged, useBackups, useCards, useConnections, useProfiles } from '../hooks.ts'
-import { letGo } from '../opened.ts'
 import { withSeed } from '../passkey.ts'
-import { letGoRated } from '../rated.ts'
 import { applyTheme } from '../theme.ts'
 import { DarkIcon, DeviceIcon, LightIcon, Line, type Place, Places, Spinner, Top, Verified, day, useAction } from '../ui.tsx'
 import { WHY_SECOND } from './SecondPasskey.tsx'
 
-type Props = { go: (to: Place) => void; onForgot: () => void; onIdCheck: () => void; onConnectAi: () => void; onAiApp: (address: string) => void; onAddPasskey: () => void }
+type Props = { go: (to: Place) => void; onForgot: () => void; onIdCheck: () => void; onConnectAi: () => void; onAiApp: (address: string) => void; onAddPasskey: () => void; onWords: () => void }
 
 const profileCount = (n: number) => `${n} profile${n === 1 ? '' : 's'}`
 
@@ -35,7 +34,7 @@ const THEMES: Array<[Theme, string, () => ReactNode]> = [
   ['dark', 'Dark', DarkIcon],
 ]
 
-export function Settings({ go, onForgot, onIdCheck, onConnectAi, onAiApp, onAddPasskey }: Props) {
+export function Settings({ go, onForgot, onIdCheck, onConnectAi, onAiApp, onAddPasskey, onWords }: Props) {
   const list = useProfiles()
   const [found, setFound] = useState(0)
   const cards = useCards(list, found)
@@ -111,6 +110,7 @@ export function Settings({ go, onForgot, onIdCheck, onConnectAi, onAiApp, onAddP
         {backups?.length === 0 && <p className="line">{WHY_SECOND}</p>}
         <Line note={remove.note} />
         <button onClick={onAddPasskey}>+ Add a passkey</button>
+        <button onClick={onWords}>Show my 24 words</button>
       </section>
       <section className="stack">
         <h2>AI apps</h2>
@@ -152,11 +152,7 @@ export function Settings({ go, onForgot, onIdCheck, onConnectAi, onAiApp, onAddP
           className={forgetting ? 'danger solid' : 'danger'}
           onClick={() => {
             if (!forgetting) return setForgetting(true)
-            forget()
-            drop()
-            letGo()
-            letGoRated()
-            applyTheme('device')
+            forgetDevice()
             onForgot()
           }}
         >
