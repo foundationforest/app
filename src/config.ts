@@ -13,6 +13,8 @@ export type Config = {
   connector: string
   /** The index, which rates each profile: the app reads what it says of the person's own. */
   index: string
+  /** The map's tiles, OpenFreeMap: its styles, light and dark, at /styles/positron and /styles/dark, on the place screen alone. */
+  tiles: string
 }
 
 const OURS: Config = {
@@ -21,6 +23,7 @@ const OURS: Config = {
   host: 'https://host.forest.foundation',
   connector: 'https://mcp.forest.foundation',
   index: 'https://index.forest.foundation',
+  tiles: 'https://tiles.openfreemap.org',
 }
 
 const given = import.meta.env?.VITE_FOREST_CONFIG as string | undefined

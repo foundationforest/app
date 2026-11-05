@@ -154,6 +154,22 @@ export const InboxIcon = () => (
   </Icon>
 )
 
+/** A place: a pin, filled on the map where an exact spot is. */
+export const PinIcon = ({ filled = false }: { filled?: boolean }) => (
+  <Icon className={filled ? 'pin' : undefined}>
+    <path d="M12 21.5s-7-6.3-7-11.5a7 7 0 0 1 14 0c0 5.2-7 11.5-7 11.5z" fill={filled ? 'currentColor' : 'none'} />
+    <circle cx="12" cy="10" r="2.5" {...(filled && { fill: 'var(--paper)', stroke: 'none' })} />
+  </Icon>
+)
+/** Where the device is: the map's own button, which centres it there. */
+export const LocateIcon = () => (
+  <Icon>
+    <circle cx="12" cy="12" r="7" />
+    <circle cx="12" cy="12" r="2" fill="currentColor" />
+    <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+  </Icon>
+)
+
 /** The way into messages, at a screen's top right: the inbox tray, always there, and how many are new once any is. An icon-only button shows its own icon. */
 export function Inbox({ count, onOpen }: { count: number; onOpen: () => void }) {
   return (

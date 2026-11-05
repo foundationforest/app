@@ -1026,3 +1026,154 @@ button.solid .icon {
 .aside .count {
   position: static;
 }
+
+/* A place: one row in the form, its words or Choose on the map; tapped, its screen over the form,
+   the kind of place, the map filling what is left, then the radius or the exact spot's line, the
+   name and Done. */
+button.place-row {
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.placing {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--paper);
+}
+
+.placing:focus {
+  outline: none;
+}
+
+.placing-screen {
+  width: 100%;
+  max-width: 32rem;
+  min-height: 100%;
+  margin: 0 auto;
+  padding: max(12px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.map-box {
+  position: relative;
+  flex: 1 0 280px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--paper-2);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.map-box .map {
+  position: absolute;
+  inset: 0;
+}
+
+.map-box .locate {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 3;
+  width: var(--touch);
+  padding: 0;
+}
+
+/* The area's radius, or the exact spot's line, in the same room: the map keeps its size between them. */
+.place-detail {
+  display: grid;
+}
+
+.place-detail > * {
+  grid-area: 1 / 1;
+}
+
+.place-detail > .gone {
+  visibility: hidden;
+}
+
+.within {
+  display: grid;
+  gap: 4px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.placing .hint {
+  color: var(--ink-2);
+}
+
+/* What MapLibre's own stylesheet would set, and no more: the canvas, the pin, the attribution in
+   full, in the app's own words' look. The map takes every gesture made on it. */
+.maplibregl-canvas {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+.maplibregl-canvas-container,
+.maplibregl-canvas {
+  touch-action: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.maplibregl-canvas-container.maplibregl-interactive {
+  cursor: grab;
+}
+
+.maplibregl-canvas-container.maplibregl-interactive:active {
+  cursor: grabbing;
+}
+
+.maplibregl-marker {
+  position: absolute;
+  top: 0;
+  left: 0;
+  will-change: transform;
+}
+
+.map-pin {
+  color: var(--dot);
+  cursor: grab;
+}
+
+.map-pin .icon {
+  display: block;
+  width: 36px;
+  height: 36px;
+}
+
+.maplibregl-ctrl-bottom-right {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.maplibregl-ctrl {
+  pointer-events: auto;
+}
+
+.maplibregl-ctrl-attrib {
+  padding: 1px 6px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--ink-2);
+  background: color-mix(in srgb, var(--paper) 80%, transparent);
+  border-top-left-radius: 6px;
+}
+
+.maplibregl-ctrl-attrib a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.maplibregl-ctrl-attrib-button {
+  display: none;
+}

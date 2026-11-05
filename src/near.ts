@@ -1,10 +1,10 @@
-// Where a listing's place is centred (the markets manual's Types, place): near the person, never on
-// them. The first time the device posts from somewhere, the app moves its spot once, about 0.2 to
-// 0.6 km in a random direction, and keeps that point on the device (device.ts); a listing from
-// within 0.8 km of a kept point is centred on it again. So listings from one place share one centre
-// and never average out to the person's home, and their real spot stays inside even a 1 km circle.
-// Radius 0, an exact spot, is where the device is: with no map, the one spot a person can mean. And
-// the radii a place's slider offers.
+// Where a listing's place is centred (the markets manual's Types, place). An area: near the spot the
+// person puts it on, never on it. The first time an area is put somewhere, the app moves that spot
+// once, about 0.2 to 0.6 km in a random direction, and keeps that point on the device (device.ts);
+// an area put within 0.8 km of a kept point is centred on it again. So listings from one place
+// share one centre and never average out to the person's home, and the spot they put it on stays
+// inside even a 1 km circle. An exact spot is exactly where the person drops the pin, kept nowhere.
+// And the radii an area's slider offers, and the ring the map draws for it.
 
 import { type Point, keepPoint, points } from './device.ts'
 
@@ -19,8 +19,8 @@ export const MOVED = { least: 0.2, most: 0.6 }
 /** A listing from within this many kilometres of a kept centre is centred on it again. */
 export const SAME_PLACE_KM = 0.8
 
-/** The radii a place's slider offers, in kilometres: 0, that exact spot, then up to 50. */
-export const RADII = [0, 1, 2, 3, 5, 10, 15, 20, 30, 50]
+/** The radii an area's slider offers, in kilometres, up to 50. */
+export const RADII = [1, 2, 3, 5, 10, 15, 20, 30, 50]
 
 const EARTH_KM = 6371
 const rad = (deg: number) => (deg * Math.PI) / 180
@@ -53,8 +53,8 @@ function moved(spot: Spot, km: number, bearing: number): Spot {
 }
 
 /**
- * The centre of a listing's place, for the device at `spot`: the point kept near it, else a new one,
- * moved once and kept. To 3 decimals, about 100 m, since it is rough anyway.
+ * The centre of an area put on `spot`: the point kept near it, else a new one, moved once and kept.
+ * To 3 decimals, about 100 m, since it is rough anyway.
  */
 export function pointFor(spot: Spot, random: () => number = Math.random): Point {
   const kept = points().find((p) => kmBetween(spotOf(p), spot) <= SAME_PLACE_KM)
@@ -66,8 +66,14 @@ export function pointFor(spot: Spot, random: () => number = Math.random): Point 
   return point
 }
 
-/** The device's spot itself, for radius 0: to 5 decimals, about a metre. */
+/** An exact spot, where the pin is: to 5 decimals, about a metre. */
 export const exactPoint = (spot: Spot): Point => pointOf(spot, 5)
 
-/** The radii a place's slider offers, with the one its field starts at. */
+/** The radii an area's slider offers, with the one its field starts at. */
 export const radiusSteps = (start: number): number[] => [...new Set([...RADII, start])].sort((a, b) => a - b)
+
+/** The edge of the circle `km` round `centre`, as the map draws it: `sides` points, [lon, lat], the first again at the end. */
+export function ring(centre: Spot, km: number, sides = 64): Array<[number, number]> {
+  const points = Array.from({ length: sides }, (_, i) => moved(centre, km, (i / sides) * 2 * Math.PI))
+  return [...points, points[0]!].map((p) => [p.lon, p.lat])
+}
