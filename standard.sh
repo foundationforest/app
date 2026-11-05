@@ -12,8 +12,8 @@
 #               the reference app (mcp/test/app.ts) checks that both write the same.
 #
 # `./standard.sh services` also readies services' own verifier, host, index and mcp to run on this
-# machine, as services' loop runs them (its own standard.sh, then `npm ci` in each): the browser test
-# needs them.
+# machine, as services' end-to-end test runs them (its own standard.sh, then `npm ci` in each): the
+# browser test needs them.
 # Moving a pin is a one-line change to its file. Needs git, Node 22.18 or later, and the network.
 set -euo pipefail
 cd "$(dirname "$0")"

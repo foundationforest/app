@@ -61,7 +61,7 @@ const asTheConnectorReads = (pointer: Pointer) => readConnection(pointer, w.conn
 /** The keys a profile entry lists now. */
 const keysOf = async (address: string) => (await readFolder([w.host], address, Date.now())).keys
 
-/** The reference app, with the person's seed, its connection folders funded from the wallet as the loop's are. */
+/** The reference app, with the person's seed, its connection folders funded from the wallet as services' end-to-end test funds its own. */
 const reference = (seed: Uint8Array) => {
   const app: App = new App({ seed, hosts: [w.host], pay: (folder) => app.fund(folder, 1) })
   return app

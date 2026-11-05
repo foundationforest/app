@@ -3,10 +3,10 @@
 //
 // 1. the connection folder, named by a key made at random (keys/'s newAccessKey), listed nowhere;
 //    for each profile ticked, an access key made the same way and its access entry; the folder
-//    funded from the wallet with one credit, as the loop's app pays (its `pay`), then written: its
-//    profile entry, which holds only its hosts, its `connection` entry, the AI app's name and a
-//    random secret, and the access entries, each locked to the folder's own open key and the
-//    connector's, which it reads at the connector's /open-key;
+//    funded from the wallet with one credit, as the app in services' end-to-end test pays (its
+//    `pay`), then written: its profile entry, which holds only its hosts, its `connection` entry,
+//    the AI app's name and a random secret, and the access entries, each locked to the folder's own
+//    open key and the connector's, which it reads at the connector's /open-key;
 // 2. then each key listed in its profile entry with every switch, and its note;
 // 3. the pointer to the folder, locked to the connector's open key alone, naming the request, and
 //    where the browser goes: the connector's /connected, with the request and the pointer.
