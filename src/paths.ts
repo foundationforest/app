@@ -10,7 +10,7 @@ export const PATHS = {
   received: '/received',
   listing: '/listing',
   review: '/review',
-  feedback: '/feedback',
+  notifications: '/notifications',
   messages: '/messages',
   thread: '/thread',
   message: '/message',
@@ -19,4 +19,5 @@ export const PATHS = {
   'connect-ai': '/connect-ai',
   ai: '/ai',
   'add-passkey': '/passkey',
+  words: '/words',
 } as const

@@ -5,10 +5,12 @@
 // No score makes it a vouch, "I know they're real". The market's review fields for their role,
 // which of their listings it is about, a comment, and Post. A red Report at the bottom turns it
 // into a report: a comment only, posted in red. Before the unlock, the app checks it as for any
-// entry: they are on the other side of the same market, and not this profile (flows/entries.ts); a
-// refusal shows once. An edit keeps its kind, and has Delete.
+// entry: they are on the other side of the same market, and none of the person's own profiles
+// (flows/entries.ts); a refusal shows once. An edit keeps its kind, and has Delete; a review an older
+// market shaped opens with what still fits once who it is about is known (form.ts), so it is posted
+// again in the market's shape today.
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { type Body, publicKeyFromAddress } from '@foundationforest/folders'
 
@@ -17,6 +19,7 @@ import { type Profile, passkey } from '../device.ts'
 import { Field } from '../fields/Field.tsx'
 import type { Picked } from '../fields/Photos.tsx'
 import { type Posted, type Subject, addressIn, check, newPath, post, subjectOf, unpost } from '../flows/entries.ts'
+import { fitting } from '../form.ts'
 import { useProfiles } from '../hooks.ts'
 import { type Kind, fieldsOf, kindWords, markets, pairOf } from '../markets.ts'
 import { withSeed } from '../passkey.ts'
@@ -72,6 +75,19 @@ export function Review({ me, subject: given, edit, report = false, onDone, onBac
     )
     return () => void (live = false)
   }, [address])
+
+  // A review its market outgrew: what still fits, once, as soon as the role of whom it is about is known.
+  const fitted = useRef(false)
+  useEffect(() => {
+    if (!edit || edit.kind !== 'review' || !subject || fitted.current) return
+    fitted.current = true
+    const fit = fitting(name, role, edit.body, 'review', subject.role)
+    if (Object.keys(fit).length === Object.keys(edit.body).length) return
+    setValues(Object.fromEntries(Object.entries(fit).filter(([n]) => !SHARED.includes(n))))
+    setScore(typeof fit.score === 'string' ? fit.score : '')
+    setTheir(typeof fit.listing === 'string' ? fit.listing : '')
+    setText(typeof fit.text === 'string' ? fit.text : '')
+  }, [subject])
 
   const send = useAction(async () => {
     // Refused already, under the box: nothing more to say.

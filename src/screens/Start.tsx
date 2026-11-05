@@ -6,7 +6,9 @@
 // sheet says neither: "No passkey chosen.", and the same ask again. Reached from a connect page, I
 // already have one comes first, the primary, and Create a passkey under it: an AI app's login often
 // opens in a browser that has never seen this app (a fresh tab, the AI app's sign-in sheet), where
-// the person almost always has a passkey already, and a second would be a second Forest.
+// the person almost always has a passkey already, and a second would be a second Forest. Last, on
+// every Start, a quiet I have 24 words, which opens a seed from its words (ImportWords.tsx): it opens
+// a Forest that is there already, never a second one, so it shows where Create a passkey doesn't.
 //
 // Every button here asks: nobody is in yet, so Start drops any seed still held (held.ts) as it opens.
 // The seed a passkey gives is held from then, as after any unlock, so New to Forest?, the
@@ -31,9 +33,9 @@ import { Line, Spinner, UnlockIcon, useAction } from '../ui.tsx'
 /** How the passkey that let the person in came: just made here (with its manager's AAGUID when it sent one), or from another device. */
 export type How = { made?: { aaguid?: string }; elsewhere?: boolean }
 
-type Props = { onEntered: (entered: Entered, passkey: string, how: How) => void; connecting?: boolean }
+type Props = { onEntered: (entered: Entered, passkey: string, how: How) => void; onWords: () => void; connecting?: boolean }
 
-export function Start({ onEntered, connecting = false }: Props) {
+export function Start({ onEntered, onWords, connecting = false }: Props) {
   // Read at each draw: a passkey made here is known from the moment it answers (flows/start.ts).
   const known = passkeys()
   useEffect(drop, [])
@@ -92,6 +94,9 @@ export function Start({ onEntered, connecting = false }: Props) {
           </button>
         </>
       )}
+      <button className="quiet" disabled={busy} onClick={onWords}>
+        I have 24 words
+      </button>
     </main>
   )
 }

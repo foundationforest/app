@@ -1,13 +1,15 @@
 // The screens, and the way between them. Start, until a person is verified here: a passkey that
 // opens a seed with no stamp and nothing under way goes to New to Forest? first, then Get verified;
 // one that answered from another device, letting a verified person in, to Save a passkey on this
-// device?, once. Then a person with no profile yet makes their first, and once it is made, Add a
-// second passkey, then Use Forest from your AI; then Profiles, Feedback and Settings, and from them
-// New profile, every profile's messages (the inbox at the top of Profiles and Feedback), a profile,
-// its messages, its Feedback, a review received, a listing, Review someone, a thread, a new
-// message, the ID check, an AI app, Connect an AI, or Add a passkey. Every setup step has a back:
-// New to Forest? to Start, Get verified to New to Forest? (or Start, once a check is under way),
-// Your first profile to Profiles.
+// device?, once. Start's I have 24 words opens a seed from its words, and the person is in as from
+// Start (back to Start). Then a person with no profile yet makes their first, and once it is made,
+// Add a second passkey, then Use Forest from your AI; then Profiles, Notifications and Settings,
+// and from them New profile, every profile's messages (the inbox at the top of Profiles and
+// Notifications), what a market outgrew, to update, a profile, its messages, its Feedback, a
+// review received, a listing, Review someone, a thread, a new message, the ID check, an AI app,
+// Connect an AI, Add a passkey, or Your 24 words. Every setup step has a back: New to Forest? to
+// Start, Get verified to New to Forest? (or Start, once a check is under way), Your first profile
+// to Profiles.
 // Each screen the person can come back to has its own path, so a reload opens on it and the phone's
 // back goes back; what a screen is about (a profile's address, a thread, an entry being edited, the
 // market picked on New profile) is kept in the page's history, never in its path, which a host's
@@ -37,7 +39,8 @@ import { Message } from './screens/Message.tsx'
 import { Messages } from './screens/Messages.tsx'
 import { NewHere } from './screens/NewHere.tsx'
 import { NewProfile } from './screens/NewProfile.tsx'
-import { Feedback } from './screens/Feedback.tsx'
+import { Notifications } from './screens/Notifications.tsx'
+import { ImportWords } from './screens/ImportWords.tsx'
 import { Listing } from './screens/Listing.tsx'
 import { Profile } from './screens/Profile.tsx'
 import { Profiles } from './screens/Profiles.tsx'
@@ -51,10 +54,12 @@ import { type How, Start } from './screens/Start.tsx'
 import { Thread } from './screens/Thread.tsx'
 import { UseAi } from './screens/UseAi.tsx'
 import { Verify } from './screens/Verify.tsx'
+import { Words } from './screens/Words.tsx'
 import { NewVersion, type Place } from './ui.tsx'
 
 type Screen =
   | { at: 'start' }
+  | { at: 'import-words' }
   | { at: 'new-here'; id: string; step: Step; aaguid?: string }
   | { at: 'save-passkey' }
   | { at: 'verify'; fromStart: boolean; id: string; step: Step; aaguid?: string }
@@ -65,7 +70,7 @@ type Screen =
   | { at: 'received'; address: string; entry: string }
   | { at: 'listing'; address: string; edit?: Posted }
   | { at: 'review'; address: string; subject?: string; edit?: Posted; report?: boolean }
-  | { at: 'feedback' }
+  | { at: 'notifications' }
   | { at: 'messages'; only?: string }
   | { at: 'thread'; mine: string; them: string }
   | { at: 'message'; to?: string }
@@ -76,6 +81,7 @@ type Screen =
   | { at: 'use-ai' }
   | { at: 'second-passkey' }
   | { at: 'add-passkey'; offered?: boolean }
+  | { at: 'words' }
   | { at: 'back' }
 
 const PATHS: Partial<Record<Screen['at'], string>> = SCREEN_PATHS
@@ -129,8 +135,8 @@ function here(): Screen {
       return { at: 'new', ...(isText(now.market) && { market: now.market }) }
     case '/settings':
       return { at: 'settings' }
-    case '/feedback':
-      return { at: 'feedback' }
+    case '/notifications':
+      return { at: 'notifications' }
     // A profile's messages, or with none named every profile's.
     case '/messages':
       return { at: 'messages', ...(isText(now.only) && { only: now.only }) }
@@ -138,6 +144,8 @@ function here(): Screen {
       return { at: 'message', ...(isText(now.to) && { to: now.to }) }
     case '/passkey':
       return { at: 'add-passkey', ...(now.offered && { offered: true }) }
+    case '/words':
+      return { at: 'words' }
   }
   if (path === '/profile' && isText(now.address)) return { at: 'profile', address: now.address }
   if (path === '/profile-feedback' && isText(now.address)) return { at: 'profile-feedback', address: now.address }
@@ -252,7 +260,9 @@ function Screens() {
     case 'back':
       return <Back />
     case 'start':
-      return <Start connecting={connecting()} onEntered={entered} />
+      return <Start connecting={connecting()} onEntered={entered} onWords={() => go({ at: 'import-words' })} />
+    case 'import-words':
+      return <ImportWords onEntered={entered} onBack={() => go({ at: 'start' })} />
     case 'new-here': {
       const { id, step, aaguid } = screen
       return (
@@ -327,12 +337,13 @@ function Screens() {
           {(me) => <Review me={me} {...(screen.edit && { edit: screen.edit })} {...(screen.subject && { subject: screen.subject })} {...(screen.report && { report: true })} onDone={back} onBack={back} />}
         </For>
       )
-    case 'feedback':
+    case 'notifications':
       return (
-        <Feedback
+        <Notifications
           go={place}
           onMessages={() => go({ at: 'messages' }, true)}
           onReceived={(address, entry) => go({ at: 'received', address, entry }, true)}
+          onUpdate={(address, edit) => (edit.kind === 'listing' ? go({ at: 'listing', address, edit }, true) : review(address, { edit }))}
         />
       )
     case 'messages':
@@ -350,6 +361,7 @@ function Screens() {
           onConnectAi={() => go({ at: 'connect-ai' }, true)}
           onAiApp={(address) => go({ at: 'ai', address }, true)}
           onAddPasskey={() => go({ at: 'add-passkey' }, true)}
+          onWords={() => go({ at: 'words' }, true)}
         />
       )
     case 'connect':
@@ -365,6 +377,8 @@ function Screens() {
     case 'add-passkey':
       // From Add a second passkey: on to Use Forest from your AI, and back to the offer. From Settings: back there.
       return screen.offered ? <AddPasskey onDone={() => go({ at: 'use-ai' })} onBack={() => go({ at: 'second-passkey' })} /> : <AddPasskey onDone={back} onBack={back} />
+    case 'words':
+      return <Words onBack={back} />
   }
 }
 

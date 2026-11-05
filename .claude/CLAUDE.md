@@ -30,7 +30,8 @@ it.
   entries is a list.
 - review, vouch, report: the markets' kinds, each about one profile.
 - feedback: what people say about a profile, its reviews, vouches and reports. A word, never a
-  kind. On screen, Feedback is where they show together: the place, and a profile's.
+  kind. On screen, a profile's Feedback is where they show together; Notifications, the bell's
+  place, shows them for every profile, with what a market outgrew.
 - post: only the everyday verb, to post a listing, a review, a vouch or a report.
 
 ## How to work

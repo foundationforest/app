@@ -778,6 +778,28 @@ button:focus-visible {
   font-size: 14px;
 }
 
+/* Your 24 words: numbered, in two columns. */
+.words {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px 16px;
+}
+
+.words li {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.words li .quiet-text {
+  min-width: 1.5em;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
 .said-text {
   color: var(--ink);
   white-space: pre-wrap;
@@ -995,7 +1017,7 @@ button.solid .icon {
   pointer-events: none;
 }
 
-/* Feedback: a profile's new messages, in the ink, with how many; a review's text in full. */
+/* Notifications: a review's text in full; a profile's new messages, in the ink, with how many. */
 .two > .said-text {
   white-space: pre-wrap;
   overflow: visible;

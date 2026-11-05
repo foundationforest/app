@@ -10,7 +10,7 @@
 
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 
-import { useHeld, useNews, useProfiles, useRated } from './hooks.ts'
+import { useHeld, useNews, useOutgrown, useProfiles, useRated } from './hooks.ts'
 import { marketWords, pairOf } from './markets.ts'
 import type { Check } from './services/verifier.ts'
 import { Reloading } from './version.ts'
@@ -282,26 +282,31 @@ export function Top({ onBack, children, right }: { onBack?: () => void; children
   )
 }
 
-export type Place = 'profiles' | 'feedback' | 'settings'
+export type Place = 'profiles' | 'notifications' | 'settings'
 
 const PLACES: Array<[Place, string, () => ReactNode]> = [
   ['profiles', 'Profiles', ProfilesIcon],
-  ['feedback', 'Feedback', BellIcon],
+  ['notifications', 'Notifications', BellIcon],
   ['settings', 'Settings', SettingsIcon],
 ]
 
-/** The places, at the bottom: Profiles, Feedback, with how many reviews, vouches and reports are new (messages count on the inbox), and Settings. Opening one reads what the index says of every profile. */
+/**
+ * The places, at the bottom: Profiles, Notifications, its bell counting the new reviews, vouches and
+ * reports and what a market outgrew (messages count on the inbox), and Settings. Opening one reads
+ * what the index says of every profile, and what a market outgrew of what each posted.
+ */
 export function Places({ at, go }: { at: Place; go: (to: Place) => void }) {
   const list = useProfiles()
   useRated(list)
-  const count = useNews(list).received
+  const outgrown = useOutgrown(list)
+  const count = useNews(list).received + Object.values(outgrown).reduce((n, o) => n + (o?.length ?? 0), 0)
   return (
     <nav className="places">
       {PLACES.map(([place, words, PlaceIcon]) => (
         <button key={place} className={at === place ? 'here' : ''} aria-current={at === place ? 'page' : undefined} onClick={() => go(place)}>
           <span className="place-icon">
             <PlaceIcon />
-            {place === 'feedback' && count > 0 && (
+            {place === 'notifications' && count > 0 && (
               <span className="count" aria-label={`${count} new`}>
                 {count}
               </span>

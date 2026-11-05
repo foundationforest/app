@@ -1,7 +1,8 @@
 // What the screens read from the device, the host and the index, kept fresh: the person's profiles
 // and AI apps as the device keeps them; how each is verified, as its profile entry at the host says;
 // the new entries in their inboxes, one list for the page (list.ts); what the index says of
-// each, read as a screen showing it opens and held in the page meanwhile; what is new on each;
+// each, read as a screen showing it opens and held in the page meanwhile, and what a market outgrew
+// of what each posted, the same way; what is new on each;
 // whether a profile was made on another device; the messages opened in this page; the passkeys added
 // to the Profiles folder (backups, as the standard names them); whether a seed is held in it; and
 // whether a newer version of the app is live.
@@ -14,6 +15,8 @@ import { type Card, readCard } from './flows/cards.ts'
 import { type Backup, backupsAt } from './flows/backups.ts'
 import { anyNew, labelIds } from './flows/elsewhere.ts'
 import { type Received, newOf, rate } from './flows/feedback.ts'
+import type { Posted } from './flows/entries.ts'
+import { onOutgrown, outgrownHeld, readOutgrown } from './flows/outgrown.ts'
 import { isHeld, onHeld } from './held.ts'
 import { newMessagesList } from './list.ts'
 import { onOpened, opened } from './opened.ts'
@@ -90,10 +93,24 @@ export function useRated(list: Profile[]): Record<string, Held | undefined> {
   return useHeldRated(list)
 }
 
+/** What a market outgrew of what each profile in `list` posted, when last read in this page. */
+export function useHeldOutgrown(list: Profile[]): Record<string, Posted[] | undefined> {
+  const [, tick] = useState(0)
+  useEffect(() => onOutgrown(() => tick((n) => n + 1)), [])
+  return Object.fromEntries(list.map((p) => [p.address, outgrownHeld(p.address)]))
+}
+
+/** What a market outgrew of what each profile in `list` posted: read as the screen opens, held in the page meanwhile. */
+export function useOutgrown(list: Profile[]): Record<string, Posted[] | undefined> {
+  const addresses = list.map((p) => p.address).join(',')
+  useEffect(() => void readOutgrown(config, list), [addresses])
+  return useHeldOutgrown(list)
+}
+
 /** What is new on one profile: how many new messages, and the new reviews, vouches and reports. */
 export type News = { messages: number; received: Received[] }
 
-/** What is new on each profile in `list`, by address; and in all, how many messages (what the inbox counts) and how many reviews, vouches and reports (what Feedback's bell counts). */
+/** What is new on each profile in `list`, by address; and in all, how many messages (what the inbox counts) and how many reviews, vouches and reports (what the bell counts, with what a market outgrew). */
 export function useNews(list: Profile[]): { of: Record<string, News>; messages: number; received: number } {
   useDevice()
   const messages = useNewMessages()

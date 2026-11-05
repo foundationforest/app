@@ -38,7 +38,7 @@ const MATHS = {
 }
 
 /** Why `check` refused, as the line the screen shows. */
-const refusal = async (p: Promise<void>) => {
+const refusal = async (p: Promise<unknown>) => {
   const err = await p.then(() => null, (e: unknown) => e)
   if (!(err instanceof Said)) throw new Error(`not refused in words: ${String(err)}`)
   return [err.message, err.red]
@@ -112,7 +112,7 @@ describe('a listing', () => {
 })
 
 describe('a review, a vouch or a report', () => {
-  test("about someone on the other side of the same market, one's own other profile too, for now, never the profile itself; a review naming their listing", async () => {
+  test("about someone on the other side of the same market, never the profile itself nor another of the person's own; a review naming their listing", async () => {
     const tutor = await verifiedWith(w, 'tutoring/tutor')
     const offer = await post(w, tutor.seed, tutor.profiles[0]!, 'listing', MATHS)
     const student = await verifiedWith(w, 'tutoring/student', 'tutoring/tutor', 'clothing/buyer')
@@ -124,9 +124,9 @@ describe('a review, a vouch or a report', () => {
     expect(await refusal(check(w, me, 'review', { score: '9' }, mine))).toEqual(['Add their address.', false])
     expect(await refusal(review('not an address'))).toEqual(["That isn't a profile's address.", true])
     expect(await refusal(review(me.address)), 'never the profile itself, which the index never counts').toEqual(["That's this profile.", true])
-    await check(w, me, 'review', { subject: myTutor.address, score: '9' }, mine)
-    expect((await subjectOf(w, me, myTutor.address, mine)).role, "for now, while Carlos tests, one of the person's own other profiles").toBe('tutor')
-    expect(await refusal(review(myBuyer.address)), 'their own in another market, as anyone in another market').toEqual(["This profile isn't in this market.", true])
+    expect(await refusal(review(myTutor.address)), "never one of the person's own other profiles, before the unlock").toEqual(["That's one of your profiles.", true])
+    for (const kind of ['vouch', 'report'] as const) expect(await refusal(check(w, me, kind, { subject: myTutor.address }, mine)), kind).toEqual(["That's one of your profiles.", true])
+    expect(await refusal(subjectOf(w, me, myBuyer.address, mine)), 'their own in another market too').toEqual(["That's one of your profiles.", true])
     expect(await refusal(review(other.profiles[1]!.address))).toEqual(["This profile isn't in this market.", true])
     expect(await refusal(review(other.profiles[0]!.address))).toEqual(["This profile isn't on the other side of this market.", true])
     expect(await refusal(check(w, me, 'review', { subject: tutor.profiles[0]!.address, score: '11' }, mine))).toEqual(["Score doesn't fit.", true])
