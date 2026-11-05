@@ -1,11 +1,11 @@
 // Services' own verifier, host and index, on loopback, from services/ at SERVICES, started the way
-// services' loop starts them (e2e/services.ts): the verifier with the stand-in Didit its tests run
-// (verifier/test/fake-didit.ts, a process of its own) and the stand-in face model, its own name and
-// seed in a directory of its own, its gifts credits at this host; the host taking the verifier's
-// sponsor's tickets; the index with lists of its own, reading this host and counting this verifier's
-// two keys, as the foundation's index lists the foundation's, its numbers index/config's. One more
-// setting than the loop's: APP_ORIGINS, the app's address in this test, where the verifier lets
-// Didit and Stripe send a person back; and Stripe, the verifier's own stand-in
+// services' end-to-end test starts them (e2e/services.ts): the verifier with the stand-in Didit its
+// tests run (verifier/test/fake-didit.ts, a process of its own) and the stand-in face model, its own
+// name and seed in a directory of its own, its gifts credits at this host; the host taking the
+// verifier's sponsor's tickets; the index with lists of its own, reading this host and counting this
+// verifier's two keys, as the foundation's index lists the foundation's, its numbers index/config's.
+// One more setting than the end-to-end test's: APP_ORIGINS, the app's address in this test, where
+// the verifier lets Didit and Stripe send a person back; and Stripe, the verifier's own stand-in
 // (verifier/test/fakes.ts, FakePayments), so the ID check is for sale: the test pays a payment on its
 // page. `./standard.sh services` readies them.
 
@@ -23,7 +23,7 @@ import { FakePayments } from '../../services/verifier/test/fakes.ts'
 
 const services = fileURLToPath(new URL('../../services/', import.meta.url))
 
-/** The loop verifier's name, as services' loop names its own: one no real verifier has. */
+/** This test's verifier's name, as services' end-to-end test names its own: one no real verifier has. */
 export const VERIFIER_NAME = 'verifier.app-test.invalid'
 /** How often the index reads the host: often, so the test waits little for what it counts. */
 const INDEX_SECONDS = 2
@@ -97,7 +97,7 @@ export async function startServices({ appOrigin, say }: { appOrigin: string; say
     const h = await startHost(hostConfig({ DATA_DIR: join(dir, 'host'), PUBLIC_ORIGIN: host, PORT: String(hostPort), SPONSORS: verifier.sponsor }))
     closers.push(() => h.close())
 
-    // The index: its own lists, beside index/config, as the loop writes them.
+    // The index: its own lists, beside index/config, as services' end-to-end test writes them.
     const lists = join(dir, 'index-lists')
     mkdirSync(join(lists, 'lists'), { recursive: true })
     cpSync(join(services, 'index/config'), join(lists, 'config'), { recursive: true })

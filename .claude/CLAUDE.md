@@ -12,16 +12,17 @@ Read `README.md`, then the READMEs of the pinned repos at their pins: the front 
 (foundationforest/.github, `profile/README.md`); standard's `README.md`, `keys/`, `folders/` and
 `proofs/`; markets' `README.md` and `build/README.md`; services' `README.md`, `verifier/`, `host/`
 (Credits) and `mcp/` (The connection). Then services' `mcp/test/app.ts`, the reference app, and
-`e2e/e2e.ts`, the loop.
+`e2e/e2e.ts`, services' end-to-end test.
 
 ## Words
 
 Use the standard's, the markets' and services' words: seed, profile, profile entry, entry, folder,
 host, verifier, stamp, verification, access key, connector, credits, wallet, unlock, listing,
 review, vouch, report, feedback. Never: account (but "no account"), record, signer, permission,
-sealed, issuer, vault, registry, keeper, devnet. No em-dashes. A string baked into a recipe keeps
-its bytes even when its words grow old (the passkey's salt, `forest-seed-v1`): rename the code
-around it, never the string, and say why beside it.
+sealed, issuer, vault, registry, keeper, devnet, the loop (say services' end-to-end test). No
+em-dashes. A string baked into a recipe keeps its bytes even when its words grow old (the
+passkey's salt, `forest-seed-v1`): rename the code around it, never the string, and say why beside
+it.
 
 - entry: anything in a folder, the standard's word.
 - listing: an offer or a request, at `listing/<id>`; the role's `listings` (`offers` or

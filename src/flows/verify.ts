@@ -5,9 +5,10 @@
 //   1. pay (the ID check only): the gift's buy, then the payment at the verifier, its id kept on the
 //      device (device.ts, `Under`), since Stripe sends the person back with none. They pay on Stripe's
 //      page;
-//   2. open: the gift's buy (one buy at the host for exactly the check's gift, services' loop's way),
-//      then a session at the verifier, kept on the device with its page, so a tab closed midway opens
-//      the same check again; the ID check's with its payment, each session one of its three tries;
+//   2. open: the gift's buy (one buy at the host for exactly the check's gift, as services'
+//      end-to-end test buys it), then a session at the verifier, kept on the device with its page, so
+//      a tab closed midway opens the same check again; the ID check's with its payment, each session
+//      one of its three tries;
 //   3. ask: the session's stamp, with the buy's reference (and the payment); the gift's ticket comes
 //      with it and is kept. The same session and stamp number give the same stamp and ticket within
 //      its hour, and after it the verifier hands the stamp back by its stamp number. A session that
