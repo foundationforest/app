@@ -1,7 +1,8 @@
 // One field of an entry, as suits its type on a phone (the markets manual's Types), its name above it:
 // text in a line (a box for a description), a number on the number keys, words in a line with commas
-// between them, a choice by how many values it has (Choice: side by side, chips, or a picker), each
-// value by its label where the field has one, else in words; money as an amount with its currency
+// between them, a choice by how many values it has (Choice: side by side, chips, or a picker), one
+// value or several as the field itself says (`many`), each value by its label where the field has
+// one, else in words; money as an amount with its currency
 // and, only when the field lists what its amount may be for, a pick of exactly those, side by side;
 // photos as tiles; and place, moment and hours in their own modules. A contact says, beside its
 // name, that it is public.
@@ -24,7 +25,7 @@ export type FieldProps = { name: string; field: MarketField; value: unknown; onC
 /** Text a person typed, trimmed; left out when empty. */
 const given = (text: string) => (text.trim() ? text.trim() : undefined)
 
-/** A choice with more values than this is a row that opens a picker; with at most `SIDE_BY_SIDE`, one of them side by side, several chips with ticks; else chips. */
+/** A choice with more values than this is a row that opens a picker; with at most `SIDE_BY_SIDE`, one of them side by side; else chips, several each with its tick. */
 const CHIPS_AT_MOST = 8
 const SIDE_BY_SIDE = 3
 
@@ -82,9 +83,10 @@ function Input({ name, field, value, onChange, picked }: FieldProps) {
 }
 
 /**
- * A choice: a long list, a row that opens its picker (Picker.tsx); two or three values, one of them
- * side by side (Seg), or several as chips that show their tick; else chips, any number of them for
- * `many`. One picked, tapped again, is picked no more.
+ * A choice, one value or several as the field says (`many`), never by market: a long list, a row
+ * that opens its picker (Picker.tsx); else one value of two or three side by side (Seg), and of more
+ * as chips that behave the same, a pick unpicking the other; several, chips that each show their
+ * tick when picked. One picked, tapped again, is picked no more.
  */
 export function Choice({ label, field, value, onChange }: { label: string; field: Pick<MarketField, 'values' | 'many' | 'labels'>; value: unknown; onChange: (v: unknown) => void }) {
   const values = field.values ?? []
@@ -96,14 +98,20 @@ export function Choice({ label, field, value, onChange }: { label: string; field
   if (values.length > CHIPS_AT_MOST) return <Picker label={label} field={field} picked={picked} onPick={set} />
   if (!field.many && values.length <= SIDE_BY_SIDE)
     return <Seg label={label} options={values.map((v) => ({ value: v, words: choiceWords(field, v) }))} value={picked[0]} onPick={(v) => set(v ? [v] : [])} clears />
-  const ticks = field.many && values.length <= SIDE_BY_SIDE
+  const many = field.many === true
   return (
-    <div className="chips" role="group" aria-label={label}>
+    <div className="chips" role={many ? 'group' : 'radiogroup'} aria-label={label}>
       {values.map((v) => {
         const on = picked.includes(v)
         return (
-          <button key={v} type="button" className={on ? 'chip here' : 'chip'} aria-pressed={on} onClick={() => set(field.many ? (on ? picked.filter((p) => p !== v) : [...picked, v]) : on ? [] : [v])}>
-            {ticks && on && <Icon name="check" bold />}
+          <button
+            key={v}
+            type="button"
+            className={on ? 'chip here' : 'chip'}
+            {...(many ? { 'aria-pressed': on } : { role: 'radio', 'aria-checked': on })}
+            onClick={() => set(many ? (on ? picked.filter((p) => p !== v) : [...picked, v]) : on ? [] : [v])}
+          >
+            {many && on && <Icon name="check" bold />}
             {choiceWords(field, v)}
           </button>
         )

@@ -150,5 +150,19 @@ export const ratingText = (rating: number) => rating.toFixed(1)
 /** How many reviews: 1 review, 12 reviews. */
 export const reviewCount = (n: number) => `${n} review${n === 1 ? '' : 's'}`
 
+/** What came about a profile, by kind, as its rating line says it with no score yet: 1 vouch, 2 vouches, 1 report. */
+export function saidCount(received: Array<{ kind: 'review' | 'vouch' | 'report' }>): string {
+  const n = (kind: string) => received.filter((r) => r.kind === kind).length
+  const words: Array<[number, string, string]> = [
+    [n('review'), 'review', 'reviews'],
+    [n('vouch'), 'vouch', 'vouches'],
+    [n('report'), 'report', 'reports'],
+  ]
+  return words
+    .filter(([count]) => count > 0)
+    .map(([count, one, many]) => `${count} ${count === 1 ? one : many}`)
+    .join(', ')
+}
+
 /** How many profiles: 1 profile, 2 profiles. */
 export const profileCount = (n: number) => `${n} profile${n === 1 ? '' : 's'}`

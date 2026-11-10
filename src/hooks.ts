@@ -1,5 +1,6 @@
 // What the screens read from the device, the host and the index, kept fresh: the person's profiles
-// and AI apps as the device keeps them; how each is verified, as its profile entry at the host says;
+// and AI apps as the device keeps them, and the profiles in the app's order (order.ts); how each is
+// verified, as its profile entry at the host says, and so how the person is;
 // the new entries in their inboxes, one list for the page (list.ts); what the index says of
 // each, read as a screen showing it opens and held in the page meanwhile, and what a market outgrew
 // of what each posted, the same way; what is new on each;
@@ -10,7 +11,7 @@
 import { useEffect, useState } from 'react'
 
 import { config } from './config.ts'
-import { CHANGED, type Connection, type Profile, connections, folder, profiles, seen } from './device.ts'
+import { CHANGED, type Check, type Connection, type Profile, checks, connections, folder, profiles, seen, used } from './device.ts'
 import { type Card, readCard } from './flows/cards.ts'
 import { type Backup, backupsAt } from './flows/backups.ts'
 import { anyNew, labelIds } from './flows/elsewhere.ts'
@@ -20,6 +21,7 @@ import { onOutgrown, outgrownHeld, readOutgrown } from './flows/outgrown.ts'
 import { isHeld, onHeld } from './held.ts'
 import { newMessagesList } from './list.ts'
 import { onOpened, opened } from './opened.ts'
+import { ordered } from './order.ts'
 import { type Held, onRated, ratedOf } from './rated.ts'
 import { entryIn, newerLive } from './version.ts'
 
@@ -70,6 +72,13 @@ export function useCards(list: Profile[], again = 0): Record<string, Card> {
     return () => void (live = false)
   }, [addresses, again])
   return cards
+}
+
+/** How the person is verified: the stamps their Profiles folder holds, as this device last saw them (every way a passkey comes into use here notes them), and what their profiles' entries show. */
+export function useChecks(): Set<Check> {
+  useDevice()
+  const cards = useCards(useProfiles())
+  return new Set<Check>([...checks(), ...Object.values(cards).flatMap((c) => c.checks)])
 }
 
 /** The new inbox entries of every profile, by address, listed with nothing unlocked: the page's one list (list.ts), followed while the screen is open, the last one shown at once. */
@@ -127,6 +136,17 @@ export function useNews(list: Profile[]): { of: Record<string, News>; messages: 
     allReceived += received.length
   }
   return { of, messages: allMessages, received: allReceived }
+}
+
+/** The person's profiles in the app's order (order.ts): those with something new first (a message, a review, a vouch or a report, an entry a market outgrew), then the most recently used here. */
+export function useOrdered(list: Profile[]) {
+  const news = useNews(list)
+  const outgrown = useHeldOutgrown(list)
+  const fresh = (address: string) => {
+    const n = news.of[address]
+    return (n ? n.messages + n.received.length : 0) + (outgrown[address]?.length ?? 0) > 0
+  }
+  return ordered(list, fresh, used())
 }
 
 /** Whether the Profiles folder holds a profile made on another device: its list read with nothing unlocked as the screen opens, and again whenever the page comes back into view. */

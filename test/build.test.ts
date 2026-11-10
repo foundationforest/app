@@ -37,8 +37,20 @@ test('Vercel installs, then runs ./standard.sh, then the build', () => {
   expect(vercel.outputDirectory).toBe('dist')
 })
 
-test("the CSP: the page reaches its own origin, its verifier, host, connector and index, and the map's tiles, and nothing else; it shows photos from the host and its bucket, and those picked here", () => {
-  expect(config).toEqual({ app: 'https://app.forest.foundation', verifier: 'https://verifier.forest.foundation', host: 'https://host.forest.foundation', connector: 'https://mcp.forest.foundation', index: 'https://index.forest.foundation', tiles: 'https://tiles.openfreemap.org' })
+test("the CSP: the page reaches its own origin, its verifier, host, connector and index, and the map's tiles, and nothing else; it shows photos from the host and its bucket, and those picked here; About Forest's pages are links, never reached", () => {
+  expect(config).toEqual({
+    app: 'https://app.forest.foundation',
+    verifier: 'https://verifier.forest.foundation',
+    host: 'https://host.forest.foundation',
+    connector: 'https://mcp.forest.foundation',
+    index: 'https://index.forest.foundation',
+    tiles: 'https://tiles.openfreemap.org',
+    privacy: 'https://forest.foundation/privacy',
+    terms: 'https://forest.foundation/terms',
+    source: 'https://github.com/foundationforest/app',
+  })
+  const sources = csp.split('; ').flatMap((d) => d.split(' ').slice(1))
+  for (const link of [config.privacy, config.terms, config.source]) expect(sources, link).not.toContain(new URL(link).origin)
   expect(directive('connect-src')).toEqual(["'self'", config.verifier, config.host, config.connector, config.index, config.tiles])
   // The host answers a photo with a redirect to its bucket, at either address its FILES_STYLE gives.
   expect(directive('img-src')).toEqual(["'self'", 'blob:', config.host, 'https://t3.storageapi.dev', 'https://reserved-basket-15it-i6omre.t3.storageapi.dev'])

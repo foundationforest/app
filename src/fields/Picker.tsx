@@ -1,8 +1,10 @@
 // A choice with a long list (more than eight values, such as a tutor's subjects), as one row in the
 // form: what is picked, as chips when several may be, else in words, or Choose; tapped, a sheet
-// rises with a search over the values' words and each value with its tick. One pick closes it; for
-// several, each tap ticks or unticks, and Done closes it. The sheet sits in the page's body, so no
-// key in it reaches the form.
+// rises with a search over the values' words. Whether one value or several is the field's own
+// (`many`, the markets manual's), never the market's: for one, each value a row with its radio mark,
+// and a tap picks it and closes the sheet (the one picked, tapped, is picked no more); for several,
+// each with its tick box, each tap ticks or unticks, and Done closes it. The sheet sits in the
+// page's body, so no key in it reaches the form.
 
 import { useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
@@ -10,7 +12,7 @@ import { createPortal } from 'react-dom'
 import { Icon } from '../icons.tsx'
 import type { Field } from '../markets.ts'
 import { choiceWords } from '../show.ts'
-import { Sheet, TickBox } from '../ui.tsx'
+import { RadioMark, Sheet, TickBox } from '../ui.tsx'
 
 type Props = { label: string; field: Pick<Field, 'values' | 'many' | 'labels'>; picked: string[]; onPick: (next: string[]) => void }
 
@@ -59,11 +61,11 @@ export function Picker({ label, field, picked, onPick }: Props) {
           <Sheet label={label} onClose={close}>
             <h2>{label}</h2>
             <input type="search" aria-label="Search" placeholder="Search" autoComplete="off" value={search} onChange={(e) => setSearch(e.target.value)} />
-            <div className="rows pick-list" role="group" aria-label={label}>
+            <div className="rows pick-list" role={field.many ? 'group' : 'radiogroup'} aria-label={label}>
               {shown.map((v) => (
-                <button key={v} type="button" role="checkbox" aria-checked={picked.includes(v)} className="row pick" onClick={() => tap(v)}>
+                <button key={v} type="button" role={field.many ? 'checkbox' : 'radio'} aria-checked={picked.includes(v)} className="row pick" onClick={() => tap(v)}>
                   <span>{words(v)}</span>
-                  <TickBox ticked={picked.includes(v)} />
+                  {field.many ? <TickBox ticked={picked.includes(v)} /> : <RadioMark on={picked.includes(v)} />}
                 </button>
               ))}
             </div>

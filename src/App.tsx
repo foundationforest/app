@@ -4,18 +4,22 @@
 // from Start (back to No passkey found). Then a person with no profile yet makes their first, and
 // once it is made, or put off with Later, Connect your AI, with Skip; then the three places, Home,
 // Notifications and You, and from them New profile, every profile's messages (the round button at
-// the top of Notifications), what a market outgrew, to update, a profile, its messages, its
-// Reviews, a review received, a listing, Review someone, a thread, a new message, the ID check, an
-// AI app, Connect your AI, Add a passkey, or Your 24 words. Back wherever there is somewhere to go
-// back to: Get verified to Start, Your 24 words to No passkey found. A step done (a passkey made,
-// verified, a profile made) can't be undone by back: Your first profile has Later, Connect your AI
-// Skip. On a laptop, every setup screen sits beside the deep green panel (screens/Setup.tsx); every
-// screen past setup sits in the frame (frame.tsx): on a phone, the places' tabs at the bottom of each
-// place; on a laptop, the sidebar beside every one.
+// the top of Notifications), what a market outgrew, to update, a profile, its messages, its Reviews
+// and a review received, a listing, Review someone, a thread, a new message, Get verified (a check
+// to add, the ID's sheet up for the ID), Passkeys, Add a passkey and Your 24 words, Your AI, an AI
+// app and Connect your AI, or About Forest. Back wherever there is somewhere to go back to: Get
+// verified to Start, Your 24 words to No passkey found. A step done (a passkey made, verified, a
+// profile made) can't be undone by back: Your first profile has Later, Connect your AI Skip. On a
+// laptop, every setup screen sits beside the deep green panel (screens/Setup.tsx); every screen past
+// setup sits in the frame (frame.tsx): on a phone, the places' tabs at the bottom of each place; on a
+// laptop, the sidebar beside every one, and Messages and a thread side by side, in two panes
+// (screens/Panes.tsx).
 // Each screen the person can come back to has its own path, so a reload opens on it and the phone's
 // back goes back; what a screen is about (a profile's address and its tab, a thread, an entry being
 // edited, whose messages, the market picked on New profile, Connect your AI in setup) is kept in the
-// page's history, never in its path, which a host's logs would keep. A Share link's address arrives
+// page's history, never in its path, which a host's logs would keep. Your 24 words, once Passkeys
+// had the passkey give them, are kept in the page's memory alone, never its history, while their
+// screen is open; reloaded there, the page opens Passkeys. A Share link's address arrives
 // in its query: it is moved into the history at once, and waits there through
 // Start and the verification when no one is verified here yet. So does an AI app's login, the
 // connect page's connector and request: through Start, the verification and the first profile,
@@ -25,14 +29,16 @@
 
 import { type ReactNode, useEffect, useRef, useState } from 'react'
 
-import { passkey as inUse, profiles } from './device.ts'
+import { type Check, passkey as inUse, profiles } from './device.ts'
 import type { Posted } from './flows/entries.ts'
-import { Frame, type FrameGo, type On, type Place } from './frame.tsx'
+import { Frame, type FrameGo, type On, type Place, useWide } from './frame.tsx'
 import { PATHS as SCREEN_PATHS } from './paths.ts'
 import type { Entered } from './flows/start.ts'
 import { NotPassed, type Step, choose, stepOf } from './flows/verify.ts'
 import { useNewVersion, useProfiles } from './hooks.ts'
+import { About } from './screens/About.tsx'
 import { AiApp } from './screens/AiApp.tsx'
+import { AiApps } from './screens/AiApps.tsx'
 import { AddPasskey } from './screens/AddPasskey.tsx'
 import { Back } from './screens/Back.tsx'
 import { Connect, blocked } from './screens/Connect.tsx'
@@ -41,11 +47,14 @@ import { Home } from './screens/Home.tsx'
 import { Message } from './screens/Message.tsx'
 import { Messages } from './screens/Messages.tsx'
 import { NewProfile } from './screens/NewProfile.tsx'
+import { Panes } from './screens/Panes.tsx'
+import { Passkeys } from './screens/Passkeys.tsx'
 import { Notifications } from './screens/Notifications.tsx'
 import { ImportWords } from './screens/ImportWords.tsx'
 import { Listing } from './screens/Listing.tsx'
 import { Profile, type Tab } from './screens/Profile.tsx'
 import { Received } from './screens/Received.tsx'
+import { Reviews } from './screens/Reviews.tsx'
 import { Review } from './screens/Review.tsx'
 import { Setup } from './screens/Setup.tsx'
 import { Start } from './screens/Start.tsx'
@@ -62,19 +71,23 @@ type Screen =
   | { at: 'home' }
   | { at: 'new'; market?: string }
   | { at: 'profile'; address: string; tab?: Tab }
+  | { at: 'reviews'; address: string }
   | { at: 'received'; address: string; entry: string }
   | { at: 'listing'; address: string; edit?: Posted }
   | { at: 'review'; address: string; subject?: string; edit?: Posted; report?: boolean }
   | { at: 'notifications' }
   | { at: 'messages'; only?: string }
-  | { at: 'thread'; mine: string; them: string }
+  | { at: 'thread'; mine: string; them: string; only?: string }
   | { at: 'message'; to?: string }
   | { at: 'you' }
   | { at: 'connect'; connector: string; request: string }
   | { at: 'connect-ai'; setup?: boolean }
+  | { at: 'ai-apps' }
   | { at: 'ai'; address: string }
+  | { at: 'passkeys' }
   | { at: 'add-passkey' }
   | { at: 'words' }
+  | { at: 'about' }
   | { at: 'back' }
 
 const PATHS: Partial<Record<Screen['at'], string>> = SCREEN_PATHS
@@ -97,9 +110,9 @@ type Waiting = { to: string } | { login: Login }
 const kept = (): Kept => (history.state as Kept | null) ?? {}
 const isText = (v: unknown): v is string => typeof v === 'string' && v.length > 0
 
-/** The ID check, for the person verified here: where it stands, from the device; nothing under way, its consent screen. */
-function idCheck(id: string): Screen {
-  if (stepOf(id).at === 'choose') choose(id, 'id')
+/** A check to add, for the person verified here: Get verified, where it stands, from the device; for the ID with nothing under way, its sheet up, its consent screen. */
+function checkOf(id: string, check: Check): Screen {
+  if (check === 'id' && stepOf(id).at === 'choose') choose(id, 'id')
   return { at: 'verify', setup: false, id, step: stepOf(id) }
 }
 
@@ -123,7 +136,7 @@ function here(): Screen {
   const now = kept()
   switch (path) {
     case '/id':
-      return idCheck(id)
+      return checkOf(id, 'id')
     case '/new':
       return { at: 'new', ...(isText(now.market) && { market: now.market }) }
     case '/you':
@@ -135,16 +148,24 @@ function here(): Screen {
       return { at: 'messages', ...(isText(now.only) && { only: now.only }) }
     case '/message':
       return { at: 'message', ...(isText(now.to) && { to: now.to }) }
+    case '/passkeys':
+      return { at: 'passkeys' }
     case '/passkey':
       return { at: 'add-passkey' }
+    // The words were in the page's memory alone: reloaded, Passkeys, to ask for them again.
     case '/words':
-      return { at: 'words' }
+      return { at: 'passkeys' }
+    case '/ai-apps':
+      return { at: 'ai-apps' }
+    case '/about':
+      return { at: 'about' }
   }
-  if (path === '/profile' && isText(now.address)) return { at: 'profile', address: now.address, ...(now.tab === 'reviews' && { tab: 'reviews' }) }
+  if (path === '/profile' && isText(now.address)) return { at: 'profile', address: now.address, ...(now.tab === 'written' && { tab: 'written' }) }
+  if (path === '/reviews' && isText(now.address)) return { at: 'reviews', address: now.address }
   if (path === '/received' && isText(now.address) && isText(now.entry)) return { at: 'received', address: now.address, entry: now.entry }
   if (path === '/listing' && isText(now.address)) return { at: 'listing', address: now.address, ...(now.edit && { edit: now.edit }) }
   if (path === '/review' && isText(now.address)) return { at: 'review', address: now.address, ...(now.edit && { edit: now.edit }), ...(isText(now.subject) && { subject: now.subject }), ...(now.report && { report: true }) }
-  if (path === '/thread' && isText(now.mine) && isText(now.them)) return { at: 'thread', mine: now.mine, them: now.them }
+  if (path === '/thread' && isText(now.mine) && isText(now.them)) return { at: 'thread', mine: now.mine, them: now.them, ...(isText(now.only) && { only: now.only }) }
   if (path === '/ai' && isText(now.address)) return { at: 'ai', address: now.address }
   if (path === '/connect-ai') return { at: 'connect-ai', ...(now.setup && { setup: true }) }
   return { at: 'home' }
@@ -156,7 +177,9 @@ function keptOf(to: Screen): Kept {
     case 'new':
       return to.market ? { market: to.market } : {}
     case 'profile':
-      return { address: to.address, ...(to.tab === 'reviews' && { tab: 'reviews' }) }
+      return { address: to.address, ...(to.tab === 'written' && { tab: 'written' }) }
+    case 'reviews':
+      return { address: to.address }
     case 'received':
       return { address: to.address, entry: to.entry }
     case 'listing':
@@ -166,7 +189,7 @@ function keptOf(to: Screen): Kept {
     case 'messages':
       return to.only ? { only: to.only } : {}
     case 'thread':
-      return { mine: to.mine, them: to.them }
+      return { mine: to.mine, them: to.them, ...(to.only && { only: to.only }) }
     case 'message':
       return to.to ? { to: to.to } : {}
     case 'connect':
@@ -193,6 +216,10 @@ export function App() {
 
 function Screens() {
   const [screen, setScreen] = useState<Screen>(here)
+  const wide = useWide()
+  // Your 24 words, while their screen is open: in the page's memory alone, dropped as it closes.
+  const words = useRef<string[] | null>(null)
+  if (screen.at !== 'words') words.current = null
   // The Share link's address, or the AI app's login, while Start, the verification and a first profile come first.
   const waiting = useRef<Waiting | null>(waitingAt(screen))
   useEffect(() => {
@@ -239,13 +266,14 @@ function Screens() {
     inside()
   }
   const review = (address: string, more: { subject?: string; edit?: Posted; report?: boolean } = {}) => go({ at: 'review', address, ...more }, true)
+  /** A check to add, from You or Home: Get verified, the ID's sheet up for the ID. */
+  const addCheck = (check: Check) => go(checkOf(inUse()!, check), true)
   // Where the frame's buttons go: a place in place of this screen, as its tabs do; the rest pushed, as from a card.
   const frameGo: FrameGo = {
     place,
     messages: () => go({ at: 'messages' }, true),
     profile: (address) => go({ at: 'profile', address }, true),
     newProfile: () => go({ at: 'new' }, true),
-    ai: (address) => go({ at: 'ai', address }, true),
   }
   // The screen; in setup, on a laptop, the deep green panel beside it; past setup, the frame around it.
   const on = onOf(screen)
@@ -277,7 +305,7 @@ function Screens() {
           />
         )
       case 'home':
-        return <Home onOpen={(address) => go({ at: 'profile', address }, true)} onNew={() => go({ at: 'new' }, true)} />
+        return <Home onOpen={(address) => go({ at: 'profile', address }, true)} onNew={() => go({ at: 'new' }, true)} onCheck={addCheck} />
       case 'new':
         return (
           <NewProfile
@@ -297,15 +325,17 @@ function Screens() {
             address={screen.address}
             tab={screen.tab ?? 'listings'}
             // A tab in place of the other, so back leaves the profile.
-            onTab={(tab) => go({ at: 'profile', address: screen.address, ...(tab === 'reviews' && { tab }) })}
+            onTab={(tab) => go({ at: 'profile', address: screen.address, ...(tab === 'written' && { tab }) })}
             onBack={back}
             onListing={(edit) => go({ at: 'listing', address: screen.address, ...(edit && { edit }) }, true)}
-            onReceived={(entry) => go({ at: 'received', address: screen.address, entry }, true)}
+            onReviews={() => go({ at: 'reviews', address: screen.address }, true)}
             onEdit={(edit) => review(screen.address, { edit })}
             onReview={() => review(screen.address)}
             onMessages={() => go({ at: 'messages', only: screen.address }, true)}
           />
         )
+      case 'reviews':
+        return <Reviews address={screen.address} onBack={back} onOpen={(entry) => go({ at: 'received', address: screen.address, entry }, true)} />
       case 'received':
         return (
           <Received
@@ -328,36 +358,50 @@ function Screens() {
         return (
           <Notifications
             onMessages={() => go({ at: 'messages' }, true)}
-            onReviews={(address) => go({ at: 'profile', address, tab: 'reviews' }, true)}
+            onReviews={(address) => go({ at: 'reviews', address }, true)}
             onUpdate={(address, edit) => (edit.kind === 'listing' ? go({ at: 'listing', address, edit }, true) : review(address, { edit }))}
           />
         )
+      // On a phone, one at a time; on a laptop, side by side, whose kept with the one open.
       case 'messages':
-        return (
+      case 'thread': {
+        const at = screen
+        const open = at.at === 'thread' ? at : null
+        const list = (
           <Messages
-            {...(screen.only && { only: screen.only })}
+            {...(at.only && { only: at.only })}
+            pane={wide}
+            {...(open && { open: { mine: open.mine, them: open.them } })}
             // Whose, in place of the screen as it was, so back leaves Messages.
             onOnly={(only) => go({ at: 'messages', ...(only && { only }) })}
             onBack={back}
-            onThread={(mine, them) => go({ at: 'thread', mine, them }, true)}
+            onThread={(mine, them) => go({ at: 'thread', mine, them, ...(at.only && { only: at.only }) }, true)}
             onNew={() => go({ at: 'message' }, true)}
           />
         )
-      case 'thread':
-        return <Thread mine={screen.mine} them={screen.them} onBack={back} onReview={(mine, them) => review(mine, { subject: them })} />
+        const thread = open && <Thread key={`${open.mine} ${open.them}`} mine={open.mine} them={open.them} pane={wide} onBack={back} onReview={(mine, them) => review(mine, { subject: them })} />
+        if (wide) return <Panes list={list} open={thread} />
+        return thread || list
+      }
       case 'message':
         return <Message {...(screen.to && { to: screen.to })} onSent={(mine, them) => go({ at: 'thread', mine, them })} onBack={back} />
       case 'you':
+        return <You onForgot={() => go({ at: 'start' })} onCheck={addCheck} onPasskeys={() => go({ at: 'passkeys' }, true)} onAiApps={() => go({ at: 'ai-apps' }, true)} onAbout={() => go({ at: 'about' }, true)} />
+      case 'passkeys':
         return (
-          <You
-            onForgot={() => go({ at: 'start' })}
-            onIdCheck={() => go(idCheck(inUse()!), true)}
-            onConnectAi={() => go({ at: 'connect-ai' }, true)}
-            onAiApp={(address) => go({ at: 'ai', address }, true)}
-            onAddPasskey={() => go({ at: 'add-passkey' }, true)}
-            onWords={() => go({ at: 'words' }, true)}
+          <Passkeys
+            onBack={back}
+            onAdd={() => go({ at: 'add-passkey' }, true)}
+            onWords={(given) => {
+              words.current = given
+              go({ at: 'words' }, true)
+            }}
           />
         )
+      case 'ai-apps':
+        return <AiApps onBack={back} onAiApp={(address) => go({ at: 'ai', address }, true)} onConnect={() => go({ at: 'connect-ai' }, true)} />
+      case 'about':
+        return <About onBack={back} />
       case 'connect':
         return <Connect connector={screen.connector} request={screen.request} />
       case 'connect-ai':
@@ -367,7 +411,7 @@ function Screens() {
       case 'add-passkey':
         return <AddPasskey onDone={back} onBack={back} />
       case 'words':
-        return <Words onBack={back} />
+        return words.current ? <Words words={words.current} onDone={back} /> : null
     }
   }
 }
@@ -387,6 +431,7 @@ function onOf(s: Screen): On | null {
     case 'message':
       return 'messages'
     case 'profile':
+    case 'reviews':
     case 'received':
     case 'listing':
     case 'review':
@@ -397,9 +442,12 @@ function onOf(s: Screen): On | null {
       return s.setup ? null : 'you'
     case 'connect-ai':
       return s.setup ? null : 'you'
+    case 'passkeys':
     case 'add-passkey':
-    case 'ai':
     case 'words':
+    case 'ai-apps':
+    case 'ai':
+    case 'about':
       return 'you'
     default:
       return null

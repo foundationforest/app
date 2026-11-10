@@ -5,7 +5,7 @@
 // lists. Never two seeds on one device: then Forget this device takes the place of Continue, and
 // once it has forgotten, Continue is back. Then a new passkey is added to the seed the words spell
 // as You adds one (flows/backups.ts), the seed held for it as after any unlock, and the person is
-// in, as from Start. Unlike You's, it excludes none of the passkeys this device knows: after Forget
+// in, as from Start. Unlike Passkeys', it excludes none of the passkeys this device knows: after Forget
 // they may be another seed's, and a manager keeping one would refuse this one. The words live in
 // this screen's state alone and are never kept; it has no path of its own, so a reload lands on
 // Start and they never reach the page's history. Back goes to No passkey found.
@@ -46,7 +46,7 @@ export function ImportWords({ onEntered, onBack }: Props) {
       throw err
     }
     try {
-      await addBackup(config, seed, made)
+      await addBackup(config, seed, made, { here: true })
     } catch (err) {
       seed.fill(0)
       await drop(made.id)

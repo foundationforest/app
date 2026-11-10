@@ -1,16 +1,16 @@
 // What this device keeps, in localStorage, none of it secret: the id of the passkey in use and of
 // every passkey this device has made or used (so Start never makes a second one where one is), the
-// person's profiles' labels and addresses, the Profiles folder's address and the label entries it
-// has read there, how they are verified, their AI apps (each one's name, when it connected, its
-// connection folder's address and its profiles' labels), the addresses of the access keys it knows
-// of, where they left off in each profile's inbox, the time of the newest review, vouch or report
-// about each profile its Reviews or Notifications has shown, their theme, and, while a
-// verification is under way, its check and session, the ID check's payment and the gift's buy,
-// then an ID check's payment no stamp has used yet (flows/verify.ts); and the password manager's
-// name of each passkey it added, by its entry in the Profiles folder (flows/backups.ts), which the
-// entry itself can't hold; and the point listings' places are centred on, one for each place a
-// listing's form read the device's location at, moved a little from it (near.ts). Never the seed,
-// its 24 words, a key, a stamp or a message.
+// person's profiles' labels and addresses, when each was last used here (opened, posted from or
+// written from), the Profiles folder's address and the label entries it has read there, how they
+// are verified, their AI apps (each one's name, when it connected, its connection folder's address
+// and its profiles' labels), the addresses of the access keys it knows of, where they left off in
+// each profile's inbox, the time of the newest review, vouch or report about each profile its
+// Reviews or Notifications has shown, their theme, and, while a verification is under way, its
+// check and session, the ID check's payment and the gift's buy, then an ID check's payment no stamp
+// has used yet (flows/verify.ts); and, of each passkey it made or added, the password manager's
+// name and whether it made it for itself (flows/backups.ts), which no entry can hold; and the point
+// listings' places are centred on, one for each place a listing's form read the device's location
+// at, moved a little from it (near.ts). Never the seed, its 24 words, a key, a stamp or a message.
 //
 // A label entry in the Profiles folder that this device never read, or whose label it doesn't list,
 // is a profile made elsewhere, on another device with the same seed: Profiles offers to read them
@@ -62,6 +62,7 @@ const KEYS = {
   folder: 'forest.folder',
   backups: 'forest.backups',
   points: 'forest.points',
+  used: 'forest.used',
 } as const
 
 /** The key this app keeps in sessionStorage, for one tab (version.ts). */
@@ -150,6 +151,13 @@ export const cursors = (): Record<string, number> => {
 }
 export const saveCursors = (more: Record<string, number>) => write(KEYS.read, { ...cursors(), ...more })
 
+/** When each profile was last used on this device, by its address: opened, posted from (a listing, a review, a vouch or a report) or written from (a message). */
+export const used = (): Record<string, number> => {
+  const kept = read<Record<string, unknown>>(KEYS.used, {})
+  return Object.fromEntries(Object.entries(kept).filter((e): e is [string, number] => Number.isSafeInteger(e[1])))
+}
+export const markUsed = (address: string, time = Date.now()) => write(KEYS.used, { ...used(), [address]: time })
+
 /** The time of the newest review, vouch or report about each profile, by its address, that its Reviews or Notifications has shown. */
 export const seen = (): Record<string, number> => {
   const kept = read<Record<string, unknown>>(KEYS.seen, {})
@@ -163,14 +171,37 @@ export function markNew(address: string): void {
   if (!(address in seen())) saveSeen({ [address]: 0 })
 }
 
-/** The password manager's name of each backup this device added, by the random id of its entry in the Profiles folder, `backup/<id>`. */
-export const backupNames = (): Record<string, string> => {
+/** The first passkey, among the passkeys this device made or added: the one Yes, I'm new made, which no `backup/<id>` entry names. */
+export const FIRST = 'first'
+
+/** What this device knows of a passkey it made or added: its password manager's name, from the id a new passkey sends, and `here` when it made it for itself, to unlock with on this device. */
+export type Made = { name?: string; here?: true }
+
+/**
+ * What this device knows of each passkey it made or added: by the random id of its entry in the
+ * Profiles folder, `backup/<id>`, or FIRST for the first passkey. A name alone, as the device kept
+ * it before it kept `here`, reads as that name.
+ */
+export const madeHere = (): Record<string, Made> => {
   const kept = read<Record<string, unknown>>(KEYS.backups, {})
-  return Object.fromEntries(Object.entries(kept).filter((e): e is [string, string] => typeof e[1] === 'string'))
+  const out: Record<string, Made> = {}
+  for (const [id, v] of Object.entries(kept)) {
+    if (typeof v === 'string') out[id] = { name: v }
+    else if (typeof v === 'object' && v !== null && !Array.isArray(v)) {
+      const { name, here } = v as Record<string, unknown>
+      const made: Made = { ...(typeof name === 'string' && { name }), ...(here === true && { here: true as const }) }
+      if (made.name || made.here) out[id] = made
+    }
+  }
+  return out
 }
-export const nameBackup = (id: string, name: string) => write(KEYS.backups, { ...backupNames(), [id]: name })
-export function unnameBackup(id: string): void {
-  const { [id]: _, ...rest } = backupNames()
+/** A passkey this device made or added, noted: its manager's name, if its id named one, and whether it is for this device. */
+export function noteMade(id: string, made: Made): void {
+  const note: Made = { ...(made.name && { name: made.name }), ...(made.here && { here: true as const }) }
+  if (note.name || note.here) write(KEYS.backups, { ...madeHere(), [id]: note })
+}
+export function unnoteMade(id: string): void {
+  const { [id]: _, ...rest } = madeHere()
   write(KEYS.backups, rest)
 }
 
@@ -196,9 +227,9 @@ export const under = (): Under | null => {
 export const keepUnder = (u: Under) => write(KEYS.under, u)
 export const endUnder = () => write(KEYS.under, undefined)
 
-/** Forget this device: the profiles and the Profiles folder, how they are verified, the AI apps and the keys it knows of, what was new on each, the backups' names, the points kept for places, the theme, the passkey in use and any verification under way. The ids of the passkeys it knows stay, so Start asks for them and never makes a second one. */
+/** Forget this device: the profiles, when each was last used, and the Profiles folder, how they are verified, the AI apps and the keys it knows of, what was new on each, what it knew of the passkeys it made, the points kept for places, the theme, the passkey in use and any verification under way. The ids of the passkeys it knows stay, so Start asks for them and never makes a second one. */
 export function forget(): void {
-  for (const key of [KEYS.passkey, KEYS.profiles, KEYS.folder, KEYS.checks, KEYS.connections, KEYS.known, KEYS.read, KEYS.seen, KEYS.backups, KEYS.points, KEYS.theme, KEYS.under]) store().removeItem(key)
+  for (const key of [KEYS.passkey, KEYS.profiles, KEYS.used, KEYS.folder, KEYS.checks, KEYS.connections, KEYS.known, KEYS.read, KEYS.seen, KEYS.backups, KEYS.points, KEYS.theme, KEYS.under]) store().removeItem(key)
   globalThis.dispatchEvent?.(new Event(CHANGED))
 }
 

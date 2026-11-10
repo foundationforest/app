@@ -1,167 +1,129 @@
-// You: how the person is verified, Face and ID each with its check's badge (light for the selfie
-// check, solid for the ID check), or the ID check's "+ $5" when they have only the face check;
-// their passkeys, every one that opens their profiles alike: Your first passkey, then each added
-// after it (a backup, as the standard names it), by its password manager's name where this device
-// knows it, else the day it was added, with Remove (tapped twice, then one unlock, though a row shows
-// no unlock icon); with one alone, a quiet line on why a second; + Add a passkey; all read with
-// nothing unlocked; and Show my 24 words, which opens Your 24 words (Words.tsx); their AI apps,
-// each with the day it connected and how many profiles it acts for, and + Connect an AI; the
-// appearance, the device's, light or dark; and Forget this device, in red (forget.ts). When a
-// profile entry lists an access key this device doesn't know (made in another browser with the
-// same seed), one row more, Find AI apps, finds them from the seed: one unlock, though a row shows
-// no unlock icon.
+// You, one column on a phone and a laptop alike. At the top, one card: how the person is verified,
+// Selfie and ID, each with its badge's icon square (the selfie's mint, the ID's forest green); a
+// check done says Verified on a mint chip, one not done one line on what it gives, from the
+// verifier's gifts as Get verified says it, and a plain Add, which opens Get verified (the ID's sheet
+// up, for the ID). Then one card of rows, each opening its own screen: Passkeys, with how many
+// (Passkeys.tsx); Your AI, with the apps' names (AiApps.tsx); Appearance, Auto, Light or Dark, on a
+// sheet whose one choice is a list of rows, a tap picking it and closing the sheet; and About Forest
+// (About.tsx). At the foot, Forget this device, red text, tapped twice (forget.ts). Nothing here
+// asks the passkey.
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { config } from '../config.ts'
-import { type Check, type Theme, backupNames, checks as heldChecks, knownKeys, passkey, saveTheme, theme as savedTheme } from '../device.ts'
-import { removeBackup } from '../flows/backups.ts'
-import { findConnections } from '../flows/connections.ts'
+import { type Check, type Theme, saveTheme, theme as savedTheme } from '../device.ts'
+import { type CreditLines, creditsOf } from '../flows/verify.ts'
 import { forgetDevice } from '../forget.ts'
-import { backupsChanged, useBackups, useCards, useConnections, useProfiles } from '../hooks.ts'
+import { useBackups, useChecks, useConnections } from '../hooks.ts'
 import { type IconName, Icon } from '../icons.tsx'
-import { Loader } from '../mark.tsx'
-import { withSeed } from '../passkey.ts'
-import { profileCount } from '../show.ts'
 import { applyTheme } from '../theme.ts'
-import { Line, Top, Verified, day, useAction } from '../ui.tsx'
+import { Opens, RadioMark, Sheet, Top } from '../ui.tsx'
 
-/** The line that says why a second passkey, while there is one alone. */
-const WHY_SECOND = "Add a second, so losing one doesn't lose your profiles."
+type Props = { onForgot: () => void; onCheck: (check: Check) => void; onPasskeys: () => void; onAiApps: () => void; onAbout: () => void }
 
-type Props = { onForgot: () => void; onIdCheck: () => void; onConnectAi: () => void; onAiApp: (address: string) => void; onAddPasskey: () => void; onWords: () => void }
-
-const THEMES: Array<[Theme, string, IconName]> = [
-  ['device', 'Device', 'circle-half'],
+/** The looks, each by its words and icon: the device's own is Auto. */
+export const THEMES: Array<[Theme, string, IconName]> = [
+  ['device', 'Auto', 'circle-half'],
   ['light', 'Light', 'sun'],
   ['dark', 'Dark', 'moon'],
 ]
 
-export function You({ onForgot, onIdCheck, onConnectAi, onAiApp, onAddPasskey, onWords }: Props) {
-  const list = useProfiles()
-  const [found, setFound] = useState(0)
-  const cards = useCards(list, found)
-  const aiApps = useConnections()
-  const known = new Set(knownKeys())
-  const unknown = Object.values(cards).some((c) => c.keys.some((k) => !known.has(k)))
-  const find = useAction(async () => {
-    await withSeed(passkey()!, (seed) => findConnections(config, seed))
-    setFound((n) => n + 1)
-  })
-  // How the person is verified: the stamps their Profiles folder holds, as this device last saw
-  // them (every way a passkey comes into use here notes them first), and what their profiles'
-  // entries show.
-  const shown = new Set<Check>([...heldChecks(), ...Object.values(cards).flatMap((c) => c.checks)])
-  const has = (c: Check) => shown.has(c)
+const CHECKS: Array<{ check: Check; name: string; icon: IconName; add: string }> = [
+  { check: 'face', name: 'Selfie', icon: 'smiley', add: 'Add, free' },
+  { check: 'id', name: 'ID', icon: 'identification-card', add: 'Add, $5' },
+]
+
+/** What a check not done gives, in one line: the selfie its credits, the ID stronger trust and its credits. */
+const givesOf = (check: Check, credits: CreditLines) => (check === 'id' ? ['Stronger trust', credits.id] : [credits.face]).filter(Boolean).join(', ')
+
+/** How many passkeys: 1 passkey, 2 passkeys. */
+const passkeyCount = (n: number) => `${n} passkey${n === 1 ? '' : 's'}`
+
+export function You({ onForgot, onCheck, onPasskeys, onAiApps, onAbout }: Props) {
+  const has = useChecks()
   const backups = useBackups()
-  const names = backupNames()
-  // The backup whose Remove was tapped once: tapped again, it is removed.
-  const [removing, setRemoving] = useState<string | null>(null)
-  const remove = useAction(async (id: string) => {
-    await withSeed(passkey()!, (seed) => removeBackup(config, seed, id))
-    setRemoving(null)
-    backupsChanged()
-  })
+  const aiApps = useConnections()
+  const [credits, setCredits] = useState<CreditLines>({})
+  useEffect(() => {
+    let live = true
+    creditsOf(config).then(
+      (lines) => live && setCredits(lines),
+      () => undefined,
+    )
+    return () => void (live = false)
+  }, [])
   const [theme, setTheme] = useState(savedTheme)
+  const [looks, setLooks] = useState(false)
   const [forgetting, setForgetting] = useState(false)
   const pick = (t: Theme) => {
     saveTheme(t)
     applyTheme(t)
     setTheme(t)
+    setLooks(false)
   }
+  const look = THEMES.find(([t]) => t === theme)!
   return (
     <main>
       <Top>
         <h1>You</h1>
       </Top>
-      <section className="stack">
-        <h2>Verified</h2>
-        <div className="rows">
-          <div className="row">
-            <span>Face</span>
-            {has('face') && <Verified check="face" />}
-          </div>
-          <div className="row">
-            <span>ID</span>
-            {has('id') ? (
-              <Verified check="id" />
+      <div className="rows" role="group" aria-label="Verified">
+        {CHECKS.map(({ check, name, icon, add }) => (
+          <div key={check} className="row">
+            <span className={check === 'id' ? 'sq sm forest' : 'sq sm mint'}>
+              <Icon name={icon} fill />
+            </span>
+            <span className="two">
+              <strong>{name}</strong>
+              {!has.has(check) && givesOf(check, credits) && <span className="wraps">{givesOf(check, credits)}</span>}
+            </span>
+            {has.has(check) ? (
+              <span className="chip new">
+                <Icon name="check" bold />
+                Verified
+              </span>
             ) : (
-              <button className="small" onClick={onIdCheck}>
-                + $5
+              <button className="small" onClick={() => onCheck(check)}>
+                {add}
               </button>
             )}
           </div>
-        </div>
-      </section>
-      <section className="stack">
-        <h2>Passkeys</h2>
-        {backups && (
-          <div className="rows">
-            <div className="row">
-              <span>Your first passkey</span>
-            </div>
-            {backups.map((b) => (
-              <div key={b.id} className="row">
-                <span>{names[b.id] ?? day(b.time)}</span>
-                <button className={removing === b.id ? 'small danger solid' : 'small danger'} disabled={remove.busy} onClick={() => (removing === b.id ? remove.run(b.id) : setRemoving(b.id))}>
-                  {remove.busy && removing === b.id ? <Loader /> : 'Remove'}
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-        {backups?.length === 0 && <p className="line">{WHY_SECOND}</p>}
-        <Line note={remove.note} />
-        <button onClick={onAddPasskey}>+ Add a passkey</button>
-        <button onClick={onWords}>Show my 24 words</button>
-      </section>
-      <section className="stack">
-        <h2>AI apps</h2>
-        {(aiApps.length > 0 || unknown) && (
-          <div className="rows">
-            {aiApps.map((c) => (
-              <button key={c.address} className="row pick" onClick={() => onAiApp(c.address)}>
-                <span className="two">
-                  <strong>{c.name}</strong>
-                  <span>{day(c.time)}</span>
-                </span>
-                <span className="aside">{profileCount(c.labels.length)}</span>
-              </button>
-            ))}
-            {unknown && (
-              <button className="row" disabled={find.busy} onClick={() => find.run()}>
-                <span>Find AI apps</span>
-                {find.busy && <Loader />}
-              </button>
-            )}
-          </div>
-        )}
-        <Line note={find.note} />
-        <button onClick={onConnectAi}>+ Connect an AI</button>
-      </section>
-      <section className="stack">
-        <h2>Appearance</h2>
-        <div className="choice" role="radiogroup" aria-label="Appearance">
-          {THEMES.map(([t, words, icon]) => (
-            <button key={t} role="radio" aria-label={words} aria-checked={theme === t} className={theme === t ? 'here' : ''} onClick={() => pick(t)}>
-              <Icon name={icon} fill={theme === t} />
-            </button>
-          ))}
-        </div>
-      </section>
-      <section className="stack">
+        ))}
+      </div>
+      <div className="rows">
+        <Opens icon="key" words="Passkeys" line={backups ? passkeyCount(backups.length + 1) : ''} onClick={onPasskeys} />
+        <Opens icon="sparkle" words="Your AI" line={aiApps.map((c) => c.name).join(', ')} onClick={onAiApps} />
+        <Opens icon="circle-half" words="Appearance" line={look[1]} onClick={() => setLooks(true)} />
+        <Opens icon="info" words="About Forest" onClick={onAbout} />
+      </div>
+      <div className="lone">
         {forgetting && <p className="line">Your passkey stays in your password manager.</p>}
         <button
-          className={forgetting ? 'danger solid' : 'danger'}
+          className={forgetting ? 'danger solid small' : 'danger text'}
           onClick={() => {
             if (!forgetting) return setForgetting(true)
             forgetDevice()
             onForgot()
           }}
         >
+          <Icon name="sign-out" bold />
           {forgetting ? 'Forget' : 'Forget this device'}
         </button>
-      </section>
+      </div>
+      {looks && (
+        <Sheet label="Appearance" onClose={() => setLooks(false)}>
+          <h2>Appearance</h2>
+          <div className="rows pick-list" role="radiogroup" aria-label="Appearance">
+            {THEMES.map(([t, words, icon]) => (
+              <button key={t} type="button" role="radio" aria-checked={theme === t} className="row pick" onClick={() => pick(t)}>
+                <Icon name={icon} />
+                <span className="grow">{words}</span>
+                <RadioMark on={theme === t} />
+              </button>
+            ))}
+          </div>
+        </Sheet>
+      )}
     </main>
   )
 }

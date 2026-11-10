@@ -1,5 +1,6 @@
-// Where this copy of the app is, and the services it talks to: the one place they are set. A copy
-// hosted elsewhere sets its own here, and in vercel.json's content security policy. The browser
+// Where this copy of the app is, the services it talks to, and the pages About Forest links to (its
+// privacy and terms, and its source code): the one place they are set. A copy hosted elsewhere sets
+// its own here, and in vercel.json's content security policy. The browser
 // test builds the app with its own loopback copies, named in VITE_FOREST_CONFIG at build time.
 
 export type Config = {
@@ -15,6 +16,10 @@ export type Config = {
   index: string
   /** The map's tiles, OpenFreeMap: its styles, light and dark, at /styles/positron and /styles/dark, on the place screen alone. */
   tiles: string
+  /** The pages About Forest opens, each in a new tab: how this copy treats what people give it, its terms, and its source code. Links, never fetched. */
+  privacy: string
+  terms: string
+  source: string
 }
 
 const OURS: Config = {
@@ -24,6 +29,9 @@ const OURS: Config = {
   connector: 'https://mcp.forest.foundation',
   index: 'https://index.forest.foundation',
   tiles: 'https://tiles.openfreemap.org',
+  privacy: 'https://forest.foundation/privacy',
+  terms: 'https://forest.foundation/terms',
+  source: 'https://github.com/foundationforest/app',
 }
 
 const given = import.meta.env?.VITE_FOREST_CONFIG as string | undefined

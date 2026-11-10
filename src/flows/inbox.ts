@@ -27,7 +27,7 @@ import { mainKey, openingHalf } from '@foundationforest/keys'
 
 import { inboxPayment } from '../../services/host/client/client.ts'
 import type { Services } from '../config.ts'
-import { type Profile, cursors, saveCursors } from '../device.ts'
+import { type Profile, cursors, markUsed, saveCursors } from '../device.ts'
 import { leaveAll, readAllInbox, readView, writeAll } from '../services/host.ts'
 import { type Check, about } from '../services/verifier.ts'
 import { Said, hostSays } from '../words.ts'
@@ -146,7 +146,8 @@ export async function openAll(s: Services, seed: Uint8Array, list: Profile[], ch
 
 /**
  * `text`, from the person's profile `label` to the profile at `to`, left with its host and paid from
- * the profile's folder; then its copy in that folder. Gives back the message as its thread shows it.
+ * the profile's folder; then its copy in that folder. The profile written from is used (device.ts).
+ * Gives back the message as its thread shows it.
  */
 export async function send(s: Services, seed: Uint8Array, label: string, to: string, text: string): Promise<Message> {
   const theirs = await profileEntry(s.host, to)
@@ -161,5 +162,6 @@ export async function send(s: Services, seed: Uint8Array, label: string, to: str
   const path = `sent/${randomId()}`
   const copy = await lock({ to, time, body: { text } }, lockKeysOf(view.current.get('profile')?.entry.body))
   await paid(s.host, main.address, wallet, () => writeAll(s.host, [entry(main, path, copy, nextTime(time, view, path))]))
+  markUsed(main.address)
   return { id: path, time, text, mine: true }
 }

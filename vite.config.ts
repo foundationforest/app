@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 
 import react from '@vitejs/plugin-react'
@@ -24,6 +25,17 @@ export const standard = [
 
 /** The markets' browser entry, from the checkout standard.sh builds (markets/ at MARKETS): it takes the files as data and runs no eval. */
 export const marketsEntry = [{ find: /^@foundationforest\/markets\/browser$/, replacement: here('./markets/build/dist/browser.js') }]
+
+/** The commit this build comes from, short, as About Forest shows it: Vercel's, else the checkout's, else "dev". */
+function commit(): string {
+  const given = process.env.VERCEL_GIT_COMMIT_SHA
+  if (given) return given.slice(0, 7)
+  try {
+    return execFileSync('git', ['rev-parse', '--short=7', 'HEAD'], { cwd: here('.'), encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim() || 'dev'
+  } catch {
+    return 'dev'
+  }
+}
 
 /** The map's chunks: the place screen's map with MapLibre (src/fields/PlaceMap.tsx), and MapLibre's worker. */
 export const MAP_CODE = ['assets/PlaceMap-*', 'assets/maplibre-gl-worker-*']
@@ -76,6 +88,7 @@ export default defineConfig({
       },
     }),
   ],
+  define: { __COMMIT__: JSON.stringify(commit()) },
   resolve: { alias: [...standard, ...marketsEntry] },
   worker: { format: 'es' },
   // Every asset a file of the app's own, never a data: URI, so the CSP (vercel.json) takes fonts and images from 'self' alone.

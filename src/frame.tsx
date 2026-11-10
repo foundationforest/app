@@ -3,19 +3,22 @@
 // Notifications and You, the one selected filled on a mint pill; the Notifications tab counts
 // everything new, messages included. From 900px wide, no tabs: a sidebar on the left, on every
 // screen past setup, with the mark and Forest, the search, Home, Notifications (what came about the
-// profiles, and what a market outgrew), Messages and You with their counts, then each profile with
-// how many things are new on it, New profile, and the person's AI apps at the bottom; the screen sits
-// to its right. A place opening reads what the index says of every profile, and what a market
-// outgrew of what each posted; the counts elsewhere are what the page holds.
+// profiles, and what a market outgrew), Messages and You with their counts, then Profiles, with a
+// small round plus beside it while a market's role has no profile of theirs, which opens New
+// profile; under it the profiles in the app's order (order.ts), those with something new first, then
+// the most recently used here, each with how many things are new on it, eight at most, then All
+// profiles with how many there are, which opens Home. The screen sits to its right. A place opening
+// reads what the index says of every profile, and what a market outgrew of what each posted; the
+// counts elsewhere are what the page holds.
 
 import { type ReactNode, useEffect, useState } from 'react'
 
 import { Avatar } from './avatar.tsx'
-import { useConnections, useHeldOutgrown, useNews, useOutgrown, useProfiles, useRated } from './hooks.ts'
+import { useHeldOutgrown, useNews, useOrdered, useOutgrown, useProfiles, useRated } from './hooks.ts'
 import { Icon, type IconName } from './icons.tsx'
 import { Mark } from './mark.tsx'
-import { offersFirst, pairs } from './markets.ts'
-import { profileCount } from './show.ts'
+import { pairs } from './markets.ts'
+import { MOST } from './order.ts'
 import { Named, Search } from './ui.tsx'
 
 export type Place = 'home' | 'notifications' | 'you'
@@ -24,7 +27,7 @@ export type Place = 'home' | 'notifications' | 'you'
 export type On = Place | 'messages' | 'new' | { profile: string }
 
 /** Where the frame's buttons go. */
-export type FrameGo = { place: (to: Place) => void; messages: () => void; profile: (address: string) => void; newProfile: () => void; ai: (address: string) => void }
+export type FrameGo = { place: (to: Place) => void; messages: () => void; profile: (address: string) => void; newProfile: () => void }
 
 const WIDE = '(min-width: 900px)'
 
@@ -126,7 +129,7 @@ function Nav({ on, icon, words, count = 0, onClick }: { on: boolean; icon: IconN
 /** The laptop's sidebar. */
 function Side({ on, go }: { on: On; go: FrameGo }) {
   const { list, news, notices, messages } = useCounts()
-  const apps = useConnections()
+  const shown = useOrdered(list)
   const held = new Set(list.map((p) => p.label))
   const at = typeof on === 'string' ? on : null
   return (
@@ -142,8 +145,15 @@ function Side({ on, go }: { on: On; go: FrameGo }) {
         <Nav on={at === 'messages'} icon="chat-circle" words="Messages" count={messages} onClick={go.messages} />
         <Nav on={at === 'you'} icon="user-circle" words="You" onClick={() => go.place('you')} />
       </nav>
-      <h2 className="sect">Profiles</h2>
-      {offersFirst(list).map((p) => {
+      <div className="side-head">
+        <h2 className="sect">Profiles</h2>
+        {pairs.some((p) => !held.has(p.label)) && (
+          <button className={at === 'new' ? 'round tiny on' : 'round tiny'} aria-label="New profile" onClick={go.newProfile}>
+            <Icon name="plus" bold />
+          </button>
+        )}
+      </div>
+      {shown.slice(0, MOST).map((p) => {
         const n = news.of[p.address]
         const count = n ? n.messages + n.received.length : 0
         const here = typeof on === 'object' && on.profile === p.address
@@ -161,24 +171,11 @@ function Side({ on, go }: { on: On; go: FrameGo }) {
           </button>
         )
       })}
-      {pairs.some((p) => !held.has(p.label)) && (
-        <button className={at === 'new' ? 'nav green on' : 'nav green'} onClick={go.newProfile}>
-          <Icon name="plus" />
-          New profile
+      {list.length > MOST && (
+        <button className="nav all" onClick={() => go.place('home')}>
+          All profiles ({list.length})
         </button>
       )}
-      <div className="fill" />
-      {apps.map((c) => (
-        <button key={c.address} className="ai-app" onClick={() => go.ai(c.address)}>
-          <span className="ico">
-            <Icon name="sparkle" fill />
-          </span>
-          <span className="two">
-            <strong>{c.name}</strong>
-            <span>{profileCount(c.labels.length)}</span>
-          </span>
-        </button>
-      ))}
     </aside>
   )
 }

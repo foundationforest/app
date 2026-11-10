@@ -7,7 +7,8 @@
 // icon (an icon-only button shows what it does) and asks the passkey once: signed with the
 // profile's main key, locked to their keys, left with their host and paid from the profile's
 // folder; its copy kept in that folder. Reached with the messages not yet opened (a reload), they
-// open by themselves with a seed held, else with Open (opening.ts).
+// open by themselves with a seed held, else with Open (opening.ts). On a laptop it is the right of
+// two panes (`pane`, Panes.tsx), the conversations on the left, so it has no Back.
 
 import { Fragment, useEffect, useState } from 'react'
 
@@ -23,9 +24,9 @@ import { withSeed } from '../passkey.ts'
 import { Line, Named, Top, UnlockIcon, clock, dayWords, lastOfRun, newDay, useAction } from '../ui.tsx'
 import { Who, WhoAvatar } from './Who.tsx'
 
-type Props = { mine: string; them: string; onBack: () => void; onReview: (mine: string, them: string) => void }
+type Props = { mine: string; them: string; pane?: boolean; onBack: () => void; onReview: (mine: string, them: string) => void }
 
-export function Thread({ mine, them, onBack, onReview }: Props) {
+export function Thread({ mine, them, pane = false, onBack, onReview }: Props) {
   const list = useProfiles()
   const me = list.find((p) => p.address === mine)
   const held = useOpened()
@@ -43,10 +44,11 @@ export function Thread({ mine, them, onBack, onReview }: Props) {
   })
   if (!me) return null
   const messages = thread?.messages ?? []
+  const Root = pane ? 'div' : 'main'
   return (
-    <main>
+    <Root className={pane ? 'pane-body convo' : undefined}>
       <Top
-        onBack={onBack}
+        {...(!pane && { onBack })}
         clear
         right={
           <button className="soft small" onClick={() => onReview(mine, them)}>
@@ -104,6 +106,6 @@ export function Thread({ mine, them, onBack, onReview }: Props) {
           </button>
         </>
       )}
-    </main>
+    </Root>
   )
 }
