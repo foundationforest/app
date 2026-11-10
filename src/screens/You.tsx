@@ -1,5 +1,5 @@
-// Settings: how the person is verified, Face and ID each with its check's shield (an outline for the
-// face check, filled for the ID check), or the ID check's "+ $5" when they have only the face check;
+// You: how the person is verified, Face and ID each with its check's badge (light for the selfie
+// check, solid for the ID check), or the ID check's "+ $5" when they have only the face check;
 // their passkeys, every one that opens their profiles alike: Your first passkey, then each added
 // after it (a backup, as the standard names it), by its password manager's name where this device
 // knows it, else the day it was added, with Remove (tapped twice, then one unlock, though a row shows
@@ -11,7 +11,7 @@
 // same seed), one row more, Find AI apps, finds them from the seed: one unlock, though a row shows
 // no unlock icon.
 
-import { type ReactNode, useState } from 'react'
+import { useState } from 'react'
 
 import { config } from '../config.ts'
 import { type Check, type Theme, backupNames, checks as heldChecks, knownKeys, passkey, saveTheme, theme as savedTheme } from '../device.ts'
@@ -19,22 +19,23 @@ import { removeBackup } from '../flows/backups.ts'
 import { findConnections } from '../flows/connections.ts'
 import { forgetDevice } from '../forget.ts'
 import { backupsChanged, useBackups, useCards, useConnections, useProfiles } from '../hooks.ts'
+import { type IconName, Icon } from '../icons.tsx'
+import { Loader } from '../mark.tsx'
 import { withSeed } from '../passkey.ts'
+import { profileCount } from '../show.ts'
 import { applyTheme } from '../theme.ts'
-import { DarkIcon, DeviceIcon, LightIcon, Line, type Place, Places, Spinner, Top, Verified, day, useAction } from '../ui.tsx'
+import { Line, Top, Verified, day, useAction } from '../ui.tsx'
 import { WHY_SECOND } from './SecondPasskey.tsx'
 
-type Props = { go: (to: Place) => void; onForgot: () => void; onIdCheck: () => void; onConnectAi: () => void; onAiApp: (address: string) => void; onAddPasskey: () => void; onWords: () => void }
+type Props = { onForgot: () => void; onIdCheck: () => void; onConnectAi: () => void; onAiApp: (address: string) => void; onAddPasskey: () => void; onWords: () => void }
 
-const profileCount = (n: number) => `${n} profile${n === 1 ? '' : 's'}`
-
-const THEMES: Array<[Theme, string, () => ReactNode]> = [
-  ['device', 'Device', DeviceIcon],
-  ['light', 'Light', LightIcon],
-  ['dark', 'Dark', DarkIcon],
+const THEMES: Array<[Theme, string, IconName]> = [
+  ['device', 'Device', 'circle-half'],
+  ['light', 'Light', 'sun'],
+  ['dark', 'Dark', 'moon'],
 ]
 
-export function Settings({ go, onForgot, onIdCheck, onConnectAi, onAiApp, onAddPasskey, onWords }: Props) {
+export function You({ onForgot, onIdCheck, onConnectAi, onAiApp, onAddPasskey, onWords }: Props) {
   const list = useProfiles()
   const [found, setFound] = useState(0)
   const cards = useCards(list, found)
@@ -69,7 +70,7 @@ export function Settings({ go, onForgot, onIdCheck, onConnectAi, onAiApp, onAddP
   return (
     <main>
       <Top>
-        <h1>Settings</h1>
+        <h1>You</h1>
       </Top>
       <section className="stack">
         <h2>Verified</h2>
@@ -101,7 +102,7 @@ export function Settings({ go, onForgot, onIdCheck, onConnectAi, onAiApp, onAddP
               <div key={b.id} className="row">
                 <span>{names[b.id] ?? day(b.time)}</span>
                 <button className={removing === b.id ? 'small danger solid' : 'small danger'} disabled={remove.busy} onClick={() => (removing === b.id ? remove.run(b.id) : setRemoving(b.id))}>
-                  {remove.busy && removing === b.id ? <Spinner /> : 'Remove'}
+                  {remove.busy && removing === b.id ? <Loader /> : 'Remove'}
                 </button>
               </div>
             ))}
@@ -128,7 +129,7 @@ export function Settings({ go, onForgot, onIdCheck, onConnectAi, onAiApp, onAddP
             {unknown && (
               <button className="row" disabled={find.busy} onClick={() => find.run()}>
                 <span>Find AI apps</span>
-                {find.busy && <Spinner />}
+                {find.busy && <Loader />}
               </button>
             )}
           </div>
@@ -139,9 +140,9 @@ export function Settings({ go, onForgot, onIdCheck, onConnectAi, onAiApp, onAddP
       <section className="stack">
         <h2>Appearance</h2>
         <div className="choice" role="radiogroup" aria-label="Appearance">
-          {THEMES.map(([t, words, ThemeIcon]) => (
+          {THEMES.map(([t, words, icon]) => (
             <button key={t} role="radio" aria-label={words} aria-checked={theme === t} className={theme === t ? 'here' : ''} onClick={() => pick(t)}>
-              <ThemeIcon />
+              <Icon name={icon} fill={theme === t} />
             </button>
           ))}
         </div>
@@ -159,8 +160,6 @@ export function Settings({ go, onForgot, onIdCheck, onConnectAi, onAiApp, onAddP
           {forgetting ? 'Forget' : 'Forget this device'}
         </button>
       </section>
-      <div className="fill" />
-      <Places at="settings" go={go} />
     </main>
   )
 }

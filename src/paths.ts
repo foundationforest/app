@@ -14,7 +14,7 @@ export const PATHS = {
   messages: '/messages',
   thread: '/thread',
   message: '/message',
-  settings: '/settings',
+  you: '/you',
   connect: '/connect',
   'connect-ai': '/connect-ai',
   ai: '/ai',

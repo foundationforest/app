@@ -1,49 +1,110 @@
-/* Four colors and one accent, and red for what went wrong. Dark is the same four reversed, with a
-   lighter red; the device's setting picks one unless data-theme on <html> says otherwise. The
-   accent is a fill only, with paper-light text on it in both themes. A review's score sits on its
-   own chip, sand with brown text, darker sand with light text in dark; the dot that marks what is
-   new is the accent, the ink in dark, where the accent is too faint for it. Manrope only; bold is
-   the only emphasis. Phone first: one column, at most 32rem wide on a laptop. */
+/* The app's look. Tokens by role: the page's ground (bg), cards on it (card), what sits sunk in it
+   (sunk); three inks, strongest first; two hairlines; the edge that alone marks a field or a tick
+   box; forest green for the one main action, deep green for Start, leaf for what is new, mint for
+   what is soft, sun for stars and warnings, red for errors, reports and removing. Dark is its own
+   set; the device's setting picks one unless data-theme on <html> says otherwise. Every text 4.5:1
+   against what is behind it, every icon and needed edge 3:1, light and dark (test/contrast.test.ts);
+   the star beside a rating, decorative, is the one left out. Figtree for words; Bricolage Grotesque
+   for titles, prices and scores. Phone first; from 900px the sidebar (frame.tsx). */
 :root {
-  --paper: #edeae0;
-  --paper-2: #c0cabf;
-  --ink-2: #313c34;
-  --ink: #121a15;
-  --accent: #1e5e43;
-  --on-accent: #edeae0;
-  --danger: #b3261e;
-  --chip: #efe3cc;
-  --on-chip: #6e4106;
-  --dot: var(--accent);
-  --radius: 10px;
+  --bg: #f2f0e8;
+  --card: #fdfcf8;
+  --sunk: #e8e5d9;
+  --ink: #111a15;
+  --ink2: #46524a;
+  --ink3: #626d66;
+  --line: #e1ded1;
+  --line2: #cbc7b8;
+  --edge: #8a8a7f;
+  --forest: #1e5e43;
+  --on-forest: #f7f5ee;
+  --deep: #123a2a;
+  --on-deep: #f2f0e8;
+  --on-deep2: #a9c4b5;
+  --leaf: #2f9a63;
+  --mint: #dcedde;
+  --on-mint: #174a35;
+  --sun: #e8a317;
+  --sun-bg: #fbefcc;
+  --on-sun: #6b4a00;
+  --danger: #b73f2c;
+  --danger-bg: #f9e3dd;
+  --on-danger: #ffffff;
+  --seg-on: var(--card);
+  --shadow: 0 1px 2px rgb(17 26 21 / 0.05), 0 10px 28px -14px rgb(17 26 21 / 0.18);
+  /* A light avatar: its market's color on this much of it over the card, its icon this much of it toward the ink. */
+  --look-tint: 16%;
+  --look-icon: 85%;
+  --look-to: var(--ink);
+  --text: 'Figtree Variable', system-ui, sans-serif;
+  --display: 'Bricolage Grotesque Variable', 'Figtree Variable', system-ui, sans-serif;
   --touch: 48px;
-  --font: 'Manrope Variable', system-ui, sans-serif;
   color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
-    --paper: #121a15;
-    --paper-2: #313c34;
-    --ink-2: #c0cabf;
-    --ink: #edeae0;
-    --danger: #f28b82;
-    --chip: #3b2c12;
-    --on-chip: #f0d49a;
-    --dot: var(--ink);
+    --bg: #0e1511;
+    --card: #18211b;
+    --sunk: #0a100d;
+    --ink: #eef0ea;
+    --ink2: #b9c3bb;
+    --ink3: #8f9a92;
+    --line: #243029;
+    --line2: #36443b;
+    --edge: #626d65;
+    --forest: #7fd1a3;
+    --on-forest: #0e1511;
+    --deep: #1c3d2d;
+    --on-deep: #eef0ea;
+    --on-deep2: #9dbcab;
+    --leaf: #7fd1a3;
+    --mint: #1f3529;
+    --on-mint: #a8dfc0;
+    --sun: #f0b93b;
+    --sun-bg: #3a2e12;
+    --on-sun: #f4d58a;
+    --danger: #f08a78;
+    --danger-bg: #3a1c16;
+    --on-danger: #1a0c09;
+    --seg-on: var(--line2);
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 10px 28px -14px rgb(0 0 0 / 0.6);
+    --look-tint: 24%;
+    --look-icon: 45%;
+    --look-to: #ffffff;
     color-scheme: dark;
   }
 }
 
 :root[data-theme='dark'] {
-  --paper: #121a15;
-  --paper-2: #313c34;
-  --ink-2: #c0cabf;
-  --ink: #edeae0;
-  --danger: #f28b82;
-  --chip: #3b2c12;
-  --on-chip: #f0d49a;
-  --dot: var(--ink);
+  --bg: #0e1511;
+  --card: #18211b;
+  --sunk: #0a100d;
+  --ink: #eef0ea;
+  --ink2: #b9c3bb;
+  --ink3: #8f9a92;
+  --line: #243029;
+  --line2: #36443b;
+  --edge: #626d65;
+  --forest: #7fd1a3;
+  --on-forest: #0e1511;
+  --deep: #1c3d2d;
+  --on-deep: #eef0ea;
+  --on-deep2: #9dbcab;
+  --leaf: #7fd1a3;
+  --mint: #1f3529;
+  --on-mint: #a8dfc0;
+  --sun: #f0b93b;
+  --sun-bg: #3a2e12;
+  --on-sun: #f4d58a;
+  --danger: #f08a78;
+  --danger-bg: #3a1c16;
+  --on-danger: #1a0c09;
+  --seg-on: var(--line2);
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 10px 28px -14px rgb(0 0 0 / 0.6);
+  --look-tint: 24%;
+  --look-icon: 45%;
+  --look-to: #ffffff;
   color-scheme: dark;
 }
 
@@ -56,11 +117,10 @@
 html,
 body {
   margin: 0;
-  background: var(--paper);
+  background: var(--bg);
   color: var(--ink);
-  font-family: var(--font);
-  font-size: 16px;
-  line-height: 1.5;
+  font: 400 16px/1.45 var(--text);
+  -webkit-font-smoothing: antialiased;
   -webkit-text-size-adjust: 100%;
   -webkit-tap-highlight-color: transparent;
 }
@@ -71,19 +131,30 @@ p {
   margin: 0;
 }
 
-h1 {
-  font-size: 28px;
+/* Titles, prices and scores: Bricolage Grotesque, bold. */
+h1,
+.d,
+.big {
+  font-family: var(--display);
   font-weight: 700;
-  line-height: 1.2;
+  letter-spacing: -0.02em;
 }
 
+h1 {
+  font-size: 30px;
+  line-height: 1.1;
+}
+
+/* A section's name, quietly. */
 h2 {
   font-size: 14px;
   font-weight: 700;
+  color: var(--ink3);
+  padding: 0 6px;
 }
 
 p {
-  color: var(--ink-2);
+  color: var(--ink2);
 }
 
 a {
@@ -101,7 +172,7 @@ main {
   width: 100%;
   max-width: 32rem;
   margin: 0 auto;
-  padding: max(12px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
+  padding: max(12px, env(safe-area-inset-top)) 20px max(16px, env(safe-area-inset-bottom));
   flex: 1 0 auto;
   display: flex;
   flex-direction: column;
@@ -125,13 +196,20 @@ main {
   font-weight: 700;
 }
 
-.fill {
-  flex: 1;
+.fill,
+.grow {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .stack {
   display: grid;
   gap: 8px;
+}
+
+.center {
+  justify-items: center;
+  text-align: center;
 }
 
 .mark {
@@ -144,20 +222,34 @@ main {
   gap: 12px;
 }
 
-/* Buttons: one primary per step, on the accent; the rest outlined; a quiet one is text alone. */
+/* Icons: Phosphor, in their text's color. */
+.icon {
+  flex: none;
+  display: block;
+  width: 22px;
+  height: 22px;
+}
+
+/* Buttons: one filled forest green per screen, for the main action; plain (the card, with an edge),
+   soft (mint) and text (quiet) for the rest; red text only to remove or report, filled red to
+   confirm it. */
 button {
   font: inherit;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1;
   color: var(--ink);
-  min-height: var(--touch);
-  border: 1px solid var(--paper-2);
-  border-radius: var(--radius);
-  background: var(--paper);
-  padding: 0 16px;
+  min-height: 54px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--card);
+  box-shadow: inset 0 0 0 1px var(--line2);
+  padding: 0 22px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 9px;
 }
 
 button:disabled {
@@ -165,223 +257,933 @@ button:disabled {
   cursor: default;
 }
 
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--forest);
+  outline-offset: 2px;
+}
+
+button > .icon {
+  width: 20px;
+  height: 20px;
+}
+
 button.primary {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--on-accent);
-  font-weight: 700;
+  background: var(--forest);
+  color: var(--on-forest);
+  box-shadow: none;
 }
 
-button.quiet,
-button.plain {
-  border-color: transparent;
+button.soft {
+  background: var(--mint);
+  color: var(--on-mint);
+  box-shadow: none;
+}
+
+button.quiet {
   background: none;
-}
-
-button.plain {
-  padding: 0;
-  min-width: var(--touch);
+  box-shadow: none;
+  min-height: 44px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink2);
 }
 
 button.danger {
-  border-color: var(--danger);
+  background: none;
+  box-shadow: none;
   color: var(--danger);
-  font-weight: 700;
 }
 
-.icon {
+button.danger.solid {
+  background: var(--danger);
+  color: var(--on-danger);
+}
+
+button.danger-text {
+  color: var(--danger);
+}
+
+button.small {
+  min-height: 38px;
+  border-radius: 12px;
+  padding: 0 14px;
+  font-size: 14.5px;
+  gap: 6px;
+}
+
+button.small > .icon {
+  width: 17px;
+  height: 17px;
+}
+
+button.link {
+  justify-self: start;
+  background: none;
+  box-shadow: none;
+  padding: 0;
+  min-height: 32px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink2);
+  gap: 6px;
+}
+
+/* An icon-only button: round, its own icon. */
+button.round {
+  position: relative;
   flex: none;
+  width: 42px;
+  min-height: 42px;
+  height: 42px;
+  padding: 0;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px var(--line);
 }
 
-/* A profile's name: its market in bold (one bold, in a title too), then its role in the muted tone. */
-.named strong {
+button.round.primary {
+  width: 46px;
+  height: 46px;
+  box-shadow: none;
+}
+
+button.round .count {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  box-shadow: 0 0 0 2px var(--bg);
+}
+
+button.plain {
+  background: none;
+  box-shadow: none;
+  padding: 0;
+  min-height: var(--touch);
+  min-width: var(--touch);
+}
+
+/* A link that is the step's one button: Stripe's page, in test mode. */
+a.button {
+  min-height: 54px;
+  border-radius: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  font-size: 17px;
   font-weight: 700;
 }
 
-.named .role {
-  color: var(--ink-2);
-  font-weight: 400;
+a.button.primary {
+  background: var(--forest);
+  color: var(--on-forest);
 }
 
-/* The one line that says why something can't be done. */
+/* An icon on a filled button takes the button's text color, wherever the button sits. */
+button.primary .icon,
+button.solid .icon {
+  color: inherit;
+}
+
+/* The one line that says why something can't be done: red when what was given is wrong, quiet when something is still missing. */
 .line {
-  color: var(--ink-2);
+  color: var(--ink2);
   text-align: center;
+  font-size: 15px;
 }
 
 .line.red {
   color: var(--danger);
 }
 
+/* Something loading: the mark filling from the trunk up. */
+.loader {
+  flex: none;
+  display: inline-block;
+}
+
+.loader line,
+.loader polyline {
+  opacity: 0.16;
+  animation: fill 1.8s ease-in-out infinite;
+}
+
+.loader .p2 {
+  animation-delay: 0.16s;
+}
+
+.loader .p3 {
+  animation-delay: 0.32s;
+}
+
+.loader .p4 {
+  animation-delay: 0.48s;
+}
+
+.loader.big {
+  display: block;
+  margin: 24px auto;
+  color: var(--forest);
+}
+
+@keyframes fill {
+  0% {
+    opacity: 0.16;
+  }
+  18%,
+  62% {
+    opacity: 1;
+  }
+  80%,
+  100% {
+    opacity: 0.16;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loader line,
+  .loader polyline {
+    animation: none;
+    opacity: 1;
+  }
+}
+
+.line .loader {
+  display: inline-block;
+  vertical-align: -4px;
+  margin-right: 8px;
+}
+
+/* A screen's top bar: back, its title, and what sits at its right. */
 .top {
   display: flex;
   align-items: center;
   gap: 8px;
-  min-height: var(--touch);
+  min-height: 52px;
 }
 
-.cards,
-.rows {
-  display: grid;
+.top-title {
+  flex: 1;
+  min-width: 0;
+}
+
+.top-right {
+  display: flex;
+  align-items: center;
   gap: 8px;
 }
 
-.card {
-  display: grid;
-  justify-content: stretch;
-  justify-items: start;
-  gap: 2px;
-  padding: 14px 16px;
-  text-align: left;
+.top .search {
+  margin-left: 4px;
 }
 
-.card span {
-  color: var(--ink-2);
+.titled {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
-.row {
-  justify-content: space-between;
-  text-align: left;
-}
-
-.row .icon {
-  color: var(--ink-2);
-}
-
-.badges {
+.profile-title {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-}
-
-.badge {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--ink) !important;
-  border: 1px solid var(--paper-2);
-  border-radius: 999px;
-  padding: 1px 10px;
-}
-
-.choice {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-}
-
-.choice .here {
-  font-weight: 700;
-  border-color: var(--ink);
-}
-
-.places {
-  position: sticky;
-  bottom: 0;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  padding-top: 8px;
-  background: var(--paper);
-}
-
-.places button {
-  border-color: transparent;
-  color: var(--ink-2);
-  flex-direction: column;
-  gap: 2px;
-  font-size: 13px;
-  min-height: 56px;
-}
-
-.places .here {
-  color: var(--ink);
-  font-weight: 700;
-}
-
-.place-icon {
-  position: relative;
-  display: inline-flex;
-}
-
-/* How many are new: on the bell, reviews, vouches and reports; on the inbox, messages. */
-.count {
-  position: absolute;
-  top: -6px;
-  left: 14px;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 5px;
-  border-radius: 999px;
-  background: var(--accent);
-  color: var(--on-accent);
-  font-size: 11px;
-  font-weight: 700;
-  line-height: 18px;
-  text-align: center;
-}
-
-.line .spinner {
-  display: inline-block;
-  vertical-align: -3px;
-  margin-right: 8px;
-}
-
-.spinner {
-  width: 18px;
-  height: 18px;
-  border: 2px solid currentColor;
-  border-right-color: transparent;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(1turn);
-  }
-}
-
-.row .aside,
-.card .last {
-  color: var(--ink-2);
-}
-
-.card .last {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 100%;
-}
-
-.row.chosen {
-  border-color: var(--ink);
-  font-weight: 700;
-}
-
-/* A link that is the step's one button: Stripe's page, in test mode. */
-a.button {
-  min-height: var(--touch);
-  border-radius: var(--radius);
-  display: inline-flex;
   align-items: center;
-  justify-content: center;
+  gap: 6px;
+  font-size: 22px;
+  line-height: 1.15;
+}
+
+/* Search Forest: the index, in a new tab. */
+.search {
+  flex: 1;
+  min-width: 0;
+  min-height: 46px;
+  border-radius: 999px;
+  background: var(--card);
+  box-shadow: inset 0 0 0 1px var(--line);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 16px;
+  color: var(--ink);
   text-decoration: none;
 }
 
-a.button.primary {
-  background: var(--accent);
-  color: var(--on-accent);
+.search .grow {
+  color: var(--ink3);
+}
+
+.search .icon:last-child {
+  width: 16px;
+  height: 16px;
+  color: var(--ink3);
+}
+
+/* A profile's name: its market in bold, then its role in the muted tone. */
+.named {
+  color: var(--ink);
+}
+
+.named strong {
   font-weight: 700;
 }
 
-.consent {
+.named .role {
+  color: var(--ink2);
+  font-weight: 500;
+}
+
+/* Cards: each a card of its own, apart. */
+.cards {
+  display: grid;
+  gap: 10px;
+}
+
+button.card {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  width: 100%;
+  padding: 14px;
+  border-radius: 22px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+  text-align: left;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.45;
+}
+
+button.card .named {
+  font-size: 16.5px;
+}
+
+.card-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Rows: one card, its rows split by hairlines. */
+.rows {
+  display: grid;
+  background: var(--card);
+  border-radius: 22px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.rows:empty {
+  display: none;
+}
+
+.rows > * + * {
+  border-top: 1px solid var(--line);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 13px;
+  width: 100%;
+  min-height: 64px;
+  padding: 14px 16px;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  text-align: left;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+.row > span:first-child:not(.two):not(.av):not(.who) {
+  font-weight: 700;
+  font-size: 16.5px;
+}
+
+.row > .icon {
+  color: var(--ink2);
+}
+
+.row > .av + .who {
+  flex: 1;
+  min-width: 0;
+}
+
+.row .aside {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+  color: var(--ink3);
   font-size: 14px;
+}
+
+.row.chosen {
+  background: var(--mint);
+  color: var(--on-mint);
+}
+
+.row.chosen .two > span,
+.row.chosen .aside {
+  color: var(--on-mint);
+}
+
+.row.pick {
+  min-height: 64px;
+}
+
+.said-row,
+.listing-row {
+  justify-content: flex-start;
+  align-items: flex-start;
+}
+
+.said-row .aside {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* A row that stands alone: how many messages are new, and Open. */
+.row.messages-row {
+  min-height: 0;
+  padding: 8px 8px 8px 16px;
+  border-radius: 22px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+}
+
+/* Two lines in a row or a card: what it is, in bold, and a quiet line under it. */
+.two {
+  display: grid;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+}
+
+.two > strong {
+  font-size: 16.5px;
+}
+
+.two > span,
+.two .last {
+  color: var(--ink3);
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.two > .said-text {
+  white-space: pre-wrap;
+  overflow: visible;
+  font-size: 15.5px;
+  color: var(--ink2);
+}
+
+.two > .who {
+  overflow: visible;
+}
+
+.icon.car {
+  color: var(--ink3);
+  width: 18px;
+  height: 18px;
+}
+
+.thumb {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  object-fit: cover;
+  flex: none;
+}
+
+/* Small things: a status chip, how many are new, the dot, a rating. */
+span.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 11px;
+  border-radius: 999px;
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  flex: none;
+  color: var(--ink2);
+  background: var(--sunk);
+}
+
+span.chip .icon {
+  width: 15px;
+  height: 15px;
+}
+
+.chip.new {
+  background: var(--mint);
+  color: var(--on-mint);
+}
+
+.chip.warn {
+  background: var(--sun-bg);
+  color: var(--on-sun);
+}
+
+.chip.bad {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.said-chip {
+  display: inline-flex;
+}
+
+.count {
+  display: inline-block;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: var(--forest);
+  color: var(--on-forest);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 20px;
+  text-align: center;
+}
+
+.dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--leaf);
+  flex: none;
+}
+
+.said-row .dot {
+  margin-top: 6px;
+}
+
+.rate {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.rate .icon {
+  width: 16px;
+  height: 16px;
+  color: var(--sun);
+}
+
+/* Avatars: the market's icon in its color. Solid: this profile offers. Light: it requests. */
+.av {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 46px;
+  height: 46px;
+  border-radius: 15px;
+  background: var(--h);
+  color: #ffffff;
+}
+
+.av.look {
+  background: color-mix(in srgb, var(--h) var(--look-tint), var(--card));
+  color: color-mix(in srgb, var(--h) var(--look-icon), var(--look-to));
+}
+
+.av.blank {
+  background: var(--sunk);
+}
+
+.av .icon {
+  width: 56%;
+  height: 56%;
+  color: inherit;
+}
+
+.av .letter {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.av.sm {
+  width: 34px;
+  height: 34px;
+  border-radius: 11px;
+}
+
+.av.sm .letter {
+  font-size: 16px;
+}
+
+.av.xs {
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+}
+
+.av.xs .letter {
+  font-size: 11px;
+}
+
+.av.lg {
+  width: 68px;
+  height: 68px;
+  border-radius: 22px;
+}
+
+.av.lg .letter {
+  font-size: 32px;
+}
+
+/* The two badges: a selfie check's light, an ID check's solid; tapped where one stands alone, its
+   words, above it. */
+.vb {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 7px;
+  background: var(--mint);
+  color: var(--on-mint);
+}
+
+.vb.alone {
+  cursor: pointer;
+}
+
+.vb.id {
+  background: var(--forest);
+  color: var(--on-forest);
+}
+
+.vb .icon {
+  width: 14px;
+  height: 14px;
+  color: inherit;
+}
+
+.vb.lg {
+  width: 26px;
+  height: 26px;
+  border-radius: 9px;
+}
+
+.vb.lg .icon {
+  width: 18px;
+  height: 18px;
+}
+
+.verified-said {
+  position: fixed;
+  z-index: 10;
+  transform: translate(-50%, calc(-100% - 6px));
+  padding: 5px 10px;
+  border-radius: 10px;
+  background: var(--ink);
+  color: var(--bg);
+  font-family: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: 0;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* Who another profile is: its avatar, its name, its badge. */
+.who {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.who .addr {
+  color: var(--ink3);
+  font-weight: 400;
+}
+
+/* The phone's tabs: Home, Notifications, You. */
+.tabbar {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding: 8px 16px max(10px, env(safe-area-inset-bottom));
+  background: var(--card);
+  box-shadow: 0 -1px 0 var(--line);
+}
+
+.tabbar button {
+  flex-direction: column;
+  gap: 3px;
+  min-height: 0;
+  padding: 4px 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink3);
+}
+
+.tabbar button.on {
+  color: var(--forest);
+  font-weight: 800;
+}
+
+.tabbar .ti {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 30px;
+  border-radius: 15px;
+}
+
+.tabbar .on .ti {
+  background: var(--mint);
+}
+
+.tabbar .icon {
+  width: 24px;
+  height: 24px;
+}
+
+.tabbar .on .icon {
+  color: var(--on-mint);
+}
+
+.tabbar .count {
+  position: absolute;
+  top: -4px;
+  right: 2px;
+  box-shadow: 0 0 0 2px var(--card);
+}
+
+/* The laptop's sidebar, and the screen to its right. */
+.desk {
+  flex: 1 0 auto;
+  display: flex;
+}
+
+.side {
+  position: sticky;
+  top: 0;
+  width: 264px;
+  height: 100dvh;
+  flex: none;
+  overflow-y: auto;
+  padding: 20px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-right: 1px solid var(--line);
+  background: var(--bg);
+}
+
+.side .brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 12px 14px;
+}
+
+.side .brand .d {
+  font-size: 21px;
+}
+
+.side .search {
+  flex: none;
+  margin: 0 2px 10px;
+}
+
+.navs {
+  display: grid;
+  gap: 4px;
+}
+
+button.nav {
+  justify-content: flex-start;
+  gap: 12px;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: 12px;
+  background: none;
+  box-shadow: none;
+  font-size: 15.5px;
+  font-weight: 600;
+  color: var(--ink2);
+  text-align: left;
+}
+
+button.nav.on {
+  background: var(--card);
+  color: var(--ink);
+  font-weight: 700;
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+button.nav > .icon {
+  width: 21px;
+  height: 21px;
+}
+
+button.nav.profile {
+  min-height: 48px;
+}
+
+button.nav.profile .grow {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 400;
+}
+
+button.nav.profile .role {
+  color: var(--ink3);
+}
+
+button.nav.green {
+  color: var(--forest);
+}
+
+.side h2 {
+  padding: 18px 12px 6px;
+}
+
+button.ai-app {
+  justify-content: flex-start;
+  gap: 10px;
+  width: 100%;
+  min-height: 0;
+  padding: 10px 12px;
+  border-radius: 16px;
+  box-shadow: inset 0 0 0 1px var(--line);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.35;
+}
+
+.ai-app .ico {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 11px;
+  background: var(--mint);
+  color: var(--on-mint);
+}
+
+.ai-app .two > strong {
+  font-size: 15px;
+}
+
+.ai-app .two > span {
+  font-size: 12.5px;
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.content > main {
+  max-width: calc(32rem + 72px);
+  padding: 28px 36px;
+}
+
+.content > main.home {
+  max-width: 980px;
+}
+
+.content > main.home .cards {
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+/* Choices of one: the appearance; Received and Given. */
+.choice,
+.tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 14px;
+  background: var(--sunk);
+}
+
+.choice button,
+.tabs button {
+  flex: 1;
+  min-height: 40px;
+  border-radius: 11px;
+  background: none;
+  box-shadow: none;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink2);
+}
+
+.choice .here,
+.tabs .here {
+  background: var(--seg-on);
+  color: var(--ink);
+  font-weight: 700;
+  box-shadow: 0 1px 2px rgb(17 26 21 / 0.12);
+}
+
+/* A checkbox's box: its edge when empty, the forest green with its tick when ticked. */
+.tick {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 9px;
+  box-shadow: inset 0 0 0 2px var(--edge);
+  color: transparent;
+}
+
+.tick.on {
+  background: var(--forest);
+  box-shadow: none;
+  color: var(--on-forest);
+}
+
+.row .tick .icon {
+  width: 16px;
+  height: 16px;
+  color: inherit;
 }
 
 /* Text tapped open, such as what the ID check keeps. */
 summary {
   cursor: pointer;
   padding: 10px 0;
+}
+
+.consent {
+  font-size: 14px;
 }
 
 .pair {
@@ -406,25 +1208,46 @@ summary {
 }
 
 .field .label {
+  display: flex;
+  gap: 8px;
   font-size: 14px;
   font-weight: 700;
+  color: var(--ink2);
+}
+
+.field .label .aside {
+  font-weight: 400;
+  color: var(--ink3);
 }
 
 .hint {
   font-size: 14px;
+  color: var(--ink3);
 }
 
 input,
 textarea,
 select {
   font: inherit;
+  font-size: 16.5px;
   color: var(--ink);
-  background: var(--paper);
-  border: 1px solid var(--paper-2);
-  border-radius: var(--radius);
-  min-height: var(--touch);
-  padding: 10px 12px;
+  background: var(--card);
+  border: 0;
+  border-radius: 16px;
+  box-shadow: inset 0 0 0 1px var(--edge);
+  min-height: 54px;
+  padding: 14px 16px;
   width: 100%;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--ink3);
+}
+
+input[type='search'] {
+  border-radius: 999px;
+  min-height: 48px;
 }
 
 textarea {
@@ -432,35 +1255,38 @@ textarea {
 }
 
 input[type='range'] {
-  border: none;
+  box-shadow: none;
+  background: none;
   padding: 0;
-  accent-color: var(--accent);
+  accent-color: var(--forest);
 }
 
 input:focus,
 textarea:focus,
-select:focus,
-button:focus-visible {
-  outline: 2px solid var(--accent);
+select:focus {
+  outline: 2px solid var(--forest);
   outline-offset: 1px;
 }
 
+/* A choice in a form: pills, the one picked in the ink. */
 .chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
 }
 
-.chip {
+button.chip {
   min-height: 40px;
+  padding: 0 15px;
   border-radius: 999px;
-  padding: 0 14px;
+  font-size: 15px;
+  font-weight: 600;
 }
 
-.chip.here {
-  border-color: var(--accent);
-  background: var(--accent);
-  color: var(--on-accent);
+button.chip.here {
+  background: var(--ink);
+  color: var(--bg);
+  box-shadow: none;
   font-weight: 700;
 }
 
@@ -486,7 +1312,14 @@ button:focus-visible {
   gap: 4px;
 }
 
-/* Drawn here, not the browser's, so Safari hides its thumb too: a plain track, the thumb on the accent. */
+.big {
+  font-size: 48px;
+  line-height: 1.1;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+/* Drawn here, not the browser's, so Safari hides its thumb too: a plain track, the thumb in forest green. */
 .score input[type='range'] {
   -webkit-appearance: none;
   appearance: none;
@@ -497,13 +1330,13 @@ button:focus-visible {
 .score input[type='range']::-webkit-slider-runnable-track {
   height: 6px;
   border-radius: 3px;
-  background: var(--paper-2);
+  background: var(--edge);
 }
 
 .score input[type='range']::-moz-range-track {
   height: 6px;
   border-radius: 3px;
-  background: var(--paper-2);
+  background: var(--edge);
 }
 
 .score input[type='range']::-webkit-slider-thumb {
@@ -514,7 +1347,7 @@ button:focus-visible {
   margin-top: -10px;
   border: none;
   border-radius: 50%;
-  background: var(--accent);
+  background: var(--forest);
 }
 
 .score input[type='range']::-moz-range-thumb {
@@ -522,7 +1355,7 @@ button:focus-visible {
   height: 26px;
   border: none;
   border-radius: 50%;
-  background: var(--accent);
+  background: var(--forest);
 }
 
 .score input.untouched::-webkit-slider-thumb {
@@ -541,42 +1374,25 @@ button:focus-visible {
   gap: 8px;
 }
 
-.entry {
-  display: grid;
-  gap: 6px;
-  padding: 14px 16px;
-  border: 1px solid var(--paper-2);
-  border-radius: var(--radius);
-}
-
-.entry .kind {
-  font-size: 14px;
-  font-weight: 700;
-}
-
-.who {
-  display: inline-flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-}
-
-/* A thread: theirs on the left, the person's own on the right, on the accent; each with its time,
-   quietly, and a quiet line with the day wherever the day changes. */
+/* A thread: theirs on the left, on the card; the person's own on the right, in forest green; each
+   with its time, quietly, and a quiet line with the day wherever the day changes. */
 .thread {
-  display: grid;
-  gap: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
 }
 
 .said {
-  justify-self: start;
+  align-self: flex-start;
   display: grid;
   gap: 2px;
-  max-width: 85%;
-  padding: 8px 12px;
-  border-radius: var(--radius);
-  background: var(--paper-2);
+  max-width: 78%;
+  padding: 10px 14px;
+  border-radius: 20px 20px 20px 7px;
+  background: var(--card);
+  box-shadow: inset 0 0 0 1px var(--line);
   color: var(--ink);
+  line-height: 1.38;
 }
 
 .said .text {
@@ -586,171 +1402,140 @@ button:focus-visible {
 
 .said .sent {
   justify-self: end;
-  font-size: 11px;
-  opacity: 0.75;
-}
-
-.day-line {
-  justify-self: center;
-  font-size: 13px;
-  padding: 4px 0;
+  font-size: 11.5px;
+  opacity: 0.8;
 }
 
 .said.mine {
-  justify-self: end;
-  background: var(--accent);
-  color: var(--on-accent);
+  align-self: flex-end;
+  border-radius: 20px 20px 7px 20px;
+  background: var(--forest);
+  color: var(--on-forest);
+  box-shadow: none;
 }
 
-/* The top bar's title, and what sits at its right. */
-.top-title {
+.day-line {
+  align-self: center;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink3);
+  padding: 4px 0 8px;
+}
+
+/* A thread's reply, in one row: the text box, growing with what is typed, and the round Send. */
+.composer {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.composer textarea {
   flex: 1;
-  min-width: 0;
+  resize: none;
+  field-sizing: content;
+  min-height: 46px;
+  max-height: 10rem;
+  padding: 11px 18px;
+  border-radius: 24px;
 }
 
-.top-right {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.top h1 {
-  font-size: 22px;
-}
-
-.titled {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.titled .shield {
-  width: 24px;
-  height: 24px;
-}
-
-/* Two lines in a row or a card: what it is, in bold, and a quiet line under it. */
-.two {
+/* A button that stays at the bottom while the page scrolls. */
+.foot {
+  position: sticky;
+  bottom: 0;
+  margin-top: auto;
   display: grid;
-  gap: 2px;
-  flex: 1;
-  min-width: 0;
-  text-align: left;
+  gap: 8px;
+  padding-top: 12px;
+  background: var(--bg);
 }
 
-.two > span,
-.two .last {
-  color: var(--ink-2);
+/* A listing's photos: tiles, and one to add more. */
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.tile {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 14px;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  background: var(--sunk);
 }
 
-.card-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.tile img {
   width: 100%;
-}
-
-.card-line {
-  font-size: 14px;
-}
-
-.row {
-  gap: 12px;
-}
-
-.row.pick {
-  min-height: 64px;
-  padding: 10px 16px;
-}
-
-.row .aside {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  flex: none;
-}
-
-.said-row,
-.listing-row {
-  min-height: 64px;
-  padding: 10px 14px;
-  justify-content: flex-start;
-}
-
-.thumb {
-  width: 48px;
-  height: 48px;
-  border-radius: 8px;
+  height: 100%;
   object-fit: cover;
-  flex: none;
+  display: block;
 }
 
-/* Something new. */
-.dot {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--dot);
-  flex: none;
+.tile.add {
+  display: grid;
+  place-items: center;
+  box-shadow: inset 0 0 0 1px var(--edge);
+  background: var(--card);
+  color: var(--ink2);
+  cursor: pointer;
 }
 
-.place-icon .dot {
+.tile .remove {
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: 4px;
+  right: 4px;
+  min-height: 32px;
+  min-width: 32px;
+  background: var(--card);
+  border-radius: 50%;
 }
 
-/* A review's score, a vouch and a report, each on its chip. */
-.said-chip {
-  flex: none;
-  min-width: 56px;
-  text-align: center;
-  font-size: 14px;
-  font-weight: 700;
-  border-radius: 999px;
-  padding: 3px 10px;
-  white-space: nowrap;
+.tile .remove .icon {
+  width: 16px;
+  height: 16px;
 }
 
-.said-chip.score {
-  background: var(--chip);
-  color: var(--on-chip);
-}
-
-.said-chip.vouch {
-  border: 1px solid var(--ink-2);
-  color: var(--ink);
-}
-
-.said-chip.report {
-  background: var(--danger);
-  color: var(--paper);
-}
-
-.big {
-  font-size: 48px;
-  font-weight: 700;
-  line-height: 1.1;
+.address {
   color: var(--ink);
   overflow-wrap: anywhere;
 }
 
-/* A checkbox's box: quiet when empty, the accent with its tick on it when ticked. */
-.row .tick {
-  color: var(--ink-2);
+.said-text {
+  color: var(--ink);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
-.tick.ticked rect {
-  fill: var(--accent);
-  stroke: var(--accent);
+/* A review's facts, one a row. */
+.facts {
+  display: grid;
+  margin: 0;
+  border-top: 1px solid var(--line);
 }
 
-.tick.ticked polyline {
-  stroke: var(--on-accent);
+.facts > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.facts dt {
+  color: var(--ink3);
+}
+
+.facts dd {
+  margin: 0;
+  text-align: right;
+  font-weight: 700;
+}
+
+/* A profile's line under its name: its rating, which opens its Feedback. */
+.lines {
+  display: grid;
+  justify-items: start;
 }
 
 /* Steps, numbered, one to a line. */
@@ -769,13 +1554,9 @@ button:focus-visible {
   margin-top: 8px;
 }
 
-.center {
-  justify-items: center;
-  text-align: center;
-}
-
 .quiet-text {
   font-size: 14px;
+  color: var(--ink3);
 }
 
 /* Your 24 words: numbered, in two columns. */
@@ -800,239 +1581,16 @@ button:focus-visible {
   font-variant-numeric: tabular-nums;
 }
 
-.said-text {
-  color: var(--ink);
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-}
-
-/* A review's facts, one a row. */
-.facts {
-  display: grid;
-  margin: 0;
-  border-top: 1px solid var(--paper-2);
-}
-
-.facts > div {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 12px 0;
-  border-bottom: 1px solid var(--paper-2);
-}
-
-.facts dt {
-  color: var(--ink-2);
-}
-
-.facts dd {
-  margin: 0;
-  text-align: right;
-  font-weight: 700;
-}
-
-/* Two choices side by side: Received and Given. */
-.tabs {
-  display: flex;
-  gap: 6px;
-}
-
-.tabs button {
-  min-height: 40px;
-  border-radius: 999px;
-  padding: 0 14px;
-}
-
-.tabs .here {
-  border-color: var(--ink);
-  font-weight: 700;
-}
-
-button.small {
-  min-height: 40px;
-  padding: 0 12px;
-}
-
-button.link {
-  justify-self: start;
-  border: none;
-  background: none;
-  padding: 0;
-  min-height: 32px;
-  color: var(--ink-2);
-}
-
-/* A profile's line under its name: its rating. */
-.lines {
-  display: grid;
-  justify-items: start;
-}
-
-button.danger.solid {
-  background: var(--danger);
-  color: var(--paper);
-}
-
-button.danger-text {
-  color: var(--danger);
-}
-
-.messages-row {
-  display: flex;
-  align-items: center;
-  padding: 8px 8px 8px 16px;
-  border: 1px solid var(--paper-2);
-  border-radius: var(--radius);
-}
-
-.who .addr {
-  color: var(--ink-2);
-  font-weight: 400;
-}
-
-.field .label {
-  display: flex;
-  gap: 8px;
-}
-
-.field .label .aside {
-  font-weight: 400;
-  color: var(--ink-2);
-}
-
-/* A thread's reply, in one row: the text box, growing with what is typed, and the round Send. */
-.composer {
-  display: flex;
-  align-items: flex-end;
-  gap: 8px;
-}
-
-.composer textarea {
-  flex: 1;
-  resize: none;
-  field-sizing: content;
-  max-height: 10rem;
-}
-
-button.round {
-  flex: none;
-  width: var(--touch);
-  padding: 0;
-  border-radius: 50%;
-}
-
-/* A button that stays at the bottom while the page scrolls. */
-.foot {
-  position: sticky;
-  bottom: 0;
-  margin-top: auto;
-  display: grid;
-  padding-top: 8px;
-  background: var(--paper);
-}
-
-/* A listing's photos: tiles, and one to add more. */
-.tiles {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-}
-
-.tile {
-  position: relative;
-  aspect-ratio: 1;
-  border-radius: 8px;
-  overflow: hidden;
-  background: var(--paper-2);
-}
-
-.tile img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.tile.add {
-  display: grid;
-  place-items: center;
-  border: 1px dashed var(--ink-2);
-  background: none;
-  cursor: pointer;
-}
-
-.tile .remove {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  min-height: 32px;
-  min-width: 32px;
-  background: var(--paper);
-  border-radius: 50%;
-}
-
-.address {
-  color: var(--ink);
-  overflow-wrap: anywhere;
-}
-
-/* A row that is no button: what it says at the left, its check or its one action at the right. */
-div.row {
-  display: flex;
-  align-items: center;
-  min-height: var(--touch);
-  padding: 4px 4px 4px 16px;
-  border: 1px solid var(--paper-2);
-  border-radius: var(--radius);
-}
-
-div.row > .icon {
-  margin-right: 12px;
-}
-
-/* An icon on a filled button takes the button's text color, wherever the button sits. */
-button.primary .icon,
-button.solid .icon {
-  color: inherit;
-}
-
-/* How a profile is verified, by its strongest check's shield; tapped, its words, above it. */
-.verified {
-  display: inline-flex;
-  flex: none;
-}
-
-.verified .verified-said {
-  position: fixed;
-  z-index: 10;
-  transform: translate(-50%, calc(-100% - 6px));
-  padding: 4px 10px;
-  border-radius: 8px;
-  background: var(--ink);
-  color: var(--paper);
-  font-size: 13px;
-  font-weight: 700;
-  line-height: 1.4;
-  white-space: nowrap;
-  pointer-events: none;
-}
-
-/* Notifications: a review's text in full; a profile's new messages, in the ink, with how many. */
-.two > .said-text {
-  white-space: pre-wrap;
-  overflow: visible;
-}
-
-.aside .count {
-  position: static;
-}
-
 /* A place: one row in the form, its words or Choose on the map; tapped, its screen over the form,
    the kind of place, the map filling what is left, then the radius or the exact spot's line, the
    name and Done. */
 button.place-row {
   justify-content: flex-start;
   text-align: left;
+  font-size: 16.5px;
+  font-weight: 400;
+  line-height: 1.3;
+  box-shadow: inset 0 0 0 1px var(--edge);
 }
 
 .placing {
@@ -1041,7 +1599,7 @@ button.place-row {
   z-index: 20;
   overflow-y: auto;
   overscroll-behavior: contain;
-  background: var(--paper);
+  background: var(--bg);
 }
 
 .placing:focus {
@@ -1053,7 +1611,7 @@ button.place-row {
   max-width: 32rem;
   min-height: 100%;
   margin: 0 auto;
-  padding: max(12px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
+  padding: max(12px, env(safe-area-inset-top)) 20px max(16px, env(safe-area-inset-bottom));
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -1064,8 +1622,8 @@ button.place-row {
   flex: 1 0 280px;
   display: grid;
   place-items: center;
-  border: 1px solid var(--paper-2);
-  border-radius: var(--radius);
+  border-radius: 22px;
+  box-shadow: inset 0 0 0 1px var(--line);
   overflow: hidden;
 }
 
@@ -1076,11 +1634,13 @@ button.place-row {
 
 .map-box .locate {
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: 10px;
+  right: 10px;
   z-index: 3;
   width: var(--touch);
+  min-height: var(--touch);
   padding: 0;
+  border-radius: 50%;
 }
 
 /* The area's radius, or the exact spot's line, in the same room: the map keeps its size between them. */
@@ -1104,7 +1664,7 @@ button.place-row {
 }
 
 .placing .hint {
-  color: var(--ink-2);
+  color: var(--ink2);
 }
 
 /* What MapLibre's own stylesheet would set, and no more: the canvas, the pin, the attribution in
@@ -1138,7 +1698,7 @@ button.place-row {
 }
 
 .map-pin {
-  color: var(--dot);
+  color: var(--forest);
   cursor: grab;
 }
 
@@ -1164,8 +1724,8 @@ button.place-row {
   padding: 1px 6px;
   font-size: 11px;
   line-height: 1.5;
-  color: var(--ink-2);
-  background: color-mix(in srgb, var(--paper) 80%, transparent);
+  color: var(--ink2);
+  background: color-mix(in srgb, var(--bg) 80%, transparent);
   border-top-left-radius: 6px;
 }
 

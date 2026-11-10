@@ -1,5 +1,5 @@
 // The app's files that are neither hashed nor kept in public/: the favicon and the PWA icons, made at
-// each build from the mark's one component (src/mark.tsx), ink on paper, 8 units around it; and the
+// each build from the mark's one component (src/mark.tsx), ink on the page's ground, 8 units around it; and the
 // web manifest. None of them is precached: the service worker asks the network for them first
 // (vite.config.ts), so a new mark or manifest shows at the next open. Served from memory in dev.
 
@@ -10,14 +10,14 @@ import type { Plugin } from 'vite'
 
 import { Mark } from '../src/mark.tsx'
 
-/** The theme's paper and ink (src/theme.css). */
-export const PAPER = '#EDEAE0'
-export const INK = '#121A15'
+/** The theme's ground and ink, light (src/theme.css). */
+export const BG = '#F2F0E8'
+export const INK = '#111A15'
 
 /** The PNG icons: the home screen's on Apple devices, and the manifest's two. */
 export const PNG_SIZES = { 'icon-180.png': 180, 'icon-192.png': 192, 'icon-512.png': 512 }
 
-/** The mark as its component draws it, its shapes in ink on a square of paper 8 units wider on each side. */
+/** The mark as its component draws it, its shapes in ink on a square of the ground 8 units wider on each side. */
 export function iconSvg(): string {
   const drawn = renderToStaticMarkup(createElement(Mark))
   const attr = (name: string) => new RegExp(`\\s${name}="([^"]*)"`).exec(drawn)![1]!
@@ -25,7 +25,7 @@ export function iconSvg(): string {
   const box = [x - 8, y - 8, w + 16, h + 16]
   const shapes = drawn.slice(drawn.indexOf('>') + 1, drawn.lastIndexOf('</svg>'))
   const stroke = ['stroke-width', 'stroke-linecap', 'stroke-linejoin'].map((name) => `${name}="${attr(name)}"`).join(' ')
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${box.join(' ')}"><rect x="${box[0]}" y="${box[1]}" width="${box[2]}" height="${box[3]}" fill="${PAPER}"/><g fill="${attr('fill')}" stroke="${INK}" ${stroke}>${shapes}</g></svg>\n`
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${box.join(' ')}"><rect x="${box[0]}" y="${box[1]}" width="${box[2]}" height="${box[3]}" fill="${BG}"/><g fill="${attr('fill')}" stroke="${INK}" ${stroke}>${shapes}</g></svg>\n`
 }
 
 /** The icon, as a PNG `size` pixels square. */

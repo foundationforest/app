@@ -18,13 +18,13 @@ import { CODES as HOST_LIST } from '../services/host/src/codes.ts'
 import { CODES as VERIFIER_LIST } from '../services/verifier/src/codes.ts'
 import { files } from '../build/markets.ts'
 import { proofFiles } from '../build/proofs.ts'
-import { INK, PAPER } from '../build/shell.ts'
+import { BG, INK } from '../build/shell.ts'
 import { config } from '../src/config.ts'
 import { rfc3339 } from '../src/fields/Moment.tsx'
 import { kindWords, marketList, marketWords, otherSide, pairOf, pairs, roleWords } from '../src/markets.ts'
 import { PATHS } from '../src/paths.ts'
 import { contactHref } from '../src/show.ts'
-import { PAPER as THEME_PAPER } from '../src/theme.ts'
+import { BG as THEME_BG } from '../src/theme.ts'
 import { HOST_CODES, SOMETHING, VERIFIER_CODES, entrySays, fieldWords, hostSays, verifierSays } from '../src/words.ts'
 
 const vercel = JSON.parse(readFileSync(new URL('../vercel.json', import.meta.url), 'utf8'))
@@ -109,18 +109,18 @@ test("the host's credits client: every package it imports but the standard's, at
   for (const name of imported) expect(app.dependencies[name], name).toBe(host.dependencies[name])
 })
 
-test("every colour the app writes outside theme.css: theme.css's paper and ink, light and dark", () => {
+test("every colour the app writes outside theme.css: theme.css's ground and ink, light and dark", () => {
   const css = readFileSync(new URL('../src/theme.css', import.meta.url), 'utf8')
   const block = (selector: string) => css.slice(css.indexOf(selector)).split('}')[0]!
   const token = (selector: string, name: string) => new RegExp(`--${name}:\\s*(#[0-9a-f]{6});`, 'i').exec(block(selector))![1]!.toLowerCase()
-  const light = { paper: token(':root {', 'paper'), ink: token(':root {', 'ink') }
-  const dark = { paper: token(":root[data-theme='dark'] {", 'paper'), ink: token(":root[data-theme='dark'] {", 'ink') }
-  expect(token(":root:not([data-theme='light']) {", 'paper'), "the device's dark, as the chosen one").toBe(dark.paper)
-  expect(THEME_PAPER, 'theme.ts, for the browser bars').toEqual({ light: light.paper, dark: dark.paper })
-  expect([PAPER.toLowerCase(), INK.toLowerCase()], "the icons and the manifest's colours (build/shell.ts)").toEqual([light.paper, light.ink])
+  const light = { bg: token(':root {', 'bg'), ink: token(':root {', 'ink') }
+  const dark = { bg: token(":root[data-theme='dark'] {", 'bg'), ink: token(":root[data-theme='dark'] {", 'ink') }
+  expect(token(":root:not([data-theme='light']) {", 'bg'), "the device's dark, as the chosen one").toBe(dark.bg)
+  expect(THEME_BG, 'theme.ts, for the browser bars').toEqual({ light: light.bg, dark: dark.bg })
+  expect([BG.toLowerCase(), INK.toLowerCase()], "the icons and the manifest's colours (build/shell.ts)").toEqual([light.bg, light.ink])
   const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8')
   const meta = (scheme: string) => new RegExp(`<meta name="theme-color" content="(#[0-9a-f]{6})" media="\\(prefers-color-scheme: ${scheme}\\)"`, 'i').exec(html)?.[1]?.toLowerCase()
-  expect([meta('light'), meta('dark')], "index.html's theme colours").toEqual([light.paper, dark.paper])
+  expect([meta('light'), meta('dark')], "index.html's theme colours").toEqual([light.bg, dark.bg])
 })
 
 test("checkEntry's words, as one line naming the field by its name in words", () => {

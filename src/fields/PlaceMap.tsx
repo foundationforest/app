@@ -1,6 +1,6 @@
 // The place screen's map (Place.tsx): the one module that loads MapLibre, so its code comes with
 // the place screen alone. OpenFreeMap's tiles (config.ts), Positron in light and Dark in dark, its
-// attribution always shown in full. An area is a circle in the dot's colour: a tap puts it there,
+// attribution always shown in full. An area is a circle in the forest green: a tap puts it there,
 // a drag inside it carries it, and wherever it is put the screen answers with the centre it will be
 // posted at, which the circle glides to, never a jump; a drag outside it moves the map, two fingers
 // zoom it. An exact spot is a pin, none until a tap drops one, which can be dragged. Enter puts
@@ -13,9 +13,9 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
 import { config } from '../config.ts'
+import { Icon } from '../icons.tsx'
 import { type Spot, kmBetween, ring } from '../near.ts'
 import { isDark } from '../theme.ts'
-import { PinIcon } from '../ui.tsx'
 
 // MapLibre's worker, built by Vite as a file of the app's own: a worker from 'self', as the CSP allows.
 setWorkerUrl(worker)
@@ -122,10 +122,10 @@ export default function PlaceMap(props: MapProps) {
     m.once('style.load', () => void (styled = true))
     m.on('error', () => void (styled || now.current.onFail()))
     m.on('load', () => {
-      const dot = getComputedStyle(document.documentElement).getPropertyValue('--dot').trim()
+      const forest = getComputedStyle(document.documentElement).getPropertyValue('--forest').trim()
       m.addSource('area', { type: 'geojson', data: NOTHING })
-      m.addLayer({ id: 'area', type: 'fill', source: 'area', paint: { 'fill-color': dot, 'fill-opacity': 0.15 } })
-      m.addLayer({ id: 'area-edge', type: 'line', source: 'area', paint: { 'line-color': dot, 'line-width': 2 } })
+      m.addLayer({ id: 'area', type: 'fill', source: 'area', paint: { 'fill-color': forest, 'fill-opacity': 0.15 } })
+      m.addLayer({ id: 'area-edge', type: 'line', source: 'area', paint: { 'line-color': forest, 'line-width': 2 } })
       ready.current = true
       draw(drawn.current)
     })
@@ -243,7 +243,7 @@ export default function PlaceMap(props: MapProps) {
   return (
     <>
       <div ref={box} className="map" />
-      {createPortal(<PinIcon filled />, pinAt)}
+      {createPortal(<Icon name="map-pin" fill />, pinAt)}
     </>
   )
 }

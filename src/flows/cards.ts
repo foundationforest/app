@@ -2,7 +2,7 @@
 // public. How it is verified is the verifications its profile entry carries, by which of the
 // verifier's keys each names: the face key's a face check, the ID key's an ID check. How many
 // listings it holds is its folder's entries at listing/<id>. With them, the access keys its profile
-// entry lists now, unended, by address, so Settings can tell one this device doesn't know.
+// entry lists now, unended, by address, so You can tell one this device doesn't know.
 
 import { liveContent, proofsOf } from '@foundationforest/folders'
 

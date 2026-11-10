@@ -52,7 +52,7 @@ test('a message and its reply: counted with nothing unlocked, opened in one unlo
   expect(opened.threads).toHaveLength(1)
   const [thread] = opened.threads
   expect([thread!.mine, thread!.them]).toEqual([t.address, s.address])
-  expect(thread!.who, "the sender's market and role, and the shield of their strongest check whose verification checks, the face check's").toEqual({ market: 'tutoring', role: 'student', check: 'face' })
+  expect(thread!.who, "the sender's market and role, and the badge of their strongest check whose verification checks, the face check's").toEqual({ market: 'tutoring', role: 'student', check: 'face' })
   expect(thread!.messages.map((m) => [m.text, m.mine])).toEqual([[ASK, false]])
   expect(await newCount(w.host, [t]), 'none new once opened').toBe(0)
 

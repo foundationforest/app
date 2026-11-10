@@ -8,14 +8,14 @@
 // Every step has a back. From Start, Get verified goes back to New to Forest? while nothing is under
 // way, else to Start (App.tsx), and every later step to Get verified, the check under way still
 // picked: the asking stops, nothing under way changes, and Continue picks it up where it was
-// (flows/verify.ts, `choose`). From Settings, back is Settings.
+// (flows/verify.ts, `choose`). From You, back is You.
 //
 // The screen keeps no seed of its own: it uses the one held after an unlock (held.ts), for 5
 // minutes since the last action, the check's own tab hiding the page meanwhile. So while a seed is
 // held as the screen opens (from Start, or from an unlock a moment before), the seed's number and
 // the wallet are worked out at once, and the stamp is asked for with them, needing no seed, until it
 // comes. Once it does, it is kept at once if a seed is still held; else Continue asks for one. With
-// none held as the screen opened (from Settings, or after a review), opening the check needs none,
+// none held as the screen opened (from You, or after a review), opening the check needs none,
 // and one unlock at Continue asks for the stamp, collects its gift, keeps it and makes every profile
 // show it.
 
@@ -26,9 +26,10 @@ import { type Check, under } from '../device.ts'
 import { type Step, NotFinished, NotPassed, advance, ask, choose, collect, consentOf, finish, open, pay, stampNumberAt, stepOf } from '../flows/verify.ts'
 import { walletKey } from '../flows/profiles.ts'
 import { isHeldFor } from '../held.ts'
+import { Loader } from '../mark.tsx'
 import { withSeed } from '../passkey.ts'
 import { proveInWorker } from '../proof/prove.ts'
-import { Line, type Note, Quiet, Spinner, Top, UnlockIcon, noteOf, useAction } from '../ui.tsx'
+import { Line, type Note, Quiet, Top, UnlockIcon, noteOf, useAction } from '../ui.tsx'
 
 /** How often the stamp is asked for while the check is open, and for how long; and while it is held for review. */
 const AWAY_EVERY_MS = 3_000
@@ -44,7 +45,7 @@ type Props = {
   id: string
   step: Step
   onVerified: () => void
-  /** Back from Get verified: to New to Forest? or Start; for someone verified already, to Settings. */
+  /** Back from Get verified: to New to Forest? or Start; for someone verified already, to You. */
   onBack: () => void
 }
 
@@ -295,7 +296,7 @@ export function Verify({ fromStart, id, step: first, onVerified, onBack }: Props
           </div>
           <Line note={start.note} />
           <button className="primary" disabled={!picked || start.busy} onClick={() => picked && pick(picked)}>
-            {start.busy ? <Spinner /> : 'Continue'}
+            {start.busy ? <Loader /> : 'Continue'}
           </button>
         </>
       ) : step.at === 'consent' ? (
@@ -310,12 +311,12 @@ export function Verify({ fromStart, id, step: first, onVerified, onBack }: Props
             </>
           ) : consent ? (
             <button className="primary" disabled={paying.busy} onClick={() => paying.run()}>
-              {paying.busy ? <Spinner /> : 'Pay $5'}
+              {paying.busy ? <Loader /> : 'Pay $5'}
             </button>
           ) : (
             !noConsent && (
               <button className="primary" disabled>
-                <Spinner />
+                <Loader />
               </button>
             )
           )}
@@ -323,7 +324,7 @@ export function Verify({ fromStart, id, step: first, onVerified, onBack }: Props
       ) : step.at === 'review' ? (
         <>
           <p className="line">
-            <Spinner />
+            <Loader />
             Being reviewed
           </p>
           <Line note={start.note ?? go.note} />
@@ -332,7 +333,7 @@ export function Verify({ fromStart, id, step: first, onVerified, onBack }: Props
         <>
           <Line note={keep.note ?? go.note} />
           <button className="primary" disabled={keep.busy || go.busy} onClick={() => (step.at === 'signed' ? keep.run() : go.run())}>
-            {keep.busy || go.busy ? <Spinner /> : <><UnlockIcon /> Continue</>}
+            {keep.busy || go.busy ? <Loader /> : <><UnlockIcon /> Continue</>}
           </button>
         </>
       ) : away && !start.busy ? (
@@ -340,7 +341,7 @@ export function Verify({ fromStart, id, step: first, onVerified, onBack }: Props
           <p className="line">Finish in the other tab.</p>
           <Line note={go.note ?? start.note} />
           <button className="primary" disabled={go.busy} onClick={() => go.run()}>
-            {go.busy ? <Spinner /> : <><UnlockIcon /> Continue</>}
+            {go.busy ? <Loader /> : <><UnlockIcon /> Continue</>}
           </button>
           <button className="quiet" disabled={go.busy || start.busy} onClick={() => start.run()}>
             Open the check
@@ -351,7 +352,7 @@ export function Verify({ fromStart, id, step: first, onVerified, onBack }: Props
           {away && <p className="line">Finish in the other tab.</p>}
           <Line note={start.note} />
           <button className="primary" disabled={start.busy} onClick={() => start.run()}>
-            {start.busy ? <Spinner /> : 'Start'}
+            {start.busy ? <Loader /> : 'Start'}
           </button>
         </>
       )}

@@ -4,7 +4,7 @@
 // backup's own seed open the person's; not a different Forest from the one this device lists; and
 // verified, a stamp in its Profiles folder, since the new passkey's folder is paid for from its
 // wallet. Then a new passkey is made and added to that seed exactly as a passkey added from
-// Settings is (flows/backups.ts): it opens the seed from then on. The words are never kept.
+// You is (flows/backups.ts): it opens the seed from then on. The words are never kept.
 
 import { openingHalf, importWords, WORD_COUNT } from '@foundationforest/keys'
 

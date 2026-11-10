@@ -1,12 +1,12 @@
 // A new message, all of it there from the start. To: an address or a Share link, filled in when one
 // came with the screen (/message?to=<address>, or Message on a review received), or a profile's page
 // on the index, as Share hands it out; under it, once it is a profile, who it is (its market and
-// role, the shield). From: the person's profile on the other
+// role, the badge). From: the person's profile on the other
 // side of that profile's market (the same role where the market has one), picked for them, or New
 // profile when they have none, one unlock. The message, and Send, one unlock. When Send can't work,
 // one line says why, once. To may be one of the person's own profiles, From their profile on the
 // other side, as for anyone's; only where that would be the same profile, in a market with one
-// role, is it refused. From shows the shield of that profile's strongest check, from its card.
+// role, is it refused. From shows the badge of that profile's strongest check, from its card.
 
 import { useEffect, useState } from 'react'
 
@@ -19,11 +19,12 @@ import { makeProfile } from '../flows/profile.ts'
 import { strongest } from '../flows/cards.ts'
 import { addressIn } from '../flows/entries.ts'
 import { useCards, useProfiles } from '../hooks.ts'
+import { Loader } from '../mark.tsx'
 import { otherSide } from '../markets.ts'
 import { holdThread, opened } from '../opened.ts'
 import { withSeed } from '../passkey.ts'
 import { checkInWorker, proveInWorker } from '../proof/prove.ts'
-import { Line, Named, type Note, Spinner, Top, UnlockIcon, Verified, useAction } from '../ui.tsx'
+import { Line, Named, type Note, Top, UnlockIcon, Verified, useAction } from '../ui.tsx'
 import { Who } from './Who.tsx'
 
 type Props = { to?: string; onSent: (mine: string, them: string) => void; onBack: () => void }
@@ -98,7 +99,7 @@ export function Message({ to: given, onSent, onBack }: Props) {
               </span>
               {!me && (
                 <button className="small" disabled={make.busy} onClick={() => make.run()}>
-                  {make.busy ? <Spinner /> : <><UnlockIcon /> New profile</>}
+                  {make.busy ? <Loader /> : <><UnlockIcon /> New profile</>}
                 </button>
               )}
             </div>
@@ -109,7 +110,7 @@ export function Message({ to: given, onSent, onBack }: Props) {
         <textarea aria-label="Message" rows={4} value={text} onChange={(e) => setText(e.target.value)} />
         <Line note={why ?? make.note ?? go.note} />
         <button className="primary" disabled={go.busy || !me || !text.trim()} onClick={() => go.run()}>
-          {go.busy ? <Spinner /> : <><UnlockIcon /> Send</>}
+          {go.busy ? <Loader /> : <><UnlockIcon /> Send</>}
         </button>
       </div>
     </main>

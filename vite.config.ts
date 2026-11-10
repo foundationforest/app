@@ -6,7 +6,7 @@ import { defineConfig } from 'vitest/config'
 
 import { markets } from './build/markets.ts'
 import { proofs } from './build/proofs.ts'
-import { PAPER, shell } from './build/shell.ts'
+import { BG, shell } from './build/shell.ts'
 
 const here = (path: string) => fileURLToPath(new URL(path, import.meta.url))
 
@@ -42,8 +42,8 @@ export default defineConfig({
       start_url: '/',
       scope: '/',
       display: 'standalone',
-      background_color: PAPER,
-      theme_color: PAPER,
+      background_color: BG,
+      theme_color: BG,
       icons: [
         { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
         { src: '/icon-512.png', sizes: '512x512', type: 'image/png' },

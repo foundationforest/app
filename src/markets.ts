@@ -94,3 +94,7 @@ export function fieldsOf(market: Market, kind: Kind, role: string, aboutRole?: s
   if (kind === 'review') return { ...SHARED.review, ...forRole(market.review ?? {}, aboutRole) }
   return SHARED[kind]
 }
+
+/** The person's profiles in the order the app lists them: those whose role offers first, then by their words. */
+export const offersFirst = <P extends { label: string }>(list: P[]): Array<P & { pair: Pair }> =>
+  list.map((p) => ({ ...p, pair: pairOf(p.label) })).sort((a, b) => Number(b.pair.offers) - Number(a.pair.offers) || a.pair.words.localeCompare(b.pair.words))

@@ -1,16 +1,19 @@
 // The pieces every screen shares: the one-line note that says why something can't be done (red when
-// what was given is wrong, quiet when something is still missing), an action's busy and its note,
-// the icons (the shield, drawn once here, is how a profile shows it is verified, by its strongest
-// check: an outline for a face check, filled for an ID check, an icon whose words show only when it
-// is tapped; the unlock icon goes beside the word on a labeled button that asks the passkey, only
-// while a tap will ask, never on a list row), the inbox tray, the way into messages, always there,
-// with how many are new once any is; a checkbox's box, the dot that marks what is new, the chips of
-// a review, vouch or report, a profile's name (its market in bold, then its role, muted: Clothing
-// seller), the bars, how long ago something was, the day something happened, and the time of day.
+// what was given is wrong, quiet when something is still missing), an action's busy and its note;
+// the two badges, drawn once here, how a profile shows it is verified, by its strongest check (a
+// selfie check's light, an ID check's solid; their words a label, shown on a tap only where a badge
+// stands alone); the unlock icon, the fingerprint before the word on a labeled button that asks the
+// passkey, only while a tap will ask, never on a list row; the round way into messages, always
+// there, with how many are new once any is; a checkbox's box, the dot that marks what is new, a
+// rating with its star, the chips of a review, vouch or report, a profile's name (its market in
+// bold, then its role, muted: Clothing seller), Search Forest (the index, in a new tab), the bars,
+// how long ago something was, the day something happened, and the time of day.
 
-import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
+import { type MouseEvent, type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 
-import { useHeld, useNews, useOutgrown, useProfiles, useRated } from './hooks.ts'
+import { config } from './config.ts'
+import { useHeld } from './hooks.ts'
+import { Icon } from './icons.tsx'
 import { marketWords, pairOf } from './markets.ts'
 import type { Check } from './services/verifier.ts'
 import { Reloading } from './version.ts'
@@ -56,46 +59,24 @@ export function useAction<A extends unknown[]>(run: (...args: A) => Promise<void
   return { busy, note, setNote, run: go }
 }
 
-export const Spinner = () => <span className="spinner" role="status" aria-label="Working" />
-
-const Icon = ({ children, label, className }: { children: ReactNode; label?: string; className?: string }) => (
-  <svg
-    className={className ? `icon ${className}` : 'icon'}
-    width="20"
-    height="20"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    {...(label ? { role: 'img', 'aria-label': label } : { 'aria-hidden': true })}
-  >
-    {children}
-  </svg>
-)
-
-/** Beside the word on a labeled button that asks the passkey, and only while a tap will ask: with a seed held (held.ts), none, unless the tap asks a passkey anyway (`always`: one to make, or another to link to). Never on a list row. */
+/** Beside the word on a labeled button that asks the passkey, before it, and only while a tap will ask: with a seed held (held.ts), none, unless the tap asks a passkey anyway (`always`: one to make, or another to link to). Never on a list row. */
 export function UnlockIcon({ always = false }: { always?: boolean }) {
   const held = useHeld()
   if (held && !always) return null
-  return (
-    <Icon className="unlock">
-      <rect x="5" y="11" width="14" height="10" rx="2" />
-      <path d="M8 11V7a4 4 0 0 1 7.6-1.7" />
-    </Icon>
-  )
+  return <Icon name="fingerprint-simple" className="unlock" />
 }
-/** What each check's shield says, tapped: its words, and its accessible name. */
-const VERIFIED: Record<Check, string> = { face: 'Verified by face', id: 'Verified with ID' }
+/** What each check's badge says, tapped: its words, and its accessible name. */
+const VERIFIED: Record<Check, string> = { face: 'Verified with a selfie', id: 'Verified with ID' }
 
 /**
- * How a profile is verified, by its strongest check: the one way the app says so, an icon, the
- * shield drawn once here. An outline for a face check; filled, its tick in the paper's color, for an
- * ID check. Tapped, it says its words for a moment, above it; the tap goes no further, so a card or
- * row it sits in does not open. A span, not a button, so it can sit inside one.
+ * How a profile is verified, by its strongest check: the one way the app says so, one of two badges.
+ * A selfie check's is light, a face on mint; an ID check's solid, an ID card on the forest green.
+ * Its words are its label for screen readers and its title on hover. Inside a row or a card it
+ * takes no tap of its own: tapped, it does what the row or card does (tick, open). Only where it
+ * stands alone (`alone`: a profile's header) does a tap say its words for a moment, above it. A
+ * span, not a button, so it can sit inside one. `big` beside a title.
  */
-export function Verified({ check }: { check: Check }) {
+export function Verified({ check, big = false, alone = false }: { check: Check; big?: boolean; alone?: boolean }) {
   const [at, setAt] = useState<{ x: number; y: number } | null>(null)
   useEffect(() => {
     if (!at) return
@@ -106,22 +87,19 @@ export function Verified({ check }: { check: Check }) {
   const id = check === 'id'
   return (
     <span
-      className={id ? 'verified id' : 'verified'}
+      className={`vb${id ? ' id' : ''}${big ? ' lg' : ''}${alone ? ' alone' : ''}`}
       role="img"
       aria-label={words}
       title={words}
-      onClick={(e) => {
-        e.stopPropagation()
-        e.preventDefault()
-        const r = e.currentTarget.getBoundingClientRect()
-        // Its middle, kept far enough from the screen's edges for its words to fit.
-        setAt({ x: Math.min(Math.max(r.left + r.width / 2, 80), innerWidth - 80), y: r.top })
-      }}
+      {...(alone && {
+        onClick: (e: MouseEvent<HTMLSpanElement>) => {
+          const r = e.currentTarget.getBoundingClientRect()
+          // Its middle, kept far enough from the screen's edges for its words to fit.
+          setAt({ x: Math.min(Math.max(r.left + r.width / 2, 90), innerWidth - 90), y: r.top })
+        },
+      })}
     >
-      <svg className="icon shield" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-        <path d="M12 3l7 3v5c0 4.5-3 8.2-7 10-4-1.8-7-5.5-7-10V6z" fill={id ? 'currentColor' : 'none'} />
-        <polyline points="9,12 11.2,14.2 15.5,9.8" stroke={id ? 'var(--paper)' : 'currentColor'} />
-      </svg>
+      <Icon name={id ? 'identification-card' : 'smiley'} fill />
       {at && (
         <span className="verified-said" style={{ left: at.x, top: at.y }}>
           {words}
@@ -130,136 +108,60 @@ export function Verified({ check }: { check: Check }) {
     </span>
   )
 }
-export const BackIcon = () => (
-  <Icon>
-    <polyline points="15,5 8,12 15,19" />
-  </Icon>
-)
-export const ProfilesIcon = () => (
-  <Icon>
-    <circle cx="12" cy="8" r="4" />
-    <path d="M4 21a8 8 0 0 1 16 0" />
-  </Icon>
-)
-export const MessageIcon = () => (
-  <Icon>
-    <path d="M4 5h16v11H9l-5 4z" />
-  </Icon>
-)
-/** The inbox tray: messages. */
-export const InboxIcon = () => (
-  <Icon>
-    <path d="M3 13l3-8h12l3 8" />
-    <path d="M3 13v6h18v-6h-5.5l-1.5 2.5h-4L8.5 13z" />
-  </Icon>
-)
 
-/** A place: a pin, filled on the map where an exact spot is. */
-export const PinIcon = ({ filled = false }: { filled?: boolean }) => (
-  <Icon className={filled ? 'pin' : undefined}>
-    <path d="M12 21.5s-7-6.3-7-11.5a7 7 0 0 1 14 0c0 5.2-7 11.5-7 11.5z" fill={filled ? 'currentColor' : 'none'} />
-    <circle cx="12" cy="10" r="2.5" {...(filled && { fill: 'var(--paper)', stroke: 'none' })} />
-  </Icon>
-)
-/** Where the device is: the map's own button, which centres it there. */
-export const LocateIcon = () => (
-  <Icon>
-    <circle cx="12" cy="12" r="7" />
-    <circle cx="12" cy="12" r="2" fill="currentColor" />
-    <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
-  </Icon>
-)
-
-/** The way into messages, at a screen's top right: the inbox tray, always there, and how many are new once any is. An icon-only button shows its own icon. */
-export function Inbox({ count, onOpen }: { count: number; onOpen: () => void }) {
+/** The way into messages, at a screen's top right: a round button with its own icon, always there, and how many are new once any is. */
+export function MessagesButton({ count, onOpen }: { count: number; onOpen: () => void }) {
   return (
-    <button className="plain inbox" aria-label={count > 0 ? `Messages, ${count} new` : 'Messages'} onClick={onOpen}>
-      <span className="place-icon">
-        <InboxIcon />
-        {count > 0 && (
-          <span className="count" aria-hidden>
-            {count}
-          </span>
-        )}
-      </span>
+    <button className="round" aria-label={count > 0 ? `Messages, ${count} new` : 'Messages'} onClick={onOpen}>
+      <Icon name="chat-circle" />
+      {count > 0 && (
+        <span className="count" aria-hidden>
+          {count}
+        </span>
+      )}
     </button>
   )
 }
 
-export const BellIcon = () => (
-  <Icon>
-    <path d="M6 16v-5a6 6 0 0 1 12 0v5l2 2H4z" />
-    <path d="M10 21h4" />
-  </Icon>
-)
-export const SettingsIcon = () => (
-  <Icon>
-    <line x1="4" y1="6" x2="20" y2="6" />
-    <line x1="4" y1="12" x2="20" y2="12" />
-    <line x1="4" y1="18" x2="20" y2="18" />
-    <circle cx="9" cy="6" r="2" fill="var(--paper)" />
-    <circle cx="15" cy="12" r="2" fill="var(--paper)" />
-    <circle cx="8" cy="18" r="2" fill="var(--paper)" />
-  </Icon>
-)
-/** A thread's round Send: an icon-only button shows what it does. */
-export const SendIcon = () => (
-  <Icon>
-    <path d="M21 3L10 14" />
-    <path d="M21 3l-7 18-4-7-7-4z" />
-  </Icon>
-)
-export const CheckIcon = ({ label }: { label?: string }) => (
-  <Icon {...(label && { label })}>
-    <polyline points="5,12.5 10,17.5 19,7" />
-  </Icon>
-)
 /** A checkbox's box: empty, or filled with its tick. */
 export const TickBox = ({ ticked }: { ticked: boolean }) => (
-  <svg className={ticked ? 'icon tick ticked' : 'icon tick'} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-    <rect x="3.5" y="3.5" width="17" height="17" rx="4" />
-    {ticked && <polyline points="7.5,12.5 10.5,15.5 16.5,9" />}
-  </svg>
+  <span className={ticked ? 'tick on' : 'tick'} aria-hidden>
+    <Icon name="check" bold />
+  </span>
 )
-export const PlusIcon = () => (
-  <Icon>
-    <line x1="12" y1="5" x2="12" y2="19" />
-    <line x1="5" y1="12" x2="19" y2="12" />
-  </Icon>
-)
-export const CloseIcon = () => (
-  <Icon>
-    <line x1="6" y1="6" x2="18" y2="18" />
-    <line x1="18" y1="6" x2="6" y2="18" />
-  </Icon>
-)
-export const DeviceIcon = () => (
-  <Icon>
-    <rect x="3" y="4" width="18" height="12" rx="2" />
-    <line x1="8" y1="20" x2="16" y2="20" />
-    <line x1="12" y1="16" x2="12" y2="20" />
-  </Icon>
-)
-export const LightIcon = () => (
-  <Icon>
-    <circle cx="12" cy="12" r="4" />
-    <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
-  </Icon>
-)
-export const DarkIcon = () => (
-  <Icon>
-    <path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" />
-  </Icon>
+
+/** A rating or a score, with its star: the number says it, so the star is hidden from screen readers. */
+export const Rating = ({ value }: { value: string }) => (
+  <span className="rate">
+    <Icon name="star" fill />
+    {value}
+  </span>
 )
 
 /** The dot: something new, a message, a review, a vouch or a report not yet looked at, said as "New". */
 export const Dot = () => <span className="dot" role="img" aria-label="New" />
 
-/** A review's score, a vouch or a report, as its chip. */
+/** A review's score with its star, a vouch or a report, each on its chip. */
 export function SaidChip({ kind, score }: { kind: 'review' | 'vouch' | 'report'; score?: unknown }) {
-  if (kind === 'report') return <span className="said-chip report">Report</span>
-  if (kind === 'vouch') return <span className="said-chip vouch">Vouch</span>
-  return <span className="said-chip score">{typeof score === 'string' ? score : '–'} ★</span>
+  if (kind === 'report')
+    return (
+      <span className="said-chip chip bad">
+        <Icon name="flag" bold />
+        Report
+      </span>
+    )
+  if (kind === 'vouch')
+    return (
+      <span className="said-chip chip new">
+        <Icon name="handshake" bold />
+        Vouch
+      </span>
+    )
+  return (
+    <span className="said-chip">
+      <Rating value={typeof score === 'string' ? score : '–'} />
+    </span>
+  )
 }
 
 /** A profile's name, from its label: its market in bold, then its role in the muted tone, no symbol between: Clothing seller. */
@@ -272,6 +174,15 @@ export function Named({ label }: { label: string }) {
     </span>
   )
 }
+
+/** Search Forest: the index, in a new tab. */
+export const Search = () => (
+  <a className="search" href={config.index} target="_blank" rel="noopener noreferrer">
+    <Icon name="magnifying-glass" />
+    <span className="grow">Search Forest</span>
+    <Icon name="arrow-up-right" bold />
+  </a>
+)
 
 /** A newer version of the app is live: one quiet line at the top, with Reload, which opens the same screen in it. */
 export const NewVersion = () => (
@@ -288,50 +199,13 @@ export function Top({ onBack, children, right }: { onBack?: () => void; children
   return (
     <div className="top">
       {onBack && (
-        <button className="plain" aria-label="Back" onClick={onBack}>
-          <BackIcon />
+        <button className="round" aria-label="Back" onClick={onBack}>
+          <Icon name="arrow-left" />
         </button>
       )}
       <div className="top-title">{children}</div>
       {right && <div className="top-right">{right}</div>}
     </div>
-  )
-}
-
-export type Place = 'profiles' | 'notifications' | 'settings'
-
-const PLACES: Array<[Place, string, () => ReactNode]> = [
-  ['profiles', 'Profiles', ProfilesIcon],
-  ['notifications', 'Notifications', BellIcon],
-  ['settings', 'Settings', SettingsIcon],
-]
-
-/**
- * The places, at the bottom: Profiles, Notifications, its bell counting the new reviews, vouches and
- * reports and what a market outgrew (messages count on the inbox), and Settings. Opening one reads
- * what the index says of every profile, and what a market outgrew of what each posted.
- */
-export function Places({ at, go }: { at: Place; go: (to: Place) => void }) {
-  const list = useProfiles()
-  useRated(list)
-  const outgrown = useOutgrown(list)
-  const count = useNews(list).received + Object.values(outgrown).reduce((n, o) => n + (o?.length ?? 0), 0)
-  return (
-    <nav className="places">
-      {PLACES.map(([place, words, PlaceIcon]) => (
-        <button key={place} className={at === place ? 'here' : ''} aria-current={at === place ? 'page' : undefined} onClick={() => go(place)}>
-          <span className="place-icon">
-            <PlaceIcon />
-            {place === 'notifications' && count > 0 && (
-              <span className="count" aria-label={`${count} new`}>
-                {count}
-              </span>
-            )}
-          </span>
-          {words}
-        </button>
-      ))}
-    </nav>
   )
 }
 

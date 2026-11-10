@@ -110,7 +110,7 @@ export function useOutgrown(list: Profile[]): Record<string, Posted[] | undefine
 /** What is new on one profile: how many new messages, and the new reviews, vouches and reports. */
 export type News = { messages: number; received: Received[] }
 
-/** What is new on each profile in `list`, by address; and in all, how many messages (what the inbox counts) and how many reviews, vouches and reports (what the bell counts, with what a market outgrew). */
+/** What is new on each profile in `list`, by address; and in all, how many messages (what Messages counts) and how many reviews, vouches and reports (what the bell counts, with what a market outgrew). */
 export function useNews(list: Profile[]): { of: Record<string, News>; messages: number; received: number } {
   useDevice()
   const messages = useNewMessages()

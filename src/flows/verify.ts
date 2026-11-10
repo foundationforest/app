@@ -19,7 +19,7 @@
 //   5. keep: the stamp in the Profiles folder, its first write paid from the wallet;
 //   6. show: each profile's entry written again with a verification of the new stamp (stamps.ts).
 //      Then nothing of the verification is left on the device, but an ID check's payment no stamp
-//      used (paid, then left for the face check), so the ID check from Settings opens paid.
+//      used (paid, then left for the face check), so the ID check from You opens paid.
 //
 // The device keeps the check's session and the gift's buy because both are lost otherwise: a second
 // check of the same face goes to review, and a gift is given once a stamp number. It keeps the
@@ -275,7 +275,7 @@ export async function advance(s: Services, passkey: string, seed: Uint8Array, pr
  * Where the person whose seed this is stands: verified, with the labels their Profiles folder
  * lists, or the step their verification stopped at, taken up as far as it goes. A stamp the
  * verifier signed and the app had not kept yet is kept now. A verified person's ID check under way
- * stays under way, to go on from Settings.
+ * stays under way, to go on from You.
  */
 export async function resume(s: Services, passkey: string, seed: Uint8Array, prove: Prove): Promise<{ verified: true; labels: string[] } | { verified: false; step: Step }> {
   const folder = await openProfiles(seed, s.host)

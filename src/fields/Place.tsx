@@ -17,10 +17,12 @@ import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
 import { points } from '../device.ts'
+import { Icon } from '../icons.tsx'
+import { Loader } from '../mark.tsx'
 import type { Field } from '../markets.ts'
 import { type Point, type Spot, exactPoint, pointFor, radiusSteps, spotOf } from '../near.ts'
 import { placeText } from '../show.ts'
-import { LocateIcon, PinIcon, Spinner, Top } from '../ui.tsx'
+import { Top } from '../ui.tsx'
 import type { Mode } from './PlaceMap.tsx'
 
 const PlaceMap = lazy(() => import('./PlaceMap.tsx'))
@@ -73,7 +75,7 @@ export function Place({ label, field, value, onChange }: { label: string; field:
   return (
     <div className="place" role="group" aria-label={label}>
       <button ref={row} type="button" className="place-row" onClick={show}>
-        <PinIcon />
+        <Icon name="map-pin" />
         {was ? placeText(was) : PLACE_SAYS.choose}
       </button>
       {open &&
@@ -195,7 +197,7 @@ function PlaceScreen({ label, start, was, onDone, onBack }: { label: string; sta
             <p className="line">{PLACE_SAYS.noMap}</p>
           ) : (
             allowed !== null && (
-              <Suspense fallback={<Spinner />}>
+              <Suspense fallback={<Loader big />}>
                 <PlaceMap
                   mode={mode}
                   centre={centreSpot}
@@ -212,7 +214,7 @@ function PlaceScreen({ label, start, was, onDone, onBack }: { label: string; sta
           )}
           {!noMap && allowed !== null && allowed !== 'denied' && navigator.geolocation && (
             <button type="button" className="locate" aria-label="Your location" disabled={asking} onClick={locate}>
-              {asking ? <Spinner /> : <LocateIcon />}
+              {asking ? <Loader /> : <Icon name="crosshair" />}
             </button>
           )}
         </div>

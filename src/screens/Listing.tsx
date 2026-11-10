@@ -19,9 +19,10 @@ import { newPhotos, withFiles } from '../flows/photos.ts'
 import { type Posted, check, newPath, post, unpost } from '../flows/entries.ts'
 import { applies, fitting, formFields, settled } from '../form.ts'
 import { useProfiles } from '../hooks.ts'
+import { Loader } from '../mark.tsx'
 import { kindWords, markets, pairOf } from '../markets.ts'
 import { withSeed } from '../passkey.ts'
-import { Line, Spinner, Top, UnlockIcon, useAction } from '../ui.tsx'
+import { Line, Top, UnlockIcon, useAction } from '../ui.tsx'
 
 type Props = { me: Profile; edit?: Posted; onDone: () => void; onBack: () => void }
 
@@ -71,13 +72,13 @@ export function Listing({ me, edit, onDone, onBack }: Props) {
         ))}
         <Line note={send.note} />
         <button type="submit" className="primary" disabled={send.busy || remove.busy}>
-          {send.busy ? <Spinner /> : <><UnlockIcon /> Post</>}
+          {send.busy ? <Loader /> : <><UnlockIcon /> Post</>}
         </button>
         {edit && (
           <>
             <Line note={remove.note} />
             <button type="button" className={sure ? 'danger solid' : 'danger'} disabled={send.busy || remove.busy} onClick={() => (sure ? remove.run() : setSure(true))}>
-              {remove.busy ? <Spinner /> : sure ? <><UnlockIcon /> Delete</> : 'Delete'}
+              {remove.busy ? <Loader /> : sure ? <><UnlockIcon /> Delete</> : 'Delete'}
             </button>
           </>
         )}

@@ -10,8 +10,9 @@ import { fileOf } from '@foundationforest/folders'
 
 import { config } from '../config.ts'
 import { MAX_PHOTOS, PHOTO_TYPE, photoUrl, photosIn } from '../flows/photos.ts'
+import { Icon } from '../icons.tsx'
+import { Loader } from '../mark.tsx'
 import { redraw } from '../redraw.ts'
-import { CloseIcon, PlusIcon, Spinner } from '../ui.tsx'
 
 /** The photos picked and not sent yet, by SHA-256: their bytes, and where the page shows them meanwhile. */
 export type Picked = Map<string, { bytes: Uint8Array; url: string }>
@@ -57,13 +58,13 @@ export function Photos({ label, many, value, onChange, picked }: Props) {
           <span key={sha} className="tile">
             <img src={picked.get(sha)?.url ?? photoUrl(config.host, sha)} alt="" />
             <button type="button" className="plain remove" aria-label="Remove photo" onClick={() => set(shas.filter((s) => s !== sha))}>
-              <CloseIcon />
+              <Icon name="x" bold />
             </button>
           </span>
         ))}
         {shas.length < most && (
           <label className="tile add" aria-label="Add photos">
-            {busy ? <Spinner /> : <PlusIcon />}
+            {busy ? <Loader /> : <Icon name="plus" />}
             <input ref={input} type="file" accept="image/*" multiple={many} hidden disabled={busy} onChange={(e) => void add(e.target.files)} />
           </label>
         )}

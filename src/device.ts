@@ -18,7 +18,7 @@
 // by flows that save no profile here (an AI app's ticks, the verification): read is not listed.
 //
 // An access key the person's profile entries list that this device doesn't know was made
-// elsewhere, by another browser with the same seed: Settings offers to find the AI apps then.
+// elsewhere, by another browser with the same seed: You offers to find the AI apps then.
 //
 // What is new on a profile is what came after those two marks. A profile this device has no mark for
 // yet (on a new device, or after Forget) is marked at what it holds when first read, so nothing old
