@@ -6,7 +6,6 @@ export const PATHS = {
   verify: '/id',
   new: '/new',
   profile: '/profile',
-  'profile-feedback': '/profile-feedback',
   received: '/received',
   listing: '/listing',
   review: '/review',

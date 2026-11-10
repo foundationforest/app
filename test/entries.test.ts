@@ -1,6 +1,7 @@
 // Posting, against services' own host (world.ts): every kind at <kind>/<id>, a random id, checked
 // before the unlock against its market (the markets' browser entry, which answers as the Node entry
-// does) and, for a review, a vouch or a report, against its subject's profile entry at the host;
+// does) and, for a review, a vouch or a report, against its subject's profile entry at the host,
+// and found again when written about the same person once more;
 // paid from the profile's folder, topped up from the wallet; edited at its own path; deleted. A
 // listing's photos: named in its files, then each sent to the host, paid the same way; a price's per
 // only from its field's list; a place a point and a radius, never an area alone. And a listing
@@ -14,7 +15,7 @@ import { loadMarkets } from '../markets/build/dist/index.js'
 import * as device from '../src/device.ts'
 import { PHOTO_TYPE, newPhotos, sendPhotos, withFiles } from '../src/flows/photos.ts'
 import { walletKey } from '../src/flows/profiles.ts'
-import { addressIn, check, newPath, post, readEntries, subjectOf, unpost } from '../src/flows/entries.ts'
+import { addressIn, check, newPath, post, readEntries, subjectOf, unpost, writtenAbout } from '../src/flows/entries.ts'
 import { fits, fitting } from '../src/form.ts'
 import { markets } from '../src/markets.ts'
 import { Said } from '../src/words.ts'
@@ -145,6 +146,12 @@ describe('a review, a vouch or a report', () => {
       expect(await post(w, student.seed, me, kind, said)).toMatch(new RegExp(`^${kind}/[0-9a-f]{32}$`))
     }
     expect((await readEntries(w, me.address)).map((x) => x.kind).sort()).toEqual(['report', 'review', 'vouch'])
+    // Written again about the same person, one goes where that kind was: the index counts one. A
+    // review naming a listing, as an older app wrote it, is another one at the index, so it is left be.
+    const vouch = (await readEntries(w, me.address)).find((e) => e.kind === 'vouch')!
+    expect(await writtenAbout(w, me, 'vouch', body.subject), 'the vouch, in its place').toBe(vouch.path)
+    expect(await writtenAbout(w, me, 'review', body.subject), 'the review names a listing').toBeUndefined()
+    expect(await writtenAbout(w, me, 'report', other.profiles[0]!.address), 'about no one else').toBeUndefined()
   })
 
   test("a market with one role: a review is about another of that role, and a review field kept for some roles is checked against the subject's", async () => {

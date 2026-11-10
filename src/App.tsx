@@ -5,7 +5,7 @@
 // once it is made, or put off with Later, Connect your AI, with Skip; then the three places, Home,
 // Notifications and You, and from them New profile, every profile's messages (the round button at
 // the top of Notifications), what a market outgrew, to update, a profile, its messages, its
-// Feedback, a review received, a listing, Review someone, a thread, a new message, the ID check, an
+// Reviews, a review received, a listing, Review someone, a thread, a new message, the ID check, an
 // AI app, Connect your AI, Add a passkey, or Your 24 words. Back wherever there is somewhere to go
 // back to: Get verified to Start, Your 24 words to No passkey found. A step done (a passkey made,
 // verified, a profile made) can't be undone by back: Your first profile has Later, Connect your AI
@@ -13,10 +13,10 @@
 // screen past setup sits in the frame (frame.tsx): on a phone, the places' tabs at the bottom of each
 // place; on a laptop, the sidebar beside every one.
 // Each screen the person can come back to has its own path, so a reload opens on it and the phone's
-// back goes back; what a screen is about (a profile's address, a thread, an entry being edited, the
-// market picked on New profile, Connect your AI in setup) is kept in the page's history, never in
-// its path, which a host's logs would keep. A Share
-// link's address arrives in its query: it is moved into the history at once, and waits there through
+// back goes back; what a screen is about (a profile's address and its tab, a thread, an entry being
+// edited, whose messages, the market picked on New profile, Connect your AI in setup) is kept in the
+// page's history, never in its path, which a host's logs would keep. A Share link's address arrives
+// in its query: it is moved into the history at once, and waits there through
 // Start and the verification when no one is verified here yet. So does an AI app's login, the
 // connect page's connector and request: through Start, the verification and the first profile,
 // then back to the connect page, Save a passkey on this device? and Connect your AI left out. A
@@ -44,10 +44,9 @@ import { NewProfile } from './screens/NewProfile.tsx'
 import { Notifications } from './screens/Notifications.tsx'
 import { ImportWords } from './screens/ImportWords.tsx'
 import { Listing } from './screens/Listing.tsx'
-import { Profile } from './screens/Profile.tsx'
+import { Profile, type Tab } from './screens/Profile.tsx'
 import { Received } from './screens/Received.tsx'
 import { Review } from './screens/Review.tsx'
-import { ProfileFeedback } from './screens/ProfileFeedback.tsx'
 import { Setup } from './screens/Setup.tsx'
 import { Start } from './screens/Start.tsx'
 import { Thread } from './screens/Thread.tsx'
@@ -62,8 +61,7 @@ type Screen =
   | { at: 'verify'; setup: boolean; id: string; step: Step; failed?: NotPassed }
   | { at: 'home' }
   | { at: 'new'; market?: string }
-  | { at: 'profile'; address: string }
-  | { at: 'profile-feedback'; address: string }
+  | { at: 'profile'; address: string; tab?: Tab }
   | { at: 'received'; address: string; entry: string }
   | { at: 'listing'; address: string; edit?: Posted }
   | { at: 'review'; address: string; subject?: string; edit?: Posted; report?: boolean }
@@ -82,7 +80,7 @@ type Screen =
 const PATHS: Partial<Record<Screen['at'], string>> = SCREEN_PATHS
 
 /** What the page's history keeps of a screen: what it is about, never in the path. */
-type Kept = { address?: string; entry?: string; edit?: Posted; subject?: string; report?: boolean; only?: string; mine?: string; them?: string; to?: string; market?: string; connector?: string; request?: string; setup?: boolean; pushed?: boolean }
+type Kept = { address?: string; tab?: Tab; entry?: string; edit?: Posted; subject?: string; report?: boolean; only?: string; mine?: string; them?: string; to?: string; market?: string; connector?: string; request?: string; setup?: boolean; pushed?: boolean }
 
 /** An AI app's login, from the connector: what the connect page is about. */
 type Login = { connector: string; request: string }
@@ -142,8 +140,7 @@ function here(): Screen {
     case '/words':
       return { at: 'words' }
   }
-  if (path === '/profile' && isText(now.address)) return { at: 'profile', address: now.address }
-  if (path === '/profile-feedback' && isText(now.address)) return { at: 'profile-feedback', address: now.address }
+  if (path === '/profile' && isText(now.address)) return { at: 'profile', address: now.address, ...(now.tab === 'reviews' && { tab: 'reviews' }) }
   if (path === '/received' && isText(now.address) && isText(now.entry)) return { at: 'received', address: now.address, entry: now.entry }
   if (path === '/listing' && isText(now.address)) return { at: 'listing', address: now.address, ...(now.edit && { edit: now.edit }) }
   if (path === '/review' && isText(now.address)) return { at: 'review', address: now.address, ...(now.edit && { edit: now.edit }), ...(isText(now.subject) && { subject: now.subject }), ...(now.report && { report: true }) }
@@ -159,8 +156,7 @@ function keptOf(to: Screen): Kept {
     case 'new':
       return to.market ? { market: to.market } : {}
     case 'profile':
-    case 'profile-feedback':
-      return { address: to.address }
+      return { address: to.address, ...(to.tab === 'reviews' && { tab: 'reviews' }) }
     case 'received':
       return { address: to.address, entry: to.entry }
     case 'listing':
@@ -299,21 +295,15 @@ function Screens() {
         return (
           <Profile
             address={screen.address}
+            tab={screen.tab ?? 'listings'}
+            // A tab in place of the other, so back leaves the profile.
+            onTab={(tab) => go({ at: 'profile', address: screen.address, ...(tab === 'reviews' && { tab }) })}
             onBack={back}
             onListing={(edit) => go({ at: 'listing', address: screen.address, ...(edit && { edit }) }, true)}
-            onFeedback={() => go({ at: 'profile-feedback', address: screen.address }, true)}
-            onReview={() => review(screen.address)}
-            onMessages={() => go({ at: 'messages', only: screen.address }, true)}
-          />
-        )
-      case 'profile-feedback':
-        return (
-          <ProfileFeedback
-            address={screen.address}
-            onBack={back}
-            onOpen={(entry) => go({ at: 'received', address: screen.address, entry }, true)}
+            onReceived={(entry) => go({ at: 'received', address: screen.address, entry }, true)}
             onEdit={(edit) => review(screen.address, { edit })}
             onReview={() => review(screen.address)}
+            onMessages={() => go({ at: 'messages', only: screen.address }, true)}
           />
         )
       case 'received':
@@ -338,12 +328,21 @@ function Screens() {
         return (
           <Notifications
             onMessages={() => go({ at: 'messages' }, true)}
-            onReceived={(address, entry) => go({ at: 'received', address, entry }, true)}
+            onReviews={(address) => go({ at: 'profile', address, tab: 'reviews' }, true)}
             onUpdate={(address, edit) => (edit.kind === 'listing' ? go({ at: 'listing', address, edit }, true) : review(address, { edit }))}
           />
         )
       case 'messages':
-        return <Messages {...(screen.only && { only: screen.only })} onBack={back} onThread={(mine, them) => go({ at: 'thread', mine, them }, true)} onNew={() => go({ at: 'message' }, true)} />
+        return (
+          <Messages
+            {...(screen.only && { only: screen.only })}
+            // Whose, in place of the screen as it was, so back leaves Messages.
+            onOnly={(only) => go({ at: 'messages', ...(only && { only }) })}
+            onBack={back}
+            onThread={(mine, them) => go({ at: 'thread', mine, them }, true)}
+            onNew={() => go({ at: 'message' }, true)}
+          />
+        )
       case 'thread':
         return <Thread mine={screen.mine} them={screen.them} onBack={back} onReview={(mine, them) => review(mine, { subject: them })} />
       case 'message':
@@ -388,7 +387,6 @@ function onOf(s: Screen): On | null {
     case 'message':
       return 'messages'
     case 'profile':
-    case 'profile-feedback':
     case 'received':
     case 'listing':
     case 'review':

@@ -7,14 +7,15 @@
 // there, with how many are new once any is; a checkbox's box, the dot that marks what is new, a
 // rating with its star, the chips of a review, vouch or report, You're verified, a profile's name
 // (its market in bold, then its role, muted: Clothing seller), Search Forest (the index, in a new
-// tab), a sheet risen over the screen, a notice in the sun, the bars, how long ago something was,
-// the day something happened, and the time of day.
+// tab), a sheet risen over the screen, a notice in the sun, the bars, a choice of a few side by
+// side, how long ago something was, the day something happened (Today in a thread), the time of
+// day, and whether a message's time shows under it.
 
 import { type MouseEvent, type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 
 import { config } from './config.ts'
 import { useHeld } from './hooks.ts'
-import { Icon } from './icons.tsx'
+import { Icon, type IconName } from './icons.tsx'
 import { marketWords, pairOf } from './markets.ts'
 import type { Check } from './services/verifier.ts'
 import { Reloading } from './version.ts'
@@ -236,17 +237,35 @@ export const Notice = ({ children }: { children: ReactNode }) => (
   </p>
 )
 
-/** A screen's top bar, with a way back, and anything at its right. */
-export function Top({ onBack, children, right }: { onBack?: () => void; children?: ReactNode; right?: ReactNode }) {
+/** A screen's top bar, with a way back (`onBack`, an arrow; `onClose`, a cross, for a screen that closes over another; with no ring when `clear`), and anything at its right. */
+export function Top({ onBack, onClose, clear = false, children, right }: { onBack?: () => void; onClose?: () => void; clear?: boolean; children?: ReactNode; right?: ReactNode }) {
+  const away = onClose ?? onBack
   return (
     <div className="top">
-      {onBack && (
-        <button className="round" aria-label="Back" onClick={onBack}>
-          <Icon name="arrow-left" />
+      {away && (
+        <button type="button" className={clear || onClose ? 'round clear' : 'round'} aria-label={onClose ? 'Close' : 'Back'} onClick={away}>
+          <Icon name={onClose ? 'x' : 'arrow-left'} />
         </button>
       )}
       <div className="top-title">{children}</div>
       {right && <div className="top-right">{right}</div>}
+    </div>
+  )
+}
+
+/** One choice of a few, side by side on the sunk ground, the one picked raised on a card: each option its words, and its icon, filled when picked. `clears`: the one picked, tapped again, leaves none. */
+export function Seg<V extends string>({ label, options, value, onPick, clears = false }: { label: string; options: Array<{ value: V; words: string; icon?: IconName }>; value: V | undefined; onPick: (v: V | undefined) => void; clears?: boolean }) {
+  return (
+    <div className="seg" role="group" aria-label={label}>
+      {options.map((o) => {
+        const on = o.value === value
+        return (
+          <button key={o.value} type="button" className={on ? 'here' : ''} aria-pressed={on} onClick={() => onPick(on && clears ? undefined : o.value)}>
+            {o.icon && <Icon name={o.icon} fill={on} />}
+            {o.words}
+          </button>
+        )
+      })}
     </div>
   )
 }
@@ -263,6 +282,9 @@ export function ago(time: number, now = Date.now()): string {
   return new Date(time).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
 }
 
+/** The day `time` was, as a thread's line says it: Today, else the day. */
+export const dayWords = (time: number, now = Date.now()) => (newDay(now, time) ? day(time, now) : 'Today')
+
 /** The day `time` was: 3 Nov, and its year when it is not this one. */
 export function day(time: number, now = Date.now()): string {
   const d = new Date(time)
@@ -277,6 +299,12 @@ export function newDay(before: number | undefined, time: number): boolean {
   if (before === undefined) return true
   const [a, b] = [new Date(before), new Date(time)]
   return a.getFullYear() !== b.getFullYear() || a.getMonth() !== b.getMonth() || a.getDate() !== b.getDate()
+}
+
+/** Whether the message at `i` ends its run, so its time shows under it: the next is from the other side, on another day, or there is none. */
+export function lastOfRun(messages: Array<{ mine: boolean; time: number }>, i: number): boolean {
+  const [m, next] = [messages[i]!, messages[i + 1]]
+  return !next || next.mine !== m.mine || newDay(m.time, next.time)
 }
 
 /** An address cut short, its start and end: enough to tell two apart at a glance. */

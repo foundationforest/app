@@ -93,6 +93,16 @@ export async function check(s: Services, me: Profile, kind: Kind, body: Body, mi
   if (why) throw entrySays(why, Object.keys(body))
 }
 
+/**
+ * Where `me` wrote a `kind` entry about `subject` before, its newest, if it did: a review, vouch or
+ * report posted again about the same profile goes there, in place of it. The index counts one of a
+ * kind per writer and subject (one review per listing named, and no review here names one), so a
+ * second at a new path would leave the first in the folder, counting for nothing.
+ */
+export async function writtenAbout(s: Services, me: Profile, kind: Kind, subject: string): Promise<string | undefined> {
+  return (await readEntries(s, me.address)).find((e) => e.kind === kind && e.body.subject === subject && e.body.listing === undefined)?.path
+}
+
 /** A path for a new `kind` entry: a random id, which names nothing. */
 export const newPath = (kind: Kind) => `${kind}/${randomId()}`
 

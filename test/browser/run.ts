@@ -41,8 +41,10 @@
 //     verification checking as any reader checks it; its market's
 //     avatar, solid, a tutor offering; the selfie check's badge, a face on mint, its words its label
 //     and title, which, tapped on a card, opens the profile as the card does, and on the profile's
-//     header, where it stands alone, says "Verified with a selfie"; its name, Tutoring tutor, the
-//     market in bold and the role muted, as on every name below; under it, one line, its reviews; at its top
+//     header, where it stands alone, says "Verified with a selfie"; the header on a tint of its
+//     market's color, its bottom corners rounded; its name, Tutoring tutor, the market in bold and the
+//     role muted, as on every name below; under it, one line, its rating, none yet; two tabs, Offers
+//     and Reviews, Offers open, New offer with its plus at the foot; at its top
 //     right, Messages, its own icon and no number while nothing is new, then Share: Share copies its
 //     page on the index where there is no share sheet, and hands the sheet that page where there
 //     is; Home with the mark, Search Forest opening the index in a new tab, no Messages, the three
@@ -52,25 +54,32 @@
 //     Connect your AI, with a back and no Skip. On a laptop, no tabs: the sidebar, its places, the
 //     profiles with their avatars, New profile; a profile opened from it.
 //  6. Two people: the first, whose phone allows its location, posts an offer from their profile,
-//     its price per hour, which its row shows second, its form the market's: no place until sessions
-//     are In person, then the place right after, one row, Choose on the map, and nothing of the map
+//     its price per hour side by side, its subjects from a long list, a row whose sheet has a search
+//     and ticks, its card its first line, its subjects, then $30 and per hour under it; its form the
+//     market's: no place until sessions are In person (a chip with its tick), then the place right
+//     after, one row with its pin, Choose on the map, and nothing of the map
 //     asked for yet; its screen: Area, the map from OpenFreeMap's stand-in with its attribution, a
 //     circle round the phone at the market's 5 km, its centre kept a few hundred metres from it, the
-//     slider moved to 10 and a place name given, Done, and the row says so; opened again, the
-//     phone's back closes it, keeping the form; the place gone again with In person; a contact, which no market
+//     slider moved to 10 and a place name given, Done, and the row says so, its name, then how far;
+//     opened again, the phone's back closes it, keeping the form; the place gone again with In person;
+//     a contact, which no market
 //     lists; asking nothing, the seed still held, so Post shows no unlock icon; the second
 //     opens its link with nothing set up, goes through Start, Yes, I'm new and the selfie,
-//     makes the profile on the other side from the compose screen's From, and messages, nothing
+//     makes the profile on the other side from the compose screen's From, To the link's profile as
+//     its card, and messages, nothing
 //     asked after Start; the first sees it counted with nothing unlocked, on the card ("1 new"), the
 //     Notifications tab, which counts everything new, and the Messages button of the profile and of
 //     Notifications, Notifications holding no message and the profile no Messages line; the page
-//     closed and opened again, Messages opens every profile's conversations: "1 new message" and
-//     Open with its unlock icon, and New message at the bottom; every inbox opens in one unlock, who
-//     it is from with the badge; the reply in one row, the text box and a round Send with its own
-//     icon, each message with its time and the day above them; Notifications then says "Nothing
-//     yet.", its Messages no number; the
-//     second, their page closed and opened again, reads the reply beside what they sent, and reviews
-//     the tutor from the thread, the slider's thumb hidden until touched, naming the offer.
+//     closed and opened again, Messages opens every profile's conversations: only what is true before
+//     the unlock, the avatar of the profile it came to, "1 new message" and Open with its unlock
+//     icon, no chips, New message the round pencil at the top; every inbox opens in one unlock, chips
+//     for All and the tutor, who it is from with the badge, its last message bold with its dot, to
+//     which profile; the thread's header, Review soft with its star; the reply in one row, the pill
+//     and a round Send with its arrow, the time under each run and Today above them; Notifications
+//     then says "Nothing yet.", its Messages no number; the second, their page closed and opened
+//     again, opens Messages from their profile, picked to it before the unlock and after, reads the
+//     reply beside what they sent, and reviews the tutor from the thread: Close, Score, Vouch and
+//     Report, Score picked, its line, the slider's thumb hidden until touched, naming no listing.
 //  7. A second browser, with the same passkey, answered from the first, as a phone answers through
 //     the passkey sheet's QR code, from another device: I use Forest on another device, then the
 //     sheet Save a passkey on this device?, Save with the unlock icon, and Not now; it finds the
@@ -104,33 +113,42 @@
 //     passkey more.
 //  9. Clothing, with the index: the first, the page closed and opened again so Post shows its unlock
 //     icon, a moment hidden keeping it so, posts a coat with two photos in one unlock, redrawn on the device as JPEGs no longer
-//     than 1600 pixels, their notes gone, no per to pick; for women, then a coat, and only then one
-//     size question, right after them, its values by their labels (XL); picked up and shipped, a
+//     than 1600 pixels, their notes gone, no per to pick; for women, then a coat from the kind's
+//     sheet, and only then one size question, right after them, its values by their labels (XL) on
+//     its sheet; picked up and shipped, a
 //     choice of several; its location the offer's kept point, the circle the map opens on, moved a
 //     little from the phone's, within 3 km of Lavapiés, an exact spot showing no pin and no Done
-//     until one is dropped; its row's price reading $40, as on the buyer's pick of it in their
-//     review; the index lists it. A buyer, whose phone hasn't allowed its location: told no before,
+//     until one is dropped; its card's price reading $40; the index lists it. A buyer, whose phone
+//     hasn't allowed its location: told no before,
 //     the map opens on the whole world, with no circle and no button for the location; a tap puts
 //     the circle there and the map fits it, a drag carries it east and keeps a second centre; then
 //     an exact spot, a tap on the map's middle, its one quiet line, posted exactly there; never
 //     asked, the map's button asks, and the prompt refused, one quiet line, the button gone; the
-//     map's code never in the service worker's install; their page closed and opened again, their profile's messages say
-//     "No new messages" with Open; they write with New message (their own address taken, From the
-//     other side; the seller's page on the index taken as the seller's address) and reviews the coat
-//     from the thread, then, from their profile's Review, vouches ("That's this profile." once) and
-//     reports, and Given lists all three; the seller sees the rating with its star on the card, "3
-//     new" on the profile's rating line and 1 on its Messages, the tab and the card counting the
-//     three and the message; the profile's Feedback marks the three, and once seen there they are
-//     new no more, the tab counting the message alone; the review opened; Notifications lists all
-//     that came, newest first, in full, each with its profile's avatar, with no dot and no message,
-//     and its Messages opens the messages, which hold no review.
-//     Then a listing an older market shaped, written to the host as the app wrote it before: its
-//     row says Update this listing, and Notifications holds a notice for it, the tab counting it;
-//     opened there, what still fits is filled in; posted, it fits, and both go. Then a review an
-//     older market shaped: its notice, Update this review; opened, what still fits; posted, gone.
+//     map's code never in the service worker's install; their page closed and opened again, their
+//     profile's messages, none new, show a lock, Open your messages and Open, never "No new
+//     messages"; they write with the round pencil (their own address taken, From the other side;
+//     Change, and the seller's page on the index taken as the seller's address) and review the
+//     seller from the thread, a score with the market's own question in one row, As described, Yes
+//     or No, naming no listing; then, from their profile's Reviews, Review someone asks who on a
+//     sheet, the seller among those they have a conversation with ("That's this profile." there,
+//     once): a vouch, its mint square, written again in the same place, and a report, its red
+//     square, Report in red; Written by this profile lists all three. The seller sees the rating
+//     with its star on the card and under the profile's name, the Reviews tab's dot, 1 on its
+//     Messages, the tab and the card counting the three and the message; the profile's Reviews mark
+//     the three, each a card with who wrote it, and once seen there they are new no more, the tab
+//     counting the message alone; the review opened, no listing named; Notifications lists all
+//     that came, under Today, newest first, in full, each with the avatar of who wrote it and what it
+//     is on which profile, with no dot and no message, and its Messages opens the messages, which
+//     hold no review.
+//     Then a listing an older market shaped, written to the host as the app wrote it before, days
+//     ago: its card says Needs an update and opens its form, and Notifications holds a notice for
+//     it under Earlier, its sun square and no time, the tab counting it; opened there, what still
+//     fits is filled in; posted, it fits, and both go. Then a review an older market shaped: its
+//     notice; opened, its kind kept, what still fits; posted, gone.
 //     Then a review of one of the person's own profiles, from their student about their tutor:
-//     refused before the unlock, in one red line, nothing asked. Someone else vouches for the tutor:
-//     Notifications shows it first, new, and once shown it is seen, the tab counting it no more.
+//     refused on the who sheet, in one red line, nothing asked. Someone else vouches for the tutor:
+//     Notifications shows it first, new, the avatar of who wrote it; once shown it is seen, the tab
+//     counting it no more, and a tap opens the tutor's Reviews, the vouch among them.
 //     Then the AI apps, with services' own mcp and an AI app as services' tests make one (the MCP
 //     SDK's client, mcp/test/setup.ts):
 //  a. its login comes to the connect page: the AI app's name, its redirect's host, the profiles
@@ -373,11 +391,11 @@ const asks = async (b: Locator) => (await b.locator('.unlock').count()) === 1
 /** The round Messages button at the top right of the screen: the way into messages, its number only when some are new. */
 const inbox = (page: Page) => page.locator('.top-right').getByRole('button', { name: /^Messages/ })
 
-/** A profile's messages, from its card on Home and the round button at its top. */
+/** A profile's messages, from its card on Home and the round button at its top: Messages, picked to it. */
 async function messagesOf(page: Page, card: string) {
   await page.locator('button.card', { hasText: card }).click()
   await inbox(page).click()
-  await page.getByRole('heading', { name: card }).waitFor()
+  await page.getByRole('heading', { name: 'Messages', exact: true }).waitFor()
 }
 
 /** The page closed and opened again, on the same screen: what drops the seed now, besides 5 minutes with nothing done. */
@@ -392,7 +410,7 @@ async function untilNotice(page: Page, text: string) {
   for (;;) {
     await button(page, 'You').click()
     await button(page, /Notifications$/).click()
-    const row = page.locator('main .rows button.row', { hasText: text })
+    const row = page.locator('main .rows button', { hasText: text })
     try {
       await row.waitFor({ timeout: 5_000 })
       return row
@@ -429,6 +447,16 @@ async function named(within: Locator, words: string) {
   })
   const [market, role] = [words.slice(0, words.lastIndexOf(' ')), words.slice(words.lastIndexOf(' ') + 1)]
   assert.deepEqual(seen, { text: words, market: [market, '700'], role: [role, '500', true] }, `${words}: the market in bold, the role muted, nothing between`)
+}
+
+/** On a field with a long list, its row tapped, then `words` on its sheet: one picked closes it; of several, Done does. */
+async function pick(page: Page, field: string, words: string) {
+  await page.getByRole('group', { name: field, exact: true }).locator('button.open-row').click()
+  const sheet = page.getByRole('dialog', { name: field })
+  await sheet.getByRole('checkbox', { name: words, exact: true }).click()
+  const done = sheet.getByRole('button', { name: 'Done' })
+  if (await done.count()) await done.click()
+  await sheet.waitFor({ state: 'detached' })
 }
 
 /** The quiet tone, ink3, as the page draws it now. */
@@ -600,13 +628,16 @@ function jpegSize(b: Uint8Array): { width: number; height: number } {
   throw new Error('no frame header')
 }
 
+/** The rating line under a profile's name, its parts as they read: 10.0 1 review. */
+const lineOf = async (page: Page) => (await page.locator('.rate-line > *').allTextContents()).join(' ')
+
 /** A profile opened again and again from its card, so it reads the index each time, until its rating line says `text`. */
 async function untilLine(page: Page, card: string, text: string) {
   const until = Date.now() + 90_000
   for (;;) {
     await page.locator('button.card', { hasText: card }).click()
-    const line = page.locator('button.link').first()
-    if (((await line.textContent({ timeout: 10_000 })) ?? '').includes(text)) return line
+    await page.locator('.rate-line').waitFor({ timeout: 10_000 })
+    if ((await lineOf(page)).includes(text)) return
     if (Date.now() > until) throw new Error(`${card}'s rating line never said ${text}`)
     await button(page, 'Back').click()
     await button(page, 'You').click()
@@ -916,9 +947,16 @@ test("the first profile: Later, Connect your AI and Skip, then back; every marke
   await page.locator('button.card', { hasText: 'Tutoring tutor' }).click()
   await badge(page.getByRole('heading', { name: 'Tutoring tutor' })).waitFor()
   await named(page.getByRole('heading', { name: 'Tutoring tutor' }), 'Tutoring tutor')
-  await page.getByRole('button', { name: /No reviews yet/ }).waitFor()
-  // Under the name, one line, its reviews, nothing new; at the top right, its messages, always there, with no number while nothing is new, then Share, each round with its own icon.
-  assert.deepEqual(await page.locator('.lines button.link').allTextContents(), ['No reviews yet'])
+  // The header, on a tint of the market's color, its bottom corners rounded; under the name, one line, its rating, here none yet; at
+  // the top right, its messages, always there, with no number while nothing is new, then Share, each round with its own icon.
+  const head = page.locator('.profile-head')
+  assert.equal(await head.evaluate((h) => getComputedStyle(h).borderBottomLeftRadius), '30px', 'its bottom corners rounded')
+  assert.equal(await head.evaluate((h) => (h as HTMLElement).style.getPropertyValue('--h')), colorOf('tutoring'), "a tint of its market's color")
+  assert.equal(await head.locator('.rate-line').textContent(), 'No reviews yet')
+  // Its two tabs: Offers, in its role's word, then Reviews; Offers open, with New offer at the foot, its plus.
+  assert.deepEqual(await page.getByRole('tab').allTextContents(), ['Offers', 'Reviews'])
+  assert.equal(await page.getByRole('tab', { name: 'Offers' }).getAttribute('aria-selected'), 'true')
+  assert.equal(await button(page, 'New offer').locator('.icon').getAttribute('data-icon'), 'plus')
   assert.deepEqual(await page.locator('.top-right button').evaluateAll((b) => b.map((x) => x.getAttribute('aria-label'))), ['Messages', 'Share'])
   assert.deepEqual(await page.locator('.top-right button .icon').evaluateAll((i) => i.map((x) => (x as SVGElement).dataset.icon)), ['chat-circle', 'export'])
   assert.deepEqual([await inbox(page).locator('.icon').count(), await inbox(page).locator('.count').count(), await inbox(page).locator('.unlock').count()], [1, 0, 0], 'its own icon, no number, no fingerprint')
@@ -1058,7 +1096,21 @@ test('two people: one posts an offer, its price per hour, the place only for ses
   await page.getByLabel('Price').fill('30')
   assert.deepEqual(await page.getByRole('group', { name: 'Per' }).getByRole('button').allTextContents(), ['per hour', 'per session'], "exactly the field's per values")
   await page.getByRole('group', { name: 'Per' }).getByRole('button', { name: 'per hour' }).click()
-  await page.getByRole('group', { name: 'Subjects' }).getByRole('button', { name: 'Maths' }).click()
+  assert.equal(await page.getByRole('group', { name: 'Per' }).getByRole('button', { name: 'per hour' }).getAttribute('aria-pressed'), 'true', 'side by side, one picked')
+  // A long list (a tutor's 22 subjects): one row, Choose; tapped, a sheet with a search and each with its tick; Done.
+  const subjects = page.getByRole('group', { name: 'Subjects' }).locator('button.open-row')
+  assert.equal(await subjects.textContent(), 'Choose')
+  await subjects.click()
+  const picker = page.getByRole('dialog', { name: 'Subjects' })
+  assert.equal(await picker.getByRole('checkbox').count(), 22, 'every subject')
+  await picker.getByLabel('Search').fill('mat')
+  assert.deepEqual(await picker.getByRole('checkbox').allTextContents(), ['Maths'], 'the search, by their words')
+  await picker.getByRole('checkbox', { name: 'Maths' }).click()
+  assert.equal(await picker.getByRole('checkbox', { name: 'Maths' }).getAttribute('aria-checked'), 'true', 'ticked')
+  await shot(page, 'picker')
+  await picker.getByRole('button', { name: 'Done' }).click()
+  await picker.waitFor({ state: 'detached' })
+  assert.deepEqual(await subjects.locator('.chip').allTextContents(), ['Maths'], 'the row shows it')
   // How sessions are held: no place until they are in person; then the place, right after, one row,
   // and nothing of the map asked for yet: its code and its tiles come with its screen alone.
   const mode = page.getByRole('group', { name: 'Mode' })
@@ -1068,7 +1120,9 @@ test('two people: one posts an offer, its price per hour, the place only for ses
   page.on('request', watch)
   assert.equal(await place.count(), 0, 'no place before In person')
   await mode.getByRole('button', { name: 'In person' }).click()
+  assert.equal(await mode.getByRole('button', { name: 'In person' }).locator('[data-icon="check"]').count(), 1, 'two that can both be picked: chips with their tick')
   await place.getByRole('button', { name: 'Choose on the map' }).waitFor()
+  assert.equal(await place.locator('[data-icon="map-pin"]').count(), 1, 'its row, with its pin')
   const labels = async () => (await page.locator('form > .field > .label').allTextContents()).map((l) => l.replace('Public.', ''))
   assert.deepEqual(await labels(), ['Subjects', 'Description', 'Price', 'Mode', 'Place', 'Levels', 'Minutes', 'Hours', 'Contact'], "the preview's fields first, the place right after how sessions are held, contact last")
   assert.deepEqual([mapCode, tiles.asked], [[], { styles: [], tilejson: 0, tiles: 0 }], 'nothing of the map yet')
@@ -1092,14 +1146,14 @@ test('two people: one posts an offer, its price per hour, the place only for ses
   await shot(page, 'place-area')
   await placing.getByRole('button', { name: 'Done' }).click()
   await placing.waitFor({ state: 'detached' })
-  await place.getByRole('button', { name: 'Chamberí, within 10 km' }).waitFor()
+  await place.getByRole('button', { name: /^Chamberí\s*Within 10 km$/ }).waitFor()
   // Opened again, on that circle; the phone's back closes it, keeping nothing changed there, and the form keeps all it holds.
   await placeScreen(page, 'Place')
   await placing.getByText('Within 10 km', { exact: true }).waitFor()
   await placing.getByRole('slider', { name: 'Within' }).fill('0')
   await page.goBack()
   await placing.waitFor({ state: 'detached' })
-  await place.getByRole('button', { name: 'Chamberí, within 10 km' }).waitFor()
+  await place.getByRole('button', { name: /^Chamberí\s*Within 10 km$/ }).waitFor()
   assert.equal(await page.getByLabel('Description').inputValue(), OFFER)
   assert.equal(new URL(page.url()).pathname, '/listing', 'still the offer')
   await page.getByLabel('Contact').fill('ada@example.com')
@@ -1114,10 +1168,11 @@ test('two people: one posts an offer, its price per hour, the place only for ses
   await shot(page, 'listing-offer')
   let asked = counts.asserted
   await button(page, 'Post').click()
-  // Its row: its subjects, then its price, in every market its second line.
-  const offerRow = page.locator('.listing-row', { hasText: '$30 per hour' })
+  // Its card: its description's first line, then its subjects, quietly; its price at the right, the amount, then per hour under it.
+  const offerRow = page.locator('.listing-card', { hasText: OFFER })
   await offerRow.waitFor({ timeout: 60_000 })
-  assert.deepEqual(await offerRow.locator('.two > *').allTextContents(), ['Maths', '$30 per hour'])
+  assert.deepEqual(await offerRow.locator('.two > *').allTextContents(), [OFFER, 'Maths'])
+  assert.deepEqual(await offerRow.locator('.price-col > *').allTextContents(), ['$30', 'per hour'])
   assert.equal(counts.asserted - asked, 1, 'one unlock')
   // Edited and posted again: the seed held since that unlock, Post shows no unlock icon, and asks nothing.
   await offerRow.click()
@@ -1126,14 +1181,14 @@ test('two people: one posts an offer, its price per hour, the place only for ses
   await shot(page, 'listing-offer-held')
   asked = counts.asserted
   await button(page, 'Post').click()
-  await page.getByRole('heading', { name: 'Your offers' }).waitFor({ timeout: 60_000 })
+  await page.getByRole('tab', { name: 'Offers', selected: true }).waitFor({ timeout: 60_000 })
   assert.equal(counts.asserted - asked, 0, 'nothing asked')
   const listings = await entriesOf(tutor, 'listing')
   assert.equal(listings.length, 1)
   const [offerPath, offer] = listings[0]!
   assert.match(offerPath, /^listing\/[0-9a-f]{32}$/, 'at a random id')
   assert.deepEqual(offer.entry.body, { description: OFFER, price: { amount: '30', currency: 'USD', per: 'hour' }, subjects: ['maths'], mode: ['online'], contact: 'ada@example.com' })
-  await page.getByRole('heading', { name: 'Your offers' }).waitFor()
+  await offerRow.waitFor()
   await shot(page, 'profile-listings')
 
   // The second person opens a message link with nothing set up: Start and the selfie first, then the message.
@@ -1141,13 +1196,15 @@ test('two people: one posts an offer, its price per hour, the place only for ses
   await second.page.goto(`${APP}message?to=${tutor}`)
   await imNew(second)
   await faceCheck(second)
-  // The compose screen, all of it there: To filled with the link's address and who it is under it; From, the profile to make.
+  // The compose screen, all of it there: To, the link's profile as its card, who it is and its address cut short; From, the profile to make.
   await second.page.getByRole('heading', { name: 'New message' }).waitFor({ timeout: 60_000 })
   assert.equal(new URL(second.page.url()).search, '', "the profile's address out of the path")
-  assert.equal(await second.page.getByLabel('To').inputValue(), tutor)
-  await badge(second.page.locator('.who', { hasText: 'Tutoring tutor' })).waitFor()
+  const toCard = second.page.locator('.person.to')
+  await toCard.locator('.addr', { hasText: `${tutor.slice(0, 4)}…${tutor.slice(-4)}` }).waitFor()
+  assert.equal(await second.page.getByLabel('To').count(), 0, 'its card, in place of the box')
+  await badge(toCard.locator('.who', { hasText: 'Tutoring tutor' })).waitFor()
   await second.page.locator('.from', { hasText: 'Tutoring student' }).waitFor()
-  await named(second.page.locator('.who'), 'Tutoring tutor')
+  await named(toCard, 'Tutoring tutor')
   await named(second.page.locator('.from'), 'Tutoring student')
   assert.ok(await second.page.getByLabel('Message').isVisible(), 'the message box from the start')
   assert.ok(await button(second.page, 'Send').isDisabled(), 'Send once there is a profile to send from')
@@ -1177,66 +1234,79 @@ test('two people: one posts an offer, its price per hour, the place only for ses
   await page.locator('button.card', { hasText: 'Tutoring tutor' }).click()
   await inbox(page).locator('.count', { hasText: '1' }).waitFor()
   assert.equal(await inbox(page).getAttribute('aria-label'), 'Messages, 1 new')
-  assert.deepEqual(await page.locator('.lines button.link').allTextContents(), ['No reviews yet'], 'no Messages line')
+  assert.equal(await page.locator('.rate-line').textContent(), 'No reviews yet', 'no Messages line')
   await shot(page, 'profile-message')
   await button(page, 'Back').click()
   await button(page, /Notifications$/).click()
   await page.getByRole('heading', { name: 'Notifications' }).waitFor()
   await page.getByText('Nothing yet.').waitFor()
-  assert.equal(await page.locator('main .rows button.row').count(), 0, 'no message row')
+  assert.equal(await page.locator('main .rows button').count(), 0, 'no message row')
   await inbox(page).locator('.count', { hasText: '1' }).waitFor()
   await shot(page, 'notifications-message')
   // The page closed and opened again (the seed dropped), then its inbox: every profile's conversations.
+  // Before the unlock, only what is true: the avatar of the profile it came to, how many, and Open;
+  // at the top, Back, the title, and the round New message, its pencil.
   await closed(page)
   await inbox(page).click()
-  await page.getByRole('heading', { name: 'Messages' }).waitFor()
-  await page.locator('.messages-row', { hasText: '1 new message' }).getByRole('button', { name: 'Open' }).waitFor()
-  assert.equal(await page.getByRole('tab').count(), 0, 'messages only: no filters')
-  assert.deepEqual(await page.locator('.top button').evaluateAll((b) => b.map((x) => x.getAttribute('aria-label'))), ['Back'], 'nothing at the top but back: no pencil')
-  const compose = button(page, 'New message')
-  assert.match((await compose.getAttribute('class')) ?? '', /primary/, 'New message, a labeled button')
-  assert.ok((await compose.boundingBox())!.y > (await page.locator('.messages-row').boundingBox())!.y, 'at the bottom')
+  await page.getByRole('heading', { name: 'Messages', exact: true }).waitFor()
+  const unopened = page.locator('.unopened', { hasText: '1 new message' })
+  await unopened.waitFor()
+  assert.deepEqual(await unopened.locator('.av').evaluateAll((a) => a.map((x) => (x as HTMLElement).dataset.market)), ['tutoring'], "the avatar of the person's own profile it came to: an envelope shows no one who wrote it")
+  assert.deepEqual(await avatarOf(unopened.locator('.av')), { light: false, h: colorOf('tutoring'), ground: rgbOf(colorOf('tutoring')), icon: 'graduation-cap' }, 'the tutor, solid')
+  assert.equal(await page.getByText('No new messages').count(), 0)
+  assert.equal(await page.locator('.filters').count(), 0, 'no chips before the unlock')
+  assert.deepEqual(await page.locator('.top button').evaluateAll((b) => b.map((x) => x.getAttribute('aria-label'))), ['Back', 'New message'])
+  assert.equal(await page.locator('.top-right').getByRole('button', { name: 'New message' }).locator('.icon').getAttribute('data-icon'), 'note-pencil', 'round, its pencil')
   // No seed held: Open asks, and says so.
-  assert.equal(await iconsInTheirButtonsColor(page), 1, "Open's unlock icon, in its text color, on its row")
+  assert.equal(await iconsInTheirButtonsColor(page), 1, "Open's unlock icon, in its text color")
   await shot(page, 'messages-asking')
   asked = counts.asserted
   await button(page, 'Open').click()
-  const row = page.locator('button.row', { hasText: 'Tutoring student' })
+  const row = page.locator('button.thread-row', { hasText: 'Tutoring student' })
   await badge(row).waitFor({ timeout: 60_000 })
   assert.equal(counts.asserted - asked, 1, 'one unlock opens every inbox')
   await named(row, 'Tutoring student')
   await row.locator('.dot').waitFor()
-  assert.equal(await page.locator('.messages-row').count(), 0, 'opened: the row gone')
+  assert.equal(await row.locator('.thread-last .text.fresh').textContent(), ASK, 'its last message, bold while new')
+  await row.getByText('to your Tutoring tutor').waitFor()
+  assert.equal(await page.locator('.unopened').count(), 0, 'opened')
+  // Chips that pick whose: All, then each profile by its avatar and role.
+  assert.deepEqual(await page.locator('.filters button').allTextContents(), ['All', 'tutor'])
+  assert.equal(await button(page, 'All').getAttribute('aria-pressed'), 'true')
   await shot(page, 'messages')
   await row.click()
   await page.getByText(ASK).waitFor()
-  await page.getByText('Your Tutoring tutor').waitFor()
-  await named(page.locator('.top'), 'Tutoring student')
-  // The reply, in one row: the text box and a round Send, which shows its own icon.
-  const reply = page.getByLabel('Reply')
+  // Its header: their avatar, who they are and to which of the person's, and Review, soft, its star.
+  const convo = page.locator('.top')
+  await convo.getByText('to your Tutoring tutor').waitFor()
+  await named(convo, 'Tutoring student')
+  assert.equal(await convo.locator('.convo-head .av').getAttribute('data-market'), 'tutoring')
+  assert.deepEqual([await button(page, 'Review').getAttribute('class'), await button(page, 'Review').locator('.icon').getAttribute('data-icon')], ['soft small', 'star'])
+  // The reply, in one row: the pill and a round Send, which shows its own icon.
+  const reply = page.getByLabel('Message')
   const send = button(page, 'Send')
   const [box, round] = [(await reply.boundingBox())!, (await send.boundingBox())!]
   assert.ok(round.y < box.y + box.height && box.y < round.y + round.height && round.x > box.x + box.width - 1, 'side by side, in one row')
   assert.equal(Math.round(round.width), Math.round(round.height), 'as wide as it is high')
   assert.equal(await send.evaluate((b) => getComputedStyle(b).borderRadius), '50%', 'round')
-  assert.deepEqual([await send.locator('.icon').count(), await send.locator('.unlock').count(), await send.textContent()], [1, 0, ''], 'its own icon, no word, no padlock')
+  assert.deepEqual([await send.locator('.icon').count(), await send.locator('.unlock').count(), await send.textContent(), await send.locator('.icon').getAttribute('data-icon')], [1, 0, '', 'arrow-up'], 'its own icon, no word, no padlock')
   await reply.fill(YES)
   assert.equal(await iconsInTheirButtonsColor(page), 1, "Send's icon, in its text color")
   await send.click()
   await page.locator('.said.mine', { hasText: YES }).waitFor({ timeout: 60_000 })
-  // Each message with the time it was sent, quietly; the day once, above them, since they are of one day.
-  const times = await page.locator('.said .sent').allTextContents()
-  assert.equal(times.length, 2)
+  // The time under the last message of each run, quietly, at its side; the day once, above them, since they are of one day: Today.
+  const times = await page.locator('.thread .stamp').allTextContents()
+  assert.equal(times.length, 2, 'two runs, one each')
   for (const t of times) assert.match(t, /^\d{1,2}:\d{2}\s?[AP]M$/, `a time of day: ${t}`)
-  assert.deepEqual(await page.locator('.thread > *').evaluateAll((els) => els.map((e) => e.className)), ['day-line', 'said', 'said mine'], 'one day line, before the first')
-  assert.equal(await page.locator('.day-line').textContent(), await page.evaluate(() => new Date().toLocaleDateString(undefined, { day: 'numeric', month: 'short' })))
+  assert.deepEqual(await page.locator('.thread > *').evaluateAll((els) => els.map((e) => e.className)), ['day-line', 'said', 'stamp', 'said mine gap', 'stamp mine'], 'one day line, before the first')
+  assert.equal(await page.locator('.day-line').textContent(), 'Today')
   await shot(page, 'thread')
   assert.equal((await entriesOf(tutor, 'sent')).length, 1, "the reply's copy, in the tutor's own folder")
   await button(page, 'Back').click()
   assert.equal(await row.locator('.dot').count(), 0, 'looked at: new no more')
   await button(page, 'Back').click()
   await inbox(page).locator('.count').waitFor({ state: 'detached' })
-  assert.equal(await page.locator('main .rows button.row').count(), 0, 'nothing yet about the tutor')
+  assert.equal(await page.locator('main .rows button').count(), 0, 'nothing yet about the tutor')
   await page.getByText('Nothing yet.').waitFor()
   await shot(page, 'notifications-none')
 
@@ -1245,13 +1315,27 @@ test('two people: one posts an offer, its price per hour, the place only for ses
   await button(second.page, 'Back').click()
   await closed(second.page)
   await second.page.locator('button.card', { hasText: 'Tutoring student' }).locator('.chip.new', { hasText: '1 new' }).waitFor({ timeout: 45_000 })
+  // From the profile's own Messages button: Messages picked to it, before the unlock its avatar and how many, after it its chip pressed.
   await messagesOf(second.page, 'Tutoring student')
+  await second.page.locator('.unopened', { hasText: '1 new message' }).locator('.av[data-market="tutoring"].look').waitFor()
+  await shot(second.page, 'messages-picked-asking')
   await button(second.page, 'Open').click()
-  await second.page.locator('button.row', { hasText: 'Tutoring tutor' }).click()
+  await second.page.locator('button.thread-row', { hasText: 'Tutoring tutor' }).waitFor({ timeout: 60_000 })
+  assert.equal(await button(second.page, 'Tutoring student').getAttribute('aria-pressed'), 'true', 'picked to the profile it was opened from')
+  assert.equal(await button(second.page, 'All').getAttribute('aria-pressed'), 'false')
+  await shot(second.page, 'messages-picked')
+  await second.page.locator('button.thread-row', { hasText: 'Tutoring tutor' }).click()
   await second.page.locator('.said.mine', { hasText: ASK }).waitFor()
   await second.page.locator('.said:not(.mine)', { hasText: YES }).waitFor()
+  // Review, from the thread: who it is about known, at the top with Close; Score, Vouch and Report, Score picked, its line.
   await button(second.page, 'Review').click()
-  await badge(second.page.locator('.who', { hasText: 'Tutoring tutor' })).waitFor()
+  await badge(second.page.locator('.top .who', { hasText: 'Tutoring tutor' })).waitFor()
+  assert.equal(await button(second.page, 'Close').locator('.icon').getAttribute('data-icon'), 'x')
+  const kinds = second.page.getByRole('group', { name: 'Kind' })
+  assert.deepEqual(await kinds.getByRole('button').allTextContents(), ['Score', 'Vouch', 'Report'])
+  assert.deepEqual(await kinds.getByRole('button').evaluateAll((b) => b.map((x) => [x.getAttribute('aria-pressed'), (x.querySelector('.icon') as SVGElement).dataset.icon])), [['true', 'star'], ['false', 'handshake'], ['false', 'flag']])
+  await second.page.getByText('How did it go, from 1 to 10?').waitFor()
+  assert.equal(await second.page.getByLabel('Comment').getAttribute('placeholder'), "What went well, or didn't?")
   const score = second.page.getByLabel('Score')
   assert.match((await score.getAttribute('class')) ?? '', /untouched/, "the thumb hidden until touched: no score looks chosen")
   await second.page.locator('.score .big', { hasText: '–' }).waitFor()
@@ -1263,14 +1347,14 @@ test('two people: one posts an offer, its price per hour, the place only for ses
   for (let i = 0; i < 6; i++) await score.press('ArrowLeft')
   await second.page.locator('.score .big', { hasText: '9.4' }).waitFor()
   await second.page.getByLabel('Comment').fill('Clear and patient.')
-  await second.page.getByRole('button', { name: /^Maths\s*\$30 per hour$/ }).click()
+  assert.equal(await second.page.getByText('$30 per hour').count(), 0, 'none of their listings to name')
   await shot(second.page, 'review-someone')
   await button(second.page, 'Post').click()
-  await second.page.getByLabel('Reply').waitFor({ timeout: 60_000 })
+  await second.page.getByLabel('Message').waitFor({ timeout: 60_000 })
   const reviews = await entriesOf(student, 'review')
   assert.equal(reviews.length, 1)
   const [, review] = reviews[0]!
-  assert.deepEqual(review.entry.body, { subject: tutor, score: '9.4', text: 'Clear and patient.', listing: `${tutor}/${offerPath}` }, 'about the tutor, naming the offer, in tenths')
+  assert.deepEqual(review.entry.body, { subject: tutor, score: '9.4', text: 'Clear and patient.' }, 'about the tutor, in tenths, naming none of their listings')
   await second.context.close()
   await button(page, 'Home').click()
   say('two people: an offer per hour, found by its link, messaged, replied to, reviewed in tenths; nothing asked while the seed was held')
@@ -1334,7 +1418,7 @@ test("a message to one of the person's own profiles: To their tutor, From their 
   await messagesOf(page, 'Tutoring tutor')
   // The seed held: no Open, the conversations opened by themselves.
   await page.locator('button.row', { hasText: 'Tutoring student' }).waitFor({ timeout: 60_000 })
-  assert.equal(await page.locator('.messages-row').count(), 0, 'no Open')
+  assert.equal(await page.locator('.unopened').count(), 0, 'no Open')
   await shot(page, 'messages-held')
   await button(page, 'New message').click()
   await page.getByLabel('To').fill(tutor)
@@ -1345,17 +1429,17 @@ test("a message to one of the person's own profiles: To their tutor, From their 
   await page.getByLabel('Message').fill(NOTE)
   await button(page, 'Send').click()
   await page.locator('.said.mine', { hasText: NOTE }).waitFor({ timeout: 60_000 })
-  await page.getByText('Your Tutoring student').waitFor()
+  await page.getByText('to your Tutoring student').waitFor()
   await button(page, 'Back').click()
   // The tutor's messages: it arrives, and with the seed held it opens by itself, from the student, new.
   const row = page.locator('button.row', { hasText: NOTE }).filter({ hasText: 'Tutoring student' })
   await badge(row).waitFor({ timeout: 90_000 })
-  assert.equal(await page.locator('.messages-row').count(), 0, 'never an Open row')
+  assert.equal(await page.locator('.unopened').count(), 0, 'never Open')
   assert.equal(counts.asserted - asked, 0, 'opened, sent and opened again, nothing asked')
   await row.locator('.dot').waitFor()
   await row.click()
   await page.locator('.said:not(.mine)', { hasText: NOTE }).waitFor()
-  await page.getByText('Your Tutoring tutor').waitFor()
+  await page.getByText('to your Tutoring tutor').waitFor()
   await button(page, 'Back').click()
   await button(page, 'Back').click()
   await button(page, 'Back').click()
@@ -1517,7 +1601,7 @@ test('signed in through the QR code: Save a passkey on this device? once; Save m
   const before = [first.counts.asserted, third.counts.asserted]
   await messagesOf(third.page, 'Tutoring tutor')
   await button(third.page, 'Open').click()
-  await third.page.locator('.messages-row').waitFor({ state: 'detached', timeout: 60_000 })
+  await third.page.locator('.unopened').waitFor({ state: 'detached', timeout: 60_000 })
   assert.deepEqual([first.counts.asserted - before[0]!, third.counts.asserted - before[1]!], [0, 1], 'this device asked, not the phone')
   await third.context.close()
 
@@ -1662,11 +1746,14 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   // Who it's for, then the kind, and only then one size question, right after them, by its labels.
   await page.getByRole('group', { name: 'Wearer' }).getByRole('button', { name: 'Women' }).click()
   assert.equal(await page.getByLabel('Size', { exact: true }).count(), 0, 'no size before the kind')
-  await page.getByLabel('Kind', { exact: true }).selectOption({ label: 'Coat' })
+  await pick(page, 'Kind', 'Coat')
+  assert.equal(await page.getByRole('group', { name: 'Kind', exact: true }).locator('button.open-row').textContent(), 'Coat', 'one picked, in words, on its row')
   const coatLabels = (await page.locator('form > .field > .label').allTextContents()).map((l) => l.replace('Public.', ''))
   assert.deepEqual(coatLabels, ['Photos', 'Description', 'Price', 'Wearer', 'Kind', 'Size', 'Brand', 'Condition', 'Location', 'Delivery', 'Contact'], 'one size question, right after who and the kind')
-  assert.deepEqual((await page.getByLabel('Size', { exact: true }).locator('option').allTextContents()).slice(1), ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL', 'One size'], 'each value by its label, else in words')
-  await page.getByLabel('Size', { exact: true }).selectOption({ label: 'XL' })
+  await page.getByRole('group', { name: 'Size', exact: true }).locator('button.open-row').click()
+  assert.deepEqual(await page.getByRole('dialog', { name: 'Size' }).getByRole('checkbox').allTextContents(), ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL', 'One size'], 'each value by its label, else in words')
+  await page.keyboard.press('Escape')
+  await pick(page, 'Size', 'XL')
   // A choice of several: picked up and shipped.
   const delivery = page.getByRole('group', { name: 'Delivery' })
   await delivery.getByRole('button', { name: 'Pickup' }).click()
@@ -1687,7 +1774,7 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   assert.ok(await where.getByRole('button', { name: 'Done' }).isDisabled(), 'so no Done')
   await where.getByRole('button', { name: 'Area' }).click()
   await where.getByRole('button', { name: 'Done' }).click()
-  await location.getByRole('button', { name: 'Lavapiés, Madrid, within 3 km' }).waitFor()
+  await location.getByRole('button', { name: /^Lavapiés, Madrid\s*Within 3 km$/ }).waitFor()
   await page.getByLabel('Contact').fill('@coats')
   // The page hidden a moment keeps the seed, which closing it dropped: Post asks, and shows it.
   await away(page)
@@ -1696,7 +1783,7 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   await shot(page, 'listing-coat')
   const asked = counts.asserted
   await button(page, 'Post').click()
-  const coatRow = page.locator('.listing-row', { hasText: COAT })
+  const coatRow = page.locator('.listing-card', { hasText: COAT })
   await coatRow.waitFor({ timeout: 60_000 })
   assert.equal(counts.asserted - asked, 1, 'one unlock: the listing and its photos')
   const [[coatPath, coat]] = (await entriesOf(seller, 'listing')) as unknown as [[string, { entry: { body: any } }]]
@@ -1721,7 +1808,7 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   assert.equal(await coatRow.locator('img.thumb').getAttribute('src'), `${services.host}/v1/files/${body.photos[0]}`, 'its first photo, from the host')
   await coatRow.locator('img.thumb').evaluate((img: HTMLImageElement) => img.decode())
   await coatRow.getByText('$40', { exact: true }).waitFor()
-  assert.equal(await coatRow.getByText('Update this listing').count(), 0, 'it fits: nothing to update')
+  assert.equal(await coatRow.getByText('Needs an update').count(), 0, 'it fits: nothing to update')
   await shot(page, 'profile-coat')
   // The index lists it: it fits the market as the index reads it.
   const onIndex = `${services.index}/profiles/${seller}/${coatPath}.json`
@@ -1775,7 +1862,7 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   await buyer.page.getByRole('group', { name: 'Location' }).getByRole('button', { name: 'An exact spot' }).waitFor()
   await buyer.page.getByLabel('Description').fill(WANTED)
   await button(buyer.page, 'Post').click()
-  await buyer.page.locator('.listing-row', { hasText: WANTED }).waitFor({ timeout: 60_000 })
+  await buyer.page.locator('.listing-card', { hasText: WANTED }).waitFor({ timeout: 60_000 })
   const [[, wanted]] = (await entriesOf(buyerAddress, 'listing')) as unknown as [[string, { entry: { body: any } }]]
   const spot = wanted.entry.body.location
   assert.equal(spot.radiusKm, 0, 'an exact spot')
@@ -1794,13 +1881,17 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   await shot(buyer.page, 'place-refused')
   await asking.getByRole('button', { name: 'Back' }).click()
   await asking.waitFor({ state: 'detached' })
+  await button(buyer.page, 'Close').click()
   await button(buyer.page, 'Back').click()
-  await button(buyer.page, 'Back').click()
-  // The page closed and opened again, so no seed is held; before the unlock, how many are new, here none, with Open.
+  // The page closed and opened again, so no seed is held; before the unlock, with none new, a lock and Open your messages, and Open.
   await closed(buyer.page)
   await messagesOf(buyer.page, 'Clothing buyer')
-  await buyer.page.locator('.messages-row', { hasText: 'No new messages' }).getByRole('button', { name: 'Open' }).waitFor()
+  const none = buyer.page.locator('.unopened', { hasText: 'Open your messages' })
+  await none.locator('[data-icon="lock-simple"]').waitFor()
+  await button(buyer.page, 'Open').waitFor()
+  assert.equal(await buyer.page.getByText('No new messages').count(), 0, 'never "No new messages" beside Open')
   await shot(buyer.page, 'messages-none')
+  // New message, the round pencil at the top, before the unlock too.
   await button(buyer.page, 'New message').click()
   await buyer.page.getByRole('heading', { name: 'New message' }).waitFor()
   assert.ok((await buyer.page.getByLabel('To').isVisible()) && (await buyer.page.getByLabel('Message').isVisible()), 'To and the message box, from the start')
@@ -1810,7 +1901,8 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   await badge(buyer.page.locator('.who', { hasText: 'Clothing buyer' })).waitFor()
   await buyer.page.locator('.from', { hasText: 'Clothing seller' }).getByRole('button', { name: 'New profile' }).waitFor()
   assert.equal(await buyer.page.locator('main .line').count(), 0, 'not refused')
-  // The seller's page on the index, as their Share hands it out: taken as their address.
+  // Changed: the box again. The seller's page on the index, as their Share hands it out: taken as their address.
+  await button(buyer.page, 'Change').click()
   await buyer.page.getByLabel('To').fill(`${services.index}/profiles/${seller}`)
   await badge(buyer.page.locator('.who', { hasText: 'Clothing seller' })).waitFor()
   await buyer.page.locator('.from', { hasText: 'Clothing buyer' }).waitFor()
@@ -1818,62 +1910,89 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   await buyer.page.getByLabel('Message').fill('Is the coat still there?')
   await button(buyer.page, 'Send').click()
   await buyer.page.locator('.said.mine', { hasText: 'Is the coat still there?' }).waitFor({ timeout: 60_000 })
+  // Score, with the market's own question for a seller, in its own words, in one row: Yes or No.
   await button(buyer.page, 'Review').click()
   const score = buyer.page.getByLabel('Score')
   await score.focus()
   await score.press('End')
-  await buyer.page.getByRole('group', { name: 'As described' }).getByRole('button', { name: 'Yes' }).click()
-  assert.deepEqual(await buyer.page.getByRole('button', { name: COAT }).locator('.two > *').allTextContents(), [COAT, '$40'], 'its pick: the coat, then its price')
-  await buyer.page.getByRole('button', { name: COAT }).getByText('$40', { exact: true }).waitFor()
-  await buyer.page.getByRole('button', { name: COAT }).click()
+  const question = buyer.page.getByRole('group', { name: 'As described' })
+  assert.deepEqual([await question.locator('strong').textContent(), await question.getByRole('button').allTextContents()], ['As described', ['Yes', 'No']])
+  const [words, chips] = [(await question.locator('strong').boundingBox())!, (await question.getByRole('button', { name: 'No' }).boundingBox())!]
+  assert.ok(Math.abs(words.y + words.height / 2 - (chips.y + chips.height / 2)) < 4 && chips.x > words.x, 'in one row: its words, then its chips')
+  await question.getByRole('button', { name: 'Yes' }).click()
+  assert.equal(await buyer.page.getByRole('button', { name: COAT }).count(), 0, 'no listing of theirs to name')
   await buyer.page.getByLabel('Comment').fill('Just like the photos.')
+  await shot(buyer.page, 'review-question')
   await button(buyer.page, 'Post').click()
-  await buyer.page.getByLabel('Reply').waitFor({ timeout: 60_000 })
+  await buyer.page.getByLabel('Message').waitFor({ timeout: 60_000 })
   const [[, reviewed]] = (await entriesOf(buyerAddress, 'review')) as unknown as [[string, { entry: { body: any } }]]
-  assert.deepEqual(reviewed.entry.body, { asDescribed: 'yes', subject: seller, text: 'Just like the photos.', score: '10', listing: `${seller}/${coatPath}` })
+  assert.deepEqual(reviewed.entry.body, { asDescribed: 'yes', subject: seller, text: 'Just like the photos.', score: '10' })
 
-  // From the buyer's profile, Review beside New request: a vouch (no score), then a report, each about the seller by address; Given lists all three.
+  // From the buyer's profile, its Reviews and Review someone: who first, on a sheet, the seller among
+  // those it has a conversation with; a vouch, written again in its place, then a report, each about
+  // the seller; Written by this profile lists all three.
   await button(buyer.page, 'Back').click()
   await button(buyer.page, 'Back').click()
   await buyer.page.getByRole('heading', { name: 'Clothing buyer' }).waitFor()
-  assert.deepEqual(await buyer.page.locator('.foot button').allTextContents(), ['Review', 'New request'], 'side by side')
-  await shot(buyer.page, 'profile-review')
-  await button(buyer.page, 'Review').click()
-  await buyer.page.getByRole('heading', { name: 'Review' }).waitFor()
-  // The profile itself: refused, in one line, under the box; Post says it no twice.
-  await buyer.page.getByLabel('Their address').fill(buyerAddress)
-  const own = buyer.page.getByText("That's this profile.")
-  await own.waitFor()
-  await button(buyer.page, 'Post').click()
-  await buyer.page.waitForTimeout(500)
-  assert.equal(await buyer.page.locator('main .line').count(), 1, 'one line, once')
-  await buyer.page.getByLabel('Their address').fill(seller)
-  await badge(buyer.page.locator('.who', { hasText: 'Clothing seller' })).waitFor()
-  await button(buyer.page, 'No score').click()
-  await buyer.page.getByText("You know they're real.").waitFor()
+  await buyer.page.getByRole('tab', { name: 'Reviews' }).click()
+  assert.deepEqual([await button(buyer.page, 'Review someone').getAttribute('class'), await button(buyer.page, 'Review someone').locator('.icon').getAttribute('data-icon')], [null, 'star'], 'plain, its star, at the foot')
+  await shot(buyer.page, 'profile-reviews-none')
+  await button(buyer.page, 'Review someone').click()
+  const whom = buyer.page.getByRole('dialog', { name: 'Who are you reviewing?' })
+  await badge(whom.locator('button.row', { hasText: 'Clothing seller' })).waitFor()
+  await shot(buyer.page, 'review-who')
+  // The profile itself: refused, in one line, on the sheet, which stays.
+  await whom.getByLabel('Their address').fill(buyerAddress)
+  await whom.getByText("That's this profile.").waitFor()
+  await whom.locator('button.row', { hasText: 'Clothing seller' }).click()
+  await whom.waitFor({ state: 'detached' })
+  await badge(buyer.page.locator('.top .who', { hasText: 'Clothing seller' })).waitFor()
+  // Vouch: its line, its mint square, no score, its comment's own placeholder, and Vouch at the foot.
+  const kinds = buyer.page.getByRole('group', { name: 'Kind' })
+  await kinds.getByRole('button', { name: 'Vouch' }).click()
+  await buyer.page.getByText("Say they're real and honest, without a score.").waitFor()
+  assert.equal(await kinds.getByRole('button', { name: 'Vouch' }).locator('.icon').getAttribute('data-icon'), 'handshake')
+  assert.equal(await buyer.page.locator('.kind-mark .sq.mint [data-icon="handshake"]').count(), 1, 'its mint square')
   assert.equal(await buyer.page.getByLabel('Score').count(), 0, 'no score: a vouch')
+  assert.equal(await buyer.page.getByRole('group', { name: 'As described' }).count(), 0, "a review's question only")
+  assert.equal(await buyer.page.getByLabel('Comment').getAttribute('placeholder'), 'How do you know them? (optional)')
+  assert.match((await button(buyer.page, 'Vouch').last().getAttribute('class')) ?? '', /primary/)
+  await shot(buyer.page, 'review-vouch')
+  await buyer.page.getByLabel('Comment').fill('Real.')
+  await buyer.page.locator('.foot').getByRole('button', { name: 'Vouch' }).click()
+  await button(buyer.page, 'Review someone').waitFor({ timeout: 60_000 })
+  const [[vouchAt]] = await entriesOf(buyerAddress, 'vouch')
+  // Vouched again for the same person: in place of the first, never a second.
+  await button(buyer.page, 'Review someone').click()
+  await whom.locator('button.row', { hasText: 'Clothing seller' }).click()
+  await kinds.getByRole('button', { name: 'Vouch' }).click()
   await buyer.page.getByLabel('Comment').fill('Real and kind.')
-  await button(buyer.page, 'Post').click()
-  await button(buyer.page, 'Review').waitFor({ timeout: 60_000 })
-  await button(buyer.page, 'Review').click()
-  await buyer.page.getByLabel('Their address').fill(seller)
-  await buyer.page.locator('.who', { hasText: 'Clothing seller' }).waitFor()
-  await button(buyer.page, 'Report').click()
-  await buyer.page.getByRole('heading', { name: 'Report' }).waitFor()
+  await buyer.page.locator('.foot').getByRole('button', { name: 'Vouch' }).click()
+  await button(buyer.page, 'Review someone').waitFor({ timeout: 60_000 })
+  const vouches = await entriesOf(buyerAddress, 'vouch')
+  assert.deepEqual(vouches.map(([path, c]) => [path, c.entry.body]), [[vouchAt, { subject: seller, text: 'Real and kind.' }]], 'one vouch, at the first one\'s path')
+  // Report, the seller's address pasted: its line, its red square, Report in red at the foot.
+  await button(buyer.page, 'Review someone').click()
+  await whom.getByLabel('Their address').fill(seller)
+  await whom.waitFor({ state: 'detached' })
+  await buyer.page.locator('.top .who', { hasText: 'Clothing seller' }).waitFor()
+  await kinds.getByRole('button', { name: 'Report' }).click()
+  await buyer.page.getByText("Warn others it's fake or a scam.").waitFor()
+  assert.equal(await buyer.page.locator('.kind-mark .sq.red [data-icon="flag"]').count(), 1, 'its red square')
   assert.equal(await buyer.page.getByLabel('Score').count(), 0, 'a report: text only')
+  assert.equal(await buyer.page.getByLabel('Comment').getAttribute('placeholder'), 'What happened?')
   await buyer.page.getByLabel('Comment').fill('Sold me the wrong size twice.')
-  const red = button(buyer.page, 'Post')
-  assert.match((await red.getAttribute('class')) ?? '', /danger/, 'posted in red')
+  const red = buyer.page.locator('.foot').getByRole('button', { name: 'Report' })
+  assert.match((await red.getAttribute('class')) ?? '', /danger solid/, 'posted in red')
+  assert.equal(await asks(red), false, 'the seed held since the review: Report will ask nothing')
   await shot(buyer.page, 'report')
   await red.click()
-  await button(buyer.page, 'Review').waitFor({ timeout: 60_000 })
-  await button(buyer.page, /^No reviews yet/).click()
-  await buyer.page.getByRole('tab', { name: 'Given' }).click()
-  const given = buyer.page.locator('button.said-row')
+  await button(buyer.page, 'Review someone').waitFor({ timeout: 60_000 })
+  const given = buyer.page.locator('h2:has-text("Written by this profile") + .cards > button.said-card')
   await given.nth(2).waitFor()
   assert.deepEqual((await given.locator('.said-chip').allTextContents()).sort(), ['10', 'Report', 'Vouch'])
   for (let i = 0; i < 3; i++) await given.nth(i).locator('.who', { hasText: 'Clothing seller' }).waitFor()
-  await shot(buyer.page, 'profile-feedback-given')
+  await shot(buyer.page, 'profile-reviews-given')
   for (const kind of ['vouch', 'report']) assert.equal((await entriesOf(buyerAddress, kind)).length, 1, `one ${kind}, in the buyer's folder`)
   await buyer.context.close()
 
@@ -1882,79 +2001,89 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   const card = await untilCard(page, 'Clothing seller', '10.0')
   assert.deepEqual(await card.locator('.card-line > *').allTextContents(), ['10.0', '1 review'])
   assert.equal(await card.locator('.rate .icon').getAttribute('data-icon'), 'star')
-  // The review, the vouch and the report: "3 new" on the profile's rating line, once the index counts all three; the message, 1 on its Messages button.
-  await untilLine(page, 'Clothing seller', '10.0 · 1 review · 3 new')
-  await inbox(page).locator('.count', { hasText: '1' }).waitFor({ timeout: 45_000 })
-  await shot(page, 'profile-new')
-  // The Notifications tab counts all that is new: the review, the vouch, the report and the message; the card, the same four.
-  await button(page, 'Back').click()
-  await page.locator('.tabbar .count', { hasText: '4' }).waitFor({ timeout: 45_000 })
-  await card.locator('.chip.new', { hasText: '4 new' }).waitFor()
+  // The card counts all that is new, once the index counts all three: the review, the vouch, the report and the message; the Notifications tab, the same four.
+  await untilCard(page, 'Clothing seller', '4 new')
+  await page.locator('.tabbar .count', { hasText: '4' }).waitFor()
   await shot(page, 'home-rated')
+  // The profile: the rating under its name, its star, its score, how many reviews; the Reviews tab
+  // with its dot; the message, 1 on its Messages button.
+  await untilLine(page, 'Clothing seller', '10.0 1 review')
+  await page.getByRole('tab', { name: 'Reviews' }).locator('.dot').waitFor()
+  assert.equal(await page.locator('.rate-line .rate .icon').getAttribute('data-icon'), 'star')
+  await inbox(page).locator('.count', { hasText: '1' }).waitFor()
+  await shot(page, 'profile-new')
+  await button(page, 'Back').click()
+  // The profile's Reviews mark the new ones; seeing them, they are new no more. Each a card: its
+  // score or chip, when and its dot, what they wrote, then who wrote it.
   await page.locator('button.card', { hasText: 'Clothing seller' }).click()
-  const line = page.locator('button.link').first()
-  // The profile's Feedback marks the new ones; seeing them, they are new no more.
-  await line.click()
-  await page.locator('.big', { hasText: '10.0' }).waitFor()
-  await page.getByText(`Rated by ${new URL(services.index).host}`).waitFor()
-  const received = page.locator('button.said-row', { hasText: 'Just like the photos.' })
+  await page.getByRole('tab', { name: 'Reviews' }).click()
+  const said = page.locator('.cards').first().locator('button.said-card')
+  const received = said.filter({ hasText: 'Just like the photos.' })
   await received.waitFor({ timeout: 60_000 })
-  assert.equal(await page.locator('button.said-row').count(), 3)
-  assert.equal(await page.locator('button.said-row .dot').count(), 3, 'each with its dot')
-  await shot(page, 'profile-feedback')
+  await said.nth(2).waitFor()
+  assert.equal(await said.count(), 3)
+  assert.deepEqual(await said.locator('.said-chip').allTextContents(), ['Report', 'Vouch', '10'], 'newest first')
+  assert.deepEqual(await said.locator('.said-chip .icon').evaluateAll((i) => i.map((x) => (x as SVGElement).dataset.icon)), ['flag', 'handshake', 'star'])
+  assert.equal(await said.locator('.dot').count(), 3, 'each with its dot')
+  for (let i = 0; i < 3; i++) await badge(said.nth(i).locator('.who', { hasText: 'Clothing buyer' })).waitFor()
+  await page.getByText(`Rated by ${new URL(services.index).host}`).waitFor()
+  await page.getByRole('tab', { name: 'Reviews' }).locator('.dot').waitFor({ state: 'detached' })
+  await shot(page, 'profile-reviews')
+  // A card opened: the review as received, its market's field, and no listing named.
   await received.click()
   await page.getByText(/^On your Clothing seller · /).waitFor()
   await page.locator('.big', { hasText: '10 / 10' }).waitFor()
   const facts = page.locator('.facts')
   await facts.getByText('As described').waitFor()
   await facts.getByText('Yes').waitFor()
-  await facts.getByText('Offer').waitFor()
-  await facts.getByText(COAT).waitFor()
+  assert.equal(await facts.getByText('Offer').count(), 0, 'no listing named')
   await badge(facts.locator('.who', { hasText: 'Clothing buyer' })).waitFor()
   assert.ok(await button(page, 'Message').isVisible())
   assert.match((await button(page, 'Report').getAttribute('class')) ?? '', /danger/)
   await shot(page, 'received')
   await button(page, 'Back').click()
-  await button(page, 'Back').click()
-  await button(page, '10.0 · 1 review').waitFor()
+  await page.getByRole('tab', { name: 'Reviews', selected: true }).waitFor()
   await button(page, 'Back').click()
   await page.locator('.tabbar .count', { hasText: '1' }).waitFor()
-  assert.equal(await card.locator('.chip.new').textContent(), '1 new', "the tab and the card counting the message alone now, the three seen in the profile's Feedback")
+  assert.equal(await card.locator('.chip.new').textContent(), '1 new', "the tab and the card counting the message alone now, the three seen in the profile's Reviews")
   await page.locator('button.card', { hasText: 'Clothing seller' }).click()
-  await button(page, '10.0 · 1 review').click()
+  await page.getByRole('tab', { name: 'Reviews' }).click()
   await received.waitFor()
-  assert.equal(await page.locator('button.said-row .dot').count(), 0, 'seen once: new no more')
-  await button(page, 'Back').click()
+  assert.equal(await said.locator('.dot').count(), 0, 'seen once: new no more')
   await button(page, 'Back').click()
 
-  // Notifications: all that came to any profile, newest first, the three seen already, so with no
-  // dot, and no message; its Messages button, counting the message, opens every profile's conversations.
+  // Notifications: all that came to any profile, under Today, newest first, the three seen already,
+  // so with no dot, and no message: each with the avatar of who wrote it, what it is on which
+  // profile, its score or chip, what they wrote, in full. Its Messages button, counting the
+  // message, opens every profile's conversations.
   await button(page, /Notifications$/).click()
-  const rows = page.locator('main .rows button.row')
+  const rows = page.locator('main .rows button')
   await rows.nth(3).waitFor()
   assert.equal(await rows.count(), 4, 'no message row')
+  assert.deepEqual(await page.locator('main h2').allTextContents(), ['Today'])
+  assert.deepEqual(await rows.locator('.nrow-head > strong').allTextContents(), ['Report on your Clothing seller', 'Vouch on your Clothing seller', 'Review on your Clothing seller', 'Review on your Tutoring tutor'])
   assert.deepEqual(await rows.locator('.said-chip').allTextContents(), ['Report', 'Vouch', '10', '9.4'], "the coat's three, newest first, then the tutor's review")
   assert.deepEqual(await rows.locator('.said-chip .icon').evaluateAll((i) => i.map((x) => (x as SVGElement).dataset.icon)), ['flag', 'handshake', 'star', 'star'])
-  assert.deepEqual(await rows.evaluateAll((r) => r.map((x) => (x.querySelector('.av') as HTMLElement).dataset.market)), ['clothing', 'clothing', 'clothing', 'tutoring'], "each with its profile's avatar")
-  assert.equal(await rows.locator('.dot').count(), 0, "seen in the profile's Feedback, or before this device forgot and started again")
+  await rows.nth(3).locator('.av[data-market]').waitFor()
+  assert.deepEqual(await rows.evaluateAll((r) => r.map((x) => [(x.querySelector('.av') as HTMLElement).dataset.market, x.querySelector('.av')!.classList.contains('look')])), [['clothing', true], ['clothing', true], ['clothing', true], ['tutoring', true]], 'each with the avatar of who wrote it: a buyer, a student, light')
+  assert.equal(await rows.locator('.dot').count(), 0, "seen in the profile's Reviews, or before this device forgot and started again")
   assert.equal(await rows.nth(0).locator('.said-text').textContent(), 'Sold me the wrong size twice.', 'in full')
-  await named(rows.nth(0), 'Clothing seller')
   await inbox(page).locator('.count', { hasText: '1' }).waitFor()
   await shot(page, 'notifications')
   await closed(page)
   await inbox(page).click()
-  await page.getByRole('heading', { name: 'Messages' }).waitFor()
+  await page.getByRole('heading', { name: 'Messages', exact: true }).waitFor()
   await page.getByText('1 new message').waitFor()
   assert.equal(await page.locator('.said-chip').count(), 0, 'messages only: no review, vouch or report')
   await button(page, 'Back').click()
   await button(page, 'Home').click()
-  say('clothing: two photos redrawn and sent, a review, a vouch and a report; the rating, "3 new", the tab counting them and the message, the profile\'s Feedback, and Notifications')
+  say("clothing: two photos redrawn and sent, a review with its market's question, a vouch and a report; the rating, the Reviews tab's dot, the tab counting them and the message, the profile's Reviews, and Notifications")
 })
 
 const TROUSERS = 'Linen trousers, worn once.'
 
-/** The notice Notifications holds for an entry a market outgrew, by what it needs and a line of it. */
-const noticeOf = (page: Page, needs: string, line: string) => page.locator('main .rows button.row', { hasText: needs }).filter({ hasText: line })
+/** The notice Notifications holds for an entry a market outgrew, by what it needs and its line. */
+const noticeOf = (page: Page, needs: string, line: string) => page.locator('main .rows button', { hasText: needs }).filter({ hasText: line })
 
 test('a listing an older market shaped: its row says Update this listing, and Notifications holds a notice for it, the tab counting it; opened there, what still fits is filled in; posted, it fits and both are gone', async () => {
   const { page } = first
@@ -1964,26 +2093,37 @@ test('a listing an older market shaped: its row says Update this listing, and No
   const path = 'listing/0123456789abcdef0123456789abcdef'
   const old = { description: TROUSERS, price: { amount: '25', currency: 'USD' }, kind: 'trousers', wearer: 'women', size: 'EU 38', delivery: 'either', location: { area: 'Lavapiés, Madrid' }, contact: '@coats' }
   assert.notEqual(loadMarkets().checkEntry('clothing', 'seller', 'listing', old), null, "it doesn't fit the market today")
+  // Three days ago, so it was posted before what came today.
   const view = await readFolder([services.host], main.address, Date.now())
-  const [outcome] = await write([services.host], [entry(main, path, old, nextTime(Date.now(), view, path))])
+  const [outcome] = await write([services.host], [entry(main, path, old, nextTime(Date.now() - 3 * 86_400_000, view, path))])
   assert.ok(outcome?.results.length === 1 && outcome.results[0]!.ok, 'written')
 
+  // On the profile's Offers, its card says so, in the sun; a tap opens its form.
   await page.locator('button.card', { hasText: 'Clothing seller' }).click()
-  const row = page.locator('.listing-row', { hasText: TROUSERS })
-  await row.getByText('Update this listing', { exact: true }).waitFor()
-  assert.equal(await page.locator('.listing-row', { hasText: COAT }).getByText('Update this listing').count(), 0, 'the coat fits')
+  const row = page.locator('.listing-card', { hasText: TROUSERS })
+  const chip = row.locator('.chip.warn', { hasText: 'Needs an update' })
+  await chip.waitFor()
+  assert.equal(await page.locator('.listing-card', { hasText: COAT }).getByText('Needs an update').count(), 0, 'the coat fits')
   await shot(page, 'profile-update')
+  await row.click()
+  await page.getByRole('heading', { name: 'Offer', exact: true }).waitFor()
+  assert.equal(await page.getByLabel('Description').inputValue(), TROUSERS)
+  await button(page, 'Close').click()
+  await row.waitFor()
   await button(page, 'Back').click()
 
-  // Notifications: a notice for it, the listing's first line and its profile, the tab counting it.
+  // Notifications: a notice for it, under Earlier, by when it was posted, after what came today: its
+  // sun square, its first line, that the market changed; the tab counting it.
   await button(page, /Notifications$/).click()
   await page.getByRole('heading', { name: 'Notifications' }).waitFor()
-  const notice = noticeOf(page, 'Update this listing', TROUSERS)
+  const notice = noticeOf(page, `${TROUSERS.replace(/\.$/, '')} needs an update`, 'The Clothing market changed. Tap to fix it.')
   await notice.waitFor()
-  await named(notice, 'Clothing seller')
   await noticesCounted(page, 1)
-  assert.equal(await notice.locator('.av').getAttribute('data-market'), 'clothing', "its profile's avatar")
-  assert.equal(await page.locator('main .rows button.row', { hasText: 'Update this' }).count(), 1, 'the coat fits: no notice')
+  assert.equal(await notice.locator('.sq.sun [data-icon="warning"]').count(), 1, 'its sun square')
+  assert.equal(await notice.locator('.xs').count(), 0, 'no time: when the market changed, the app cannot know')
+  assert.deepEqual(await page.locator('main h2').allTextContents(), ['Today', 'Earlier'])
+  assert.equal(await page.locator('main section', { hasText: 'Earlier' }).locator('.rows button').count(), 1, 'Earlier: the notice alone')
+  assert.equal(await page.locator('main .rows button', { hasText: 'needs an update' }).count(), 1, 'the coat fits: no notice')
   await shot(page, 'notifications-update')
   await notice.click()
   await page.getByRole('heading', { name: 'Offer', exact: true }).waitFor()
@@ -1992,7 +2132,7 @@ test('a listing an older market shaped: its row says Update this listing, and No
   // point at the field's 2 km, its old area gone with it.
   assert.equal(await page.getByLabel('Description').inputValue(), TROUSERS)
   assert.equal(await page.getByLabel('Price').inputValue(), '25')
-  assert.equal(await page.getByLabel('Kind', { exact: true }).inputValue(), 'trousers')
+  assert.equal(await page.getByRole('group', { name: 'Kind', exact: true }).locator('button.open-row').textContent(), 'Trousers')
   assert.equal(await page.getByLabel('Contact').inputValue(), '@coats')
   assert.equal(await page.getByRole('group', { name: 'Wearer' }).locator('[aria-pressed=true]').count(), 0)
   assert.equal(await page.getByRole('group', { name: 'Delivery' }).locator('[aria-pressed=true]').count(), 0)
@@ -2000,11 +2140,11 @@ test('a listing an older market shaped: its row says Update this listing, and No
   const again = await placeScreen(page, 'Location')
   await again.getByText('Within 2 km', { exact: true }).waitFor()
   await again.getByRole('button', { name: 'Done' }).click()
-  await page.getByRole('group', { name: 'Location' }).getByRole('button', { name: 'Within 2 km' }).waitFor()
+  await page.getByRole('group', { name: 'Location' }).getByRole('button', { name: 'Within 2 km', exact: true }).waitFor()
   await shot(page, 'listing-update')
   // For women: trousers then ask their waist, right after the kind.
   await page.getByRole('group', { name: 'Wearer' }).getByRole('button', { name: 'Women' }).click()
-  await page.getByLabel('Waist', { exact: true }).selectOption({ label: 'W30' })
+  await pick(page, 'Waist', 'W30')
   await button(page, 'Post').click()
   // Back on Notifications: posted, it fits, so the notice is gone, and the tab counts it no more.
   await page.getByRole('heading', { name: 'Notifications' }).waitFor({ timeout: 60_000 })
@@ -2016,10 +2156,10 @@ test('a listing an older market shaped: its row says Update this listing, and No
   assert.deepEqual([body.size, body.delivery], [undefined, undefined], "what didn't fit, gone")
   await button(page, 'Home').click()
   await page.locator('button.card', { hasText: 'Clothing seller' }).click()
-  await page.locator('.listing-row', { hasText: TROUSERS }).waitFor()
-  assert.equal(await page.locator('.listing-row', { hasText: TROUSERS }).getByText('Update this listing').count(), 0, 'nor on its row')
+  await page.locator('.listing-card', { hasText: TROUSERS }).waitFor()
+  assert.equal(await page.locator('.listing-card', { hasText: TROUSERS }).getByText('Needs an update').count(), 0, 'nor on its card')
   await button(page, 'Back').click()
-  say("an old listing: Update this listing on its row and in Notifications, what fits filled in, posted in the market's shape today")
+  say("an old listing: Needs an update on its card and in Notifications, under Earlier, what fits filled in, posted in the market's shape today")
 })
 
 const PAID = 'Paid on time, picked it up as agreed.'
@@ -2037,13 +2177,13 @@ test('a review an older market shaped: Notifications holds a notice for it, Upda
   assert.ok(outcome?.results.length === 1 && outcome.results[0]!.ok, 'written')
 
   await button(page, /Notifications$/).click()
-  const notice = noticeOf(page, 'Update this review', PAID)
+  const notice = noticeOf(page, 'Your review needs an update', 'The Clothing market changed. Tap to fix it.')
   await notice.waitFor({ timeout: 30_000 })
-  await named(notice, 'Clothing seller')
   await noticesCounted(page, 1)
   await notice.click()
-  await page.getByRole('heading', { name: 'Review', exact: true }).waitFor()
-  await badge(page.locator('.who', { hasText: 'Clothing buyer' })).waitFor()
+  // The edit: its kind kept, so no switch; who it is about at the top.
+  await badge(page.locator('.top .who', { hasText: 'Clothing buyer' })).waitFor()
+  assert.equal(await page.getByRole('group', { name: 'Kind' }).count(), 0, 'an edit keeps its kind')
   assert.equal(await page.getByLabel('Comment').inputValue(), PAID)
   assert.equal(await page.locator('.score .big').textContent(), '8')
   await shot(page, 'review-update')
@@ -2055,7 +2195,7 @@ test('a review an older market shaped: Notifications holds a notice for it, Upda
   assert.equal(loadMarkets().checkEntry('clothing', 'seller', 'review', body, 'buyer'), null, 'it fits the market')
   assert.deepEqual(body, { subject: buyerAt, score: '8', text: PAID }, "what didn't fit, gone")
   await button(page, 'Home').click()
-  say('an old review: Update this review in Notifications, what fits filled in, posted in the shape today')
+  say('an old review: its notice in Notifications, what fits filled in, posted in the shape today')
 })
 
 const OWN = 'Patient with my own questions.'
@@ -2064,23 +2204,22 @@ const VOUCH = 'Real, and there every week.'
 test("no review of one's own profiles: from their student, about their tutor, refused before the unlock in one red line; someone else's vouch shows first in Notifications, new; opened, it is seen", async () => {
   const { page, counts } = first
   await page.locator('button.card', { hasText: 'Tutoring student' }).click()
-  await button(page, 'Review').click()
-  await page.getByLabel('Their address').fill(tutor)
-  const line = page.getByText("That's one of your profiles.", { exact: true })
+  await page.getByRole('tab', { name: 'Reviews' }).click()
+  const asked = counts.asserted
+  await button(page, 'Review someone').click()
+  const whom = page.getByRole('dialog', { name: 'Who are you reviewing?' })
+  await whom.getByLabel('Their address').fill(tutor)
+  const line = whom.getByText("That's one of your profiles.", { exact: true })
   await line.waitFor()
   assert.equal(await line.getAttribute('class'), 'line red')
-  const score = page.getByLabel('Score')
-  await score.focus()
-  await score.press('End')
-  await page.getByLabel('Comment').fill(OWN)
-  const asked = counts.asserted
-  await button(page, 'Post').click()
-  await page.waitForTimeout(1_000)
+  await page.waitForTimeout(500)
+  assert.equal(await whom.locator('.line').count(), 1, 'said once, on the sheet, which stays')
   assert.equal(counts.asserted, asked, 'refused before the unlock: nothing asked')
-  assert.equal(await page.locator('main .line').count(), 1, 'said once')
   assert.equal((await entriesOf((await mainKey(seed, 'tutoring/student')).address, 'review')).length, 0, 'nothing written')
   await shot(page, 'review-own')
-  await button(page, 'Back').click()
+  // Closed with no one picked: Review someone closes too.
+  await page.keyboard.press('Escape')
+  await page.getByRole('tab', { name: 'Reviews', selected: true }).waitFor()
   await button(page, 'Back').click()
 
   // Someone else, a student, vouches for the tutor.
@@ -2090,28 +2229,34 @@ test("no review of one's own profiles: from their student, about their tutor, re
   await pickFirst(other.page, 'Tutoring student')
   await button(other.page, 'Skip').click()
   await other.page.locator('button.card', { hasText: 'Tutoring student' }).click()
-  await button(other.page, 'Review').click()
+  await other.page.getByRole('tab', { name: 'Reviews' }).click()
+  await button(other.page, 'Review someone').click()
   await other.page.getByLabel('Their address').fill(tutor)
-  await badge(other.page.locator('.who', { hasText: 'Tutoring tutor' })).waitFor()
+  await badge(other.page.locator('.top .who', { hasText: 'Tutoring tutor' })).waitFor()
   assert.equal(await other.page.locator('main .line').count(), 0, 'not refused')
-  await button(other.page, 'No score').click()
+  await other.page.getByRole('group', { name: 'Kind' }).getByRole('button', { name: 'Vouch' }).click()
   await other.page.getByLabel('Comment').fill(VOUCH)
-  await button(other.page, 'Post').click()
-  await button(other.page, 'Review').waitFor({ timeout: 60_000 })
+  await other.page.locator('.foot').getByRole('button', { name: 'Vouch' }).click()
+  await button(other.page, 'Review someone').waitFor({ timeout: 60_000 })
   await other.context.close()
 
   // Counted by the index, it is new: first of what came, with its dot, in full.
   const row = await untilNotice(page, VOUCH)
   await row.locator('.dot').waitFor()
-  await named(row, 'Tutoring tutor')
-  const rows = page.locator('main .rows button.row')
+  assert.equal(await row.locator('.nrow-head > strong').textContent(), 'Vouch on your Tutoring tutor')
+  await row.locator('.chip.new', { hasText: 'Vouch' }).locator('[data-icon="handshake"]').waitFor()
+  assert.deepEqual(await row.locator('.av[data-market]').evaluate((a) => [(a as HTMLElement).dataset.market, a.classList.contains('look')]), ['tutoring', true], 'the avatar of who wrote it, a student')
+  const rows = page.locator('main .rows button')
   assert.equal(await rows.nth(0).textContent().then((t) => t?.includes(VOUCH)), true, 'the newest first')
   await shot(page, 'notifications-new')
-  // Shown, it is seen: the tab counts it no more.
+  // Shown, it is seen: the tab counts it no more. Tapped: the tutor's Reviews, the vouch among them, by who wrote it.
   await noticesCounted(page, 0)
   await row.click()
-  await page.getByText(/^On your Tutoring tutor · /).waitFor()
-  await badge(page.locator('.facts .who', { hasText: 'Tutoring student' })).waitFor()
+  await page.getByRole('heading', { name: 'Tutoring tutor' }).waitFor()
+  await page.getByRole('tab', { name: 'Reviews', selected: true }).waitFor()
+  const vouch = page.locator('button.said-card', { hasText: VOUCH })
+  await badge(vouch.locator('.who', { hasText: 'Tutoring student' })).waitFor()
+  await vouch.locator('.chip.new', { hasText: 'Vouch' }).waitFor()
   await button(page, 'Back').click()
   await rows.nth(1).waitFor()
   assert.equal(await rows.locator('.dot').count(), 0, 'new no more')
@@ -2185,7 +2330,7 @@ test("an AI app's login: the connect page, its name and its redirect's host, the
   await tool(ai, 'write', { label: 'tutoring/tutor', path: 'listing/by-the-ai', body: lesson(BY_THE_AI) })
   await backToTheApp(page)
   await page.locator('button.card', { hasText: 'Tutoring tutor' }).click()
-  await page.locator('.listing-row', { hasText: AI_ROW }).waitFor()
+  await page.locator('.listing-card', { hasText: AI_ROW }).waitFor()
   await shot(page, 'profile-ai-listing')
 
   // The device: the AI app's name, its day, its folder's address and its profile; no key.
@@ -2209,12 +2354,12 @@ test('a whole visit asks exactly once: post, edit, message, open messages, revie
   await page.getByLabel('Description').fill(VISIT)
   await page.getByLabel('Price').fill('20')
   await page.getByRole('group', { name: 'Per' }).getByRole('button', { name: 'per hour' }).click()
-  await page.getByRole('group', { name: 'Subjects' }).getByRole('button', { name: 'Physics' }).click()
+  await pick(page, 'Subjects', 'Physics')
   await page.getByRole('group', { name: 'Mode' }).getByRole('button', { name: 'Online' }).click()
   await page.getByLabel('Contact').fill('ada@example.com')
   assert.equal(await asks(button(page, 'Post')), true, 'Post will ask: the one unlock of the visit')
   await button(page, 'Post').click()
-  const posted = page.locator('.listing-row', { hasText: '$20 per hour' })
+  const posted = page.locator('.listing-card', { hasText: VISIT }).filter({ hasText: '$20' })
   await posted.waitFor({ timeout: 60_000 })
   assert.equal(counts.asserted - asked, 1)
   await away(page)
@@ -2224,13 +2369,13 @@ test('a whole visit asks exactly once: post, edit, message, open messages, revie
   await page.getByLabel('Price').fill('25')
   assert.equal(await asks(button(page, 'Post')), false, 'hidden, and the seed still held')
   await button(page, 'Post').click()
-  const edited = page.locator('.listing-row', { hasText: '$25 per hour' })
+  const edited = page.locator('.listing-card', { hasText: VISIT }).filter({ hasText: '$25' })
   await edited.waitFor({ timeout: 60_000 })
   await away(page)
   // Open messages: by themselves, the seed held.
   await inbox(page).click()
   await page.locator('button.row', { hasText: 'Tutoring student' }).first().waitFor({ timeout: 60_000 })
-  assert.equal(await page.locator('.messages-row').count(), 0, 'no Open')
+  assert.equal(await page.locator('.unopened').count(), 0, 'no Open')
   await away(page)
   // Message: from their student to their tutor.
   await button(page, 'New message').click()
@@ -2244,15 +2389,15 @@ test('a whole visit asks exactly once: post, edit, message, open messages, revie
   // Review, from a thread: the tutor's with the other person's student, never one of their own.
   await button(page, 'Back').click()
   await page.locator('button.row', { hasText: YES }).filter({ hasText: 'Tutoring student' }).click()
-  await page.getByLabel('Reply').waitFor()
+  await page.getByLabel('Message').waitFor()
   await button(page, 'Review').click()
-  await badge(page.locator('.who', { hasText: 'Tutoring student' })).waitFor()
+  await badge(page.locator('.top .who', { hasText: 'Tutoring student' })).waitFor()
   const score = page.getByLabel('Score')
   await score.focus()
   await score.press('End')
   assert.equal(await asks(button(page, 'Post')), false)
   await button(page, 'Post').click()
-  await page.getByLabel('Reply').waitFor({ timeout: 60_000 })
+  await page.getByLabel('Message').waitFor({ timeout: 60_000 })
   await away(page)
   // The tutor's messages again: the note arrives and opens by itself.
   await button(page, 'Back').click()
@@ -2277,7 +2422,7 @@ test('a whole visit asks exactly once: post, edit, message, open messages, revie
   await edited.click()
   await button(page, 'Delete').click()
   await button(page, 'Delete').click()
-  await page.getByRole('heading', { name: 'Your offers' }).waitFor({ timeout: 60_000 })
+  await page.getByRole('tab', { name: 'Offers', selected: true }).waitFor({ timeout: 60_000 })
   await edited.waitFor({ state: 'detached' })
   assert.equal(counts.asserted - asked, 1, 'the whole visit, one unlock')
   // The page closed, as the next tests start: the seed dropped.
@@ -2328,7 +2473,7 @@ test('You, AI apps: the AI app, its day and its one profile, kept ticked while i
   assert.deepEqual(JSON.parse((await kept(page))['forest.connections']!), [])
   await button(page, 'Home').click()
   await page.locator('button.card', { hasText: 'Tutoring tutor' }).click()
-  await page.locator('.listing-row', { hasText: AI_ROW }).waitFor()
+  await page.locator('.listing-card', { hasText: AI_ROW }).waitFor()
   await button(page, 'Back').click()
   await ai.client.close()
   say('an AI app given a profile, one taken away and given back, and disconnected, one unlock each; its listing kept')
@@ -2641,7 +2786,7 @@ test('the seed held for 5 minutes after the last action: a button that will not 
   assert.equal(await asks(open), true, 'a page just opened holds no seed: Open will ask')
   const asked = counts.asserted
   await open.click()
-  await page.locator('.messages-row').waitFor({ state: 'detached', timeout: 60_000 })
+  await page.locator('.unopened').waitFor({ state: 'detached', timeout: 60_000 })
   assert.equal(counts.asserted - asked, 1, 'one unlock')
   await button(page, 'New message').click()
   const send = button(page, 'Send')

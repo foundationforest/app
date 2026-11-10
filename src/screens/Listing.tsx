@@ -1,16 +1,18 @@
-// A listing, new or edited, from a profile: an offer or a request, as the profile's role names it,
-// its form the market's own fields and contact, in the order form.ts reads from the market's file,
+// A listing, new or edited, from a profile: an offer or a request, as the profile's role names it.
+// At the top, Close, its title in the middle (New offer), the profile's avatar at the right. Its form:
+// the market's own fields and contact (Field.tsx), in the order form.ts reads from the market's file,
 // each shown once the answers it depends on hold and dropped when they no longer do, the photos
 // among them. An edit opens with what still fits its market today, so a listing an older market
 // shaped is posted again in today's. Everything is checked before the unlock (flows/entries.ts);
 // then one unlock signs it, writes it and sends its new photos. Its path is set as the form opens,
-// so posting again after a photo did not go writes the same listing, never a second. An edit's
-// Delete is in red, asking once more.
+// so posting again after a photo did not go writes the same listing, never a second. Post stays at
+// the foot as the form scrolls; an edit's Delete is under it, in red, asking once more.
 
 import { useRef, useState } from 'react'
 
 import type { Body } from '@foundationforest/folders'
 
+import { Avatar } from '../avatar.tsx'
 import { config } from '../config.ts'
 import { type Profile, passkey } from '../device.ts'
 import { Field } from '../fields/Field.tsx'
@@ -57,10 +59,11 @@ export function Listing({ me, edit, onDone, onBack }: Props) {
   const word = kindWords('listing', me.label)
   return (
     <main>
-      <Top onBack={onBack}>
-        <h1>{edit ? word : `New ${word.toLowerCase()}`}</h1>
+      <Top onClose={onBack} right={<Avatar label={me.label} size="sm" />}>
+        <h1 className="bar-title">{edit ? word : `New ${word.toLowerCase()}`}</h1>
       </Top>
       <form
+        id="listing"
         className="form"
         onSubmit={(e) => {
           e.preventDefault()
@@ -70,8 +73,10 @@ export function Listing({ me, edit, onDone, onBack }: Props) {
         {fields.filter(([, f]) => applies(f, values)).map(([n, f]) => (
           <Field key={n} name={n} field={f} value={values[n]} onChange={(v) => set(n, v)} picked={picked} />
         ))}
+      </form>
+      <div className="foot">
         <Line note={send.note} />
-        <button type="submit" className="primary" disabled={send.busy || remove.busy}>
+        <button type="submit" form="listing" className="primary" disabled={send.busy || remove.busy}>
           {send.busy ? <Loader /> : <><UnlockIcon /> Post</>}
         </button>
         {edit && (
@@ -82,7 +87,7 @@ export function Listing({ me, edit, onDone, onBack }: Props) {
             </button>
           </>
         )}
-      </form>
+      </div>
     </main>
   )
 }

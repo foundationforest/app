@@ -1,10 +1,10 @@
-// Feedback: reviews, vouches and reports. Those about the person's profiles come from the index,
-// which counted them, read with nothing unlocked: it is asked about each profile from this device,
-// so it can tell they are one person's, as the host already can. Those a profile wrote come from
-// its own folder.
+// Feedback, what people say about a profile: its reviews, vouches and reports. Those about the
+// person's profiles come from the index, which counted them, read with nothing unlocked: it is asked
+// about each profile from this device, so it can tell they are one person's, as the host already
+// can. Those a profile wrote come from its own folder.
 //
 // What is new about a profile is what the index counted after the time the device keeps for it, the
-// newest its Feedback or Notifications has shown (device.ts). A profile the device has no time
+// newest its Reviews or Notifications has shown (device.ts). A profile the device has no time
 // for yet is marked at the newest the index holds now, so nothing old shows as new on a new device.
 //
 // Notifications lists every review, vouch and report the index counted about any of the person's
