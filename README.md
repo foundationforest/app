@@ -51,6 +51,8 @@ Three places: **Home**, **Notifications** and **You**. On a phone they are three
 
 Run `./standard.sh`, which fetches the standard, the markets and services (for the host's credits client) at the commits in `STANDARD`, `MARKETS` and `SERVICES`; then `npm ci` and `npm run dev`. To test it, run `./standard.sh services` instead, which also readies services' own verifier, host, index and connector to run on your machine, as services' end-to-end test runs them. Then `npm run check` checks the types, `npm test` the flows against those services, and `npm run test:browser` the whole app in Chromium, with a virtual passkey, against them too. Node 22.18 or later.
 
+When services moves its `MARKETS`, the app follows by itself within a day: `MARKETS` to services' and `SERVICES` to services' main, once every check here passes with them ([`markets.yml`](.github/workflows/markets.yml)); `STANDARD` moves by hand, here and in services. To move them now, Run workflow on [its page](https://github.com/foundationforest/app/actions/workflows/markets.yml).
+
 To host a copy, serve the build from any static host with the security headers in `vercel.json`, and set the services it talks to in its one config file. A copy at another address makes its own passkeys, so its own seeds.
 
 ## How we run it
