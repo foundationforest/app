@@ -20,11 +20,13 @@ type Line = [text: string, red: boolean]
 export const SOMETHING = 'Something went wrong. Try again.'
 
 const START_AGAIN = 'Start again.'
+/** A check that did not pass, whatever Didit saw: one line for the check, by verifierSays, never by its code. */
+const DIDNT_PASS: Line = ['{didnt}', false]
 const VERIFIER_DOWN: Line = ["The verifier isn't working right now. Try again later.", false]
 /** What the app says of a request it should never have made: a code the person can do nothing about. */
 const OURS: Line = [SOMETHING, false]
 
-/** Each verifier code. `{check}` is the check the person is on: face or ID. */
+/** Each verifier code. `{check}` is the check the person is on: the selfie check or the ID check. */
 const VERIFIER: Record<string, Line> = {
   // 400: the app sent what the verifier does not take. Only the return address is the person's place.
   bad_return_url: ["The ID check can't be paid for from this address.", false],
@@ -42,20 +44,21 @@ const VERIFIER: Record<string, Line> = {
   bad_payment: OURS,
   // 402
   not_paid: ['Not paid.', false],
-  // 403: the check does not count. All but not_approved end the session.
+  // 403: the check does not count. All but not_approved end the session; every one the person can
+  // try again after says one line, the same whatever Didit saw.
   not_approved: ['Not finished.', false],
   unknown_session: [`That check was lost. ${START_AGAIN}`, false],
-  wrong_workflow: [`That check was lost. ${START_AGAIN}`, false],
-  declined: [`The check didn't pass. ${START_AGAIN}`, true],
-  expired: [`The check ran out of time. ${START_AGAIN}`, false],
-  no_liveness: [`The check couldn't see you live. ${START_AGAIN}`, true],
-  liveness_not_passed: [`The check couldn't see you live. ${START_AGAIN}`, true],
-  no_face: [`The check saw no face. ${START_AGAIN}`, true],
-  no_document: [`Your ID couldn't be checked. ${START_AGAIN}`, true],
-  document_not_passed: [`Your ID couldn't be checked. ${START_AGAIN}`, true],
-  no_face_match: [`Your face didn't match your ID. ${START_AGAIN}`, true],
-  face_match_not_passed: [`Your face didn't match your ID. ${START_AGAIN}`, true],
-  no_document_data: [`Your ID's name or birth date couldn't be read. ${START_AGAIN}`, true],
+  wrong_workflow: DIDNT_PASS,
+  declined: DIDNT_PASS,
+  expired: DIDNT_PASS,
+  no_liveness: DIDNT_PASS,
+  liveness_not_passed: DIDNT_PASS,
+  no_face: DIDNT_PASS,
+  no_document: DIDNT_PASS,
+  document_not_passed: DIDNT_PASS,
+  no_face_match: DIDNT_PASS,
+  face_match_not_passed: DIDNT_PASS,
+  no_document_data: DIDNT_PASS,
   duplicate_document: ['This ID was already used to verify someone else.', true],
   // 409
   session_used: [`That check was already used. ${START_AGAIN}`, false],
@@ -77,10 +80,11 @@ const VERIFIER: Record<string, Line> = {
 /** The codes the verifier answers that the app has its own line for. */
 export const VERIFIER_CODES = Object.keys(VERIFIER)
 
-/** The verifier's `code`, said for the check the person is on. */
+/** The verifier's `code`, said for the check the person is on. A check that didn't pass offers the selfie's way on: the ID. */
 export function verifierSays(code: string, check: 'face' | 'id' = 'face'): Said {
   const [text, red] = VERIFIER[code] ?? [SOMETHING, false]
-  return new Said(text.replace('{check}', check === 'id' ? 'ID check' : 'face check'), red)
+  if (text === DIDNT_PASS[0]) return new Said(check === 'id' ? "That ID check didn't pass. Try again." : "That selfie didn't pass. Try again, or use your ID.")
+  return new Said(text.replace('{check}', check === 'id' ? 'ID check' : 'selfie check'), red)
 }
 
 /** Each host refusal: of an entry or an inbox entry (the standard's codes and the host's), and of a credit route. */

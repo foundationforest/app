@@ -25,7 +25,9 @@ import { withSeed } from '../passkey.ts'
 import { profileCount } from '../show.ts'
 import { applyTheme } from '../theme.ts'
 import { Line, Top, Verified, day, useAction } from '../ui.tsx'
-import { WHY_SECOND } from './SecondPasskey.tsx'
+
+/** The line that says why a second passkey, while there is one alone. */
+const WHY_SECOND = "Add a second, so losing one doesn't lose your profiles."
 
 type Props = { onForgot: () => void; onIdCheck: () => void; onConnectAi: () => void; onAiApp: (address: string) => void; onAddPasskey: () => void; onWords: () => void }
 

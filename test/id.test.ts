@@ -19,7 +19,7 @@ import { readCard, strongest } from '../src/flows/cards.ts'
 import { whoIs } from '../src/flows/inbox.ts'
 import { makeProfile } from '../src/flows/profile.ts'
 import { walletKey } from '../src/flows/profiles.ts'
-import { NotPassed, advance, ask, consentOf, finish, open, pay, resume, stampNumberAt, stepOf } from '../src/flows/verify.ts'
+import { NotPassed, advance, ask, consentOf, creditLines, creditsOf, finish, open, pay, resume, stampNumberAt, stepOf } from '../src/flows/verify.ts'
 import { Refused } from '../src/services/http.ts'
 import { Said } from '../src/words.ts'
 import { ID_CREDITS, type World, checkHere, freshDevice, proveHere, world } from './world.ts'
@@ -77,6 +77,15 @@ async function shown(address: string): Promise<string[]> {
 describe('the ID check', () => {
   test('its consent screen, word for word as the verifier serves it in GET /', async () => {
     expect(await consentOf(w)).toBe(CONSENT)
+  })
+
+  test("Get verified's credit lines, from the verifier's own gifts: the ID's as so many times the selfie's; none where no credits come", async () => {
+    expect(await creditsOf(w), 'its gifts here, 10 and 100').toEqual({ face: 'Free credits for posts and messages', id: '10× the free credits' })
+    const at = (face: number, id: number, host = w.host) => creditLines({ gift: { face, id, host, sponsor: '' } }, w.host)
+    expect(at(10, 25).id).toBe('2.5× the free credits')
+    expect(at(0, 100), 'no selfie gift: no line for it').toEqual({ id: 'More free credits' })
+    expect(at(10, 100, 'https://another.host'), 'a gift at another host comes to nothing here').toEqual({})
+    expect(creditLines({}, w.host), 'no gift').toEqual({})
   })
 
   test('paid, checked, its stamp and its gift; then, in one unlock, every profile shows both checks', async () => {
@@ -140,8 +149,8 @@ describe('the ID check', () => {
     await faceChecked(p)
     const payment = await paid(p)
     for (const [status, line, red] of [
-      ['Declined', "The check didn't pass. Start again.", true],
-      ['Expired', 'The check ran out of time. Start again.', false],
+      ['Declined', "That ID check didn't pass. Try again.", false],
+      ['Expired', "That ID check didn't pass. Try again.", false],
     ] as const) {
       await checked(p, passedId(p.name, doc(p.name), { status }))
       const was = session()
@@ -203,12 +212,12 @@ describe('the ID check', () => {
     expect(device.under()).toBeNull()
   })
 
-  test('the face check declined at services\' own verifier: one red line, and Start again', async () => {
+  test('the face check declined at services\' own verifier: the selfie\'s one line, the ID offered, and a new check next', async () => {
     const p = person('katherine')
     await open(w, p.id)
     w.faceCheck.set(session(), passed(p.name, { status: 'Declined' }))
     const err = await ask(w, p.id, await stampNumberAt(w, p.seed)).catch((e: unknown) => e)
-    expect([(err as Said).message, (err as Said).red]).toEqual(["The check didn't pass. Start again.", true])
+    expect([(err as Said).message, (err as NotPassed).check]).toEqual(["That selfie didn't pass. Try again, or use your ID.", 'face'])
     expect(stepOf(p.id)).toEqual({ at: 'start' })
   })
 })

@@ -13,7 +13,7 @@ import { SEED_PATH, lock, seedOf } from '@foundationforest/folders/locked'
 import { newSeed, openingHalf } from '@foundationforest/keys'
 
 import * as device from '../src/device.ts'
-import { NotAdded, NotVerified, SamePasskey, addBackup, backupsAt, linkTo, removeBackup } from '../src/flows/backups.ts'
+import { NotAdded, addBackup, backupsAt, removeBackup } from '../src/flows/backups.ts'
 import { walletKey } from '../src/flows/profiles.ts'
 import { NotYours, follow, seedFor } from '../src/flows/seed.ts'
 import { enter } from '../src/flows/start.ts'
@@ -113,31 +113,6 @@ describe('a backup', () => {
     expect(await follow(w.host, copy(b1.seed)), 'its passkey opens its own seed').toEqual(b1.seed)
     expect(await follow(w.host, copy(b2.seed)), 'the other still opens the first').toEqual(p.seed)
     expect((await enter(w, again(b1), proveHere)).to).toBe('verify')
-  })
-
-  test("a passkey made by mistake, added to the person's first on New to Forest?: its seed entry and backup/<id>, as when one is added, and its manager's name; the same passkey, or one not verified, refused", async () => {
-    const p = await verifiedWith(w, 'tutoring/tutor')
-    const x = person()
-    expect((await enter(w, again(x), proveHere)).to, 'Start opened it: no stamp, no seed entry').toBe('verify')
-
-    await expect(linkTo(w, x.seed, copy(x.seed))).rejects.toThrow(SamePasskey)
-    const y = newSeed()
-    const refused = await linkTo(w, x.seed, y).catch((err: unknown) => err)
-    expect(refused).toBeInstanceOf(NotVerified)
-    expect((refused as NotVerified).message).toBe("That passkey isn't verified.")
-    expect((refused as NotVerified).red).toBe(true)
-    expect(await backupsAt(w.host, (await walletKey(y)).address)).toEqual([])
-    expect(await follow(w.host, copy(x.seed)), 'nothing written').toEqual(x.seed)
-
-    await linkTo(w, x.seed, p.seed, 'bada5566-a7aa-401f-bd96-45619a55120d')
-    expect(await follow(w.host, copy(x.seed))).toEqual(p.seed)
-    const listed = await backupsAt(w.host, (await walletKey(p.seed)).address)
-    expect(listed).toHaveLength(1)
-    expect(device.backupNames(), "its manager's name, by its entry, as You shows it").toEqual({ [listed[0]!.id]: '1Password' })
-    // As New to Forest? goes on: the first seed, for this passkey, which stays the one in use.
-    expect(await enter(w, { id: x.id, seed: copy(p.seed) }, proveHere)).toEqual({ to: 'profiles' })
-    expect(device.passkey()).toBe(x.id)
-    expect(device.profiles().map((q) => q.label)).toEqual(['tutoring/tutor'])
   })
 
   test('a passkey that opens a seed other than the one whose profiles this device lists (a backup removed since) goes no further, in one red line', async () => {

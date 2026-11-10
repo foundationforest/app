@@ -9,8 +9,7 @@
 // (only its host) and its seed entry, at `seed`, holding the person's seed. Each is
 // `{ "seed": <base64url> }`, locked to its own folder's opening half alone. If the backup's folder
 // can't be written, its `backup/<id>` entry is deleted again, so the list never counts a backup that
-// doesn't open. Linking a passkey made by mistake (New to Forest?, I already use Forest) is the
-// same, with a seed that has answered already.
+// doesn't open.
 //
 // Their list needs nothing unlocked: the `backup/<id>` entries, and when each was written. The
 // entry holds the seed and nothing else, so the device that added a backup keeps its manager's name
@@ -30,7 +29,7 @@ import { NoCredits, fund } from '../services/credits.ts'
 import { NotWritten, readView, writeAll } from '../services/host.ts'
 import { Said } from '../words.ts'
 import { paid } from './paid.ts'
-import { addTo, opened, walletKey } from './profiles.ts'
+import { addTo, walletKey } from './profiles.ts'
 
 /** A backup the Profiles folder lists: the random id of its entry, `backup/<id>`, and when that was written. */
 export type Backup = { id: string; time: number }
@@ -43,22 +42,6 @@ export class NotAdded extends Said {
   constructor() {
     super("The passkey wasn't added.", true)
     this.name = 'NotAdded'
-  }
-}
-
-/** The passkey asked for to link to is the one being linked. */
-export class SamePasskey extends Said {
-  constructor() {
-    super("That's this passkey.", true)
-    this.name = 'SamePasskey'
-  }
-}
-
-/** The passkey asked for to link to opens a seed that holds no stamp. */
-export class NotVerified extends Said {
-  constructor() {
-    super("That passkey isn't verified.", true)
-    this.name = 'NotVerified'
   }
 }
 
@@ -128,22 +111,6 @@ export async function addBackup(s: Services, seed: Uint8Array, made: Made): Prom
   } finally {
     made.seed.fill(0)
   }
-}
-
-const same = (a: Uint8Array, b: Uint8Array) => a.length === b.length && a.every((x, i) => x === b[i])
-
-/**
- * The passkey this device opened, whose seed `own` holds no stamp and no seed entry (one made by
- * mistake), linked as a backup of `seed`, the person's Forest passkey's, which must hold a stamp;
- * its manager's name kept when `aaguid`, the one it sent as it was made, names one.
- */
-export async function linkTo(s: Services, own: Uint8Array, seed: Uint8Array, aaguid?: string): Promise<void> {
-  if (same(own, seed)) throw new SamePasskey()
-  const folder = await profilesOf(s.host, seed)
-  if (!(await opened(folder.view, 'stamp', (await openingHalf(folder.key.secret)).identity)).length) throw new NotVerified()
-  const id = await link(s.host, folder, seed, own)
-  const name = managerOf(aaguid)
-  if (name) nameBackup(id, name)
 }
 
 /**

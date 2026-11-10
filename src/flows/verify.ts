@@ -32,7 +32,7 @@ import type { Services } from '../config.ts'
 import { type Check, type Under, checks, endUnder, keepUnder, saveChecks, under, usePasskey } from '../device.ts'
 import { collectGift, giftBuy } from '../services/credits.ts'
 import { Refused } from '../services/http.ts'
-import { about, askStamp, checkOfStamp, faceSession, idPayment, idSession, stampBack, stamps, stampsBack } from '../services/verifier.ts'
+import { type About, about, askStamp, checkOfStamp, faceSession, idPayment, idSession, stampBack, stamps, stampsBack } from '../services/verifier.ts'
 import { Said, verifierSays } from '../words.ts'
 import type { Prove } from './profile.ts'
 import { addTo, openProfiles } from './profiles.ts'
@@ -48,11 +48,13 @@ export type Step = { at: 'choose' } | { at: 'consent' } | { at: 'start' } | { at
 /** The check refused for good, in the verifier's words for why: its session is done, and the next open is a new one. */
 export class NotPassed extends Said {
   readonly code: string
+  readonly check: Check
   constructor(code: string, check: Check) {
     const said = verifierSays(code, check)
     super(said.message, said.red)
     this.name = 'NotPassed'
     this.code = code
+    this.check = check
   }
 }
 
@@ -70,12 +72,6 @@ const mine = (passkey: string): Under | null => {
   return u?.passkey === passkey ? u : null
 }
 
-/** Whether nothing is under way for `passkey`: no check's session and no payment, a check at most picked. A passkey that stands so may be one made by mistake, so Start asks first whether the person is new (New to Forest?). */
-export function nothingUnderWay(passkey: string): boolean {
-  const u = mine(passkey)
-  return !u || (!u.session && !u.payment)
-}
-
 /** Where the verification under way for `passkey` stands, from the device alone: no seed asked. */
 export function stepOf(passkey: string): Step {
   const u = mine(passkey)
@@ -90,6 +86,25 @@ export async function consentOf(s: Services): Promise<string> {
   const { consent } = await about(s.verifier)
   if (typeof consent !== 'string' || !consent) throw verifierSays('not_a_verifier')
   return consent
+}
+
+/** What each check's gift comes to, as its card on Get verified says it; a check with no gift at this host says nothing of credits. */
+export type CreditLines = { face?: string; id?: string }
+
+/** Each check's credit line from the verifier's gifts at `host`: the selfie's free credits, and the ID's as so many times them, or more when the selfie gives none. */
+export function creditLines(a: Pick<About, 'gift'>, host: string): CreditLines {
+  const gift = a.gift?.host === host ? a.gift : undefined
+  if (!gift) return {}
+  const times = gift.id / gift.face
+  return {
+    ...(gift.face > 0 && { face: 'Free credits for posts and messages' }),
+    ...(gift.id > 0 && { id: gift.face > 0 ? `${Number.isInteger(times) ? times : times.toFixed(1)}× the free credits` : 'More free credits' }),
+  }
+}
+
+/** The credit lines, from the verifier this app uses. */
+export async function creditsOf(s: Services): Promise<CreditLines> {
+  return creditLines(await about(s.verifier), s.host)
 }
 
 /** The person's stamp number at the verifier: the only thing mixed from the seed it ever sees. */
