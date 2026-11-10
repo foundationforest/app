@@ -2292,9 +2292,18 @@ async function aiLogin(): Promise<AiApp> {
  */
 const backToTheAiApp = (page: Page) => page.waitForRequest((r) => r.url().startsWith(REDIRECT), { timeout: 60_000 }).then((r) => new URL(r.url()).searchParams.get('code')!)
 
-/** The app opened again after the AI app's redirect, which loads nowhere here: once its error page is in, so it never cuts the app's own load short. */
+/**
+ * The app opened again after the AI app's redirect, which loads nowhere here: once its error page is
+ * in, so it never cuts the app's own load short. A redirect that fails while this waits (a slow
+ * lookup of the AI app's host, as on GitHub's runners) throws its network error first, and its error
+ * page follows.
+ */
 async function backToTheApp(page: Page) {
-  await page.waitForURL((url) => url.protocol === 'chrome-error:', { waitUntil: 'commit', timeout: 30_000 })
+  const errorPage = () => page.waitForURL((url) => url.protocol === 'chrome-error:', { waitUntil: 'commit', timeout: 30_000 })
+  await errorPage().catch((err: Error) => {
+    if (!err.message.includes('net::ERR_')) throw err
+    return errorPage()
+  })
   await page.goto(APP)
 }
 
