@@ -1,7 +1,8 @@
-# The app's checks from a clean install, on every pull request and every push to main: the standard,
-# the markets and services at their pins (standard.sh, with services' verifier, host, index and
-# mcp readied to run), then the type-check, the tests (Vitest), the build, and the browser test in
-# Chromium (Playwright). A test that does not run fails its run.
+# The app's checks from a clean install, on every pull request and every push to main, and in each
+# run of markets.yml, against the commit that moves MARKETS and SERVICES: the standard, the markets
+# and services at their pins (standard.sh, with services' verifier, host, index and mcp readied to
+# run), then the type-check, the tests (Vitest), the build, and the browser test in Chromium
+# (Playwright). A test that does not run fails its run.
 
 name: checks
 
@@ -9,6 +10,12 @@ on:
   pull_request:
   push:
     branches: [main]
+  workflow_call:
+    inputs:
+      ref:
+        description: The commit to check, the one that moves MARKETS and SERVICES; empty on a pull request or a push
+        type: string
+        default: ''
 
 permissions:
   contents: read
@@ -19,6 +26,8 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
       - uses: actions/setup-node@v7
         with:
           node-version: '22'

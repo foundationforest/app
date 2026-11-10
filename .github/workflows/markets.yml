@@ -1,0 +1,197 @@
+# Moves MARKETS and SERVICES by themselves to what services' main runs, once a day and by hand (Run
+# workflow, on main). Services moves its own MARKETS each day at 09:41 UTC, only when every services
+# check passes with it (its markets.yml); this runs three hours later, so the app follows services,
+# not the markets' main, and ends on the markets' commit services runs, at most a day later.
+#
+#   move    reads services' main once: its commit, its MARKETS and its STANDARD. When its MARKETS is
+#           MARKETS here, it closes any open pull request from move-markets, and stops. When its
+#           STANDARD is not STANDARD here, it fails, so GitHub sends an email, and its error says to
+#           move STANDARD here by hand, in a pull request of its own. Otherwise it starts move-markets
+#           again from main, moves MARKETS to services' MARKETS and SERVICES to services' main on it,
+#           and pushes it, unless a person has a commit there while its pull request is open, which it
+#           leaves alone.
+#   checks  every check checks.yml runs, the browser test among them, against that commit, in this run.
+#   land    the pull request "Markets: move to <short commit>", opened, or updated when one from an
+#           earlier run is open, with the markets' commits it brings in (.github/markets.ts writes its
+#           description). Every check passed: it merges it, squashed. A check failed: it stays open
+#           with each failed job's failing step in its description, and the run fails, so GitHub sends
+#           an email. It never merges a red one, nor one whose main moved while the checks ran; the
+#           next run tries again.
+#
+# Only MARKETS and SERVICES move, and only together. STANDARD moves by hand, here and in services.
+#
+# GitHub starts no workflow for what a run's own token does: the pull request shows no checks of its
+# own, and its merge runs none on main. Its checks are this run's, linked from its description.
+# Vercel, which follows main itself, deploys the merge as any other. GitHub emails a failed scheduled
+# run to whoever last changed the schedule below, and a failed run by hand to whoever started it.
+#
+# GitHub turns the schedule off after 60 days with no commit to this repo. To turn it back on: Actions,
+# markets, Enable workflow; from then on the failed scheduled runs email whoever turned it on.
+
+name: markets
+
+on:
+  schedule:
+    - cron: '41 12 * * *' # 12:41 UTC: three hours after services', off the hour, which GitHub's schedules crowd
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency: markets
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  BRANCH: move-markets
+  SERVICES_REPO: https://github.com/foundationforest/services
+
+jobs:
+  move:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      pull-requests: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    outputs:
+      from: ${{ steps.move.outputs.from }}
+      to: ${{ steps.move.outputs.to }}
+      services_from: ${{ steps.move.outputs.services_from }}
+      services_to: ${{ steps.move.outputs.services_to }}
+      base: ${{ steps.move.outputs.base }}
+      commit: ${{ steps.move.outputs.commit }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: MARKETS and SERVICES, moved on move-markets
+        id: move
+        run: |
+          # Services' main in one fetch, so its commit, its MARKETS and its STANDARD are one commit's.
+          git init -q "$RUNNER_TEMP/services"
+          git -C "$RUNNER_TEMP/services" fetch -q --depth 1 "$SERVICES_REPO" main
+          services_to=$(git -C "$RUNNER_TEMP/services" rev-parse FETCH_HEAD)
+          theirs() { git -C "$RUNNER_TEMP/services" show "FETCH_HEAD:$1" | tr -d '[:space:]'; }
+          ours() { tr -d '[:space:]' < "$1"; }
+          from=$(ours MARKETS)
+          to=$(theirs MARKETS)
+          [ -n "$to" ] || { echo "::error::Services' main has no MARKETS"; exit 1; }
+          open=$(gh api "repos/$GITHUB_REPOSITORY/pulls?state=open&head=$GITHUB_REPOSITORY_OWNER:$BRANCH" --jq '.[].number')
+          if [ "$to" = "$from" ]; then
+            echo "MARKETS is services' MARKETS, $to"
+            for n in $open; do
+              gh api -X PATCH "repos/$GITHUB_REPOSITORY/pulls/$n" -f state=closed > /dev/null
+              echo "Closed #$n, which MARKETS no longer needs"
+            done
+            exit 0
+          fi
+          if [ "$(theirs STANDARD)" != "$(ours STANDARD)" ]; then
+            echo "::error::STANDARD is $(ours STANDARD) here and $(theirs STANDARD) at services' main ${services_to:0:7}, so MARKETS can't follow services. Move STANDARD here by hand, in a pull request of its own."
+            exit 1
+          fi
+          # A person's commit counts only while its pull request is open: a closed one keeps its
+          # commits at refs/pull/<n>/head, so the branch is free again.
+          people=$(git log --format=%an "origin/main..origin/$BRANCH" 2> /dev/null | grep -vxF 'github-actions[bot]' || true)
+          if [ -n "$open" ] && [ -n "$people" ]; then
+            echo "::notice::A person has a commit on $BRANCH, in #$open, so this run leaves it as it is"
+            exit 0
+          fi
+          git checkout -q -B "$BRANCH" origin/main
+          base=$(git rev-parse HEAD)
+          services_from=$(ours SERVICES)
+          echo "$to" > MARKETS
+          echo "$services_to" > SERVICES
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+            commit -q -m "Markets: move to ${to:0:7}" MARKETS SERVICES
+          git push -q -f origin "HEAD:refs/heads/$BRANCH"
+          echo "MARKETS moves from $from to $to, and SERVICES from $services_from to $services_to, on $BRANCH"
+          {
+            echo "from=$from"
+            echo "to=$to"
+            echo "services_from=$services_from"
+            echo "services_to=$services_to"
+            echo "base=$base"
+            echo "commit=$(git rev-parse HEAD)"
+          } >> "$GITHUB_OUTPUT"
+
+  checks:
+    needs: move
+    if: needs.move.outputs.commit
+    permissions:
+      contents: read
+    uses: ./.github/workflows/checks.yml
+    with:
+      ref: ${{ needs.move.outputs.commit }}
+
+  land:
+    needs: [move, checks]
+    if: ${{ !cancelled() && needs.move.outputs.commit }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      FROM: ${{ needs.move.outputs.from }}
+      TO: ${{ needs.move.outputs.to }}
+      SERVICES_FROM: ${{ needs.move.outputs.services_from }}
+      SERVICES_TO: ${{ needs.move.outputs.services_to }}
+      BASE: ${{ needs.move.outputs.base }}
+      COMMIT: ${{ needs.move.outputs.commit }}
+      PASSED: ${{ needs.checks.result == 'success' }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - name: The description
+        run: |
+          git clone -q --bare --filter=blob:none https://github.com/foundationforest/markets "$RUNNER_TEMP/markets.git"
+          git -C "$RUNNER_TEMP/markets.git" log --first-parent --reverse -z --format=%H%n%B "$FROM..$TO" > "$RUNNER_TEMP/commits"
+          failed=()
+          if [ "$PASSED" != true ]; then
+            mkdir "$RUNNER_TEMP/failed"
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/attempts/$GITHUB_RUN_ATTEMPT/jobs" --paginate \
+              --jq '.jobs[] | select(.conclusion != null and .conclusion != "success" and .conclusion != "skipped") | "\(.id) \(.name)"' |
+            while read -r id name; do
+              log="$RUNNER_TEMP/failed/${name##*/ }.log"
+              for wait in 0 10 30; do
+                sleep "$wait"
+                gh api "repos/$GITHUB_REPOSITORY/actions/jobs/$id/logs" > "$log" && break
+                echo "Its log was not ready; it is in the run." > "$log"
+              done
+            done
+            failed=("$RUNNER_TEMP/failed")
+          fi
+          node --disable-warning=ExperimentalWarning .github/markets.ts "$FROM" "$TO" "$SERVICES_FROM" "$SERVICES_TO" \
+            "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" "$RUNNER_TEMP/commits" "${failed[@]}" \
+            > "$RUNNER_TEMP/description"
+      - name: The pull request, merged when every check passed
+        run: |
+          title="Markets: move to ${TO:0:7}"
+          pulls="repos/$GITHUB_REPOSITORY/pulls"
+          n=$(gh api "$pulls?state=open&head=$GITHUB_REPOSITORY_OWNER:$BRANCH" --jq '.[0].number // empty')
+          if [ -n "$n" ]; then
+            gh api -X PATCH "$pulls/$n" -f title="$title" -F body=@"$RUNNER_TEMP/description" > /dev/null
+            echo "Updated #$n"
+          else
+            n=$(gh api "$pulls" -f title="$title" -f head="$BRANCH" -f base=main -F body=@"$RUNNER_TEMP/description" --jq .number)
+            echo "Opened #$n"
+          fi
+          if [ "$PASSED" != true ]; then
+            echo "::error::A check failed against services' MARKETS and main, so #$n stays open"
+            exit 1
+          fi
+          if [ "$(git ls-remote origin refs/heads/main | cut -f1)" != "$BASE" ]; then
+            echo "::warning::main moved while the checks ran, so #$n waits for the next run"
+            exit 0
+          fi
+          gh api -X PUT "$pulls/$n/merge" -f merge_method=squash -f sha="$COMMIT" \
+            -f commit_title="$title (#$n)" -f commit_message= > /dev/null
+          echo "Merged #$n"
