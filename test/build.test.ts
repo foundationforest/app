@@ -21,7 +21,7 @@ import { proofFiles } from '../build/proofs.ts'
 import { BG, INK } from '../build/shell.ts'
 import { config } from '../src/config.ts'
 import { rfc3339 } from '../src/fields/Moment.tsx'
-import { kindWords, marketList, marketWords, otherSide, pairOf, pairs, roleWords } from '../src/markets.ts'
+import { doesWords, kindWords, marketList, marketWords, otherSide, pairOf, pairs, withArticle } from '../src/markets.ts'
 import { PATHS } from '../src/paths.ts'
 import { contactHref } from '../src/show.ts'
 import { BG as THEME_BG } from '../src/theme.ts'
@@ -77,7 +77,8 @@ test("the markets: every role in the directory, in its market's words, no symbol
 
 test('New profile: every market, in the directory\'s order, each with every role', () => {
   expect(marketList.map((m) => m.words)).toEqual(files().directory.markets.map((m) => marketWords(m.name)))
-  expect(marketList.find((m) => m.market === 'clothing')?.roles.map((p) => roleWords(p.role))).toEqual(['Seller', 'Buyer'])
+  expect(marketList.find((m) => m.market === 'clothing')?.roles.map((p) => `I'm ${withArticle(p.role)}: ${doesWords(p.offers)}`)).toEqual(["I'm a seller: You offer", "I'm a buyer: You look for"])
+  expect([withArticle('tutor'), withArticle('owner'), withArticle('employer')]).toEqual(['a tutor', 'an owner', 'an employer'])
   expect(marketList.find((m) => m.market === 'tennis-matches')?.roles.map((p) => p.label)).toEqual(['tennis-matches/player'])
   expect(marketList.flatMap((m) => m.roles)).toEqual(pairs)
 })
@@ -94,7 +95,8 @@ test("every code the verifier, the host and the standard list has its own plain 
   for (const code of [...STANDARD_CODES, ...HOST_LIST]) expect(HOST_CODES, code).toContain(code)
   for (const code of VERIFIER_CODES) expect(verifierSays(code, 'id').message, code).not.toMatch(/[a-z]+_[a-z]+|\{check\}/)
   for (const code of HOST_CODES) expect(hostSays(code).message, code).not.toMatch(/[a-z]+_[a-z]+/)
-  expect(verifierSays('face_check_unavailable').message).toBe("The face check isn't available right now. Try again in a minute.")
+  expect(verifierSays('face_check_unavailable').message).toBe("The selfie check isn't available right now. Try again in a minute.")
+  expect([verifierSays('declined').message, verifierSays('no_face_match', 'id').message]).toEqual(["That selfie didn't pass. Try again, or use your ID.", "That ID check didn't pass. Try again."])
   expect([verifierSays('duplicate_document').message, verifierSays('duplicate_document').red]).toEqual(['This ID was already used to verify someone else.', true])
   expect(verifierSays('not_for_sale').message).toBe("The ID check isn't available yet.")
   expect(verifierSays('a_code_from_tomorrow').message).toBe(SOMETHING)

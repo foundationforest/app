@@ -1,4 +1,4 @@
-// A seed from its 24 words (keys/README.md, The seed: `importWords`), for I have 24 words on Start.
+// A seed from its 24 words (keys/README.md, The seed: `importWords`), for Your 24 words, typed from Start.
 // Everything is checked before a passkey is made: all 24 words, each in its place; the seed they
 // spell followed one step, as every unlock follows a passkey (flows/seed.ts), so words that spell a
 // backup's own seed open the person's; not a different Forest from the one this device lists; and
@@ -30,9 +30,12 @@ export class WordsNotVerified extends Said {
   }
 }
 
+/** How many words `text` holds, between spaces or lines. */
+export const wordCount = (text: string): number => text.trim().split(/\s+/).filter(Boolean).length
+
 /** The seed the 24 words in `text` spell: checked, followed one step, the one this device lists if it lists one, and verified; else why not, in one line. */
 export async function seedOfWords(host: string, text: string): Promise<Uint8Array> {
-  const count = text.trim().split(/\s+/).filter(Boolean).length
+  const count = wordCount(text)
   if (count < WORD_COUNT) throw new Said(`Add all ${WORD_COUNT} words.`)
   if (count > WORD_COUNT) throw new Said(`That's more than ${WORD_COUNT} words.`, true)
   let spelled: Uint8Array

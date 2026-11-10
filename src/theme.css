@@ -32,6 +32,13 @@
   --on-danger: #ffffff;
   --seg-on: var(--card);
   --shadow: 0 1px 2px rgb(17 26 21 / 0.05), 0 10px 28px -14px rgb(17 26 21 / 0.18);
+  --scrim: rgb(17 26 21 / 0.42);
+  /* Start's one button, cream on the deep green in both looks; a red that reads on the deep green. */
+  --cream: #f2f0e8;
+  --on-cream: #123a2a;
+  --on-deep-danger: #f08a78;
+  /* A market's tile: its color on this much of it over the card. */
+  --tile-tint: 13%;
   /* A light avatar: its market's color on this much of it over the card, its icon this much of it toward the ink. */
   --look-tint: 16%;
   --look-icon: 85%;
@@ -69,6 +76,8 @@
     --on-danger: #1a0c09;
     --seg-on: var(--line2);
     --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 10px 28px -14px rgb(0 0 0 / 0.6);
+    --scrim: rgb(0 0 0 / 0.6);
+    --tile-tint: 18%;
     --look-tint: 24%;
     --look-icon: 45%;
     --look-to: #ffffff;
@@ -102,6 +111,8 @@
   --on-danger: #1a0c09;
   --seg-on: var(--line2);
   --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 10px 28px -14px rgb(0 0 0 / 0.6);
+  --scrim: rgb(0 0 0 / 0.6);
+  --tile-tint: 18%;
   --look-tint: 24%;
   --look-icon: 45%;
   --look-to: #ffffff;
@@ -202,6 +213,10 @@ main {
   min-width: 0;
 }
 
+.fill.half {
+  flex-grow: 0.5;
+}
+
 .stack {
   display: grid;
   gap: 8px;
@@ -219,7 +234,7 @@ main {
 .start .brand {
   display: grid;
   justify-items: center;
-  gap: 12px;
+  gap: 20px;
 }
 
 /* Icons: Phosphor, in their text's color. */
@@ -1736,4 +1751,523 @@ button.place-row {
 
 .maplibregl-ctrl-attrib-button {
   display: none;
+}
+
+/* Getting in. Start: the deep green, the mark and Forest, one cream button, and what it says in
+   light tones on that ground; Didit's way back looks the same. */
+main.start {
+  max-width: none;
+  background: var(--deep);
+  color: var(--on-deep);
+}
+
+main.start > :not(.sheet):not(.scrim) {
+  width: 100%;
+  max-width: 32rem;
+  margin-inline: auto;
+}
+
+.start .brand h1 {
+  font-size: 40px;
+  line-height: 1;
+}
+
+.start .mark,
+.setup-panel .mark {
+  color: inherit;
+}
+
+main.start > .line {
+  color: var(--on-deep2);
+}
+
+main.start > .line.red {
+  color: var(--on-deep-danger);
+}
+
+button.cream {
+  background: var(--cream);
+  color: var(--on-cream);
+  box-shadow: none;
+}
+
+button.cream .icon {
+  color: inherit;
+}
+
+/* A sheet, risen from the bottom over a scrim: its grab, its title, then what it holds. */
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  background: var(--scrim);
+}
+
+.sheet {
+  position: fixed;
+  z-index: 31;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  max-width: 520px;
+  max-height: 92dvh;
+  margin: 0 auto;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 20px max(30px, env(safe-area-inset-bottom));
+  border-radius: 30px 30px 0 0;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+.sheet:focus {
+  outline: none;
+}
+
+.grab {
+  flex: none;
+  width: 40px;
+  height: 5px;
+  margin: 0 auto 10px;
+  border-radius: 3px;
+  background: var(--line2);
+}
+
+.sheet h2 {
+  padding: 0;
+  font-family: var(--display);
+  font-size: 22px;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+.sheet .stack {
+  margin-top: 12px;
+  gap: 10px;
+}
+
+/* A sheet's title with its price at the right: the ID check, $5. */
+.sheet-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.sheet-head h2 {
+  flex: 1;
+}
+
+.sheet-head .price {
+  font-size: 30px;
+  line-height: 1;
+}
+
+/* What the ID check keeps: a row, closed until tapped, then the verifier's words. */
+details.keeps {
+  margin-top: 8px;
+  border-radius: 16px;
+  background: var(--card);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+details.keeps summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px;
+  font-weight: 700;
+  list-style: none;
+}
+
+details.keeps summary::-webkit-details-marker {
+  display: none;
+}
+
+details.keeps summary .icon {
+  margin-left: auto;
+  color: var(--ink2);
+}
+
+details.keeps[open] summary .icon {
+  transform: rotate(180deg);
+}
+
+details.keeps .consent {
+  padding: 0 16px 14px;
+  white-space: pre-wrap;
+}
+
+/* A setup screen on a laptop: the deep green panel on the left, the screen centred on the right; on
+   a phone, the screen alone. */
+.setup {
+  flex: 1 0 auto;
+  display: flex;
+}
+
+.setup-panel {
+  display: none;
+}
+
+.setup-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 900px) {
+  .setup-panel {
+    position: sticky;
+    top: 0;
+    flex: none;
+    width: 40%;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    background: var(--deep);
+    color: var(--on-deep);
+  }
+
+  .setup-panel .d {
+    font-size: 40px;
+    line-height: 1;
+  }
+
+  .setup-main > main {
+    max-width: calc(520px + 40px);
+    padding-top: 28px;
+    padding-bottom: 28px;
+  }
+
+  .setup .sheet {
+    left: 40%;
+  }
+}
+
+/* A title's line under it. */
+.lead {
+  font-size: 15.5px;
+  color: var(--ink3);
+}
+
+/* A notice: what came of something, in the sun. */
+.notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--sun-bg);
+  color: var(--on-sun);
+  font-size: 15px;
+  line-height: 1.4;
+  font-weight: 600;
+}
+
+.notice .icon {
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+  color: inherit;
+}
+
+/* Get verified: two cards, each one tap; its icon square, its name and line, its price, a chevron,
+   then under a hairline what it gives. Greyed while it can't be picked. */
+.vcards {
+  display: grid;
+  gap: 12px;
+}
+
+button.vcard {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 14px;
+  width: 100%;
+  min-height: 0;
+  padding: 16px;
+  border-radius: 22px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+  text-align: left;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.45;
+}
+
+button.vcard:disabled {
+  opacity: 0.45;
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.vhead {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.vhead .two > strong {
+  font-size: 17px;
+}
+
+.vhead .price {
+  flex: none;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.vhead > .icon {
+  width: 18px;
+  height: 18px;
+  color: var(--ink3);
+}
+
+.vico {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: var(--mint);
+  color: var(--on-mint);
+}
+
+.vico.id {
+  background: var(--forest);
+  color: var(--on-forest);
+}
+
+.vico .icon {
+  width: 24px;
+  height: 24px;
+  color: inherit;
+}
+
+.vlist {
+  list-style: none;
+  margin: 0;
+  padding: 12px 0 0 58px;
+  display: grid;
+  gap: 9px;
+  border-top: 1px solid var(--line);
+}
+
+.vlist > span {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 15px;
+  line-height: 1.3;
+  font-weight: 500;
+  color: var(--ink2);
+}
+
+.vlist .icon {
+  width: 18px;
+  height: 18px;
+  color: var(--leaf);
+}
+
+.quiet-foot {
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--ink3);
+}
+
+/* Waiting for something: the loader and one line, in the middle of the screen. */
+.waiting {
+  display: grid;
+  justify-items: center;
+  gap: 16px;
+  padding: 0 20px;
+  text-align: center;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.waiting .loader.big {
+  margin: 0;
+}
+
+/* Your 24 words: the box, then how to type them and how many there are. */
+.words-count {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: -8px;
+  font-size: 12.5px;
+  color: var(--ink3);
+}
+
+.words-count b {
+  color: var(--ink);
+}
+
+/* Your first profile: Later at the top right, the chip, the search, then the markets as tiles. */
+.titled-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.titled-row h1 {
+  flex: 1;
+}
+
+.titled-row button.quiet {
+  min-height: 36px;
+  padding: 0 4px;
+}
+
+.market-tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+button.market-tile {
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 104px;
+  padding: 14px;
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--h) var(--tile-tint), var(--card));
+  box-shadow: none;
+  text-align: left;
+  font-size: 16.5px;
+  line-height: 1.2;
+}
+
+button.market-tile .icon,
+button.market-tile .letter {
+  width: 30px;
+  height: 30px;
+  color: color-mix(in srgb, var(--h) var(--look-icon), var(--look-to));
+}
+
+button.market-tile .letter {
+  font-family: var(--display);
+  font-size: 26px;
+  line-height: 30px;
+}
+
+/* A role to pick: its avatar, who you are and what you do, a chevron. */
+button.big-choice {
+  justify-content: flex-start;
+  gap: 14px;
+  width: 100%;
+  min-height: 0;
+  padding: 14px;
+  border-radius: 20px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+  text-align: left;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+.big-choice .two > strong {
+  font-size: 17px;
+}
+
+.big-choice > .icon {
+  width: 18px;
+  height: 18px;
+  color: var(--ink3);
+}
+
+.big-choice .aside {
+  flex: none;
+  color: var(--ink3);
+  font-size: 14px;
+}
+
+/* Connect your AI: its mint square, the switch, the three steps in one card, the address with Copy. */
+.ai-mark {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: var(--mint);
+  color: var(--on-mint);
+}
+
+.ai-mark .icon {
+  width: 28px;
+  height: 28px;
+  color: inherit;
+}
+
+.step-card {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-radius: 22px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+}
+
+.step-card > li {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px 18px;
+}
+
+.step-card > li + li {
+  border-top: 1px solid var(--line);
+}
+
+.step-card .bul {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 2px var(--line2);
+  color: var(--ink3);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.step-card .t {
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 26px;
+}
+
+.copy-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  margin-top: 10px;
+  padding: 0 4px 0 14px;
+  border-radius: 16px;
+  background: var(--card);
+  box-shadow: inset 0 0 0 1px var(--edge);
+}
+
+.copy-field .address {
+  flex: 1;
+  min-width: 0;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+button.round.clear {
+  background: none;
+  box-shadow: none;
 }

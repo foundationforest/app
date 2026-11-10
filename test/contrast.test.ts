@@ -61,6 +61,8 @@ const TEXT: Array<[string, string]> = [
   ['on-danger', 'danger'],
   ['on-deep', 'deep'],
   ['on-deep2', 'deep'],
+  ['on-deep-danger', 'deep'],
+  ['on-cream', 'cream'],
   ['bg', 'ink'],
 ]
 

@@ -5,9 +5,10 @@
 // stands alone); the unlock icon, the fingerprint before the word on a labeled button that asks the
 // passkey, only while a tap will ask, never on a list row; the round way into messages, always
 // there, with how many are new once any is; a checkbox's box, the dot that marks what is new, a
-// rating with its star, the chips of a review, vouch or report, a profile's name (its market in
-// bold, then its role, muted: Clothing seller), Search Forest (the index, in a new tab), the bars,
-// how long ago something was, the day something happened, and the time of day.
+// rating with its star, the chips of a review, vouch or report, You're verified, a profile's name
+// (its market in bold, then its role, muted: Clothing seller), Search Forest (the index, in a new
+// tab), a sheet risen over the screen, a notice in the sun, the bars, how long ago something was,
+// the day something happened, and the time of day.
 
 import { type MouseEvent, type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 
@@ -59,7 +60,7 @@ export function useAction<A extends unknown[]>(run: (...args: A) => Promise<void
   return { busy, note, setNote, run: go }
 }
 
-/** Beside the word on a labeled button that asks the passkey, before it, and only while a tap will ask: with a seed held (held.ts), none, unless the tap asks a passkey anyway (`always`: one to make, or another to link to). Never on a list row. */
+/** Beside the word on a labeled button that asks the passkey, before it, and only while a tap will ask: with a seed held (held.ts), none, unless the tap asks a passkey anyway (`always`: one to make). Never on a list row, nor on Start and its sheets, where every button asks. */
 export function UnlockIcon({ always = false }: { always?: boolean }) {
   const held = useHeld()
   if (held && !always) return null
@@ -108,6 +109,14 @@ export function Verified({ check, big = false, alone = false }: { check: Check; 
     </span>
   )
 }
+
+/** You're verified: the mint chip, with the badge's icon of the check that verified the person. */
+export const YoureVerified = ({ check }: { check: Check }) => (
+  <span className="chip new">
+    <Icon name={check === 'id' ? 'identification-card' : 'smiley'} fill />
+    You're verified
+  </span>
+)
 
 /** The way into messages, at a screen's top right: a round button with its own icon, always there, and how many are new once any is. */
 export function MessagesButton({ count, onOpen }: { count: number; onOpen: () => void }) {
@@ -191,6 +200,39 @@ export const NewVersion = () => (
     <button className="link" onClick={() => location.reload()}>
       Reload
     </button>
+  </p>
+)
+
+/**
+ * A sheet, risen from the screen's bottom over a scrim: its grab, then what it holds, named by its
+ * title (`label`). Tapping the scrim, or Escape, closes it. It takes the focus as it opens.
+ */
+export function Sheet({ label, onClose, children }: { label: string; onClose: () => void; children: ReactNode }) {
+  const at = useRef<HTMLElement>(null)
+  const close = useRef(onClose)
+  close.current = onClose
+  useEffect(() => {
+    at.current?.focus()
+    const key = (e: KeyboardEvent) => e.key === 'Escape' && close.current()
+    addEventListener('keydown', key)
+    return () => removeEventListener('keydown', key)
+  }, [])
+  return (
+    <>
+      <div className="scrim" onClick={() => close.current()} />
+      <section className="sheet" role="dialog" aria-modal="true" aria-label={label} tabIndex={-1} ref={at}>
+        <div className="grab" />
+        {children}
+      </section>
+    </>
+  )
+}
+
+/** A notice: one line on what came of something, in the sun, with its warning icon. */
+export const Notice = ({ children }: { children: ReactNode }) => (
+  <p className="notice" role="status">
+    <Icon name="warning-circle" fill />
+    <span>{children}</span>
   </p>
 )
 

@@ -1,20 +1,21 @@
-// I have 24 words, from Start: one box for the words, and Create a passkey. The words are checked
-// before any passkey is made (flows/imported.ts), so one that can't be used says why in one line:
-// quiet while some are missing, red when one is wrong, when they aren't verified, or when they open
-// a different Forest from the one this device lists. Never two seeds on one device: then Forget this
-// device takes the place of Create a passkey, and once it has forgotten, Create a passkey is back.
-// Then a new passkey is added to the seed the words spell as You adds one (flows/backups.ts),
-// the seed held for it as after any unlock, and the person is in, as from Start. Unlike You's, it
-// excludes none of the passkeys this device knows: after Forget they may be another seed's, and a
-// manager keeping one would refuse this one. The words live in this screen's state alone and are never kept; it has no
-// path of its own, so a reload lands on Start and they never reach the page's history. Back goes to
-// Start.
+// Your 24 words, from No passkey found on Start: one box for the words, how to type them and how many
+// there are ("19 of 24"), and Continue, off until all 24 are there. The words are checked before any
+// passkey is made (flows/imported.ts), so words that can't be used say why in one line, red: a word
+// wrong, words that aren't verified, or words that open a different Forest from the one this device
+// lists. Never two seeds on one device: then Forget this device takes the place of Continue, and
+// once it has forgotten, Continue is back. Then a new passkey is added to the seed the words spell
+// as You adds one (flows/backups.ts), the seed held for it as after any unlock, and the person is
+// in, as from Start. Unlike You's, it excludes none of the passkeys this device knows: after Forget
+// they may be another seed's, and a manager keeping one would refuse this one. The words live in
+// this screen's state alone and are never kept; it has no path of its own, so a reload lands on
+// Start and they never reach the page's history. Back goes to No passkey found.
 
+import { WORD_COUNT } from '@foundationforest/keys'
 import { useEffect, useState } from 'react'
 
 import { config } from '../config.ts'
 import { addBackup } from '../flows/backups.ts'
-import { DifferentForest, seedOfWords } from '../flows/imported.ts'
+import { DifferentForest, seedOfWords, wordCount } from '../flows/imported.ts'
 import { type Entered, enter } from '../flows/start.ts'
 import { forgetDevice } from '../forget.ts'
 import { drop as dropHeld, hold } from '../held.ts'
@@ -22,14 +23,14 @@ import { Loader } from '../mark.tsx'
 import { NoAnswer, drop, make, withSeed } from '../passkey.ts'
 import { proveInWorker } from '../proof/prove.ts'
 import { Line, Top, UnlockIcon, useAction } from '../ui.tsx'
-import type { How } from './Start.tsx'
 
-type Props = { onEntered: (entered: Entered, passkey: string, how: How) => void; onBack: () => void }
+type Props = { onEntered: (entered: Entered, passkey: string) => void; onBack: () => void }
 
 export function ImportWords({ onEntered, onBack }: Props) {
   const [text, setText] = useState('')
   const [different, setDifferent] = useState(false)
   useEffect(dropHeld, [])
+  const count = wordCount(text)
 
   const create = useAction(async () => {
     const seed = await seedOfWords(config.host, text).catch((err: unknown) => {
@@ -55,7 +56,7 @@ export function ImportWords({ onEntered, onBack }: Props) {
     const id = made.id
     const to = await withSeed(id, (s) => enter(config, { id, seed: s }, proveInWorker))
     setText('')
-    onEntered(to, id, {})
+    onEntered(to, id)
   })
 
   const forgetFirst = () => {
@@ -71,7 +72,7 @@ export function ImportWords({ onEntered, onBack }: Props) {
       </Top>
       <textarea
         aria-label="Your 24 words"
-        rows={5}
+        rows={7}
         autoComplete="off"
         autoCorrect="off"
         autoCapitalize="off"
@@ -83,6 +84,12 @@ export function ImportWords({ onEntered, onBack }: Props) {
           if (create.note) create.setNote(null)
         }}
       />
+      <p className="words-count">
+        <span className="grow">In order, with spaces between them</span>
+        <span>
+          <b>{count}</b> of {WORD_COUNT}
+        </span>
+      </p>
       <div className="fill" />
       <Line note={create.note} />
       {different ? (
@@ -90,8 +97,8 @@ export function ImportWords({ onEntered, onBack }: Props) {
           Forget this device
         </button>
       ) : (
-        <button className="primary" disabled={create.busy} onClick={() => create.run()}>
-          {create.busy ? <Loader /> : <><UnlockIcon always /> Create a passkey</>}
+        <button className="primary" disabled={create.busy || count !== WORD_COUNT} onClick={() => create.run()}>
+          {create.busy ? <Loader /> : <><UnlockIcon always /> Continue</>}
         </button>
       )}
     </main>

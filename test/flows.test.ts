@@ -92,7 +92,7 @@ describe('a verification', () => {
     expect(w.faceCheck.created, 'no other session opened').toBe(opened)
   })
 
-  test('not finished: still away; declined, expired or not passed: its session ends, in one line, and the next open is a new check', async () => {
+  test('not finished: still away; declined, expired or not passed: its session ends, in the one line for a check that didn\'t pass, and the next open is a new check', async () => {
     const p = person()
     w.decideAll('unfinished')
     const first = await open(w, p.id)
@@ -100,9 +100,9 @@ describe('a verification', () => {
     expect((await ask(w, p.id, n)).at).toBe('away')
     expect(await open(w, p.id), 'a tab closed midway opens the same check again').toBe(first)
     for (const [decision, line, red] of [
-      ['declined', "The check didn't pass. Start again.", true],
-      ['expired', 'The check ran out of time. Start again.', false],
-      ['not_passed', "The check couldn't see you live. Start again.", true],
+      ['declined', "That selfie didn't pass. Try again, or use your ID.", false],
+      ['expired', "That selfie didn't pass. Try again, or use your ID.", false],
+      ['not_passed', "That selfie didn't pass. Try again, or use your ID.", false],
     ] as const) {
       w.decideAll(decision)
       const err = await ask(w, p.id, n).catch((e: unknown) => e)

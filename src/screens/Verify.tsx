@@ -1,51 +1,61 @@
-// Get verified: two rows to pick from, the face check, free, or the ID check, $5, then Continue. Each
-// check in a tab of its own, opened on the tap itself (iPhone Safari blocks a tab opened after an
-// await). The ID check is paid first, on Stripe's page in this tab: before it, its price and tries,
-// and, tapped open, the consent screen the verifier serves (GET /), word for word, without which
-// there is no Pay; Stripe sends the person back to /id, where the payment, kept on the device, takes
-// them on.
+// Get verified: "So people know you're real.", and two cards, each one tap (Checks.tsx). The selfie
+// opens its check in a tab of its own at once, on the tap itself (iPhone Safari blocks a tab opened
+// after an await). The ID opens its sheet: its price and tries, and, tapped open, the consent screen
+// the verifier serves, word for word, before Pay $5, which sends the person to Stripe's page in this
+// tab; Stripe sends them back to /id, where the payment, kept on the device, makes the ID card open
+// its check at once too.
 //
-// Every step has a back. From Start, Get verified goes back to New to Forest? while nothing is under
-// way, else to Start (App.tsx), and every later step to Get verified, the check under way still
-// picked: the asking stops, nothing under way changes, and Continue picks it up where it was
-// (flows/verify.ts, `choose`). From You, back is You.
+// While the check is open in its tab, the screen shows only the loader, Waiting for your check, and
+// Open it again; when the stamp comes, it moves on by itself. A check that didn't pass brings no
+// screen of its own: Get verified again, one line on top in a notice, and its session is done, so
+// the next tap opens a new one. Held for review (a face Didit has seen before), Get verified again,
+// the notice saying a person is checking, that check's card greyed, and the app asking all the while;
+// approved, it moves on by itself too. From Start, Get verified's back goes to Start (App.tsx), and
+// the waiting's to Get verified: the asking stops, nothing under way changes, and a tap on the same
+// card picks it up where it was (flows/verify.ts, `choose`). From You, the checks the person has are
+// greyed, the ID's sheet is open when nothing is paid, and back is You.
 //
 // The screen keeps no seed of its own: it uses the one held after an unlock (held.ts), for 5
 // minutes since the last action, the check's own tab hiding the page meanwhile. So while a seed is
-// held as the screen opens (from Start, or from an unlock a moment before), the seed's number and
-// the wallet are worked out at once, and the stamp is asked for with them, needing no seed, until it
-// comes. Once it does, it is kept at once if a seed is still held; else Continue asks for one. With
-// none held as the screen opened (from You, or after a review), opening the check needs none,
-// and one unlock at Continue asks for the stamp, collects its gift, keeps it and makes every profile
-// show it.
+// held as the screen opens (always, from Start), the seed's number and the wallet are worked out at
+// once, and the stamp is asked for with them, needing no seed, until it comes. Once it does, it is
+// kept at once if a seed is still held; else "You're verified" and Continue ask for one. With none
+// held as the screen opened (from You, back from Stripe's page), the stamp can't be asked for, so
+// the waiting shows Continue too: one unlock asks for the stamp, collects its gift, keeps it and
+// makes every profile show it.
 
 import { useEffect, useRef, useState } from 'react'
 
 import { config } from '../config.ts'
-import { type Check, under } from '../device.ts'
-import { type Step, NotFinished, NotPassed, advance, ask, choose, collect, consentOf, finish, open, pay, stampNumberAt, stepOf } from '../flows/verify.ts'
+import { type Check, checks, under } from '../device.ts'
+import { type CreditLines, type Step, NotFinished, NotPassed, advance, ask, choose, collect, consentOf, creditsOf, finish, open, pay, stampNumberAt, stepOf } from '../flows/verify.ts'
 import { walletKey } from '../flows/profiles.ts'
 import { isHeldFor } from '../held.ts'
+import { Icon } from '../icons.tsx'
 import { Loader } from '../mark.tsx'
 import { withSeed } from '../passkey.ts'
 import { proveInWorker } from '../proof/prove.ts'
-import { Line, type Note, Quiet, Top, UnlockIcon, noteOf, useAction } from '../ui.tsx'
+import { Line, type Note, Notice, Quiet, Top, UnlockIcon, YoureVerified, noteOf, useAction } from '../ui.tsx'
+import { Reloading } from '../version.ts'
+import { CheckCard, IdSheet } from './Checks.tsx'
 
 /** How often the stamp is asked for while the check is open, and for how long; and while it is held for review. */
 const AWAY_EVERY_MS = 3_000
 const AWAY_FOR_MS = 20 * 60_000
 const REVIEW_EVERY_MS = 20_000
 
-/** While the verifier's Stripe key is a test one (a payment id `cs_test_…`), the card that pays: Stripe's test card. */
-const TEST_CARD = 'Test mode: pay with the card 4242 4242 4242 4242.'
+/** What Get verified says while a person at Forest checks a face Didit has seen before. */
+const REVIEWING = 'A person at Forest is checking your selfie. You can close Forest; it picks up here.'
 
 type Props = {
-  /** Opened from Start, whose back goes there. */
-  fromStart: boolean
+  /** Opened from Start: back goes there, and the line on adding the other check shows. */
+  setup: boolean
   id: string
   step: Step
+  /** A check that will never pass, found as Start took the verification up. */
+  failed?: NotPassed
   onVerified: () => void
-  /** Back from Get verified: to New to Forest? or Start; for someone verified already, to You. */
+  /** Back from Get verified: to Start; for someone verified already, to You. */
   onBack: () => void
 }
 
@@ -60,7 +70,7 @@ type Known = { stampNumber: bigint; wallet: string }
 
 const knownOf = async (seed: Uint8Array): Promise<Known> => ({ stampNumber: await stampNumberAt(config, seed), wallet: (await walletKey(seed)).address })
 
-export function Verify({ fromStart, id, step: first, onVerified, onBack }: Props) {
+export function Verify({ setup, id, step: first, failed: failedFirst, onVerified, onBack }: Props) {
   // Worked out at once while a seed is held, before the check's tab hides the page.
   // A failure says itself where it is awaited, as the stamp is asked for.
   const [atOpen] = useState(() => {
@@ -72,25 +82,45 @@ export function Verify({ fromStart, id, step: first, onVerified, onBack }: Props
   const known = useRef<Promise<Known> | null>(atOpen)
   const stampNumber = useRef<bigint | null>(null)
   const live = useRef(true)
-  // Each back starts a new turn: what the earlier one was asking or waiting for stops.
+  // Each back, and each card tapped, starts a new turn: what the earlier one was asking or waiting for stops.
   const turn = useRef(0)
   const wake = useRef<(() => void) | null>(null)
-  // With a seed held, a check left open is opened again, and asked for from here.
-  const [step, setStep] = useState<Step>(first.at === 'away' && known.current ? { at: 'start' } : first)
-  const [away, setAway] = useState(first.at === 'away' && !known.current)
+  // The turn the stamp is being asked for in, from here, if any.
+  const loopAt = useRef<number | null>(null)
+  const [step, setStep] = useState<Step>(first)
+  const [waiting, setWaiting] = useState(first.at === 'away')
+  const [asking, setAsking] = useState(false)
+  const [failed, setFailed] = useState<NotPassed | null>(failedFirst ?? null)
+  const [sheet, setSheet] = useState(!setup && first.at === 'consent')
   const [stripe, setStripe] = useState<string | null>(null)
+  // What the asking from here came to, when it stopped short.
+  const [note, setNote] = useState<Note | null>(null)
+  const [credits, setCredits] = useState<CreditLines | null>(null)
+  // The consent screen, as the verifier serves it: Pay shows only once it has come.
+  const [consent, setConsent] = useState<string | null>(null)
+  const [noConsent, setNoConsent] = useState<Note | null>(null)
+
   /** The check under way for this passkey, if any. */
   const underWay = (): Check | null => {
     const u = under()
     return u?.passkey === id ? u.check : null
   }
-  const [picked, setPicked] = useState<Check | null>(underWay)
-  const check = under()?.check
-  // The consent screen, as the verifier serves it: Pay shows only once it has come.
-  const [consent, setConsent] = useState<string | null>(null)
-  const [noConsent, setNoConsent] = useState<Note | null>(null)
+  const paid = () => {
+    const u = under()
+    return u?.passkey === id && !!u.payment
+  }
+
   useEffect(() => {
-    if (step.at !== 'consent' || consent) return
+    live.current = true
+    creditsOf(config).then(
+      (lines) => live.current && setCredits(lines),
+      () => live.current && setCredits({}),
+    )
+    return () => void (live.current = false)
+  }, [])
+
+  useEffect(() => {
+    if (!sheet || consent) return
     let on = true
     setNoConsent(null)
     consentOf(config).then(
@@ -98,7 +128,7 @@ export function Verify({ fromStart, id, step: first, onVerified, onBack }: Props
       (err: unknown) => on && setNoConsent(noteOf(err)),
     )
     return () => void (on = false)
-  }, [step.at])
+  }, [sheet])
 
   /** A pause in the asking, cut short by back. */
   const pause = (ms: number) =>
@@ -110,12 +140,20 @@ export function Verify({ fromStart, id, step: first, onVerified, onBack }: Props
       }
     })
 
-  useEffect(
-    () => () => {
-      live.current = false
-    },
-    [],
-  )
+  /** A check that will never pass: back to the two checks, saying so. */
+  const notPassed = (err: NotPassed) => {
+    setFailed(err)
+    setWaiting(false)
+    setSheet(false)
+    setStep(stepOf(id))
+  }
+
+  /** What stopped the asking in turn `at`, said: a check that didn't pass on Get verified, anything else in one line. */
+  const said = (err: unknown, at: number) => {
+    if (!live.current || turn.current !== at || err instanceof Reloading) return
+    if (err instanceof NotPassed) return notPassed(err)
+    setNote(noteOf(err))
+  }
 
   /** The stamp signed: kept at once while a seed is held, and the person is verified; else Continue asks for one. */
   const done = async (stamp: string) => {
@@ -124,19 +162,27 @@ export function Verify({ fromStart, id, step: first, onVerified, onBack }: Props
     onVerified()
   }
 
-  /** Held for review: the stamp asked for now and then, and its gift collected as it comes, when the wallet is known. */
+  /** Held for review: Get verified, saying so; the stamp asked for now and then, its gift collected and the stamp kept as it comes, when the wallet is known. */
   const review = async (at: number, wallet?: string) => {
+    setWaiting(false)
     setStep({ at: 'review' })
-    while (live.current && turn.current === at) {
-      await pause(REVIEW_EVERY_MS)
-      if (!live.current || turn.current !== at) return
-      const next = await ask(config, id, stampNumber.current!).catch(() => ({ at: 'review' }) as const)
-      if (turn.current !== at) return
-      if (next.at === 'signed') {
-        if (wallet) await collect(config, id, wallet).catch(() => undefined)
-        return setStep(next)
+    try {
+      while (live.current && turn.current === at) {
+        await pause(REVIEW_EVERY_MS)
+        if (!live.current || turn.current !== at) return
+        const next = await ask(config, id, stampNumber.current!).catch((err: unknown) => {
+          if (err instanceof NotPassed) throw err
+          return { at: 'review' } as const
+        })
+        if (turn.current !== at) return
+        if (next.at === 'signed') {
+          if (wallet) await collect(config, id, wallet).catch(() => undefined)
+          return await done(next.stamp)
+        }
+        if (next.at !== 'review') return setStep(next)
       }
-      if (next.at !== 'review') return setStep(next)
+    } catch (err) {
+      said(err, at)
     }
   }
 
@@ -149,22 +195,47 @@ export function Verify({ fromStart, id, step: first, onVerified, onBack }: Props
       if (turn.current !== at) return
       if (next.at === 'signed') return done(next.stamp)
       if (next.at === 'review') return review(at, wallet)
-      if (next.at !== 'away') return setStep(next)
+      if (next.at !== 'away') {
+        setWaiting(false)
+        return setStep(next)
+      }
       await pause(AWAY_EVERY_MS)
     }
     if (turn.current === at) throw new NotFinished()
   }
 
-  // Taken up held for review with a seed held: the stamp asked for as it would have been.
-  useEffect(() => {
-    if (first.at !== 'review' || !known.current) return
+  /** The stamp asked for from here in turn `at`, once, while what a held seed gave is known. */
+  const askHere = (at: number) => {
     const k = known.current
-    const at = turn.current
+    if (!k || loopAt.current === at) return
+    loopAt.current = at
+    setAsking(true)
+    setNote(null)
+    void (async () => {
+      try {
+        await wait(at, await k)
+      } catch (err) {
+        said(err, at)
+      } finally {
+        if (loopAt.current === at) {
+          loopAt.current = null
+          if (live.current) setAsking(false)
+        }
+      }
+    })()
+  }
+
+  // Taken up with the check open, or held for review, with a seed held: the stamp asked for as it would have been.
+  useEffect(() => {
+    const k = known.current
+    if (!k) return
+    if (first.at === 'away') return askHere(0)
+    if (first.at !== 'review') return
     void (async () => {
       const { stampNumber: number, wallet } = await k
       stampNumber.current = number
-      await review(at, wallet)
-    })().catch((err: unknown) => live.current && turn.current === at && start.setNote(noteOf(err)))
+      await review(0, wallet)
+    })().catch((err: unknown) => said(err, 0))
   }, [])
 
   /** A tab opened on the tap, then sent to the check's page. */
@@ -181,34 +252,30 @@ export function Verify({ fromStart, id, step: first, onVerified, onBack }: Props
     }
   }
 
-  /** The check opened in its tab; with what a held seed gave, asked for from here until it comes, or until back. */
-  const start = useAction(async () => {
+  /** The check chosen, opened in its tab, then waited for, the stamp asked for from here while a seed was held. */
+  const opening = useAction(async (c: Check) => {
     const at = turn.current
+    choose(id, c)
     await openTab()
     if (turn.current !== at) return
+    setFailed(null)
     setStep({ at: 'away' })
-    setAway(true)
-    if (!known.current) return
-    try {
-      await wait(at, await known.current)
-    } catch (err) {
-      if (turn.current !== at) return
-      setStep(stepOf(id))
-      throw err
-    } finally {
-      if (live.current && turn.current === at) setAway(false)
-    }
+    setWaiting(true)
+    askHere(at)
   })
 
-  /**
-   * A check chosen, or the one under way picked again, and taken to where it stands: the face check
-   * opened on the same tap; the ID check to its consent screen, or, paid, to its Start.
-   */
+  /** The same check's page again, in a tab of its own; the asking from here taken up if it had stopped. */
+  const reopen = useAction(async () => {
+    await openTab()
+    askHere(turn.current)
+  })
+
+  /** A card tapped: what was asked or waited for before stops; the selfie, or the ID paid for, opens its check; the ID not paid for, its sheet. */
   const pick = (c: Check) => {
-    choose(id, c)
-    const next = stepOf(id)
-    if (c === 'face' && (next.at === 'start' || next.at === 'away')) return void start.run()
-    setStep(next)
+    turn.current++
+    wake.current?.()
+    if (c === 'id' && !paid()) return setSheet(true)
+    void opening.run(c)
   }
 
   /** The payment made, then Stripe's page in this tab; in test mode, Stripe's test card said first. */
@@ -218,28 +285,28 @@ export function Verify({ fromStart, id, step: first, onVerified, onBack }: Props
     location.assign(url)
   })
 
-  /** One unlock: the verification taken on, as far as it goes (with no seed held). */
+  /** One unlock: the verification taken on, as far as it goes, and then asked for from here with the seed held. */
   const go = useAction(async () => {
     const at = turn.current
-    const next = await withSeed(id, async (s) => {
-      const k = await knownOf(s)
-      known.current = Promise.resolve(k)
-      stampNumber.current = k.stampNumber
-      return advance(config, id, s, proveInWorker)
-    }).catch((err: unknown) => {
-      if (turn.current !== at) return undefined
-      // A check that will never pass, or a payment to make again: the next step is the device's.
-      if (err instanceof NotPassed) {
-        setAway(false)
-        setStep(stepOf(id))
-      }
+    let next: Step | null
+    try {
+      next = await withSeed(id, async (s) => {
+        const k = await knownOf(s)
+        known.current = Promise.resolve(k)
+        stampNumber.current = k.stampNumber
+        return advance(config, id, s, proveInWorker)
+      })
+    } catch (err) {
+      if (turn.current !== at) return
+      if (err instanceof NotPassed) return notPassed(err)
       throw err
-    })
+    }
     if (next === null) return onVerified()
-    if (!next || turn.current !== at) return
+    if (turn.current !== at) return
     setStep(next)
-    if (next.at === 'away') throw new NotFinished()
-    if (next.at === 'review') await review(at)
+    if (next.at === 'away') return askHere(at)
+    if (next.at === 'review') return review(at)
+    setWaiting(false)
   })
 
   /** The stamp signed kept: one unlock, unless a seed is still held. */
@@ -249,113 +316,91 @@ export function Verify({ fromStart, id, step: first, onVerified, onBack }: Props
     onVerified()
   })
 
-  /** Back to the two checks, the one under way picked: the asking stops, and nothing under way changes. */
+  /** Back to the two checks: the asking stops, and nothing under way changes. */
   const toChecks = () => {
     turn.current++
     wake.current?.()
-    setStep({ at: 'choose' })
-    setAway(false)
-    setStripe(null)
-    setPicked(underWay() ?? picked)
-    for (const action of [start, paying, go, keep]) action.setNote(null)
+    setWaiting(false)
+    setNote(null)
+    setStep(stepOf(id))
+    for (const action of [opening, reopen, go, keep]) action.setNote(null)
   }
 
-  const title = check === 'id' && step.at !== 'choose' ? 'ID check' : 'Get verified'
-  const CHECKS = [
-    { c: 'face' as const, name: 'Face', what: 'A selfie', price: 'Free' },
-    { c: 'id' as const, name: 'ID', what: 'Your ID and a selfie · counts more', price: '$5' },
-  ]
+  const closeSheet = () => {
+    if (paying.busy) return
+    setSheet(false)
+    setStripe(null)
+    paying.setNote(null)
+  }
+
+  // A stamp signed with no seed held, or kept with its profiles left to show it: one unlock to finish.
+  if (step.at === 'signed' || step.at === 'kept') {
+    const busy = keep.busy || go.busy
+    return (
+      <main>
+        <div className="fill" />
+        <div className="stack center">
+          <YoureVerified check={underWay() ?? 'face'} />
+        </div>
+        <div className="fill" />
+        <Line note={keep.note ?? go.note} />
+        <div className="foot">
+          <button className="primary" disabled={busy} onClick={() => (step.at === 'signed' ? keep.run() : go.run())}>
+            {busy ? <Loader /> : <><UnlockIcon /> Continue</>}
+          </button>
+        </div>
+      </main>
+    )
+  }
+
+  if (waiting) {
+    // With no seed held as it opened, the stamp can't be asked for from here: Continue asks for one.
+    const needsSeed = !asking && !known.current
+    return (
+      <main>
+        <Top onBack={toChecks} />
+        <div className="fill" />
+        <div className="waiting">
+          {(asking || go.busy) && <Loader big />}
+          <span>Waiting for your check</span>
+        </div>
+        <div className="fill" />
+        <Line note={go.note ?? reopen.note ?? note} />
+        <div className="foot">
+          {needsSeed && (
+            <button className="primary" disabled={go.busy} onClick={() => go.run()}>
+              {go.busy ? <Loader /> : <><UnlockIcon /> Continue</>}
+            </button>
+          )}
+          <button disabled={reopen.busy} onClick={() => reopen.run()}>
+            {reopen.busy ? <Loader /> : <><Icon name="arrow-square-out" /> Open it again</>}
+          </button>
+        </div>
+      </main>
+    )
+  }
+
+  const reviewing = step.at === 'review' ? underWay() : null
+  const held = checks()
+  const off = (c: Check) => opening.busy || reviewing === c || (!setup && held.includes(c))
   return (
     <main>
-      <Top onBack={fromStart && step.at !== 'choose' ? toChecks : onBack} />
-      <h1>{title}</h1>
-      {step.at === 'consent' && (
-        <>
-          <p>$5 · up to three tries</p>
-          {consent && (
-            <details>
-              <summary>What the check keeps</summary>
-              <p className="consent">{consent}</p>
-            </details>
-          )}
-        </>
-      )}
+      <Top onBack={onBack} />
+      <div className="fill half" />
+      <div className="stack">
+        <h1>Get verified</h1>
+        <p className="lead">So people know you're real.</p>
+      </div>
+      {reviewing ? <Notice>{REVIEWING}</Notice> : failed && <Notice>{failed.message}</Notice>}
+      <Line note={opening.note} />
+      <div className="vcards">
+        {(['face', 'id'] as const).map((c) => (
+          <CheckCard key={c} check={c} credits={credits} off={off(c)} busy={opening.busy && underWay() === c} onPick={() => pick(c)} />
+        ))}
+      </div>
       <div className="fill" />
-      {step.at === 'choose' ? (
-        <>
-          <div className="rows" role="radiogroup" aria-label="Check">
-            {CHECKS.map(({ c, name, what, price }) => (
-              <button key={c} role="radio" aria-checked={picked === c} className={picked === c ? 'row pick chosen' : 'row pick'} disabled={start.busy} onClick={() => setPicked(c)}>
-                <span className="two">
-                  <strong>{name}</strong>
-                  <span>{what}</span>
-                </span>
-                <span className="aside">{price}</span>
-              </button>
-            ))}
-          </div>
-          <Line note={start.note} />
-          <button className="primary" disabled={!picked || start.busy} onClick={() => picked && pick(picked)}>
-            {start.busy ? <Loader /> : 'Continue'}
-          </button>
-        </>
-      ) : step.at === 'consent' ? (
-        <>
-          <Line note={paying.note ?? noConsent} />
-          {stripe ? (
-            <>
-              <p className="line">{TEST_CARD}</p>
-              <a className="button primary" href={stripe}>
-                Go to Stripe
-              </a>
-            </>
-          ) : consent ? (
-            <button className="primary" disabled={paying.busy} onClick={() => paying.run()}>
-              {paying.busy ? <Loader /> : 'Pay $5'}
-            </button>
-          ) : (
-            !noConsent && (
-              <button className="primary" disabled>
-                <Loader />
-              </button>
-            )
-          )}
-        </>
-      ) : step.at === 'review' ? (
-        <>
-          <p className="line">
-            <Loader />
-            Being reviewed
-          </p>
-          <Line note={start.note ?? go.note} />
-        </>
-      ) : step.at === 'signed' || step.at === 'kept' ? (
-        <>
-          <Line note={keep.note ?? go.note} />
-          <button className="primary" disabled={keep.busy || go.busy} onClick={() => (step.at === 'signed' ? keep.run() : go.run())}>
-            {keep.busy || go.busy ? <Loader /> : <><UnlockIcon /> Continue</>}
-          </button>
-        </>
-      ) : away && !start.busy ? (
-        <>
-          <p className="line">Finish in the other tab.</p>
-          <Line note={go.note ?? start.note} />
-          <button className="primary" disabled={go.busy} onClick={() => go.run()}>
-            {go.busy ? <Loader /> : <><UnlockIcon /> Continue</>}
-          </button>
-          <button className="quiet" disabled={go.busy || start.busy} onClick={() => start.run()}>
-            Open the check
-          </button>
-        </>
-      ) : (
-        <>
-          {away && <p className="line">Finish in the other tab.</p>}
-          <Line note={start.note} />
-          <button className="primary" disabled={start.busy} onClick={() => start.run()}>
-            {start.busy ? <Loader /> : 'Start'}
-          </button>
-        </>
-      )}
+      {setup && <p className="quiet-foot">You can add the other one later.</p>}
+      {sheet && <IdSheet consent={consent} note={paying.note ?? noConsent} stripe={stripe} paying={paying.busy} onPay={() => paying.run()} onClose={closeSheet} />}
     </main>
   )
 }

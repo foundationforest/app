@@ -11,7 +11,7 @@ import { exportWords, newSeed } from '@foundationforest/keys'
 
 import * as device from '../src/device.ts'
 import { addBackup, backupsAt } from '../src/flows/backups.ts'
-import { DifferentForest, WordsNotVerified, seedOfWords } from '../src/flows/imported.ts'
+import { DifferentForest, WordsNotVerified, seedOfWords, wordCount } from '../src/flows/imported.ts'
 import { walletKey } from '../src/flows/profiles.ts'
 import { follow, seedFor } from '../src/flows/seed.ts'
 import { enter } from '../src/flows/start.ts'
@@ -79,6 +79,10 @@ describe('24 words', () => {
     await expect(seedOfWords(w.host, exportWords(nobody)), 'a seed no verifier stamped').rejects.toBeInstanceOf(WordsNotVerified)
     expect(await refusal(exportWords(nobody))).toEqual(["These words aren't verified.", true])
     expect(device.passkeys(), 'no passkey made or known').toEqual([])
+  })
+
+  test('Your 24 words counts them as they are typed: between spaces or lines, extra spaces and all', () => {
+    expect([wordCount(''), wordCount('  orbit  canvas\nmaple '), wordCount(exportWords(newSeed()).toUpperCase())]).toEqual([0, 3, 24])
   })
 
   test("a backup's own words: followed one step, to the seed it backs up", async () => {
