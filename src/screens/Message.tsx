@@ -1,17 +1,19 @@
-// A new message, all of it there from the start. To: an address or a Share link, filled in when one
-// came with the screen (/message?to=<address>, or Message on a review received), or a profile's page
-// on the index, as Share hands it out; under it, once it is a profile, who it is (its market and
-// role, the badge). From: the person's profile on the other
-// side of that profile's market (the same role where the market has one), picked for them, or New
-// profile when they have none, one unlock. The message, and Send, one unlock. When Send can't work,
-// one line says why, once. To may be one of the person's own profiles, From their profile on the
-// other side, as for anyone's; only where that would be the same profile, in a market with one
-// role, is it refused. From shows the badge of that profile's strongest check, from its card.
+// A new message, all of it there from the start. To: a box for an address or a Share link (a
+// profile's page on the index, as Share hands it out), until it holds a profile; then their card,
+// their avatar, market and role, the badge and their address cut short, with a cross to change it.
+// It comes filled in when an address came with the screen (/message?to=<address>, or Message on a
+// review received). From: the card of the person's profile on the other side of that profile's
+// market (the same role where the market has one), picked for them, with the badge of its
+// strongest check, from its card; or, when they have none, that profile to make, New profile, one
+// unlock. The message, and Send at the foot, one unlock. When Send can't work, one line says why,
+// once. To may be one of the person's own profiles, From their profile on the other side, as for
+// anyone's; only where that would be the same profile, in a market with one role, is it refused.
 
 import { useEffect, useState } from 'react'
 
 import { publicKeyFromAddress } from '@foundationforest/folders'
 
+import { Avatar } from '../avatar.tsx'
 import { config } from '../config.ts'
 import { passkey } from '../device.ts'
 import { type Who as Known, send, whoIs } from '../flows/inbox.ts'
@@ -19,13 +21,14 @@ import { makeProfile } from '../flows/profile.ts'
 import { strongest } from '../flows/cards.ts'
 import { addressIn } from '../flows/entries.ts'
 import { useCards, useProfiles } from '../hooks.ts'
+import { Icon } from '../icons.tsx'
 import { Loader } from '../mark.tsx'
 import { otherSide } from '../markets.ts'
 import { holdThread, opened } from '../opened.ts'
 import { withSeed } from '../passkey.ts'
 import { checkInWorker, proveInWorker } from '../proof/prove.ts'
-import { Line, Named, type Note, Top, UnlockIcon, Verified, useAction } from '../ui.tsx'
-import { Who } from './Who.tsx'
+import { Line, Named, type Note, Top, UnlockIcon, Verified, short, useAction } from '../ui.tsx'
+import { Who, WhoAvatar } from './Who.tsx'
 
 type Props = { to?: string; onSent: (mine: string, them: string) => void; onBack: () => void }
 
@@ -80,22 +83,37 @@ export function Message({ to: given, onSent, onBack }: Props) {
           : null
   return (
     <main>
-      <Top onBack={onBack}>
+      <Top onBack={onBack} clear>
         <h1>New message</h1>
       </Top>
       <div className="form">
         <div className="field">
           <span className="label">To</span>
-          <input aria-label="To" placeholder="Their address" autoComplete="off" value={typed} onChange={(e) => setTyped(e.target.value)} />
-          {named && !self && <Who address={to} {...(who !== undefined && { who })} />}
+          {named && who !== null && !self ? (
+            <div className="person to">
+              <WhoAvatar address={to} {...(who !== undefined && { who })} />
+              <span className="two">
+                <Who address={to} {...(who !== undefined && { who })} avatar={false} />
+                <span className="addr">{short(to)}</span>
+              </span>
+              <button type="button" className="round clear" aria-label="Change" onClick={() => setTyped('')}>
+                <Icon name="x" />
+              </button>
+            </div>
+          ) : (
+            <input aria-label="To" placeholder="Their link or address" autoComplete="off" value={typed} onChange={(e) => setTyped(e.target.value)} />
+          )}
         </div>
-        <div className="field">
-          <span className="label">From</span>
-          {label ? (
-            <div className="from">
-              <span className="who">
-                <Named label={label} />
-                {me && fromCheck && <Verified check={fromCheck} />}
+        {label && (
+          <div className="field">
+            <span className="label">From</span>
+            <div className="person from">
+              <Avatar label={label} />
+              <span className="two">
+                <span className="who">
+                  <Named label={label} />
+                  {me && fromCheck && <Verified check={fromCheck} />}
+                </span>
               </span>
               {!me && (
                 <button className="small" disabled={make.busy} onClick={() => make.run()}>
@@ -103,11 +121,14 @@ export function Message({ to: given, onSent, onBack }: Props) {
                 </button>
               )}
             </div>
-          ) : (
-            <span className="quiet-text">–</span>
-          )}
+          </div>
+        )}
+        <div className="field">
+          <span className="label">Message</span>
+          <textarea aria-label="Message" rows={4} value={text} onChange={(e) => setText(e.target.value)} />
         </div>
-        <textarea aria-label="Message" rows={4} value={text} onChange={(e) => setText(e.target.value)} />
+      </div>
+      <div className="foot">
         <Line note={why ?? make.note ?? go.note} />
         <button className="primary" disabled={go.busy || !me || !text.trim()} onClick={() => go.run()}>
           {go.busy ? <Loader /> : <><UnlockIcon /> Send</>}

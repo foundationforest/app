@@ -1,6 +1,7 @@
 // A place (the markets manual's Types, `place`): an area or an exact spot, set on a screen of its
-// own with a map (PlaceMap.tsx, loaded with that screen alone). In the form it is one row: the place
-// in its words (show.ts), else Choose on the map. Tapped, the place screen opens over the form,
+// own with a map (PlaceMap.tsx, loaded with that screen alone). In the form it is one row, with its
+// pin: the place in its words, its name and how far round it reaches (show.ts), else Choose on the
+// map. Tapped, the place screen opens over the form,
 // which keeps all it holds; its back, and the phone's, closes it keeping nothing, and Done keeps
 // the place. An area is a circle the person taps or drags into place, from the field's radiusKm up
 // to 50 km: its centre is pointFor's (near.ts), moved once and kept, which the circle glides to, so
@@ -21,8 +22,9 @@ import { Icon } from '../icons.tsx'
 import { Loader } from '../mark.tsx'
 import type { Field } from '../markets.ts'
 import { type Point, type Spot, exactPoint, pointFor, radiusSteps, spotOf } from '../near.ts'
-import { placeText } from '../show.ts'
+import { placeLines } from '../show.ts'
 import { Top } from '../ui.tsx'
+import { useOver } from './Over.tsx'
 import type { Mode } from './PlaceMap.tsx'
 
 const PlaceMap = lazy(() => import('./PlaceMap.tsx'))
@@ -46,37 +48,20 @@ export const NO_LOCATION = { refused: "Your location isn't allowed.", unavailabl
 
 export function Place({ label, field, value, onChange }: { label: string; field: Pick<Field, 'radiusKm'>; value: unknown; onChange: (v: unknown) => void }) {
   const was = placeIn(value)
-  const [open, setOpen] = useState(false)
   const row = useRef<HTMLButtonElement>(null)
-  const closing = useRef(false)
-
   // The place screen is a step in the page's history, so the phone's back closes it.
-  useEffect(() => {
-    if (!open) return
-    const popped = () => setOpen(false)
-    addEventListener('popstate', popped)
-    return () => {
-      removeEventListener('popstate', popped)
-      // Back on the row, once the form takes the focus again.
-      requestAnimationFrame(() => row.current?.focus())
-    }
-  }, [open])
-  const show = () => {
-    closing.current = false
-    history.pushState({ ...history.state, placing: true }, '', location.pathname)
-    setOpen(true)
-  }
-  const close = () => {
-    if (closing.current) return
-    closing.current = true
-    history.back()
-  }
+  const { open, show, close } = useOver(row)
+  const lines = was ? placeLines(was) : null
 
   return (
     <div className="place" role="group" aria-label={label}>
-      <button ref={row} type="button" className="place-row" onClick={show}>
+      <button ref={row} type="button" className="open-row" onClick={show}>
         <Icon name="map-pin" />
-        {was ? placeText(was) : PLACE_SAYS.choose}
+        <span className="two">
+          <strong className={lines ? undefined : 'muted'}>{lines?.main ?? PLACE_SAYS.choose}</strong>
+          {lines?.more && <span>{lines.more}</span>}
+        </span>
+        <Icon name="caret-right" className="car" />
       </button>
       {open &&
         createPortal(

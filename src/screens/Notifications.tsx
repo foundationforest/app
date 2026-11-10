@@ -1,38 +1,43 @@
-// Notifications, the middle place: first, each entry of the person's own that a market outgrew
-// (flows/outgrown.ts), a listing or a review, vouch or report its market's file no longer takes as
-// it is, with Update, which opens its edit with what still fits; then the reviews, vouches and
-// reports that came to every one of their profiles, with nothing unlocked. Messages open from the
-// round button at the top right, with how many are new, which opens all their conversations. Every
-// review, vouch and report the index counted about any of them, newest first, in full: the avatar
-// of the profile it is about, its score or chip, its text, that profile, when, and a dot on those
-// that came after what the device had seen as the screen opened; a tap opens it. From now they are
-// seen (device.ts), as a profile's Feedback marks them, so the tab, the card and the rating line
-// count them new no more. Each profile's own Feedback stays its own, opened from its rating.
+// Notifications, the middle place: what came to every one of the person's profiles, with nothing
+// unlocked, and what a market outgrew of what they posted, under Today and Earlier, each one card,
+// newest first. Messages open from the round button at the top right, with how many are new, which
+// opens all their conversations. A review, vouch or report the index counted about any of them, in
+// full: the avatar of who wrote it, "Review on your Tutoring tutor" in bold, when, a dot on those
+// that came after what the device had seen as the screen opened, then its score or chip, then what
+// they wrote; a tap opens that profile's Reviews. From now they are seen (device.ts), as a
+// profile's Reviews marks them, so the tab, the card and the profile's Reviews count them new no
+// more. Each entry of the person's own that a market outgrew (flows/outgrown.ts), a listing or a
+// review, vouch or report its market's file no longer takes as it is: a sun square, what needs an
+// update and that the market changed; a tap opens its edit with what still fits. It shows no time:
+// when the market changed, the app can't know; it sits by when it was posted.
 
 import { useEffect, useState } from 'react'
 
-import { Avatar } from '../avatar.tsx'
 import { saveSeen, seen } from '../device.ts'
 import type { Posted } from '../flows/entries.ts'
-import { newest, notices } from '../flows/feedback.ts'
+import { type Notice, newest, notices } from '../flows/feedback.ts'
 import { useHeldOutgrown, useHeldRated, useNews, useProfiles } from '../hooks.ts'
-import { markets, pairOf } from '../markets.ts'
-import { rowLines } from '../show.ts'
-import { Dot, MessagesButton, Named, SaidChip, Top, ago } from '../ui.tsx'
+import { Icon } from '../icons.tsx'
+import { kindWords, marketWords, markets, pairOf } from '../markets.ts'
+import { cardLines } from '../show.ts'
+import { Dot, MessagesButton, Named, SaidChip, Top, ago, newDay } from '../ui.tsx'
+import { WhoAvatar } from './Who.tsx'
 
-type Props = { onMessages: () => void; onReceived: (address: string, entry: string) => void; onUpdate: (address: string, posted: Posted) => void }
+type Props = { onMessages: () => void; onReviews: (address: string) => void; onUpdate: (address: string, posted: Posted) => void }
 
-/** What an outgrown entry's notice says it needs. */
-const update = (posted: Posted) => `Update this ${posted.kind}`
-
-/** The line an outgrown entry's notice shows of it: a listing's first preview line, else its text. */
-function lineOf(label: string, posted: Posted): string {
-  if (posted.kind !== 'listing') return typeof posted.body.text === 'string' ? posted.body.text : ''
+/** What an outgrown entry's notice says needs an update: a listing by its title, else "Your review". */
+function needs(label: string, posted: Posted): string {
+  if (posted.kind !== 'listing') return `Your ${posted.kind} needs an update`
   const market = markets.market(pairOf(label).market)
-  return market ? (rowLines(market, posted.body)[0] ?? '') : ''
+  // Its first line, as a name: "Spanish for adults", a full stop left off.
+  const title = market ? cardLines(market, posted.body).title.replace(/[.!]+$/, '') : ''
+  return `${title || 'Your listing'} needs an update`
 }
 
-export function Notifications({ onMessages, onReceived, onUpdate }: Props) {
+/** One row of Notifications: a review, vouch or report that came, or one of the person's entries a market outgrew, and when. */
+type Row = { time: number; notice: Notice } | { time: number; outgrown: Posted; label: string; address: string }
+
+export function Notifications({ onMessages, onReviews, onUpdate }: Props) {
   const list = useProfiles()
   const { messages } = useNews(list)
   // Read by the frame as the screen opens, and held in the page meanwhile.
@@ -54,9 +59,16 @@ export function Notifications({ onMessages, onReceived, onUpdate }: Props) {
     }
     if (Object.keys(marks).length) saveSeen(marks)
   }, [newestOf.join(',')])
-  const rows = notices(list, rated, since)
-  const updates = list.flatMap((p) => (outgrown[p.address] ?? []).map((posted) => ({ p, posted })))
   const label = (address: string) => list.find((p) => p.address === address)?.label ?? ''
+  const rows: Row[] = [
+    ...notices(list, rated, since).map((notice) => ({ time: notice.received.time ?? 0, notice })),
+    ...list.flatMap((p) => (outgrown[p.address] ?? []).map((posted) => ({ time: posted.time, outgrown: posted, label: p.label, address: p.address }))),
+  ].sort((a, b) => b.time - a.time)
+  const now = Date.now()
+  const groups = [
+    { words: 'Today', rows: rows.filter((r) => !newDay(now, r.time)) },
+    { words: 'Earlier', rows: rows.filter((r) => newDay(now, r.time)) },
+  ].filter((g) => g.rows.length > 0)
   const unreached = list.some((p) => {
     const r = rated[p.address]
     return r && 'failed' in r
@@ -67,42 +79,54 @@ export function Notifications({ onMessages, onReceived, onUpdate }: Props) {
       <Top right={<MessagesButton count={messages} onOpen={onMessages} />}>
         <h1>Notifications</h1>
       </Top>
-      <div className="rows">
-        {updates.map(({ p, posted }) => {
-          const line = lineOf(p.label, posted)
-          return (
-            <button key={`${p.address}/${posted.path}`} className="row said-row" onClick={() => onUpdate(p.address, posted)}>
-              <Avatar label={p.label} />
-              <span className="two">
-                <strong>{update(posted)}</strong>
-                {line && <span className="said-text">{line}</span>}
-                <span>
-                  <Named label={p.label} />
-                </span>
-              </span>
-            </button>
-          )
-        })}
-        {rows.map((n) => (
-          <button key={n.received.address} className="row said-row" onClick={() => onReceived(n.on, n.received.address)}>
-            <Avatar label={label(n.on)} />
-            <span className="two">
-              <span>
-                <SaidChip kind={n.received.kind} score={n.received.body.score} />
-              </span>
-              {typeof n.received.body.text === 'string' && n.received.body.text && <span className="said-text">{n.received.body.text}</span>}
-              <span>
-                <Named label={label(n.on)} />
-              </span>
-            </span>
-            <span className="aside">
-              {n.received.time !== undefined && ago(n.received.time)}
-              {n.fresh && <Dot />}
-            </span>
-          </button>
-        ))}
-      </div>
-      {unreached ? <p className="line">Can't reach the index.</p> : rows.length === 0 && updates.length === 0 && read && <p className="line">Nothing yet.</p>}
+      {groups.map((g) => (
+        <section key={g.words} className="stack">
+          <h2>{g.words}</h2>
+          <div className="rows">
+            {g.rows.map((r) =>
+              'notice' in r ? (
+                <Came key={r.notice.received.address} n={r.notice} label={label(r.notice.on)} onOpen={() => onReviews(r.notice.on)} />
+              ) : (
+                <button key={`${r.address}/${r.outgrown.path}`} className="nrow" onClick={() => onUpdate(r.address, r.outgrown)}>
+                  <span className="sq sun">
+                    <Icon name="warning" fill />
+                  </span>
+                  <span className="grow">
+                    <span className="nrow-head">
+                      <strong>{needs(r.label, r.outgrown)}</strong>
+                    </span>
+                    <span className="said-text">The {marketWords(pairOf(r.label).market)} market changed. Tap to fix it.</span>
+                  </span>
+                </button>
+              ),
+            )}
+          </div>
+        </section>
+      ))}
+      {unreached ? <p className="line">Can't reach the index.</p> : rows.length === 0 && read && <p className="line">Nothing yet.</p>}
     </main>
+  )
+}
+
+/** A review, vouch or report that came to the profile of `label`: who wrote it, what it is, when, its score or chip, what they wrote. */
+function Came({ n, label, onOpen }: { n: Notice; label: string; onOpen: () => void }) {
+  const r = n.received
+  return (
+    <button className="nrow" onClick={onOpen}>
+      <WhoAvatar address={r.writer} />
+      <span className="grow">
+        <span className="nrow-head">
+          <strong>
+            {kindWords(r.kind, label)} on your <Named label={label} />
+          </strong>
+          {r.time !== undefined && <span className="xs">{ago(r.time)}</span>}
+        </span>
+        <span>
+          <SaidChip kind={r.kind} score={r.body.score} />
+        </span>
+        {typeof r.body.text === 'string' && r.body.text && <span className="said-text">{r.body.text}</span>}
+      </span>
+      {n.fresh && <Dot />}
+    </button>
   )
 }
