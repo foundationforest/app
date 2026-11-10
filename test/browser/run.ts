@@ -33,9 +33,10 @@
 //     held), back, and Not now; Use Forest from your AI, whose Connect opens
 //     Connect an AI: three steps (sign in now), no links, Copy copying the connector's address; its
 //     profile entry on the host, its verification checking as any reader checks it; its market's
-//     avatar, solid, a tutor offering; the selfie check's badge, a face on mint, which, tapped on a
-//     card, says "Verified with a selfie" and opens nothing; its name, Tutoring tutor, the market in
-//     bold and the role muted, as on every name below; under it, one line, its reviews; at its top
+//     avatar, solid, a tutor offering; the selfie check's badge, a face on mint, its words its label
+//     and title, which, tapped on a card, opens the profile as the card does, and on the profile's
+//     header, where it stands alone, says "Verified with a selfie"; its name, Tutoring tutor, the
+//     market in bold and the role muted, as on every name below; under it, one line, its reviews; at its top
 //     right, Messages, its own icon and no number while nothing is new, then Share: Share copies its
 //     page on the index where there is no share sheet, and hands the sheet that page where there
 //     is; Home with the mark, Search Forest opening the index in a new tab, no Messages, the three
@@ -157,8 +158,9 @@
 //     through the verifier's own stand-in for Stripe (its test card named first), the payment kept
 //     on the device through Stripe's page; the check in its own tab; one unlock; both verifications
 //     on every profile, and the ID check's solid badge on every card, the profile's title, To and
-//     From, You's ID row (tapped: "Verified with ID") and the connect page's ticks; a student's
-//     avatar light, a tint of its market's color.
+//     From, You's ID row (its title "Verified with ID", a tap there showing nothing of its own) and
+//     the connect page's ticks; a student's avatar light, a tint of its market's color. Every tick
+//     and card, here and above, is tapped on the row itself, as a person taps it.
 // 16. The seed held 5 minutes after the last action, on the page's clock: then Send shows its unlock
 //     icon again.
 // 17. A declined check: one red line, and Start again opens a new check that passes.
@@ -187,7 +189,7 @@ import { loadMarkets } from '../../markets/build/dist/index.js'
 import { type Served, serve } from '../../services/mcp/src/server.ts'
 import { App } from '../../services/mcp/test/app.ts'
 import { REDIRECT, aiApp, lesson } from '../../services/mcp/test/setup.ts'
-import { colorOf } from '../../src/colors.ts'
+import { colorIn, colorsFor } from '../../src/colors.ts'
 import { type Running, freePort, startServices } from './services.ts'
 import { type Tiles, standInTiles } from './tiles.ts'
 import { serveLikeVercel } from './vercel.ts'
@@ -331,6 +333,8 @@ const ID = { id: true, icon: 'identification-card', ground: true }
 /** A profile's avatar as drawn: its market's color (colors.ts), solid or light, and its icon. */
 const avatarOf = (av: Locator) =>
   av.evaluate((el) => ({ light: el.classList.contains('look'), h: getComputedStyle(el).getPropertyValue('--h').trim(), ground: getComputedStyle(el).backgroundColor, icon: el.querySelector('svg')?.dataset.icon }))
+/** A market's color, as the app gives it: the directory walked in its order (colors.ts). */
+const colorOf = (market: string) => colorIn(colorsFor(loadMarkets().directory.markets.map((m) => m.name)), market)
 /** `#3d76c9` as the page computes it: rgb(61, 118, 201). */
 const rgbOf = (hex: string) => `rgb(${[1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)).join(', ')})`
 
@@ -355,9 +359,9 @@ const asks = async (b: Locator) => (await b.locator('.unlock').count()) === 1
 /** The round Messages button at the top right of the screen: the way into messages, its number only when some are new. */
 const inbox = (page: Page) => page.locator('.top-right').getByRole('button', { name: /^Messages/ })
 
-/** A profile's messages, from its card on Home (tapped on its name: a tap on its badge only says its words) and the round button at its top. */
+/** A profile's messages, from its card on Home and the round button at its top. */
 async function messagesOf(page: Page, card: string) {
-  await page.locator('button.card', { hasText: card }).locator('.named').click()
+  await page.locator('button.card', { hasText: card }).click()
   await inbox(page).click()
   await page.getByRole('heading', { name: card }).waitFor()
 }
@@ -578,7 +582,7 @@ function jpegSize(b: Uint8Array): { width: number; height: number } {
 async function untilLine(page: Page, card: string, text: string) {
   const until = Date.now() + 90_000
   for (;;) {
-    await page.locator('button.card', { hasText: card }).locator('.named').click()
+    await page.locator('button.card', { hasText: card }).click()
     const line = page.locator('button.link').first()
     if (((await line.textContent({ timeout: 10_000 })) ?? '').includes(text)) return line
     if (Date.now() > until) throw new Error(`${card}'s rating line never said ${text}`)
@@ -831,7 +835,7 @@ test("the first profile, in two steps: back to Home and in again; a search, a ma
   await shot(page, 'connect-ai')
   // Back: Home, and Add a second passkey and Use Forest from your AI never again.
   await button(page, 'Back').click()
-  await page.locator('button.card', { hasText: 'Tutoring tutor' }).locator('.named').click()
+  await page.locator('button.card', { hasText: 'Tutoring tutor' }).click()
   await badge(page.getByRole('heading', { name: 'Tutoring tutor' })).waitFor()
   await named(page.getByRole('heading', { name: 'Tutoring tutor' }), 'Tutoring tutor')
   await page.getByRole('button', { name: /No reviews yet/ }).waitFor()
@@ -877,12 +881,18 @@ test("the first profile, in two steps: back to Home and in again; a search, a ma
   assert.deepEqual(await page.locator('.tabbar button').allTextContents(), ['Home', 'Notifications', 'You'])
   assert.equal(await page.locator('.tabbar button[aria-current="page"] .icon').getAttribute('data-icon'), 'house')
   await shot(page, 'home')
-  // The badge, tapped on its card: its words, for a moment; the card stays shut.
+  // The badge on its card takes no tap of its own: its words are its label and its title, and a tap on it opens the profile, as the card does.
+  assert.equal(await badge(card).getAttribute('title'), 'Verified with a selfie')
   await badge(card).click()
+  const title = page.getByRole('heading', { name: 'Tutoring tutor' })
+  await title.waitFor()
+  assert.equal(await page.getByText('Verified with a selfie', { exact: true }).count(), 0, 'its words not shown')
+  // On the profile's header, where it stands alone, a tap says its words for a moment.
+  await badge(title).click()
   await page.getByText('Verified with a selfie', { exact: true }).waitFor()
-  assert.equal(await page.getByRole('heading', { name: 'Tutoring tutor' }).count(), 0, 'the card not opened')
-  await shot(page, 'home-badge-tapped')
+  await shot(page, 'profile-badge-tapped')
   await page.getByText('Verified with a selfie', { exact: true }).waitFor({ state: 'detached' })
+  await button(page, 'Back').click()
   // A role made says Yours, quietly, and opens its profile; one not made shows its +; back is the roles again.
   await button(page, 'New profile').click()
   await button(page, 'Tutoring').click()
@@ -954,7 +964,7 @@ const entriesOf = async (address: string, kind: string) => [...liveContent(await
 test('two people: one posts an offer, its price per hour, the place only for sessions in person, a contact, asking nothing while the seed is held; the other opens its link, messages it, gets the reply, and reviews it from the thread; the Notifications tab counts it, and Messages', async () => {
   const { page, counts } = first
   // The offer, from the tutor's profile, in the market's own fields; a price per one of its field's values.
-  await page.locator('button.card', { hasText: 'Tutoring tutor' }).locator('.named').click()
+  await page.locator('button.card', { hasText: 'Tutoring tutor' }).click()
   await button(page, 'New offer').click()
   await page.getByRole('heading', { name: 'New offer' }).waitFor()
   await page.getByLabel('Description').fill(OFFER)
@@ -1078,7 +1088,7 @@ test('two people: one posts an offer, its price per hour, the place only for ses
   await page.locator('.tabbar .count', { hasText: '1' }).waitFor({ timeout: 45_000 })
   assert.equal(await page.locator('.tabbar .count').getAttribute('aria-label'), '1 new', 'the tab counts the message too')
   await shot(page, 'home-message')
-  await page.locator('button.card', { hasText: 'Tutoring tutor' }).locator('.named').click()
+  await page.locator('button.card', { hasText: 'Tutoring tutor' }).click()
   await inbox(page).locator('.count', { hasText: '1' }).waitFor()
   assert.equal(await inbox(page).getAttribute('aria-label'), 'Messages, 1 new')
   assert.deepEqual(await page.locator('.lines button.link').allTextContents(), ['No reviews yet'], 'no Messages line')
@@ -1667,7 +1677,7 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   // answer for a site never granted): the map opens on the whole world, with no circle, no Done, no
   // button for the location and no line. A tap puts the circle there, round the centre it keeps, and
   // the map fits it; a drag carries it east, more than a kept centre's reach, so a second is kept.
-  await buyer.page.locator('button.card', { hasText: 'Clothing buyer' }).locator('.named').click()
+  await buyer.page.locator('button.card', { hasText: 'Clothing buyer' }).click()
   await button(buyer.page, 'New request').click()
   const map = await placeScreen(buyer.page, 'Location')
   assert.equal(await map.getByRole('button', { name: 'Your location' }).count(), 0, 'told no before: no button')
@@ -1812,7 +1822,7 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   await page.locator('.tabbar .count', { hasText: '4' }).waitFor({ timeout: 45_000 })
   await card.locator('.chip.new', { hasText: '4 new' }).waitFor()
   await shot(page, 'home-rated')
-  await page.locator('button.card', { hasText: 'Clothing seller' }).locator('.named').click()
+  await page.locator('button.card', { hasText: 'Clothing seller' }).click()
   const line = page.locator('button.link').first()
   // The profile's Feedback marks the new ones; seeing them, they are new no more.
   await line.click()
@@ -1841,7 +1851,7 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   await button(page, 'Back').click()
   await page.locator('.tabbar .count', { hasText: '1' }).waitFor()
   assert.equal(await card.locator('.chip.new').textContent(), '1 new', "the tab and the card counting the message alone now, the three seen in the profile's Feedback")
-  await page.locator('button.card', { hasText: 'Clothing seller' }).locator('.named').click()
+  await page.locator('button.card', { hasText: 'Clothing seller' }).click()
   await button(page, '10.0 · 1 review').click()
   await received.waitFor()
   assert.equal(await page.locator('button.said-row .dot').count(), 0, 'seen once: new no more')
@@ -1889,7 +1899,7 @@ test('a listing an older market shaped: its row says Update this listing, and No
   const [outcome] = await write([services.host], [entry(main, path, old, nextTime(Date.now(), view, path))])
   assert.ok(outcome?.results.length === 1 && outcome.results[0]!.ok, 'written')
 
-  await page.locator('button.card', { hasText: 'Clothing seller' }).locator('.named').click()
+  await page.locator('button.card', { hasText: 'Clothing seller' }).click()
   const row = page.locator('.listing-row', { hasText: TROUSERS })
   await row.getByText('Update this listing', { exact: true }).waitFor()
   assert.equal(await page.locator('.listing-row', { hasText: COAT }).getByText('Update this listing').count(), 0, 'the coat fits')
@@ -1936,7 +1946,7 @@ test('a listing an older market shaped: its row says Update this listing, and No
   assert.deepEqual([body.description, body.price, body.kind, body.wearer, body.waist, body.contact, body.location.radiusKm, body.location.area], [TROUSERS, { amount: '25', currency: 'USD' }, 'trousers', ['women'], 'w30', '@coats', 2, undefined])
   assert.deepEqual([body.size, body.delivery], [undefined, undefined], "what didn't fit, gone")
   await button(page, 'Home').click()
-  await page.locator('button.card', { hasText: 'Clothing seller' }).locator('.named').click()
+  await page.locator('button.card', { hasText: 'Clothing seller' }).click()
   await page.locator('.listing-row', { hasText: TROUSERS }).waitFor()
   assert.equal(await page.locator('.listing-row', { hasText: TROUSERS }).getByText('Update this listing').count(), 0, 'nor on its row')
   await button(page, 'Back').click()
@@ -1984,7 +1994,7 @@ const VOUCH = 'Real, and there every week.'
 
 test("no review of one's own profiles: from their student, about their tutor, refused before the unlock in one red line; someone else's vouch shows first in Notifications, new; opened, it is seen", async () => {
   const { page, counts } = first
-  await page.locator('button.card', { hasText: 'Tutoring student' }).locator('.named').click()
+  await page.locator('button.card', { hasText: 'Tutoring student' }).click()
   await button(page, 'Review').click()
   await page.getByLabel('Their address').fill(tutor)
   const line = page.getByText("That's one of your profiles.", { exact: true })
@@ -2012,7 +2022,7 @@ test("no review of one's own profiles: from their student, about their tutor, re
   await button(other.page, 'Not now').click()
   await other.page.getByRole('heading', { name: 'Use Forest from your AI' }).waitFor()
   await button(other.page, 'Not now').click()
-  await other.page.locator('button.card', { hasText: 'Tutoring student' }).locator('.named').click()
+  await other.page.locator('button.card', { hasText: 'Tutoring student' }).click()
   await button(other.page, 'Review').click()
   await other.page.getByLabel('Their address').fill(tutor)
   await badge(other.page.locator('.who', { hasText: 'Tutoring tutor' })).waitFor()
@@ -2076,7 +2086,7 @@ async function backToTheApp(page: Page) {
   await page.goto(APP)
 }
 
-/** The profiles' checkboxes, by their words, and whether each is ticked. Each is tapped on its name: a tap on its badge only says its words. */
+/** The profiles' checkboxes, by their words, and whether each is ticked. */
 const ticks = async (page: Page) => Object.fromEntries(await Promise.all((await page.getByRole('checkbox').all()).map(async (c) => [await c.textContent(), await c.getAttribute('aria-checked')])))
 
 let ai: AiApp
@@ -2094,7 +2104,7 @@ test("an AI app's login: the connect page, its name and its redirect's host, the
   for (const words of ['Clothing seller', 'Tutoring student', 'Tutoring tutor']) await badge(page.getByRole('checkbox', { name: words })).waitFor()
   assert.equal(await iconsInTheirButtonsColor(page), 1, "Connect's unlock icon, in its text color")
   await shot(page, 'connect')
-  await page.getByRole('checkbox', { name: 'Tutoring tutor' }).locator('.named').click()
+  await page.getByRole('checkbox', { name: 'Tutoring tutor' }).click()
   const asked = counts.asserted
   const code = backToTheAiApp(page)
   await button(page, 'Connect').click()
@@ -2107,7 +2117,7 @@ test("an AI app's login: the connect page, its name and its redirect's host, the
   assert.deepEqual([profile.body.market, profile.body.role], ['tutoring', 'tutor'])
   await tool(ai, 'write', { label: 'tutoring/tutor', path: 'listing/by-the-ai', body: lesson(BY_THE_AI) })
   await backToTheApp(page)
-  await page.locator('button.card', { hasText: 'Tutoring tutor' }).locator('.named').click()
+  await page.locator('button.card', { hasText: 'Tutoring tutor' }).click()
   await page.locator('.listing-row', { hasText: AI_ROW }).waitFor()
   await shot(page, 'profile-ai-listing')
 
@@ -2187,7 +2197,7 @@ test('a whole visit asks exactly once: post, edit, message, open messages, revie
   await page.locator('button.row', { hasText: 'An AI app' }).click()
   await page.getByRole('heading', { name: 'An AI app' }).waitFor()
   for (const ticked of [true, false]) {
-    await page.getByRole('checkbox', { name: 'Clothing seller' }).locator('.named').click()
+    await page.getByRole('checkbox', { name: 'Clothing seller' }).click()
     await page.getByRole('checkbox', { name: 'Clothing seller', checked: ticked }).waitFor({ timeout: 60_000 })
     await button(page, 'Disconnect').and(page.locator(':enabled')).waitFor()
     await away(page)
@@ -2196,7 +2206,7 @@ test('a whole visit asks exactly once: post, edit, message, open messages, revie
   // The visit's listing deleted, which asks nothing either.
   await button(page, 'Back').click()
   await button(page, 'Home').click()
-  await page.locator('button.card', { hasText: 'Tutoring tutor' }).locator('.named').click()
+  await page.locator('button.card', { hasText: 'Tutoring tutor' }).click()
   await edited.click()
   await button(page, 'Delete').click()
   await button(page, 'Delete').click()
@@ -2205,7 +2215,7 @@ test('a whole visit asks exactly once: post, edit, message, open messages, revie
   assert.equal(counts.asserted - asked, 1, 'the whole visit, one unlock')
   // The page closed, as the next tests start: the seed dropped.
   await page.goto(APP)
-  await page.locator('button.card', { hasText: 'Tutoring tutor' }).locator('.named').click()
+  await page.locator('button.card', { hasText: 'Tutoring tutor' }).click()
   say('a whole visit: post, edit, open messages, message, review, an AI app ticked and unticked, a listing deleted, one unlock')
 })
 
@@ -2229,7 +2239,7 @@ test('You, AI apps: the AI app, its day and its one profile, kept ticked while i
   /** One tick, and the AI's profiles after it, with no new login; `unlocks`, how many it asked: one, or none with the seed held. */
   const tickOne = async (words: string, ticked: boolean, profiles: string[], unlocks: number) => {
     const asked = counts.asserted
-    await page.getByRole('checkbox', { name: words }).locator('.named').click()
+    await page.getByRole('checkbox', { name: words }).click()
     await page.getByRole('checkbox', { name: words, checked: ticked }).waitFor({ timeout: 60_000 })
     await button(page, 'Disconnect').and(page.locator(':enabled')).waitFor()
     assert.equal(await page.locator('p.line').count(), 0, (await page.locator('p.line').allTextContents()).join(' '))
@@ -2250,7 +2260,7 @@ test('You, AI apps: the AI app, its day and its one profile, kept ticked while i
   await assert.rejects(ai.client.callTool({ name: 'my_profiles', arguments: {} }), (err: Error) => err.constructor.name === 'UnauthorizedError', 'its next call refused')
   assert.deepEqual(JSON.parse((await kept(page))['forest.connections']!), [])
   await button(page, 'Home').click()
-  await page.locator('button.card', { hasText: 'Tutoring tutor' }).locator('.named').click()
+  await page.locator('button.card', { hasText: 'Tutoring tutor' }).click()
   await page.locator('.listing-row', { hasText: AI_ROW }).waitFor()
   await button(page, 'Back').click()
   await ai.client.close()
@@ -2506,7 +2516,7 @@ test('the ID check through the stand-in Stripe: consent word for word, paid, che
   assert.deepEqual([student.light, student.h, student.icon], [true, colorOf('tutoring'), 'graduation-cap'])
   assert.notEqual(student.ground, rgbOf(colorOf('tutoring')), 'a tint of it, not the color itself')
   // The same badge everywhere: the profile's title; New message's To, who it is, and From.
-  await page.locator('button.card', { hasText: 'Tutoring tutor' }).locator('.named').click()
+  await page.locator('button.card', { hasText: 'Tutoring tutor' }).click()
   await badge(page.getByRole('heading', { name: 'Tutoring tutor' }), 'id').waitFor()
   assert.deepEqual(await drawnAs(badge(page.getByRole('heading', { name: 'Tutoring tutor' }), 'id')), ID)
   await shot(page, 'profile-id')
@@ -2525,8 +2535,11 @@ test('the ID check through the stand-in Stripe: consent word for word, paid, che
   await badge(id, 'id').waitFor()
   assert.deepEqual(await drawnAs(badge(page.locator('div.row', { hasText: 'Face' }))), SELFIE, "Face, the selfie check's badge")
   assert.equal(await button(page, '+ $5').count(), 0)
+  // In a row, its words are its label and its title; a tap shows nothing of its own.
+  assert.equal(await badge(id, 'id').getAttribute('title'), 'Verified with ID')
   await badge(id, 'id').click()
-  await page.getByText('Verified with ID', { exact: true }).waitFor()
+  await page.waitForTimeout(300)
+  assert.equal(await page.getByText('Verified with ID', { exact: true }).count(), 0, 'no words of its own in a row')
   await shot(page, 'settings-id')
   // The connect page's ticks, from an AI app's login: each profile with the ID check's badge.
   const login = await aiLogin()

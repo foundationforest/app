@@ -1,15 +1,15 @@
 // The pieces every screen shares: the one-line note that says why something can't be done (red when
 // what was given is wrong, quiet when something is still missing), an action's busy and its note;
 // the two badges, drawn once here, how a profile shows it is verified, by its strongest check (a
-// selfie check's light, an ID check's solid, whose words show only when tapped); the unlock icon,
-// the fingerprint before the word on a labeled button that asks the passkey, only while a tap will
-// ask, never on a list row; the round way into messages, always there, with how many are new once
-// any is; a checkbox's box, the dot that marks what is new, a rating with its star, the chips of a
-// review, vouch or report, a profile's name (its market in bold, then its role, muted: Clothing
-// seller), Search Forest (the index, in a new tab), the bars, how long ago something was, the day
-// something happened, and the time of day.
+// selfie check's light, an ID check's solid; their words a label, shown on a tap only where a badge
+// stands alone); the unlock icon, the fingerprint before the word on a labeled button that asks the
+// passkey, only while a tap will ask, never on a list row; the round way into messages, always
+// there, with how many are new once any is; a checkbox's box, the dot that marks what is new, a
+// rating with its star, the chips of a review, vouch or report, a profile's name (its market in
+// bold, then its role, muted: Clothing seller), Search Forest (the index, in a new tab), the bars,
+// how long ago something was, the day something happened, and the time of day.
 
-import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
+import { type MouseEvent, type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 
 import { config } from './config.ts'
 import { useHeld } from './hooks.ts'
@@ -71,10 +71,12 @@ const VERIFIED: Record<Check, string> = { face: 'Verified with a selfie', id: 'V
 /**
  * How a profile is verified, by its strongest check: the one way the app says so, one of two badges.
  * A selfie check's is light, a face on mint; an ID check's solid, an ID card on the forest green.
- * Tapped, it says its words for a moment, above it; the tap goes no further, so a card or row it
- * sits in does not open. A span, not a button, so it can sit inside one. `big` beside a title.
+ * Its words are its label for screen readers and its title on hover. Inside a row or a card it
+ * takes no tap of its own: tapped, it does what the row or card does (tick, open). Only where it
+ * stands alone (`alone`: a profile's header) does a tap say its words for a moment, above it. A
+ * span, not a button, so it can sit inside one. `big` beside a title.
  */
-export function Verified({ check, big = false }: { check: Check; big?: boolean }) {
+export function Verified({ check, big = false, alone = false }: { check: Check; big?: boolean; alone?: boolean }) {
   const [at, setAt] = useState<{ x: number; y: number } | null>(null)
   useEffect(() => {
     if (!at) return
@@ -85,17 +87,17 @@ export function Verified({ check, big = false }: { check: Check; big?: boolean }
   const id = check === 'id'
   return (
     <span
-      className={`vb${id ? ' id' : ''}${big ? ' lg' : ''}`}
+      className={`vb${id ? ' id' : ''}${big ? ' lg' : ''}${alone ? ' alone' : ''}`}
       role="img"
       aria-label={words}
       title={words}
-      onClick={(e) => {
-        e.stopPropagation()
-        e.preventDefault()
-        const r = e.currentTarget.getBoundingClientRect()
-        // Its middle, kept far enough from the screen's edges for its words to fit.
-        setAt({ x: Math.min(Math.max(r.left + r.width / 2, 90), innerWidth - 90), y: r.top })
-      }}
+      {...(alone && {
+        onClick: (e: MouseEvent<HTMLSpanElement>) => {
+          const r = e.currentTarget.getBoundingClientRect()
+          // Its middle, kept far enough from the screen's edges for its words to fit.
+          setAt({ x: Math.min(Math.max(r.left + r.width / 2, 90), innerWidth - 90), y: r.top })
+        },
+      })}
     >
       <Icon name={id ? 'identification-card' : 'smiley'} fill />
       {at && (

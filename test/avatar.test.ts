@@ -1,12 +1,17 @@
-// A profile's avatar: its market's color from its name alone, the same on every device; its icon from
-// a small table, else its name's first letter; solid when its role offers, light when it requests.
-// Nothing here ties the table or the colors to the directory's names, which may change.
+// A profile's avatar: its market's color from the directory, walked in its order, each market its
+// name's first choice or the next one free, the same on every device; its icon from a small table,
+// else its name's first letter; solid when its role offers, light when it requests. Nothing here
+// ties the table or the colors to the directory's names, which may change.
 
 import { renderToStaticMarkup } from 'react-dom/server'
 import { expect, test } from 'vitest'
 
-import { Avatar } from '../src/avatar.tsx'
-import { PALETTE, colorOf, fnv1a } from '../src/colors.ts'
+import { Avatar, colorOf } from '../src/avatar.tsx'
+import { PALETTE, colorIn, colorsFor, fnv1a } from '../src/colors.ts'
+import { markets } from '../src/markets.ts'
+
+/** The directory's markets, in its order. */
+const names = markets.directory.markets.map((m) => m.name)
 
 test('FNV-1a, 32 bits, over the UTF-8 bytes: its published values, so a market has one color everywhere', () => {
   expect(fnv1a('')).toBe(0x811c9dc5)
@@ -14,13 +19,44 @@ test('FNV-1a, 32 bits, over the UTF-8 bytes: its published values, so a market h
   expect(fnv1a('foobar')).toBe(0xbf9cf968)
 })
 
-test('the same name always gives the same color, and any name lands in the palette', () => {
-  expect(PALETTE).toHaveLength(10)
-  for (const name of ['tutoring', 'clothing', 'pottery', 'dog-walking', 'café', '', 'x'.repeat(200)]) {
-    expect(colorOf(name), name).toBe(colorOf(name))
-    expect(PALETTE, name).toContain(colorOf(name))
-  }
+test("the directory's markets each get a color of their own, up to ten: today's eight, eight colors", () => {
+  const colors = names.map(colorOf)
+  expect(new Set(colors).size).toBe(Math.min(names.length, PALETTE.length))
+  for (const color of colors) expect(PALETTE).toContain(color)
 })
+
+test('the same directory always gives the same colors: each market its first choice, else the next one free', () => {
+  expect(colorsFor(names)).toEqual(colorsFor([...names]))
+  expect(Object.fromEntries(names.map((n) => [n, colorOf(n)]))).toEqual(colorsFor(names))
+  expect(colorsFor(names)[names[0]!], 'the first market, its first choice').toBe(PALETTE[fnv1a(names[0]!) % PALETTE.length])
+  // Two names whose first choices are the same: the second takes the next color.
+  const [a, b] = sameFirstChoice()
+  const at = fnv1a(a) % PALETTE.length
+  expect(colorsFor([a, b])).toEqual({ [a]: PALETTE[at], [b]: PALETTE[(at + 1) % PALETTE.length] })
+})
+
+test('past ten markets, colors repeat: each ten in a round of its own', () => {
+  const many = Array.from({ length: 25 }, (_, i) => `market-${i}`)
+  const colors = colorsFor(many)
+  for (const round of [many.slice(0, 10), many.slice(10, 20)]) expect(new Set(round.map((n) => colors[n])).size).toBe(10)
+  expect(new Set(many.slice(20).map((n) => colors[n])).size).toBe(5)
+})
+
+test('a market the directory does not list takes its first choice', () => {
+  expect(colorOf('pottery')).toBe(PALETTE[fnv1a('pottery') % PALETTE.length])
+  expect(colorIn({}, 'pottery')).toBe(colorOf('pottery'))
+})
+
+/** Two names with the same first choice. */
+function sameFirstChoice(): [string, string] {
+  const seen = new Map<number, string>()
+  for (let i = 0; ; i++) {
+    const name = `m${i}`
+    const at = fnv1a(name) % PALETTE.length
+    if (seen.has(at)) return [seen.get(at)!, name]
+    seen.set(at, name)
+  }
+}
 
 test('a market the icon table lists shows its icon; one it does not shows its first letter', () => {
   const listed = renderToStaticMarkup(Avatar({ label: 'tutoring/tutor' }))

@@ -849,7 +849,8 @@ span.chip .icon {
   font-size: 32px;
 }
 
-/* The two badges: a selfie check's light, an ID check's solid; tapped, its words, above it. */
+/* The two badges: a selfie check's light, an ID check's solid; tapped where one stands alone, its
+   words, above it. */
 .vb {
   position: relative;
   display: inline-grid;
@@ -860,6 +861,9 @@ span.chip .icon {
   border-radius: 7px;
   background: var(--mint);
   color: var(--on-mint);
+}
+
+.vb.alone {
   cursor: pointer;
 }
 

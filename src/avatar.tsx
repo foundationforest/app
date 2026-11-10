@@ -1,14 +1,21 @@
 // A profile's avatar: its market's icon on its market's color. Solid, a white icon on the color, when
 // its role's listings are offers; light, the icon in the color on a tint of it, when they are
-// requests. A market's color is its name's (colors.ts). Its icon comes from a small table, a nicety:
-// a market the table doesn't list shows its name's first letter. The table may hold names the
-// directory no longer has, and miss new ones.
+// requests. A market's color comes from the directory, walked in its order (colors.ts), so markets
+// differ up to ten. Its icon comes from a small table, a nicety: a market the table doesn't list
+// shows its name's first letter. The table may hold names the directory no longer has, and miss
+// new ones.
 
 import type { CSSProperties } from 'react'
 
-import { colorOf } from './colors.ts'
+import { colorIn, colorsFor } from './colors.ts'
 import { Icon, type IconName } from './icons.tsx'
-import { pairOf } from './markets.ts'
+import { markets, pairOf } from './markets.ts'
+
+/** Every market's color, from the directory in its order. */
+const COLORS = colorsFor(markets.directory.markets.map((m) => m.name))
+
+/** A market's color: the directory's, else its first choice. */
+export const colorOf = (market: string): string => colorIn(COLORS, market)
 
 /** The markets with an icon of their own. */
 const ICONS: Record<string, IconName> = {

@@ -78,7 +78,7 @@ export function Profile({ address, onBack, onListing, onFeedback, onReview, onMe
           <Avatar label={profile.label} size="lg" />
           <h1 className="profile-title">
             <Named label={profile.label} />
-            {check && <Verified check={check} big />}
+            {check && <Verified check={check} big alone />}
           </h1>
         </div>
         <div className="lines">
