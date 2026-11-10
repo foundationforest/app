@@ -1,5 +1,5 @@
 // One thread: the messages between one of the person's profiles and another. At the top, who it is
-// from (their market and role, the shield when their verification checks) with which of the
+// from (their avatar, market and role, the badge when their verification checks) with which of the
 // person's profiles it is with under it, and Review, for a review, a vouch or a report about them;
 // then the messages, each with the time it was sent, quietly, and a line with the day wherever the
 // day changes; and the reply, in one row: the text box and a round Send, which shows its own icon
@@ -14,10 +14,12 @@ import { config } from '../config.ts'
 import { passkey } from '../device.ts'
 import { send } from '../flows/inbox.ts'
 import { useOpened, useProfiles } from '../hooks.ts'
+import { Icon } from '../icons.tsx'
+import { Loader } from '../mark.tsx'
 import { holdThread, looked } from '../opened.ts'
 import { useOpening } from '../opening.ts'
 import { withSeed } from '../passkey.ts'
-import { Line, Named, SendIcon, Spinner, Top, UnlockIcon, clock, day, newDay, useAction } from '../ui.tsx'
+import { Line, Named, Top, UnlockIcon, clock, day, newDay, useAction } from '../ui.tsx'
 import { Who } from './Who.tsx'
 
 type Props = { mine: string; them: string; onBack: () => void; onReview: (mine: string, them: string) => void }
@@ -78,17 +80,17 @@ export function Thread({ mine, them, onBack, onReview }: Props) {
           <div className="composer">
             <textarea aria-label="Reply" rows={1} value={text} onChange={(e) => setText(e.target.value)} />
             <button className="primary round" aria-label="Send" disabled={reply.busy || !text.trim()} onClick={() => reply.run()}>
-              {reply.busy ? <Spinner /> : <SendIcon />}
+              {reply.busy ? <Loader /> : <Icon name="paper-plane-right" fill />}
             </button>
           </div>
         </>
       ) : seedHeld && !open.note ? (
-        <Spinner />
+        <Loader big />
       ) : (
         <>
           <Line note={open.note} />
           <button className="primary" disabled={open.busy} onClick={() => open.run()}>
-            {open.busy ? <Spinner /> : <><UnlockIcon /> Open</>}
+            {open.busy ? <Loader /> : <><UnlockIcon /> Open</>}
           </button>
         </>
       )}

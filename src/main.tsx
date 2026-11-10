@@ -1,4 +1,6 @@
-import '@fontsource-variable/manrope'
+import '@fontsource-variable/figtree'
+// Bricolage with its optical-size axis, so a title is drawn with the cut made for its size.
+import '@fontsource-variable/bricolage-grotesque/opsz.css'
 import './theme.css'
 
 import { createRoot } from 'react-dom/client'

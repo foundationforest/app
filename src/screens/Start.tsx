@@ -25,10 +25,10 @@ import { passkeys } from '../device.ts'
 import { follow } from '../flows/seed.ts'
 import { type Entered, enter } from '../flows/start.ts'
 import { drop, hold } from '../held.ts'
-import { Mark } from '../mark.tsx'
+import { Loader, Mark } from '../mark.tsx'
 import { NoAnswer, type Passkey, ask, make, withSeed } from '../passkey.ts'
 import { proveInWorker } from '../proof/prove.ts'
-import { Line, Spinner, UnlockIcon, useAction } from '../ui.tsx'
+import { Line, UnlockIcon, useAction } from '../ui.tsx'
 
 /** How the passkey that let the person in came: just made here (with its manager's AAGUID when it sent one), or from another device. */
 export type How = { made?: { aaguid?: string }; elsewhere?: boolean }
@@ -73,24 +73,24 @@ export function Start({ onEntered, onWords, connecting = false }: Props) {
       <Line note={start.note ?? makeOne.note} />
       {known.length ? (
         <button className="primary" disabled={busy} onClick={() => start.run()}>
-          {start.busy ? <Spinner /> : <><UnlockIcon /> {start.note ? 'Try again' : 'Start'}</>}
+          {start.busy ? <Loader /> : <><UnlockIcon /> {start.note ? 'Try again' : 'Start'}</>}
         </button>
       ) : connecting ? (
         <>
           <button className="primary" disabled={busy} onClick={() => start.run()}>
-            {start.busy ? <Spinner /> : <><UnlockIcon /> I already have one</>}
+            {start.busy ? <Loader /> : <><UnlockIcon /> I already have one</>}
           </button>
           <button className="quiet" disabled={busy} onClick={() => makeOne.run()}>
-            {makeOne.busy ? <Spinner /> : 'Create a passkey'}
+            {makeOne.busy ? <Loader /> : 'Create a passkey'}
           </button>
         </>
       ) : (
         <>
           <button className="primary" disabled={busy} onClick={() => makeOne.run()}>
-            {makeOne.busy ? <Spinner /> : <><UnlockIcon /> Create a passkey</>}
+            {makeOne.busy ? <Loader /> : <><UnlockIcon /> Create a passkey</>}
           </button>
           <button className="quiet" disabled={busy} onClick={() => start.run()}>
-            {start.busy ? <Spinner /> : 'I already have one'}
+            {start.busy ? <Loader /> : 'I already have one'}
           </button>
         </>
       )}

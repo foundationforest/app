@@ -14,7 +14,7 @@
 // dropped, and the person is told which one does.
 //
 // Every passkey added after the first is a backup, as the standard names it (flows/backups.ts),
-// though the screens call them all passkeys: one made from Settings, or on Save a passkey on this
+// though the screens call them all passkeys: one made from You, or on Save a passkey on this
 // device, the passkeys this device knows excluded, so the same manager doesn't keep a second one;
 // or one made by mistake and added to the person's first, on New to Forest?. Its own secret is a
 // seed whose Profiles folder holds the person's seed, which every unlock follows (flows/seed.ts).

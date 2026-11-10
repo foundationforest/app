@@ -12,10 +12,12 @@ import { config } from '../config.ts'
 import { passkey } from '../device.ts'
 import { makeProfile } from '../flows/profile.ts'
 import { useProfiles } from '../hooks.ts'
+import { Icon } from '../icons.tsx'
+import { Loader } from '../mark.tsx'
 import { marketList, roleWords } from '../markets.ts'
 import { withSeed } from '../passkey.ts'
 import { proveInWorker } from '../proof/prove.ts'
-import { Line, PlusIcon, Spinner, Top, useAction } from '../ui.tsx'
+import { Line, Top, useAction } from '../ui.tsx'
 
 type Props = { market?: string; onMarket: (name: string) => void; onMade: (address: string, first: boolean) => void; onOpen: (address: string) => void; onBack: () => void }
 
@@ -43,12 +45,12 @@ export function NewProfile({ market: name, onMarket, onMade, onOpen, onBack }: P
         <Line note={make.note} />
         <div className="rows">
           {market.roles.map((p) => {
-            // The one being made keeps its spinner until its profile opens.
+            // The one being made keeps its loader until its profile opens.
             const had = making === p.label ? undefined : list.find((q) => q.label === p.label)
             return (
               <button key={p.label} className="row" disabled={make.busy} onClick={() => (had ? onOpen(had.address) : make.run(p.label))}>
                 <span>{roleWords(p.role)}</span>
-                {making === p.label ? <Spinner /> : had ? <span className="aside">Yours</span> : <PlusIcon />}
+                {making === p.label ? <Loader /> : had ? <span className="aside">Yours</span> : <Icon name="plus" />}
               </button>
             )
           })}

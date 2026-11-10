@@ -14,9 +14,10 @@ import { linkTo } from '../flows/backups.ts'
 import { follow } from '../flows/seed.ts'
 import { type Entered, enter } from '../flows/start.ts'
 import { hold } from '../held.ts'
+import { Loader } from '../mark.tsx'
 import { ask, withSeed } from '../passkey.ts'
 import { proveInWorker } from '../proof/prove.ts'
-import { Line, Spinner, Top, UnlockIcon, useAction } from '../ui.tsx'
+import { Line, Top, UnlockIcon, useAction } from '../ui.tsx'
 
 type Props = {
   /** The passkey that opened a seed with no stamp. */
@@ -58,7 +59,7 @@ export function NewHere({ id, aaguid, onNew, onIn, onBack }: Props) {
         Yes, I'm new
       </button>
       <button className="quiet" disabled={using.busy} onClick={() => using.run()}>
-        {using.busy ? <Spinner /> : <><UnlockIcon always /> I already use Forest</>}
+        {using.busy ? <Loader /> : <><UnlockIcon always /> I already use Forest</>}
       </button>
     </main>
   )

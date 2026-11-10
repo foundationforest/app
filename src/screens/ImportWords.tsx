@@ -3,8 +3,8 @@
 // quiet while some are missing, red when one is wrong, when they aren't verified, or when they open
 // a different Forest from the one this device lists. Never two seeds on one device: then Forget this
 // device takes the place of Create a passkey, and once it has forgotten, Create a passkey is back.
-// Then a new passkey is added to the seed the words spell as Settings adds one (flows/backups.ts),
-// the seed held for it as after any unlock, and the person is in, as from Start. Unlike Settings', it
+// Then a new passkey is added to the seed the words spell as You adds one (flows/backups.ts),
+// the seed held for it as after any unlock, and the person is in, as from Start. Unlike You's, it
 // excludes none of the passkeys this device knows: after Forget they may be another seed's, and a
 // manager keeping one would refuse this one. The words live in this screen's state alone and are never kept; it has no
 // path of its own, so a reload lands on Start and they never reach the page's history. Back goes to
@@ -18,9 +18,10 @@ import { DifferentForest, seedOfWords } from '../flows/imported.ts'
 import { type Entered, enter } from '../flows/start.ts'
 import { forgetDevice } from '../forget.ts'
 import { drop as dropHeld, hold } from '../held.ts'
+import { Loader } from '../mark.tsx'
 import { NoAnswer, drop, make, withSeed } from '../passkey.ts'
 import { proveInWorker } from '../proof/prove.ts'
-import { Line, Spinner, Top, UnlockIcon, useAction } from '../ui.tsx'
+import { Line, Top, UnlockIcon, useAction } from '../ui.tsx'
 import type { How } from './Start.tsx'
 
 type Props = { onEntered: (entered: Entered, passkey: string, how: How) => void; onBack: () => void }
@@ -90,7 +91,7 @@ export function ImportWords({ onEntered, onBack }: Props) {
         </button>
       ) : (
         <button className="primary" disabled={create.busy} onClick={() => create.run()}>
-          {create.busy ? <Spinner /> : <><UnlockIcon always /> Create a passkey</>}
+          {create.busy ? <Loader /> : <><UnlockIcon always /> Create a passkey</>}
         </button>
       )}
     </main>

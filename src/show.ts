@@ -114,3 +114,6 @@ export const ratingText = (rating: number) => rating.toFixed(1)
 
 /** How many reviews: 1 review, 12 reviews. */
 export const reviewCount = (n: number) => `${n} review${n === 1 ? '' : 's'}`
+
+/** How many profiles: 1 profile, 2 profiles. */
+export const profileCount = (n: number) => `${n} profile${n === 1 ? '' : 's'}`

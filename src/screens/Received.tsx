@@ -5,9 +5,10 @@
 // Report them, in red.
 
 import { useProfiles, useRated } from '../hooks.ts'
+import { Loader } from '../mark.tsx'
 import { kindWords, markets, pairOf } from '../markets.ts'
 import { previewLines, valueText } from '../show.ts'
-import { Named, SaidChip, Spinner, Top, ago } from '../ui.tsx'
+import { Named, SaidChip, Top, ago } from '../ui.tsx'
 import { fieldWords } from '../words.ts'
 import { Who } from './Who.tsx'
 
@@ -35,7 +36,7 @@ export function Received({ mine, at, onBack, onMessage, onReport }: Props) {
     <main>
       <Top onBack={onBack} />
       {!held ? (
-        <Spinner />
+        <Loader big />
       ) : !r ? (
         <p className="line">{'failed' in held ? "Can't reach the index." : "This isn't counted any more."}</p>
       ) : (

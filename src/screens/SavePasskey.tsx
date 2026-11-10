@@ -5,7 +5,8 @@
 // lands on Profiles.
 
 import { addPasskey } from '../adding.ts'
-import { Line, Spinner, UnlockIcon, useAction } from '../ui.tsx'
+import { Loader } from '../mark.tsx'
+import { Line, UnlockIcon, useAction } from '../ui.tsx'
 
 export function SavePasskey({ onDone }: { onDone: () => void }) {
   const save = useAction(async () => {
@@ -21,7 +22,7 @@ export function SavePasskey({ onDone }: { onDone: () => void }) {
       <div className="fill" />
       <Line note={save.note} />
       <button className="primary" disabled={save.busy} onClick={() => save.run()}>
-        {save.busy ? <Spinner /> : <><UnlockIcon always /> Save</>}
+        {save.busy ? <Loader /> : <><UnlockIcon always /> Save</>}
       </button>
       <button className="quiet" disabled={save.busy} onClick={onDone}>
         Not now

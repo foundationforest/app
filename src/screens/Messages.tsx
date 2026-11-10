@@ -1,16 +1,19 @@
-// Messages: the conversations of every one of the person's profiles, from the inbox at the top of
-// Profiles and Notifications, or of one profile (`only`), from the inbox at its top; only messages
+// Messages: the conversations of every one of the person's profiles, from the round button at the
+// top of Notifications (or the sidebar, on a laptop), or of one profile (`only`), from its own; only messages
 // (reviews, vouches and reports show in Notifications and a profile's Feedback). Each conversation
-// shows who it is with, its last message, when, and a dot when it holds a new one, newest first.
+// shows who it is with (their avatar first), its last message, when, and a dot when it holds a new
+// one, newest first.
 // With a seed held they open by themselves (opening.ts); with none, one row says how many are new
 // ("3 new messages", or "No new messages"), with Open: one unlock opens every profile's inbox and
 // what it sent, into threads that stay open while the page is. At the bottom, New message.
 
+import { Avatar } from '../avatar.tsx'
 import { type Thread } from '../flows/inbox.ts'
 import { useNewMessages, useOpened, useProfiles } from '../hooks.ts'
+import { Loader } from '../mark.tsx'
 import { isFresh } from '../opened.ts'
 import { useOpening } from '../opening.ts'
-import { Dot, Line, MessageIcon, Named, Spinner, Top, UnlockIcon, ago } from '../ui.tsx'
+import { Dot, Line, Named, Top, UnlockIcon, ago } from '../ui.tsx'
 import { Who } from './Who.tsx'
 
 type Props = {
@@ -45,11 +48,11 @@ export function Messages({ only, onBack, onThread, onNew }: Props) {
         <div className="row messages-row">
           <span>{newWords(newCount)}</span>
           <button className="primary small" disabled={open.busy} onClick={() => open.run()}>
-            {open.busy ? <Spinner /> : <><UnlockIcon /> Open</>}
+            {open.busy ? <Loader /> : <><UnlockIcon /> Open</>}
           </button>
         </div>
       )}
-      {held && open.busy && <Spinner />}
+      {held && open.busy && <Loader big />}
       <Line note={open.note} />
       <div className="rows">
         {threads.map((t) => (
@@ -68,10 +71,10 @@ function ThreadRow({ t, onOpen }: { t: Thread; onOpen: () => void }) {
   const last = t.messages.at(-1)
   return (
     <button className="row said-row" onClick={onOpen}>
-      <MessageIcon />
+      {t.who ? <Avatar label={`${t.who.market}/${t.who.role}`} /> : <span className="av blank" aria-hidden />}
       <span className="two">
         <strong>
-          <Who address={t.them} who={t.who} />
+          <Who address={t.them} who={t.who} avatar={false} />
         </strong>
         <span className="last">{last?.text}</span>
       </span>

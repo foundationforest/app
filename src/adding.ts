@@ -1,4 +1,4 @@
-// A passkey more, from Settings' + Add a passkey, Add a second passkey's Add, or Save a passkey on
+// A passkey more, from + Add a passkey in You, Add a second passkey's Add, or Save a passkey on
 // this device: one unlock (or the seed held), then a new passkey, named Forest, the passkeys this
 // device knows excluded, so the same manager doesn't keep a second one; then it is added to the
 // person's seed (flows/backups.ts). One made that couldn't be added is one its manager is asked to

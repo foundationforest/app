@@ -133,7 +133,7 @@ describe('a backup', () => {
     expect(await follow(w.host, copy(x.seed))).toEqual(p.seed)
     const listed = await backupsAt(w.host, (await walletKey(p.seed)).address)
     expect(listed).toHaveLength(1)
-    expect(device.backupNames(), "its manager's name, by its entry, as Settings shows it").toEqual({ [listed[0]!.id]: '1Password' })
+    expect(device.backupNames(), "its manager's name, by its entry, as You shows it").toEqual({ [listed[0]!.id]: '1Password' })
     // As New to Forest? goes on: the first seed, for this passkey, which stays the one in use.
     expect(await enter(w, { id: x.id, seed: copy(p.seed) }, proveHere)).toEqual({ to: 'profiles' })
     expect(device.passkey()).toBe(x.id)

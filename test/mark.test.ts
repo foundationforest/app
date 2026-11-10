@@ -1,8 +1,9 @@
 // The mark, never redrawn: the drawing as it was given, which is the one services' mcp draws its
 // icon from (mcp/src/icon.ts); the same shapes and strokes in the app's one component (in the
 // theme's ink), and in the icons made from that component at each build (build/shell.ts): the
-// favicon, ink on paper, 8 units around it, a 56-unit box, and the PNGs from it. No copy of it is
-// kept by hand.
+// favicon, ink on the page's ground, 8 units around it, a 56-unit box, and the PNGs from it. The
+// loader is the same drawing, its trunk first, then each chevron from the bottom up. No copy of it
+// is kept by hand.
 
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 
@@ -12,7 +13,7 @@ import { expect, test } from 'vitest'
 
 import { SVG as MCP_ICON } from '../services/mcp/src/icon.ts'
 import { PNG_SIZES, iconPng, iconSvg } from '../build/shell.ts'
-import { Mark } from '../src/mark.tsx'
+import { Loader, Mark } from '../src/mark.tsx'
 
 /** The drawing, exactly as it was given: chevrons 8,12 20,3 32,12 / 8,22 20,13 32,22 / 8,32 20,23 32,32, trunk 20,24 to 20,38, stroke 4. */
 const GIVEN =
@@ -36,25 +37,37 @@ test("the app draws the mark as given, in the theme's ink", () => {
   expect(readFileSync(new URL('../src/theme.css', import.meta.url), 'utf8')).toMatch(/\.mark \{\s*color: var\(--ink\);\s*\}/)
 })
 
-test('the icon holds the same drawing, ink #121A15 on paper #EDEAE0, 8 units around it', () => {
+test('the icon holds the same drawing, ink #111A15 on the ground #F2F0E8, 8 units around it', () => {
   const icon = iconSvg()
   expect(shapes(icon)).toEqual(shapes(GIVEN))
   expect(attr(icon, 'viewBox')).toBe('-8 -8 56 56')
-  expect(icon).toContain('<rect x="-8" y="-8" width="56" height="56" fill="#EDEAE0"/>')
+  expect(icon).toContain('<rect x="-8" y="-8" width="56" height="56" fill="#F2F0E8"/>')
   const group = icon.slice(icon.indexOf('<g'))
-  expect(attr(group, 'stroke')).toBe('#121A15')
+  expect(attr(group, 'stroke')).toBe('#111A15')
   for (const name of ['fill', 'stroke-width', 'stroke-linecap', 'stroke-linejoin']) expect(attr(group, name), name).toBe(attr(GIVEN, name))
 })
 
-test('the PNG icons: rendered from that icon, each its size, paper at the edge and ink on the trunk', () => {
+test('the PNG icons: rendered from that icon, each its size, the ground at the edge and ink on the trunk', () => {
   for (const [name, size] of Object.entries(PNG_SIZES)) {
     const png = iconPng(size)
     expect([png.readUInt32BE(16), png.readUInt32BE(20)], name).toEqual([size, size])
   }
   const { pixels, width } = new Resvg(iconSvg(), { fitTo: { mode: 'width', value: 56 } }).render()
   const at = (x: number, y: number) => [...pixels.subarray((y * width + x) * 4, (y * width + x) * 4 + 3)]
-  expect(at(1, 1), 'paper').toEqual([0xed, 0xea, 0xe0])
-  expect(at(28, 42), 'ink, on the trunk').toEqual([0x12, 0x1a, 0x15])
+  expect(at(1, 1), 'the ground').toEqual([0xf2, 0xf0, 0xe8])
+  expect(at(28, 42), 'ink, on the trunk').toEqual([0x11, 0x1a, 0x15])
+})
+
+test('the loader draws the same mark, its trunk first, then each chevron from the bottom up, each part in turn', () => {
+  const drawn = renderToStaticMarkup(Loader({}))
+  const parts = shapes(drawn).map((s) => s.replace(/class="p\d" /, ''))
+  expect(parts, 'the trunk, then the bottom chevron, the middle one, the top one').toEqual([...shapes(GIVEN)].reverse())
+  expect([...drawn.matchAll(/class="(p\d)"/g)].map(([, c]) => c)).toEqual(['p1', 'p2', 'p3', 'p4'])
+  for (const name of ['viewBox', 'fill', 'stroke', 'stroke-width', 'stroke-linecap', 'stroke-linejoin']) expect(attr(drawn, name), name).toBe(attr(GIVEN, name))
+  expect([attr(drawn, 'role'), attr(drawn, 'aria-label')]).toEqual(['status', 'Working'])
+  const css = readFileSync(new URL('../src/theme.css', import.meta.url), 'utf8')
+  expect(css, 'about 1.8 s a loop').toMatch(/\.loader line,\s*\.loader polyline \{[^}]*animation: fill 1\.8s/)
+  expect(css, 'still when motion is reduced').toMatch(/prefers-reduced-motion: reduce\)\s*\{\s*\.loader line,\s*\.loader polyline \{\s*animation: none;/)
 })
 
 test('no copy of the mark kept by hand', () => {

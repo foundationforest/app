@@ -1,5 +1,5 @@
 // Review someone, from a profile, its Feedback, a thread or a review received: who it is about at
-// the top (their market and role, the shield, their address cut short), or a box for their address
+// the top (their market and role, the badge, their address cut short), or a box for their address
 // or Share link when it is not known, with who it is under it as soon as it holds an address. A big
 // score on a slider, 1 to 10 in tenths, its thumb hidden until touched, so no score looks chosen;
 // No score makes it a vouch, "I know they're real". The market's review fields for their role,
@@ -21,9 +21,10 @@ import type { Picked } from '../fields/Photos.tsx'
 import { type Posted, type Subject, addressIn, check, newPath, post, subjectOf, unpost } from '../flows/entries.ts'
 import { fitting } from '../form.ts'
 import { useProfiles } from '../hooks.ts'
+import { Loader } from '../mark.tsx'
 import { type Kind, fieldsOf, kindWords, markets, pairOf } from '../markets.ts'
 import { withSeed } from '../passkey.ts'
-import { Line, type Note, Quiet, Spinner, Top, UnlockIcon, noteOf, useAction } from '../ui.tsx'
+import { Line, type Note, Quiet, Top, UnlockIcon, noteOf, useAction } from '../ui.tsx'
 import { clean } from './Listing.tsx'
 import { ListingRow } from './ListingRow.tsx'
 import { Who } from './Who.tsx'
@@ -177,13 +178,13 @@ export function Review({ me, subject: given, edit, report = false, onDone, onBac
         {/* The subject's refusal is said once, under the box. */}
         <Line note={send.note && send.note.text !== subjectNote?.text ? send.note : null} />
         <button type="submit" className={kind === 'report' ? 'danger solid' : 'primary'} disabled={busy}>
-          {send.busy ? <Spinner /> : <><UnlockIcon /> Post</>}
+          {send.busy ? <Loader /> : <><UnlockIcon /> Post</>}
         </button>
         {edit ? (
           <>
             <Line note={remove.note} />
             <button type="button" className={sure ? 'danger solid' : 'danger'} disabled={busy} onClick={() => (sure ? remove.run() : setSure(true))}>
-              {remove.busy ? <Spinner /> : sure ? <><UnlockIcon /> Delete</> : 'Delete'}
+              {remove.busy ? <Loader /> : sure ? <><UnlockIcon /> Delete</> : 'Delete'}
             </button>
           </>
         ) : (

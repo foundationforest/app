@@ -13,8 +13,9 @@ import { saveSeen, seen } from '../device.ts'
 import { type Posted, readEntries } from '../flows/entries.ts'
 import { givenOf, newest } from '../flows/feedback.ts'
 import { useProfiles, useRated } from '../hooks.ts'
+import { Loader } from '../mark.tsx'
 import { ratingText, reviewCount } from '../show.ts'
-import { Dot, Line, type Note, SaidChip, Spinner, Top, ago, noteOf } from '../ui.tsx'
+import { Dot, Line, type Note, SaidChip, Top, ago, noteOf } from '../ui.tsx'
 import { Who } from './Who.tsx'
 
 type Props = { address: string; onBack: () => void; onOpen: (at: string) => void; onEdit: (given: Posted) => void; onReview: () => void }
@@ -61,7 +62,7 @@ export function ProfileFeedback({ address, onBack, onOpen, onEdit, onReview }: P
       </div>
       {tab === 'received' ? (
         !held ? (
-          <Spinner />
+          <Loader big />
         ) : 'failed' in held ? (
           <p className="line">Can't reach the index.</p>
         ) : (
@@ -81,7 +82,7 @@ export function ProfileFeedback({ address, onBack, onOpen, onEdit, onReview }: P
           </div>
         )
       ) : given === null ? (
-        note ? <Line note={note} /> : <Spinner />
+        note ? <Line note={note} /> : <Loader big />
       ) : (
         <div className="rows">
           {given.map((g) => (

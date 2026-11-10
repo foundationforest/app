@@ -14,9 +14,10 @@ import { config } from '../config.ts'
 import { passkey } from '../device.ts'
 import { connect, ranOut, readRequest } from '../flows/connect.ts'
 import { useProfiles } from '../hooks.ts'
+import { Loader } from '../mark.tsx'
 import { withSeed } from '../passkey.ts'
 import { backTo } from '../services/connector.ts'
-import { Line, Quiet, Spinner, UnlockIcon, useAction } from '../ui.tsx'
+import { Line, Quiet, UnlockIcon, useAction } from '../ui.tsx'
 import { Ticks } from './Ticks.tsx'
 
 const TOO_LONG = 'This took too long. Start again from your AI app.'
@@ -69,7 +70,7 @@ export function Connect({ connector, request }: Props) {
       <div className="fill" />
       <Line note={go.note} />
       <button className="primary" disabled={ticked.size === 0 || busy} onClick={() => go.run()}>
-        {busy ? <Spinner /> : <><UnlockIcon /> Connect</>}
+        {busy ? <Loader /> : <><UnlockIcon /> Connect</>}
       </button>
       <button className="quiet" disabled={busy} onClick={() => location.replace(backTo(connector, request, 'no'))}>
         Cancel

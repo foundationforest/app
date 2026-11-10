@@ -1,8 +1,8 @@
-// A profile, opened from its card: its market and role with the shield of its strongest check; at
-// the top right, Share, then the inbox, with how many of its messages are new, which opens its
-// conversations. Share hands out the profile's page on the index: the phone's share sheet where
-// there is one, else the page's link copied. A link, not a fetch: nothing here reaches the index for
-// it. Under the name, one line: the index's rating, how many reviews it counted, and how many
+// A profile, opened from its card: its avatar, its market and role with the badge of its strongest
+// check; at the top right, its messages, a round button with how many are new, which opens its
+// conversations, then Share, round too. Share hands out the profile's page on the index: the phone's share sheet where
+// there is one, else the page's link copied, the button saying so for a moment. A link, not a fetch: nothing here reaches the index for
+// it. Under the name, one line: the index's rating with its star, how many reviews it counted, and how many
 // reviews, vouches and reports are new, which opens its Feedback. Then its listings, each a row with
 // its first photo and its preview (ListingRow.tsx), tapped to edit, one that no longer fits its
 // market saying Update this listing; and at the bottom, side by side, Review, which opens Review
@@ -11,14 +11,17 @@
 
 import { useEffect, useState } from 'react'
 
+import { Avatar } from '../avatar.tsx'
 import { config } from '../config.ts'
 import { type Posted, readEntries } from '../flows/entries.ts'
 import { strongest } from '../flows/cards.ts'
 import { fits } from '../form.ts'
 import { useCards, useNews, useProfiles, useRated } from '../hooks.ts'
+import { Icon } from '../icons.tsx'
+import { Loader } from '../mark.tsx'
 import { kindWords, markets, pairOf, yourListings } from '../markets.ts'
 import { ratingText, reviewCount } from '../show.ts'
-import { Inbox, Line, Named, type Note, Spinner, Top, Verified, noteOf } from '../ui.tsx'
+import { Line, MessagesButton, Named, type Note, Rating, Top, Verified, noteOf } from '../ui.tsx'
 import { ListingRow } from './ListingRow.tsx'
 
 type Props = { address: string; onBack: () => void; onListing: (edit?: Posted) => void; onFeedback: () => void; onReview: () => void; onMessages: () => void }
@@ -63,22 +66,34 @@ export function Profile({ address, onBack, onListing, onFeedback, onReview, onMe
         onBack={onBack}
         right={
           <>
-            <button className="small" onClick={() => void share()}>
-              {copied ? 'Copied' : 'Share'}
+            <MessagesButton count={news?.messages ?? 0} onOpen={onMessages} />
+            <button className="round" aria-label={copied ? 'Copied' : 'Share'} onClick={() => void share()}>
+              <Icon name={copied ? 'check' : 'export'} />
             </button>
-            <Inbox count={news?.messages ?? 0} onOpen={onMessages} />
           </>
         }
       />
       <div className="stack">
-        <h1 className="titled">
-          <Named label={profile.label} />
-          {check && <Verified check={check} />}
-        </h1>
+        <div className="titled">
+          <Avatar label={profile.label} size="lg" />
+          <h1 className="profile-title">
+            <Named label={profile.label} />
+            {check && <Verified check={check} big />}
+          </h1>
+        </div>
         <div className="lines">
           <button className="link" onClick={onFeedback}>
-            {held && 'failed' in held ? 'Feedback' : rated?.rating != null ? `★ ${ratingText(rated.rating)} · ${reviewCount(rated.reviews)}` : 'No reviews yet'}
-            <New n={news?.received.length ?? 0} /> ›
+            {held && 'failed' in held ? (
+              'Feedback'
+            ) : rated?.rating != null ? (
+              <>
+                <Rating value={ratingText(rated.rating)} /> · {reviewCount(rated.reviews)}
+              </>
+            ) : (
+              'No reviews yet'
+            )}
+            <New n={news?.received.length ?? 0} />
+            <Icon name="caret-right" className="car" />
           </button>
         </div>
         {held && 'failed' in held && <p className="line">Can't reach the index.</p>}
@@ -86,7 +101,7 @@ export function Profile({ address, onBack, onListing, onFeedback, onReview, onMe
       <h2>{yourListings(profile.label)}</h2>
       <Line note={note} />
       {listings === null ? (
-        !note && <Spinner />
+        !note && <Loader big />
       ) : (
         <div className="rows">
           {market && listings.map((l) => <ListingRow key={l.path} market={market} body={l.body} update={!fits(pair.market, pair.role, l.body)} onClick={() => onListing(l)} />)}
