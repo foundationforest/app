@@ -21,17 +21,20 @@
 // seed still held (held.ts) as it opens. The seed a passkey gives is held from then, as after any
 // unlock, so the verification and the first profile ask again only once 5 minutes went by with
 // nothing done. A passkey that answers is followed first: one added to a first names the person's
-// seed in its seed entry, and that one is held (flows/seed.ts). A passkey just made names none.
+// seed in its seed entry, and that one is held (flows/seed.ts). A passkey just made names none: it
+// is a first passkey, made for this device, which the device notes with its manager's name, for
+// Passkeys (device.ts).
 
 import { useEffect, useState } from 'react'
 
 import { addPasskey } from '../adding.ts'
 import { config } from '../config.ts'
-import { passkeys } from '../device.ts'
+import { FIRST, noteMade, passkeys } from '../device.ts'
 import { follow } from '../flows/seed.ts'
 import { type Entered, enter } from '../flows/start.ts'
 import { drop, hold } from '../held.ts'
 import { Icon } from '../icons.tsx'
+import { managerOf } from '../managers.ts'
 import { Loader, Mark } from '../mark.tsx'
 import { NoAnswer, type Passkey, ask, make, withSeed } from '../passkey.ts'
 import { proveInWorker } from '../proof/prove.ts'
@@ -81,7 +84,10 @@ export function Start({ onEntered, onWords, connecting = false, noPasskey = fals
 
   const making = useAction(async () => {
     try {
-      await entered(await make(), false)
+      const made = await make()
+      const name = managerOf(made.aaguid)
+      noteMade(FIRST, { ...(name && { name }), here: true })
+      await entered(made, false)
     } catch (err) {
       if (!(err instanceof NoAnswer)) throw err
     }

@@ -12,8 +12,8 @@
 // doesn't open.
 //
 // Their list needs nothing unlocked: the `backup/<id>` entries, and when each was written. The
-// entry holds the seed and nothing else, so the device that added a backup keeps its manager's name
-// (device.ts). Removing one deletes its seed entry, signed by its own Profiles folder's key, then its
+// entry holds the seed and nothing else, so the device that added a backup keeps its manager's name,
+// and whether it made it for itself (device.ts). Removing one deletes its seed entry, signed by its own Profiles folder's key, then its
 // `backup/<id>` entry. Whoever opened the seed entry before keeps the seed: removing takes nothing
 // back.
 
@@ -22,7 +22,7 @@ import { SEED_PATH, isLocked, lock, seedOf } from '@foundationforest/folders/loc
 import { type MainKey, openingHalf } from '@foundationforest/keys'
 
 import type { Services } from '../config.ts'
-import { knowPasskey, nameBackup, unnameBackup } from '../device.ts'
+import { knowPasskey, noteMade, unnoteMade } from '../device.ts'
 import { managerOf } from '../managers.ts'
 import type { Made } from '../passkey.ts'
 import { NoCredits, fund } from '../services/credits.ts'
@@ -100,13 +100,13 @@ async function link(host: string, folder: { key: MainKey; view: View }, seed: Ui
 /**
  * The passkey just made, `made`, added as a backup of `seed`: from now the device knows it, so Start
  * asks for it too and the next backup excludes it, and keeps its manager's name when its AAGUID
- * names one. Its seed is zeroed.
+ * names one, and whether it was made for this device (`here`). Its seed is zeroed.
  */
-export async function addBackup(s: Services, seed: Uint8Array, made: Made): Promise<void> {
+export async function addBackup(s: Services, seed: Uint8Array, made: Made, { here = false }: { here?: boolean } = {}): Promise<void> {
   try {
     const id = await link(s.host, await profilesOf(s.host, seed), seed, made.seed)
     const name = managerOf(made.aaguid)
-    if (name) nameBackup(id, name)
+    noteMade(id, { ...(name && { name }), ...(here && { here: true }) })
     knowPasskey(made.id)
   } finally {
     made.seed.fill(0)
@@ -132,5 +132,5 @@ export async function removeBackup(s: Services, seed: Uint8Array, id: string): P
     }
   }
   await unlist(s.host, key, id)
-  unnameBackup(id)
+  unnoteMade(id)
 }

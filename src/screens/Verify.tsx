@@ -12,15 +12,16 @@
 // the notice saying a person is checking, that check's card greyed, and the app asking all the while;
 // approved, it moves on by itself too. From Start, Get verified's back goes to Start (App.tsx), and
 // the waiting's to Get verified: the asking stops, nothing under way changes, and a tap on the same
-// card picks it up where it was (flows/verify.ts, `choose`). From You, the checks the person has are
-// greyed, the ID's sheet is open when nothing is paid, and back is You.
+// card picks it up where it was (flows/verify.ts, `choose`). From You or Home, a check to add: the
+// checks the person has are greyed, the ID's sheet is open when nothing is paid, and back is where
+// it came from.
 //
 // The screen keeps no seed of its own: it uses the one held after an unlock (held.ts), for 5
 // minutes since the last action, the check's own tab hiding the page meanwhile. So while a seed is
 // held as the screen opens (always, from Start), the seed's number and the wallet are worked out at
 // once, and the stamp is asked for with them, needing no seed, until it comes. Once it does, it is
 // kept at once if a seed is still held; else "You're verified" and Continue ask for one. With none
-// held as the screen opened (from You, back from Stripe's page), the stamp can't be asked for, so
+// held as the screen opened (from You or Home, back from Stripe's page), the stamp can't be asked for, so
 // the waiting shows Continue too: one unlock asks for the stamp, collects its gift, keeps it and
 // makes every profile show it.
 

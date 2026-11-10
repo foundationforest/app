@@ -1,84 +1,68 @@
-// A profile's Reviews, its second tab: what the index counted about it, reviews, vouches and
-// reports together, newest first, each a card: its score with its star, or its chip, when, and a
-// dot on those that came after the newest its Reviews or Notifications had shown of it, as the tab
-// opened; from now they are seen (device.ts), so the profile's card and its tab count them new no
-// more; what they wrote; and who wrote it, its avatar, its name and its badge. A tap opens it. Then,
-// quietly, which index rated it. Then what the profile wrote about others, from its own folder,
-// under Written by this profile, each with who it is about; a tap edits it. Nothing here asks the
-// passkey.
+// A profile's Reviews, from the rating under its name or from Notifications: what the index counted
+// about it, reviews, vouches and reports together, newest first. At the top, the rating large with
+// its star (or, with no score yet, what came: 1 vouch), how many reviews, and quietly which index
+// rated it. Then each a card: its score with its star, or its chip, when, and a dot on those that
+// came after the newest its Reviews or Notifications had shown of it, as the screen opened; from now
+// they are seen (device.ts), so the profile's card and its rating count them new no more; what they
+// wrote; and From, who wrote it, its avatar, its name and its badge. A tap opens it (Received.tsx).
+// Nothing here asks the passkey.
 
-import { type ReactNode, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { config } from '../config.ts'
-import { type Profile, saveSeen, seen } from '../device.ts'
-import type { Posted } from '../flows/entries.ts'
+import { saveSeen, seen } from '../device.ts'
 import { newest } from '../flows/feedback.ts'
-import { useHeldRated } from '../hooks.ts'
+import { useProfiles, useRated } from '../hooks.ts'
 import { Loader } from '../mark.tsx'
-import { Dot, SaidChip, ago } from '../ui.tsx'
+import { ratingText, reviewCount, saidCount } from '../show.ts'
+import { Named, Rating, Top } from '../ui.tsx'
+import { SaidCard } from './SaidCard.tsx'
 import { Who } from './Who.tsx'
 
-type Props = { profile: Profile; given: Posted[] | null; onOpen: (at: string) => void; onEdit: (given: Posted) => void }
+type Props = { address: string; onBack: () => void; onOpen: (at: string) => void }
 
-export function Reviews({ profile, given, onOpen, onEdit }: Props) {
-  const { address } = profile
-  // Read by the profile as it opened, and held in the page meanwhile.
-  const held = useHeldRated([profile])[address]
-  // The newest its Reviews had shown of this profile as the tab opened: what came after has its dot
-  // while it is open. A profile with no mark yet is marked at what the index holds when first read
-  // (flows/feedback.ts), so none is new.
+export function Reviews({ address, onBack, onOpen }: Props) {
+  const me = useProfiles().find((p) => p.address === address)
+  const held = useRated(me ? [me] : [])[address]
+  // The newest its Reviews had shown of this profile as the screen opened: what came after has its
+  // dot while it is open. A profile with no mark yet is marked at what the index holds when first
+  // read (flows/feedback.ts), so none is new.
   const [since] = useState(() => seen()[address] ?? Infinity)
   useEffect(() => {
     if (!held || !('rated' in held)) return
     const last = newest(held.rated)
     if (last > (seen()[address] ?? 0)) saveSeen({ [address]: last })
   }, [held])
-  const written = given?.filter((g) => g.kind !== 'listing') ?? []
+  if (!me) return null
+  const rated = held && 'rated' in held ? held.rated : null
   return (
-    <>
+    <main>
+      <Top onBack={onBack} clear>
+        <h1>Reviews</h1>
+      </Top>
+      <p className="s">
+        Of your <Named label={me.label} />
+      </p>
       {!held ? (
         <Loader big />
-      ) : 'failed' in held ? (
+      ) : !rated ? (
         <p className="line">Can't reach the index.</p>
       ) : (
-        <div className="cards">
-          {held.rated.received.length === 0 && <p className="line">No reviews yet.</p>}
-          {held.rated.received.map((r) => (
-            <SaidCard key={r.address} kind={r.kind} score={r.body.score} text={r.body.text} {...(r.time !== undefined && { time: r.time })} fresh={(r.time ?? 0) > since} onClick={() => onOpen(r.address)}>
-              <Who address={r.writer} />
-            </SaidCard>
-          ))}
-          <p className="quiet-text center">Rated by {new URL(config.index).host}</p>
-        </div>
-      )}
-      {written.length > 0 && (
         <>
-          <h2>Written by this profile</h2>
+          <div className="rated">
+            {rated.rating != null ? <Rating value={ratingText(rated.rating)} /> : <strong className="d">{saidCount(rated.received) || 'No reviews yet'}</strong>}
+            {rated.rating != null && <span>{reviewCount(rated.reviews)}</span>}
+            <span className="xs">Rated by {new URL(config.index).host}</span>
+          </div>
           <div className="cards">
-            {written.map((g) => (
-              <SaidCard key={g.path} kind={g.kind as 'review' | 'vouch' | 'report'} score={g.body.score} text={g.body.text} time={g.time} onClick={() => onEdit(g)}>
-                {typeof g.body.subject === 'string' && <Who address={g.body.subject} />}
+            {rated.received.map((r) => (
+              <SaidCard key={r.address} kind={r.kind} score={r.body.score} text={r.body.text} {...(r.time !== undefined && { time: r.time })} fresh={(r.time ?? 0) > since} from onClick={() => onOpen(r.address)}>
+                <Who address={r.writer} />
               </SaidCard>
             ))}
           </div>
         </>
       )}
-    </>
-  )
-}
-
-/** A review, vouch or report as a card: its score or chip, when and the dot, what they wrote, then who (`children`). */
-function SaidCard({ kind, score, text, time, fresh = false, onClick, children }: { kind: 'review' | 'vouch' | 'report'; score: unknown; text: unknown; time?: number; fresh?: boolean; onClick: () => void; children: ReactNode }) {
-  return (
-    <button className="card said-card" onClick={onClick}>
-      <span className="said-head">
-        <SaidChip kind={kind} score={score} />
-        <span className="grow" />
-        {time !== undefined && <span className="xs">{ago(time)}</span>}
-        {fresh && <Dot />}
-      </span>
-      {typeof text === 'string' && text && <span className="said-text">{text}</span>}
-      {children}
-    </button>
+    </main>
   )
 }

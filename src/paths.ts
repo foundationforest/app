@@ -6,6 +6,7 @@ export const PATHS = {
   verify: '/id',
   new: '/new',
   profile: '/profile',
+  reviews: '/reviews',
   received: '/received',
   listing: '/listing',
   review: '/review',
@@ -17,6 +18,9 @@ export const PATHS = {
   connect: '/connect',
   'connect-ai': '/connect-ai',
   ai: '/ai',
+  passkeys: '/passkeys',
   'add-passkey': '/passkey',
   words: '/words',
+  'ai-apps': '/ai-apps',
+  about: '/about',
 } as const

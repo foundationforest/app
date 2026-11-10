@@ -1,12 +1,13 @@
 // How the screens say things that are not words: a price as people write it, in the device's own
 // number format, whole or in its two parts; a listing's card; a place as its area and how far round
-// it reaches, and in a form's row; hours in a form's row; whether a day line goes before a message,
-// and what it says, and whether a message's time goes under it.
+// it reaches, and in a form's row; hours in a form's row; what came about a profile with no score yet;
+// whether a day line goes before a message, and what it says, and whether a message's time goes under
+// it.
 
 import { expect, test } from 'vitest'
 
 import { markets } from '../src/markets.ts'
-import { cardLines, daysText, hoursLines, placeLines, priceParts, priceText, valueText } from '../src/show.ts'
+import { cardLines, daysText, hoursLines, placeLines, priceParts, priceText, saidCount, valueText } from '../src/show.ts'
 import { dayWords, lastOfRun, newDay } from '../src/ui.tsx'
 
 test('a price as people write it, in the number format of the device (here, a locale given)', () => {
@@ -85,4 +86,11 @@ test("a thread's day line says Today, else the day; a message's time shows under
     { mine: true, time: at(9, 4) },
   ]
   expect(thread.map((_, i) => lastOfRun(thread, i)), 'the side changes, the day changes, the last').toEqual([false, true, false, true, true])
+})
+
+test('what came about a profile with no score yet, by kind: how many of each, one or more', () => {
+  expect(saidCount([{ kind: 'vouch' }])).toBe('1 vouch')
+  expect(saidCount([{ kind: 'vouch' }, { kind: 'report' }, { kind: 'vouch' }])).toBe('2 vouches, 1 report')
+  expect(saidCount([{ kind: 'report' }, { kind: 'report' }])).toBe('2 reports')
+  expect(saidCount([])).toBe('')
 })

@@ -67,7 +67,7 @@ describe('a backup', () => {
     expect(await w.balance(theirs.key.address), 'its two entries paid from it').toBeLessThan(1)
 
     expect(device.passkeys(), 'the device knows it: Start asks for it, the next backup excludes it').toContain(b.id)
-    expect(device.backupNames(), "its manager's name, by its entry").toEqual({ [listed[0]!.id]: '1Password' })
+    expect(device.madeHere(), "its manager's name, by its entry").toEqual({ [listed[0]!.id]: { name: '1Password' } })
   })
 
   test("Start through a backup: its seed entry followed, one step only, to the first seed's profiles", async () => {
@@ -104,12 +104,12 @@ describe('a backup', () => {
     expect(listed).toHaveLength(2)
     expect(listed[0]!.time).toBeGreaterThanOrEqual(t0)
     expect(listed[0]!.time).toBeLessThanOrEqual(listed[1]!.time)
-    expect(device.backupNames()).toEqual({ [listed[0]!.id]: 'Google Password Manager' })
+    expect(device.madeHere()).toEqual({ [listed[0]!.id]: { name: 'Google Password Manager' } })
 
     await removeBackup(w, p.seed, listed[0]!.id)
     expect(await backupsAt(w.host, wallet)).toEqual([listed[1]])
     expect((await profilesOf(w.host, b1.seed)).view.current.get(SEED_PATH)?.entry.body, 'its seed entry deleted').toBeNull()
-    expect(device.backupNames(), 'its name gone').toEqual({})
+    expect(device.madeHere(), 'its name gone').toEqual({})
     expect(await follow(w.host, copy(b1.seed)), 'its passkey opens its own seed').toEqual(b1.seed)
     expect(await follow(w.host, copy(b2.seed)), 'the other still opens the first').toEqual(p.seed)
     expect((await enter(w, again(b1), proveHere)).to).toBe('verify')

@@ -4,7 +4,7 @@
 // sign in when it asks (an AI app that never signs in, Claude's No sign-in, can read but never act).
 // No links to other sites. Copy address copies it and says so a moment, staying, so steps 2 and 3
 // stay in view while the person does them. Right after the first profile (or its Later) it is a
-// setup step, with Skip, which reads Done once the address is copied, on to Home; from You, a back.
+// setup step, with Skip, which reads Done once the address is copied, on to Home; from Your AI, a back.
 
 import { useState } from 'react'
 

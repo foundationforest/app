@@ -614,13 +614,18 @@ button.card .named {
   line-height: 1.4;
 }
 
-.row > span:first-child:not(.two):not(.av):not(.who) {
+.row > span:first-child:not(.two):not(.av):not(.who):not(.sq) {
   font-weight: 700;
   font-size: 16.5px;
 }
 
 .row > .icon {
   color: var(--ink2);
+}
+
+a.row {
+  color: var(--ink);
+  text-decoration: none;
 }
 
 .row > .av + .who {
@@ -1042,44 +1047,38 @@ button.nav.profile .role {
   color: var(--ink3);
 }
 
-button.nav.green {
-  color: var(--forest);
-}
-
-.side h2 {
+/* Profiles, with the small round plus beside it; All profiles past the eighth. */
+.side-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   padding: 18px 12px 6px;
 }
 
-button.ai-app {
-  justify-content: flex-start;
-  gap: 10px;
-  width: 100%;
-  min-height: 0;
-  padding: 10px 12px;
-  border-radius: 16px;
-  box-shadow: inset 0 0 0 1px var(--line);
-  font-size: 16px;
-  font-weight: 400;
-  line-height: 1.35;
+.side .side-head h2 {
+  padding: 0;
 }
 
-.ai-app .ico {
-  display: grid;
-  place-items: center;
-  flex: none;
-  width: 34px;
-  height: 34px;
-  border-radius: 11px;
-  background: var(--mint);
-  color: var(--on-mint);
+button.round.tiny {
+  width: 26px;
+  height: 26px;
+  min-height: 26px;
+  box-shadow: inset 0 0 0 1px var(--line2);
 }
 
-.ai-app .two > strong {
-  font-size: 15px;
+button.round.tiny.on {
+  background: var(--card);
 }
 
-.ai-app .two > span {
-  font-size: 12.5px;
+button.round.tiny .icon {
+  width: 14px;
+  height: 14px;
+}
+
+button.nav.all {
+  min-height: 40px;
+  font-size: 14.5px;
+  color: var(--ink2);
 }
 
 .content {
@@ -1095,11 +1094,11 @@ button.ai-app {
 }
 
 .content > main.home {
-  max-width: 980px;
+  max-width: none;
 }
 
 .content > main.home .cards {
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
 }
 
 /* Choices of one, side by side on the sunk ground: the appearance; a profile's two tabs; a few
@@ -2819,4 +2818,298 @@ button.chip .icon {
 .xs .named strong {
   color: inherit;
   font-weight: inherit;
+}
+
+/* A square in a row: smaller; on the sunk ground for a place to go, forest green for the ID. */
+.sq.sm {
+  width: 40px;
+  height: 40px;
+  border-radius: 13px;
+}
+
+.sq.sm .icon {
+  width: 22px;
+  height: 22px;
+}
+
+.sq.plain {
+  background: var(--sunk);
+  color: var(--ink2);
+}
+
+.sq.forest {
+  background: var(--forest);
+  color: var(--on-forest);
+}
+
+/* Red text, a button that removes or leaves: Remove on a row, Forget this device. */
+button.danger.text {
+  min-height: 44px;
+  padding: 0 4px;
+  font-size: 16px;
+}
+
+.row button.danger.text,
+.row button.small.danger {
+  flex: none;
+  min-height: 36px;
+  font-size: 14.5px;
+}
+
+.lone {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+/* One choice's mark: a ring, with its dot when picked. */
+.radio {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 2px var(--edge);
+}
+
+.radio.on {
+  box-shadow: inset 0 0 0 2px var(--forest);
+  background: radial-gradient(circle, var(--forest) 0 5px, transparent 5.5px);
+}
+
+.row.pick > .icon {
+  color: var(--ink2);
+}
+
+/* The person's badges beside Home's title; a check not done, its badge's outline, dashed, muted. */
+.badges {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Home's title stays on one line, the badges and the round plus beside it. */
+main.home .titled {
+  gap: 10px;
+}
+
+main.home .titled > h1 {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* A quiet line under a row's name that wraps rather than ending short. */
+.two > .wraps {
+  white-space: normal;
+  overflow: visible;
+}
+
+button.vb.outline {
+  min-height: 0;
+  padding: 0;
+  background: none;
+  box-shadow: none;
+  border: 1.5px dashed var(--edge);
+  color: var(--ink3);
+}
+
+/* A profile's card on Home: its name in two lines, the market in bold, then the role, each ending
+   short when too long; nothing under the chevron. */
+button.card.profile-card {
+  align-items: center;
+}
+
+.profile-card .two > .named {
+  display: grid;
+  gap: 1px;
+  overflow: visible;
+  white-space: normal;
+  font-size: 16.5px;
+  line-height: 1.3;
+  color: var(--ink);
+}
+
+.profile-card .named strong,
+.profile-card .named .role {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-card .named .role {
+  font-size: 15px;
+}
+
+.profile-card > .chip,
+.profile-card > .icon {
+  flex: none;
+}
+
+/* The rating under a profile's name, a button to its Reviews. */
+button.rate-line {
+  justify-self: start;
+  min-height: 32px;
+  padding: 0;
+  background: none;
+  box-shadow: none;
+  font-weight: 400;
+  gap: 6px;
+}
+
+button.rate-line .icon.car {
+  width: 15px;
+  height: 15px;
+}
+
+/* A profile's Reviews: the rating large, how many, and which index rated it. */
+.rated {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding: 8px 0 4px;
+  text-align: center;
+  color: var(--ink2);
+}
+
+.rated .rate {
+  font-family: var(--display);
+  font-size: 44px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.rated .rate .icon {
+  width: 32px;
+  height: 32px;
+}
+
+.rated > strong.d {
+  font-size: 26px;
+  line-height: 1.15;
+  color: var(--ink);
+}
+
+.said-who {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Your 24 words: three columns of small cards, each its number and its word. */
+.words {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.words li {
+  gap: 6px;
+  padding: 10px;
+  border-radius: 12px;
+  background: var(--card);
+  box-shadow: inset 0 0 0 1px var(--line);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.words li .xs {
+  min-width: 1.3em;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.sheet > .sq {
+  margin-bottom: 8px;
+}
+
+.sheet-line {
+  color: var(--ink2);
+}
+
+/* One AI app's head: its mint square, its name and when it connected. */
+.app-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.app-head .sq {
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+}
+
+.app-head .icon {
+  width: 28px;
+  height: 28px;
+}
+
+/* Messages on a laptop: the conversations, then the one open, each scrolling on its own. */
+.content > main.panes {
+  max-width: none;
+  height: 100dvh;
+  padding: 0;
+  flex-direction: row;
+  gap: 0;
+}
+
+.pane-list {
+  flex: none;
+  width: 380px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  padding: 24px 16px 16px;
+  border-right: 1px solid var(--line);
+}
+
+.pane-open {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.pane-body {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pane-list .filters {
+  margin: 0 -16px;
+  padding: 0 16px 2px;
+}
+
+.pane-open > .convo {
+  padding: 0 28px;
+}
+
+.convo > .top {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  margin: 0 -28px;
+  padding: 12px 28px;
+  background: var(--bg);
+  box-shadow: 0 1px 0 var(--line);
+}
+
+.content > main.panes .composer {
+  margin: 0 -28px;
+  padding: 14px 28px 20px;
+}
+
+.pick-one {
+  margin: auto;
+}
+
+/* The conversation open beside the list: a forest green edge, its words on the card as before. */
+.rows > button.thread-row.here {
+  box-shadow: inset 3px 0 0 var(--forest);
 }

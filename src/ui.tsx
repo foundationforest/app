@@ -2,14 +2,15 @@
 // what was given is wrong, quiet when something is still missing), an action's busy and its note;
 // the two badges, drawn once here, how a profile shows it is verified, by its strongest check (a
 // selfie check's light, an ID check's solid; their words a label, shown on a tap only where a badge
-// stands alone); the unlock icon, the fingerprint before the word on a labeled button that asks the
-// passkey, only while a tap will ask, never on a list row; the round way into messages, always
-// there, with how many are new once any is; a checkbox's box, the dot that marks what is new, a
-// rating with its star, the chips of a review, vouch or report, You're verified, a profile's name
-// (its market in bold, then its role, muted: Clothing seller), Search Forest (the index, in a new
-// tab), a sheet risen over the screen, a notice in the sun, the bars, a choice of a few side by
-// side, how long ago something was, the day something happened (Today in a thread), the time of
-// day, and whether a message's time shows under it.
+// stands alone), and a check not done as its badge's outline, which starts it; the unlock icon, the
+// fingerprint before the word on a labeled button that asks the passkey, only while a tap will ask,
+// never on a list row; the round way into messages, always there, with how many are new once any
+// is; a checkbox's box, one choice's radio mark, the dot that marks what is new, a rating with its
+// star, the chips of a review, vouch or report, You're verified, a profile's name (its market in
+// bold, then its role, muted: Clothing seller), Search Forest (the index, in a new tab), a sheet
+// risen over the screen, a notice in the sun, the bars, a choice of a few side by side, a row that
+// opens a screen of its own, how long ago something was, the day something happened (Today in a
+// thread), the time of day, and whether a message's time shows under it.
 
 import { type MouseEvent, type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 
@@ -111,6 +112,18 @@ export function Verified({ check, big = false, alone = false }: { check: Check; 
   )
 }
 
+/** What each check's outline says: what a tap on it starts. */
+const UNVERIFIED: Record<Check, string> = { face: 'Verify with a selfie', id: 'Verify with ID' }
+
+/** A check the person hasn't done, beside the badges they have: its badge's outline, dashed and muted, a button that starts it. */
+export function Unverified({ check, onClick }: { check: Check; onClick: () => void }) {
+  return (
+    <button type="button" className="vb lg outline" aria-label={UNVERIFIED[check]} title={UNVERIFIED[check]} onClick={onClick}>
+      <Icon name={check === 'id' ? 'identification-card' : 'smiley'} />
+    </button>
+  )
+}
+
 /** You're verified: the mint chip, with the badge's icon of the check that verified the person. */
 export const YoureVerified = ({ check }: { check: Check }) => (
   <span className="chip new">
@@ -139,6 +152,25 @@ export const TickBox = ({ ticked }: { ticked: boolean }) => (
     <Icon name="check" bold />
   </span>
 )
+
+/** A row that opens a screen of its own: its icon on a square (mint, `green`, for one that adds), its words, a quiet line, and a chevron unless it adds. */
+export function Opens({ icon, words, line, green = false, caret = !green, onClick }: { icon: IconName; words: string; line?: string; green?: boolean; caret?: boolean; onClick: () => void }) {
+  return (
+    <button className="row" onClick={onClick}>
+      <span className={green ? 'sq sm mint' : 'sq sm plain'}>
+        <Icon name={icon} />
+      </span>
+      <span className="two">
+        <strong>{words}</strong>
+        {line && <span>{line}</span>}
+      </span>
+      {caret && <Icon name="caret-right" className="car" />}
+    </button>
+  )
+}
+
+/** One choice's mark: an empty ring, or the ring with its dot when picked. */
+export const RadioMark = ({ on }: { on: boolean }) => <span className={on ? 'radio on' : 'radio'} aria-hidden />
 
 /** A rating or a score, with its star: the number says it, so the star is hidden from screen readers. */
 export const Rating = ({ value }: { value: string }) => (

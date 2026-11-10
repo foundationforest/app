@@ -10,6 +10,8 @@
 // Opened: chips that pick whose, All, then each of the person's profiles by its avatar and role; then
 // the conversations in one card, newest first: who each is with (their avatar, market and role, the
 // badge), when, the last message, bold with a dot while it holds a new one, and to which profile.
+// On a laptop it is the left of two panes (`pane`, Panes.tsx), with no Back, the sidebar beside it,
+// and the conversation open on the right marked here.
 
 import { Avatar } from '../avatar.tsx'
 import { type Thread } from '../flows/inbox.ts'
@@ -25,6 +27,9 @@ import { Who, WhoAvatar } from './Who.tsx'
 type Props = {
   /** The profile whose messages these are; every profile's, when none is named. */
   only?: string
+  /** The left of two panes, on a laptop: no Back; `open`, the conversation open on the right. */
+  pane?: boolean
+  open?: { mine: string; them: string }
   onOnly: (only?: string) => void
   onBack: () => void
   onThread: (mine: string, them: string) => void
@@ -34,7 +39,7 @@ type Props = {
 /** How many new messages: 1 new message, 3 new messages. */
 const newWords = (n: number) => `${n} new message${n === 1 ? '' : 's'}`
 
-export function Messages({ only, onOnly, onBack, onThread, onNew }: Props) {
+export function Messages({ only, pane = false, open: shown, onOnly, onBack, onThread, onNew }: Props) {
   const all = useProfiles()
   const list = only ? all.filter((p) => p.address === only) : all
   const fresh = useNewMessages()
@@ -48,10 +53,11 @@ export function Messages({ only, onOnly, onBack, onThread, onNew }: Props) {
   const asking = need && (!held || open.note !== null)
   const labelOf = (address: string) => all.find((p) => p.address === address)?.label ?? ''
 
+  const Root = pane ? 'div' : 'main'
   return (
-    <main>
+    <Root className={pane ? 'pane-body' : undefined}>
       <Top
-        onBack={onBack}
+        {...(!pane && { onBack })}
         clear
         right={
           <button className="round" aria-label="New message" onClick={onNew}>
@@ -102,22 +108,22 @@ export function Messages({ only, onOnly, onBack, onThread, onNew }: Props) {
           <Line note={open.note} />
           <div className="rows">
             {threads.map((t) => (
-              <ThreadRow key={`${t.mine} ${t.them}`} t={t} mine={labelOf(t.mine)} onOpen={() => onThread(t.mine, t.them)} />
+              <ThreadRow key={`${t.mine} ${t.them}`} t={t} mine={labelOf(t.mine)} here={shown?.mine === t.mine && shown.them === t.them} onOpen={() => onThread(t.mine, t.them)} />
             ))}
           </div>
           {opened?.all && threads.length === 0 && <p className="line">No messages yet.</p>}
         </>
       )}
-    </main>
+    </Root>
   )
 }
 
-/** One conversation: who it is with, when, the last message, and to which of the person's profiles (`mine`, its label). */
-function ThreadRow({ t, mine, onOpen }: { t: Thread; mine: string; onOpen: () => void }) {
+/** One conversation: who it is with, when, the last message, and to which of the person's profiles (`mine`, its label); `here` while it is open beside the list. */
+function ThreadRow({ t, mine, here, onOpen }: { t: Thread; mine: string; here: boolean; onOpen: () => void }) {
   const last = t.messages.at(-1)
   const fresh = isFresh(t)
   return (
-    <button className="row thread-row" onClick={onOpen}>
+    <button className={here ? 'row thread-row here' : 'row thread-row'} aria-current={here ? 'true' : undefined} onClick={onOpen}>
       <WhoAvatar address={t.them} who={t.who} />
       <span className="two">
         <span className="thread-head">
