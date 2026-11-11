@@ -2795,7 +2795,7 @@ test("a face seen before: Get verified says so and points to the ID, the selfie 
   await b.page.reload()
   await b.page.getByRole('heading', { name: 'Your first profile' }).waitFor({ timeout: 60_000 })
   const mine = b.counts.asserted
-  await pickProfile(b.page, 'Tutoring tutor')
+  await pickFirst(b.page, 'Tutoring tutor')
   assert.equal(b.counts.asserted - mine, 1, "this browser's own passkey, asked once")
   assert.equal(a.counts.asserted - asked, 1, 'nothing more asked of the first browser')
   assert.equal((await entriesOf(JSON.parse(local['forest.folder']!).address, 'label')).length, 1, "the profile listed in the person's Profiles folder")
