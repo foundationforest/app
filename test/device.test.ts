@@ -5,6 +5,7 @@ import { beforeEach, expect, test } from 'vitest'
 
 import * as device from '../src/device.ts'
 import { RELOADED } from '../src/version.ts'
+import { OFFERS, OTHER_OFFERS } from './labels.ts'
 import { freshDevice } from './world.ts'
 
 beforeEach(freshDevice)
@@ -13,14 +14,14 @@ const ID = 'AbCdEfGhIjKlMnOpQrStUv'
 
 test('at every start: what this app keeps stays, anything else goes, in sessionStorage too', () => {
   device.usePasskey(ID)
-  device.saveProfiles([{ label: 'tutoring/tutor', address: 'A' }])
+  device.saveProfiles([{ label: OFFERS, address: 'A' }])
   device.saveTheme('dark')
   device.saveChecks(['face', 'id'])
   device.saveCursors({ A: 42 })
   device.saveSeen({ A: 1_000 })
   device.markUsed('A', 2_000)
   device.keepUnder({ passkey: ID, check: 'id', payment: 'cs_test_abc' })
-  device.readLabels('W', { a: 'tutoring/tutor' })
+  device.readLabels('W', { a: OFFERS })
   device.keepNames({ B: 'Rodrigo' })
   localStorage.setItem('stray', '1')
   localStorage.setItem('forest.v', '"2"')
@@ -47,15 +48,15 @@ test('what waits through a check in this tab: kept as the page closes, taken bac
 test('Forget this device: everything but the ids of the passkeys it knows, so Start never makes a second one', () => {
   device.knowPasskey('OtherPasskeyIdOtherPass')
   device.usePasskey(ID)
-  device.saveProfiles([{ label: 'tutoring/tutor', address: 'A' }])
+  device.saveProfiles([{ label: OFFERS, address: 'A' }])
   device.saveTheme('light')
   device.saveChecks(['face'])
   device.saveCursors({ A: 7 })
   device.saveSeen({ A: 9 })
   device.keepUnder({ passkey: ID, check: 'face', session: 's' })
-  device.keepConnection({ address: 'C', name: 'Claude', time: 1, labels: ['tutoring/tutor'] })
+  device.keepConnection({ address: 'C', name: 'Claude', time: 1, labels: [OFFERS] })
   device.knowKeys(['K'])
-  device.readLabels('W', { a: 'tutoring/tutor' })
+  device.readLabels('W', { a: OFFERS })
   device.noteMade('b', { maker: 'Bitwarden' })
   device.keepNames({ B: 'Rodrigo' })
   device.markUsed('A')
@@ -97,11 +98,11 @@ test('when each profile was last used, by its address: kept as given, the latest
 })
 
 test('AI apps, one per connection, oldest first, each its profiles once in label order; the keys it knows of, once each; anything else dropped', () => {
-  device.keepConnection({ address: 'B', name: 'ChatGPT', time: 20, labels: ['tutoring/tutor'] })
-  device.keepConnection({ address: 'A', name: 'Claude', time: 10, labels: ['tutoring/tutor', 'clothing/seller', 'tutoring/tutor'] })
+  device.keepConnection({ address: 'B', name: 'ChatGPT', time: 20, labels: [OFFERS] })
+  device.keepConnection({ address: 'A', name: 'Claude', time: 10, labels: [OFFERS, OTHER_OFFERS, OFFERS] })
   expect(device.connections()).toEqual([
-    { address: 'A', name: 'Claude', time: 10, labels: ['clothing/seller', 'tutoring/tutor'] },
-    { address: 'B', name: 'ChatGPT', time: 20, labels: ['tutoring/tutor'] },
+    { address: 'A', name: 'Claude', time: 10, labels: [OTHER_OFFERS, OFFERS].sort() },
+    { address: 'B', name: 'ChatGPT', time: 20, labels: [OFFERS] },
   ])
   device.keepConnection({ address: 'B', name: 'ChatGPT', time: 20, labels: [] })
   device.dropConnection('A')
@@ -119,24 +120,24 @@ test('AI apps, one per connection, oldest first, each its profiles once in label
 
 test("the Profiles folder: its address, and each label entry read there with its label, kept together; another folder's in their place; anything else dropped", () => {
   expect(device.folder()).toBeNull()
-  device.readLabels('W', { a: 'tutoring/tutor' })
+  device.readLabels('W', { a: OFFERS })
   device.readLabels('W', { b: '' })
-  expect(device.folder()).toEqual({ address: 'W', labels: { a: 'tutoring/tutor', b: '' } })
-  device.readLabels('V', { c: 'clothing/seller' })
-  expect(device.folder(), "another folder's").toEqual({ address: 'V', labels: { c: 'clothing/seller' } })
-  localStorage.setItem('forest.folder', JSON.stringify({ address: 'V', labels: { c: 'clothing/seller', d: 7 } }))
-  expect(device.folder()).toEqual({ address: 'V', labels: { c: 'clothing/seller' } })
+  expect(device.folder()).toEqual({ address: 'W', labels: { a: OFFERS, b: '' } })
+  device.readLabels('V', { c: OTHER_OFFERS })
+  expect(device.folder(), "another folder's").toEqual({ address: 'V', labels: { c: OTHER_OFFERS } })
+  localStorage.setItem('forest.folder', JSON.stringify({ address: 'V', labels: { c: OTHER_OFFERS, d: 7 } }))
+  expect(device.folder()).toEqual({ address: 'V', labels: { c: OTHER_OFFERS } })
   localStorage.setItem('forest.folder', JSON.stringify('V'))
   expect(device.folder()).toBeNull()
 })
 
 test('profiles, one per label, in label order', () => {
   device.saveProfiles([
-    { label: 'tutoring/tutor', address: 'B' },
-    { label: 'clothing/seller', address: 'A' },
+    { label: OFFERS, address: 'B' },
+    { label: OTHER_OFFERS, address: 'A' },
   ])
-  device.addProfile({ label: 'tutoring/tutor', address: 'B' })
-  expect(device.profiles().map((p) => p.label)).toEqual(['clothing/seller', 'tutoring/tutor'])
+  device.addProfile({ label: OFFERS, address: 'B' })
+  expect(device.profiles().map((p) => p.label)).toEqual([OTHER_OFFERS, OFFERS].sort())
 })
 
 test('a verification under way: kept with its check; one kept without its passkey or its check is none', () => {

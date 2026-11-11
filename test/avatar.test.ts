@@ -12,6 +12,7 @@ import { ICONS, PALETTE, colorIn, colorsFor, fnv1a, iconOf as shared } from '../
 import { Avatar, colorOf, iconOf } from '../src/avatar.tsx'
 import { isIcon } from '../src/icons.tsx'
 import { markets } from '../src/markets.ts'
+import { OFFERS, REQUESTS, split } from './labels.ts'
 
 /** The directory's markets, in its order. */
 const names = markets.directory.markets.map((m) => m.name)
@@ -22,7 +23,7 @@ test('FNV-1a, 32 bits, over the UTF-8 bytes: its published values, so a market h
   expect(fnv1a('foobar')).toBe(0xbf9cf968)
 })
 
-test("the directory's markets each get a color of their own, up to ten: today's eight, eight colors", () => {
+test("the directory's markets each get a color of their own, up to ten, then a new round", () => {
   const colors = names.map(colorOf)
   expect(new Set(colors).size).toBe(Math.min(names.length, PALETTE.length))
   for (const color of colors) expect(PALETTE).toContain(color)
@@ -73,20 +74,21 @@ test('every icon the shared table names is one the app draws; a name it does not
 })
 
 test('a market the icon table lists shows its icon; one it does not shows its first letter', () => {
-  const listed = renderToStaticMarkup(Avatar({ label: 'tutoring/tutor' }))
-  expect(listed).toMatch(/data-icon="graduation-cap"/)
+  const market = names.find((n) => shared(n) !== null)!
+  const listed = renderToStaticMarkup(Avatar({ label: `${market}/${markets.market(market)!.roles[0]!.role}` }))
+  expect(listed).toContain(`data-icon="${shared(market)}"`)
   const unlisted = renderToStaticMarkup(Avatar({ label: 'pottery/potter' }))
   expect(unlisted).not.toMatch(/<svg/)
   expect(unlisted).toMatch(/<span class="letter">P<\/span>/)
 })
 
 test("solid when the role's listings are offers, light when they are requests; hidden from screen readers", () => {
-  const solid = renderToStaticMarkup(Avatar({ label: 'tutoring/tutor' }))
-  const light = renderToStaticMarkup(Avatar({ label: 'tutoring/student' }))
+  const solid = renderToStaticMarkup(Avatar({ label: OFFERS }))
+  const light = renderToStaticMarkup(Avatar({ label: REQUESTS }))
   expect(solid).toMatch(/class="av md"/)
   expect(light).toMatch(/class="av md look"/)
   for (const drawn of [solid, light]) {
-    expect(drawn).toContain(`--h:${colorOf('tutoring')}`)
+    expect(drawn).toContain(`--h:${colorOf(split(OFFERS).market)}`)
     expect(drawn).toMatch(/aria-hidden="true"/)
   }
 })
@@ -98,7 +100,7 @@ test('a profile is its animal, picked from its address alone: the same address, 
   const address = '46aPq9mVd2XoA7'
   expect(animalOf(address)).toBe(animalOf(address))
   expect(animalOf(address)).toBe(ANIMALS[fnv1a(address) % ANIMALS.length])
-  const drawn = (a: string) => renderToStaticMarkup(Avatar({ label: 'tutoring/tutor', address: a }))
+  const drawn = (a: string) => renderToStaticMarkup(Avatar({ label: OFFERS, address: a }))
   expect(drawn(address)).toBe(drawn(address))
   expect(drawn(address)).toContain(`data-animal="${animalOf(address)[0]}"`)
 })
@@ -117,12 +119,12 @@ test('different addresses spread across all forty: 2,000 at random use every ani
 
 test("an animal on its market's color, solid or light as the market's icon was; each drawn in the text's color, one path or more", async () => {
   const { ANIMALS } = await import('../src/animals.ts')
-  const solid = renderToStaticMarkup(Avatar({ label: 'tutoring/tutor', address: 'A1' }))
-  const light = renderToStaticMarkup(Avatar({ label: 'tutoring/student', address: 'A1' }))
+  const solid = renderToStaticMarkup(Avatar({ label: OFFERS, address: 'A1' }))
+  const light = renderToStaticMarkup(Avatar({ label: REQUESTS, address: 'A1' }))
   expect(solid).toMatch(/class="av md"/)
   expect(light).toMatch(/class="av md look"/)
   for (const drawn of [solid, light]) {
-    expect(drawn).toContain(`--h:${colorOf('tutoring')}`)
+    expect(drawn).toContain(`--h:${colorOf(split(OFFERS).market)}`)
     expect(drawn).toMatch(/fill="currentColor"/)
     expect(drawn).not.toMatch(/data-icon=/)
   }

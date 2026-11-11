@@ -724,6 +724,14 @@ span.chip .icon {
   color: var(--danger);
 }
 
+/* A beta market's chip: small, on its tile's corner and beside its sheet's title. */
+span.chip.beta {
+  height: 22px;
+  padding: 0 8px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
 .said-chip {
   display: inline-flex;
 }
@@ -2128,6 +2136,7 @@ button.vcard:disabled {
 }
 
 button.market-tile {
+  position: relative;
   flex-direction: column;
   align-items: flex-start;
   justify-content: space-between;
@@ -2153,6 +2162,19 @@ button.market-tile .letter {
   font-family: var(--display);
   font-size: 26px;
   line-height: 30px;
+}
+
+button.market-tile .chip.beta {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+}
+
+/* A sheet's title with a chip after it: Tutoring, Beta. */
+h2.with-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 /* A role to pick: its avatar, who you are and what you do, a chevron. */
@@ -2741,6 +2763,34 @@ button.open-row {
 
 .open-row .muted {
   color: var(--ink3);
+}
+
+/* Several places in one field: each a row, with its remove button at its right. */
+.place-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.place-row > .open-row {
+  flex: 1;
+  min-width: 0;
+}
+
+/* A number, its unit after it: 3 nights. */
+.number {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.number > input {
+  flex: none;
+  width: 128px;
+}
+
+.number > .unit {
+  color: var(--ink2);
 }
 
 /* Money: the amount, its currency at its start, then what it is for. */

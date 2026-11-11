@@ -168,7 +168,8 @@ export async function world({ entryPerKb, filePerKb, forSale = true }: { entryPe
   const verifier = await startVerifier(
     verifierConfig({
       VERIFIER_NAME,
-      DIDIT_API_KEY: 'stand-in',
+      DIDIT_FACE_API_KEY: 'stand-in',
+      DIDIT_ID_API_KEY: 'stand-in',
       DIDIT_FACE_WORKFLOW_ID: FACE_WORKFLOW,
       DIDIT_ID_WORKFLOW_ID: ID_WORKFLOW,
       DIDIT_BASE_URL: 'http://127.0.0.1:9',

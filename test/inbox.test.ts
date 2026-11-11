@@ -18,6 +18,7 @@ import { newMessages, openAll, send } from '../src/flows/inbox.ts'
 import { walletKey } from '../src/flows/profiles.ts'
 import { leaveAll } from '../src/services/host.ts'
 import { Said } from '../src/words.ts'
+import { OFFERS, REQUESTS, split } from './labels.ts'
 import { type World, checkHere, freshDevice, verifiedWith, world } from './world.ts'
 
 let w: World
@@ -35,8 +36,8 @@ const ASK = 'Is Tuesday at six free?'
 const YES = 'Tuesday at six, yes.'
 
 test('a message and its reply: counted with nothing unlocked, opened in one unlock, from whom; what each sent shows on any device, never as new', async () => {
-  const tutor = await verifiedWith(w, 'tutoring/tutor')
-  const student = await verifiedWith(w, 'tutoring/student')
+  const tutor = await verifiedWith(w, OFFERS)
+  const student = await verifiedWith(w, REQUESTS)
   const [t, s] = [tutor.profiles[0]!, student.profiles[0]!]
 
   const [fromBefore, toBefore] = [await w.balance(s.address), await w.balance(t.address)]
@@ -52,7 +53,7 @@ test('a message and its reply: counted with nothing unlocked, opened in one unlo
   expect(opened.threads).toHaveLength(1)
   const [thread] = opened.threads
   expect([thread!.mine, thread!.them]).toEqual([t.address, s.address])
-  expect(thread!.who, "the sender's market and role, and a badge for each check whose verification checks, the face check's").toEqual({ market: 'tutoring', role: 'student', checks: ['face'] })
+  expect(thread!.who, "the sender's market and role, and a badge for each check whose verification checks, the face check's").toEqual({ ...split(REQUESTS), checks: ['face'] })
   expect(thread!.messages.map((m) => [m.text, m.mine])).toEqual([[ASK, false]])
   expect(await newCount(w.host, [t]), 'none new once opened').toBe(0)
 
@@ -63,7 +64,7 @@ test('a message and its reply: counted with nothing unlocked, opened in one unlo
     [ASK, true],
     [YES, false],
   ])
-  expect(theirs.threads[0]!.who).toEqual({ market: 'tutoring', role: 'tutor', checks: ['face'] })
+  expect(theirs.threads[0]!.who).toEqual({ ...split(OFFERS), checks: ['face'] })
 
   freshDevice()
   expect(await newCount(w.host, [s]), 'on a new device, nothing already there is new').toBe(0)
@@ -87,20 +88,20 @@ test('a message and its reply: counted with nothing unlocked, opened in one unlo
 })
 
 test("one of the person's profiles to another of theirs: it arrives, counted with nothing unlocked, and shows in both threads in one unlock", async () => {
-  const me = await verifiedWith(w, 'tutoring/student', 'tutoring/tutor')
+  const me = await verifiedWith(w, REQUESTS, OFFERS)
   const [s, t] = me.profiles as [Profile, Profile]
   await send(w, me.seed, s.label, t.address, ASK)
   expect(await newMessages(w.host, [s, t]), "new to the tutor; what the student sent is in no inbox").toEqual({ [s.address]: [], [t.address]: [expect.any(String)] })
   const { threads } = await openAll(w, me.seed, [s, t], checkHere)
   const tutors = threads.find((x) => x.mine === t.address)!
-  expect([tutors.them, tutors.who, tutors.messages.map((m) => [m.text, m.mine])], "the tutor's: from the student, verified").toEqual([s.address, { market: 'tutoring', role: 'student', checks: ['face'] }, [[ASK, false]]])
+  expect([tutors.them, tutors.who, tutors.messages.map((m) => [m.text, m.mine])], "the tutor's: from the student, verified").toEqual([s.address, { ...split(REQUESTS), checks: ['face'] }, [[ASK, false]]])
   const students = threads.find((x) => x.mine === s.address)!
   expect([students.them, students.messages.map((m) => [m.text, m.mine])], "the student's: what it sent").toEqual([t.address, [[ASK, true]]])
 })
 
 test("a message that does not count is not shown: signed by a key its sender's profile entry does not list", async () => {
-  const tutor = await verifiedWith(w, 'tutoring/tutor')
-  const student = await verifiedWith(w, 'tutoring/student')
+  const tutor = await verifiedWith(w, OFFERS)
+  const student = await verifiedWith(w, REQUESTS)
   const [t, s] = [tutor.profiles[0]!, student.profiles[0]!]
   const body = (await readFolder([w.host], t.address, Date.now())).current.get('profile')!.entry.body!
   const stranger = await newAccessKey()
@@ -112,7 +113,7 @@ test("a message that does not count is not shown: signed by a key its sender's p
 })
 
 test('to a folder that takes no messages, or to no profile: one line', async () => {
-  const student = await verifiedWith(w, 'tutoring/student')
+  const student = await verifiedWith(w, REQUESTS)
   const s = student.profiles[0]!
   const wallet = (await walletKey(student.seed)).address
   const line = async (to: string) => {
@@ -120,15 +121,15 @@ test('to a folder that takes no messages, or to no profile: one line', async () 
     return [(err as Said).message, (err as Said).red]
   }
   expect(await line(wallet), 'the Profiles folder has no open key').toEqual(['This profile takes no messages.', false])
-  expect(await line((await mainKey(student.seed, 'tutoring/tutor')).address)).toEqual(['No profile is at this address.', true])
+  expect(await line((await mainKey(student.seed, OFFERS)).address)).toEqual(['No profile is at this address.', true])
 })
 
 test('a message refused for its price: one more credit from the wallet, and sent', async () => {
   // Priced so the credit a new profile gets pays its profile entry and not much more.
   const pricey = await world({ entryPerKb: '0.2' })
   try {
-    const tutor = await verifiedWith(pricey, 'tutoring/tutor')
-    const student = await verifiedWith(pricey, 'tutoring/student')
+    const tutor = await verifiedWith(pricey, OFFERS)
+    const student = await verifiedWith(pricey, REQUESTS)
     const [t, s] = [tutor.profiles[0]!, student.profiles[0]!]
     const wallet = (await walletKey(student.seed)).address
     const before = await pricey.balance(wallet)

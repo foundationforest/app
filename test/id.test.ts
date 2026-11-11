@@ -23,6 +23,7 @@ import { walletKey } from '../src/flows/profiles.ts'
 import { NotPassed, TRIES, advance, ask, consentOf, creditLines, creditsOf, finish, open, pay, resume, stampNumberAt, stepOf } from '../src/flows/verify.ts'
 import { Refused } from '../src/services/http.ts'
 import { Said } from '../src/words.ts'
+import { OFFERS, OTHER_OFFERS, OTHER_REQUESTS } from './labels.ts'
 import { ID_CREDITS, type World, checkHere, freshDevice, proveHere, world } from './world.ts'
 
 let w: World
@@ -99,8 +100,8 @@ describe('the ID check', () => {
   test('paid, checked, its stamp and its gift; then, in one unlock, every profile shows both checks', async () => {
     const p = person('ada')
     await faceChecked(p)
-    const tutor = await makeProfile(w, p.seed, 'tutoring/tutor', proveHere)
-    const seller = await makeProfile(w, p.seed, 'clothing/seller', proveHere)
+    const tutor = await makeProfile(w, p.seed, OFFERS, proveHere)
+    const seller = await makeProfile(w, p.seed, OTHER_OFFERS, proveHere)
     expect(await shown(tutor.address)).toEqual([w.keys.face])
     expect(device.checks()).toEqual(['face'])
 
@@ -231,11 +232,15 @@ describe('the ID check', () => {
     await paid(p)
     await checked(p)
     expect(await advance(w, p.id, p.seed, proveHere)).toBeNull()
+    // Didit keeps the person it checked, and finds their face again: the same name and birth date, so
+    // the verifier refuses a second ID stamp (services' verifier, since services#127).
+    const rosalind = doc('rosalind')
+    w.idCheck.users.set('id-rosalind', { fullName: rosalind.full_name!, birth: rosalind.date_of_birth! })
     freshDevice()
     const q = person('impostor')
     await faceChecked(q)
     await paid(q)
-    await checked(q, passedId(q.name, doc('rosalind')))
+    await checked(q, passedId(q.name, rosalind, { matches: [{ vendorData: 'id-rosalind', sessionId: null }] }))
     const err = await advance(w, q.id, q.seed, proveHere).catch((e: unknown) => e)
     expect([(err as Said).message, (err as Said).red]).toEqual(["You've already verified with ID in another Forest. Nothing was charged.", true])
   })
@@ -243,7 +248,7 @@ describe('the ID check', () => {
   test('the page closed after the stamp was kept, before every profile showed it: Start finishes it', async () => {
     const p = person('barbara')
     await faceChecked(p)
-    const made = await makeProfile(w, p.seed, 'home-repair/repairer', proveHere)
+    const made = await makeProfile(w, p.seed, OTHER_REQUESTS, proveHere)
     await paid(p)
     await checked(p)
     const closed = async () => {
@@ -252,7 +257,7 @@ describe('the ID check', () => {
     await expect(advance(w, p.id, p.seed, closed)).rejects.toThrow('the page closed')
     expect(stepOf(p.id)).toEqual({ at: 'kept' })
     expect(await shown(made.address)).toEqual([w.keys.face])
-    expect(await resume(w, p.id, p.seed, proveHere)).toEqual({ verified: true, labels: ['home-repair/repairer'] })
+    expect(await resume(w, p.id, p.seed, proveHere)).toEqual({ verified: true, labels: [OTHER_REQUESTS] })
     expect(await shown(made.address)).toEqual([w.keys.face, w.keys.id].sort())
     expect(device.under()).toBeNull()
   })

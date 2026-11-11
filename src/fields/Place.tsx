@@ -12,7 +12,9 @@
 // which a browser that said no hides. The map opens on the listing's place, else on the person,
 // else on the last centre this device kept, else on the whole world; an area starts round where it
 // opens, with nothing to go on where it is first tapped, and round the person when the location
-// comes and there is no circle yet.
+// comes and there is no circle yet. A field that holds a list of places (`many`, such as where a
+// guest would stay) is Places: each place its own row, opening the same screen on it, with a remove
+// button at its right, then a row that adds one more; none held, the field is left out.
 
 import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
@@ -39,6 +41,7 @@ type Held = NonNullable<ReturnType<typeof placeIn>>
 /** What the place's row and screen say. */
 export const PLACE_SAYS = {
   choose: 'Choose on the map',
+  another: 'Add another place',
   exact: 'Anyone can see this exact spot.',
   noMap: "The map isn't available right now.",
 }
@@ -71,6 +74,63 @@ export function Place({ label, field, value, onChange }: { label: string; field:
             was={was}
             onDone={(place) => {
               onChange(place)
+              close()
+            }}
+            onBack={close}
+          />,
+          document.body,
+        )}
+    </div>
+  )
+}
+
+/** Several places in one field: each its own row, which opens the place screen on it, a remove button at its right; then one row that adds another, Choose on the map while there is none. */
+export function Places({ label, field, value, onChange }: { label: string; field: Pick<Field, 'radiusKm'>; value: unknown; onChange: (v: unknown) => void }) {
+  const held = (Array.isArray(value) ? value : []).map(placeIn).filter((p): p is Held => p !== null)
+  // The row the screen opened from, which takes the focus again when it closes; and which place it opened on, null for a new one.
+  const back = useRef<HTMLButtonElement | null>(null)
+  const { open, show, close } = useOver(back)
+  const [at, setAt] = useState<number | null>(null)
+  const set = (next: Held[]) => onChange(next.length ? next.map(({ area, ...p }) => ({ ...p, ...(area && { area }) })) : undefined)
+  const opening = (i: number | null) => (e: { currentTarget: HTMLButtonElement }) => {
+    back.current = e.currentTarget
+    setAt(i)
+    show()
+  }
+  return (
+    <div className="place places" role="group" aria-label={label}>
+      {held.map((place, i) => {
+        const lines = placeLines(place)
+        return (
+          <div key={i} className="place-row">
+            <button type="button" className="open-row" onClick={opening(i)}>
+              <Icon name="map-pin" />
+              <span className="two">
+                <strong>{lines.main}</strong>
+                {lines.more && <span>{lines.more}</span>}
+              </span>
+              <Icon name="caret-right" className="car" />
+            </button>
+            <button type="button" className="round" aria-label={`Remove ${lines.main}`} onClick={() => set(held.filter((_, j) => j !== i))}>
+              <Icon name="x" />
+            </button>
+          </div>
+        )
+      })}
+      <button type="button" className="open-row" onClick={opening(null)}>
+        <Icon name={held.length ? 'plus' : 'map-pin'} />
+        <span className="grow muted">{held.length ? PLACE_SAYS.another : PLACE_SAYS.choose}</span>
+        <Icon name="caret-right" className="car" />
+      </button>
+      {open &&
+        createPortal(
+          <PlaceScreen
+            label={label}
+            start={Math.max(1, field.radiusKm ?? 5)}
+            was={at === null ? null : (held[at] ?? null)}
+            onDone={(place) => {
+              const got = placeIn(place)
+              if (got) set(at === null ? [...held, got] : held.map((p, j) => (j === at ? got : p)))
               close()
             }}
             onBack={close}

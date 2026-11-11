@@ -29,6 +29,7 @@ import { connect, ranOut, readRequest } from '../src/flows/connect.ts'
 import { accessEntry, addTo, end, findConnections, removeFrom } from '../src/flows/connections.ts'
 import { walletKey } from '../src/flows/profiles.ts'
 import { enter } from '../src/flows/start.ts'
+import { OFFERS, OTHER_OFFERS, REQUESTS } from './labels.ts'
 import { type World, freshDevice, proveHere, verifiedWith, world } from './world.ts'
 
 let w: World
@@ -40,9 +41,9 @@ beforeAll(async () => {
 afterAll(() => w?.close())
 beforeEach(() => freshDevice())
 
-const TUTOR = 'tutoring/tutor'
-const STUDENT = 'tutoring/student'
-const SELLER = 'clothing/seller'
+const TUTOR = OFFERS
+const STUDENT = REQUESTS
+const SELLER = OTHER_OFFERS
 
 /** A login request, as services' mcp signs one at /authorize for an AI app named `name`. */
 const request = (name = 'An AI app', more: { redirect?: string; exp?: number } = {}) =>
@@ -158,14 +159,10 @@ describe('same seed, same connections', () => {
     const [here, there] = mine.map((c) => c.address) as [string, string]
     await app.addToConnection(here, SELLER)
     await addTo(w, p.seed, there, TUTOR)
-    expect((await findConnections(w, p.seed)).map((c) => c.labels)).toEqual([
-      [SELLER, TUTOR],
-      [SELLER, TUTOR],
-    ])
-    expect(labelsOf(await app.connections()).map((c) => c[2])).toEqual([
-      [SELLER, TUTOR],
-      [SELLER, TUTOR],
-    ])
+    // Each its profiles in label order.
+    const both = [SELLER, TUTOR].sort()
+    expect((await findConnections(w, p.seed)).map((c) => c.labels)).toEqual([both, both])
+    expect(labelsOf(await app.connections()).map((c) => c[2])).toEqual([both, both])
   })
 })
 

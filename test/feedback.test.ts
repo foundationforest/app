@@ -11,6 +11,7 @@ import { givenOf, newOf, newest, notices, rate } from '../src/flows/feedback.ts'
 import { ratedOf } from '../src/rated.ts'
 import { readRated } from '../src/services/index.ts'
 import { Unreachable } from '../src/services/http.ts'
+import { OFFERS, OTHER_OFFERS, OTHER_REQUESTS, REQUESTS } from './labels.ts'
 import { type IndexPage, type World, freshDevice, verifiedWith, world } from './world.ts'
 
 let w: World
@@ -47,8 +48,8 @@ function page(address: string, o: { rating?: number; reviews?: Said[]; vouches?:
 
 describe('what the index says of a profile', () => {
   test('what it counted, newest first, by kind; its rating and how many reviews; its listings by address, and how many it lists; how many it wrote; a 404 is nothing yet; down, one quiet line', async () => {
-    const seller = (await verifiedWith(w, 'clothing/seller')).profiles[0]!
-    const buyer = (await verifiedWith(w, 'clothing/buyer')).profiles[0]!
+    const seller = (await verifiedWith(w, OTHER_OFFERS)).profiles[0]!
+    const buyer = (await verifiedWith(w, OTHER_REQUESTS)).profiles[0]!
     w.indexSays(
       seller.address,
       page(seller.address, {
@@ -91,8 +92,8 @@ describe('what the index says of a profile', () => {
 
 describe('what is new on a profile', () => {
   test('a profile made here: all that comes to it; once the Inbox has shown it, nothing more', async () => {
-    const seller = (await verifiedWith(w, 'clothing/seller')).profiles[0]!
-    const buyer = (await verifiedWith(w, 'clothing/buyer')).profiles[0]!
+    const seller = (await verifiedWith(w, OTHER_OFFERS)).profiles[0]!
+    const buyer = (await verifiedWith(w, OTHER_REQUESTS)).profiles[0]!
     device.saveProfiles([seller])
     expect(device.seen()[seller.address], 'marked at the start as it was made').toBe(0)
     w.indexSays(seller.address, page(seller.address, { rating: 10, reviews: [{ writer: buyer.address, id: 'a', body: { score: '10' }, time: 1_000 }] }))
@@ -105,8 +106,8 @@ describe('what is new on a profile', () => {
   })
 
   test('a new device: nothing already there is new; what comes after is', async () => {
-    const seller = (await verifiedWith(w, 'clothing/seller')).profiles[0]!
-    const buyer = (await verifiedWith(w, 'clothing/buyer')).profiles[0]!
+    const seller = (await verifiedWith(w, OTHER_OFFERS)).profiles[0]!
+    const buyer = (await verifiedWith(w, OTHER_REQUESTS)).profiles[0]!
     const first = { writer: buyer.address, id: 'a', body: { score: '8' }, time: 5_000 }
     w.indexSays(seller.address, page(seller.address, { reviews: [first] }))
     freshDevice()
@@ -125,9 +126,9 @@ describe('what is new on a profile', () => {
 })
 
 test("Notifications: every review, vouch and report about any of the person's profiles, newest first, those after the marks new; no message among them", async () => {
-  const p = await verifiedWith(w, 'clothing/seller', 'tutoring/tutor')
+  const p = await verifiedWith(w, OTHER_OFFERS, OFFERS)
   const [seller, tutor] = p.profiles as [device.Profile, device.Profile]
-  const other = (await verifiedWith(w, 'clothing/buyer', 'tutoring/student')).profiles
+  const other = (await verifiedWith(w, OTHER_REQUESTS, REQUESTS)).profiles
   w.indexSays(seller.address, page(seller.address, { reviews: [{ writer: other[0]!.address, id: 'a', body: { score: '9' }, time: 100 }], reports: [{ writer: other[0]!.address, id: 'b', body: { text: 'Late.' }, time: 300 }] }))
   w.indexSays(tutor.address, page(tutor.address, { vouches: [{ writer: other[1]!.address, id: 'c', body: { text: 'Real.' }, time: 200 }] }))
   const list = [seller, tutor]
@@ -144,8 +145,8 @@ test("Notifications: every review, vouch and report about any of the person's pr
 })
 
 test("what a profile gave: its reviews, vouches and reports, from its own folder, each naming who it is about", async () => {
-  const seller = await verifiedWith(w, 'clothing/seller')
-  const buyer = await verifiedWith(w, 'clothing/buyer')
+  const seller = await verifiedWith(w, OTHER_OFFERS)
+  const buyer = await verifiedWith(w, OTHER_REQUESTS)
   const [s, b] = [seller.profiles[0]!, buyer.profiles[0]!]
   await post(w, seller.seed, s, 'listing', { description: 'A wool coat.' })
   await post(w, buyer.seed, b, 'review', { subject: s.address, score: '9.5', asDescribed: 'yes' })
