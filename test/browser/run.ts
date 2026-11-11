@@ -2778,7 +2778,7 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   // Report, the seller's address pasted: its line, its red square, Report in red at the foot.
   await button(buyer.page, 'Review someone').click()
   await whom.getByLabel('Their address').fill(seller)
-  await whom.waitFor({ state: 'detached' })
+  await buyer.page.getByRole('heading', { name: 'Who are you reviewing?' }).waitFor({ state: 'detached' })
   await buyer.page.locator('.top .who', { hasText: SELLER_WORDS }).waitFor()
   await kinds.getByRole('button', { name: 'Report' }).click()
   await buyer.page.getByText("Warn others it's fake or a scam.").waitFor()
