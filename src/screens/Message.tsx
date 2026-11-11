@@ -105,7 +105,7 @@ export function Message({ to: given, onSent, onBack }: Props) {
           <div className="field">
             <span className="label">From</span>
             <div className="person from">
-              <Avatar label={label} {...(me && { address: me.address })} />
+              <Avatar label={label} />
               <span className="two">
                 <span className="who-name">
                   <Named label={label} />

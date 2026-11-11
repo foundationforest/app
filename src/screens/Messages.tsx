@@ -8,7 +8,7 @@
 // overlapped, with how many ("3 new messages"); with none new, a lock and Open your messages. Open,
 // one unlock, opens every profile's inbox and what it sent, into threads that stay open while the
 // page is; with a seed held they open by themselves (opening.ts), the loader showing once that takes
-// half a second.
+// half a second, alone in the middle of the screen: on a laptop across both panes (theme.css).
 // Opened: chips that pick whose, All, then each of the person's profiles, a dot in its market's color
 // and its market and role (Clothing seller); then the conversations in one card, newest first, each
 // as little as tells them apart: who it is with (their avatar, the person's name for them, else
@@ -58,6 +58,14 @@ export function Messages({ only, pane = false, open: shown, onOnly, onThread, on
   const asking = need && (!held || open.note !== null)
 
   const Root = pane ? 'div' : 'main'
+  if (!(list.length > 0 && asking) && held && open.busy && !opened?.all)
+    return (
+      <Root className={pane ? 'pane-body loading' : 'loading'}>
+        <div className="fill" />
+        <Loader big />
+        <div className="fill" />
+      </Root>
+    )
   return (
     <Root className={pane ? 'pane-body' : undefined}>
       <Top
@@ -76,7 +84,7 @@ export function Messages({ only, pane = false, open: shown, onOnly, onThread, on
             {newCount > 0 ? (
               <span className="stacked">
                 {newTo.map((p) => (
-                  <Avatar key={p.address} label={p.label} address={p.address} />
+                  <Avatar key={p.address} label={p.label} />
                 ))}
               </span>
             ) : (
@@ -92,8 +100,6 @@ export function Messages({ only, pane = false, open: shown, onOnly, onThread, on
           </button>
           <div className="fill" />
         </>
-      ) : held && open.busy && !opened?.all ? (
-        <Loader big />
       ) : (
         <>
           <div className="filters" role="group" aria-label="Whose">

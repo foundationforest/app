@@ -7,12 +7,13 @@
 // the top of Notifications), what a market outgrew, to update, a profile, its messages, its Reviews
 // and a review received, someone else's profile (a tap on another profile wherever it shows; one
 // of the person's own opens as theirs), a listing, Review someone, a thread, a new message, Get verified (a check
-// to add, the ID's sheet up for the ID), Passkeys, Add a passkey and Your 24 words, Your AI, an AI
+// to add), Passkeys, Add a passkey and Your 24 words, Your AI, an AI
 // app and Connect your AI, or About Forest. Back wherever there is somewhere to go back to: Get
 // verified to Start, Your 24 words to No passkey found. A check runs at Stripe and Didit in this tab:
 // back from Stripe's page (/paid) or Didit's (/back), the page opens on Get verified, in setup too,
-// which goes on by itself. A step done (a passkey made, verified, a
-// profile made) can't be undone by back: Your first profile has Later, Connect your AI Skip. On a
+// which goes on by itself, and comes back to the checks once it's done; from Start, Continue goes on
+// to the first profile. A step done (a passkey made, verified, a profile made) can't be undone by
+// back: Get verified has Continue, Your first profile Later, Connect your AI Skip. On a
 // laptop, every setup screen sits beside the deep green panel (screens/Setup.tsx); every screen past
 // setup sits in the frame (frame.tsx): on a phone, the places' tabs at the bottom of each place; on a
 // laptop, the sidebar beside every one, and Messages and a thread side by side, in two panes
@@ -34,12 +35,12 @@
 
 import { type ReactNode, useEffect, useRef, useState } from 'react'
 
-import { type Check, passkey as inUse, keepWaiting, profiles, takeWaiting, under } from './device.ts'
+import { passkey as inUse, keepWaiting, profiles, takeWaiting, under } from './device.ts'
 import type { Posted } from './flows/entries.ts'
 import { Frame, type FrameGo, type On, type Place, useWide } from './frame.tsx'
 import { RETURNS, PATHS as SCREEN_PATHS } from './paths.ts'
 import type { Entered } from './flows/start.ts'
-import { NotPassed, type Step, choose, stepOf } from './flows/verify.ts'
+import { NotPassed, type Step, stepOf } from './flows/verify.ts'
 import { useNewVersion, useProfiles } from './hooks.ts'
 import { opened } from './opened.ts'
 import { About } from './screens/About.tsx'
@@ -128,11 +129,8 @@ const waitedThrough: Waiting | null = (() => {
   return null
 })()
 
-/** A check to add, for the person verified here: Get verified, where it stands, from the device; for the ID with nothing under way, its sheet up, its consent screen. */
-function checkOf(id: string, check: Check): Screen {
-  if (check === 'id' && stepOf(id).at === 'choose') choose(id, 'id')
-  return { at: 'verify', setup: false, id, step: stepOf(id) }
-}
+/** A check to add, for the person verified here: Get verified, where it stands, from the device. */
+const checkOf = (id: string): Screen => ({ at: 'verify', setup: false, id, step: stepOf(id) })
 
 /** The screen the page's path and history name; Start until someone is verified here. */
 function here(): Screen {
@@ -156,8 +154,9 @@ function here(): Screen {
   if (login) return { at: 'new' }
   const now = kept()
   switch (path) {
+    // Get verified, from Start, after a check is done: still from Start, so Continue shows.
     case '/id':
-      return checkOf(id, 'id')
+      return now.setup ? { at: 'verify', setup: true, id, step: stepOf(id) } : checkOf(id)
     case '/new':
       return { at: 'new', ...(isText(now.market) && { market: now.market }) }
     case '/you':
@@ -221,6 +220,7 @@ function keptOf(to: Screen): Kept {
     case 'ai':
       return { address: to.address }
     case 'connect-ai':
+    case 'verify':
       return to.setup ? { setup: true } : {}
     default:
       return {}
@@ -257,10 +257,11 @@ function Screens() {
       removeEventListener('pagehide', closing)
     }
   }, [])
-  // A path this screen does not have (Start's, or one from before Forget) is put right.
+  // A path this screen does not have (Start's, Stripe's or Didit's way back, or one from before
+  // Forget) is put right, with what the screen keeps.
   useEffect(() => {
     const path = PATHS[screen.at] ?? '/'
-    if (location.pathname !== path) history.replaceState(kept(), '', path)
+    if (location.pathname !== path) history.replaceState({ ...kept(), ...keptOf(screen) }, '', path)
   }, [screen.at])
 
   /** To `to`, its path pushed so back comes back here, or put in place of this one's, which back then leaves as it would have. */
@@ -303,8 +304,8 @@ function Screens() {
     const t = opened()?.threads.find((x) => x.them === to)
     go(t ? { at: 'thread', mine: t.mine, them: to } : { at: 'message', to }, true)
   }
-  /** A check to add, from You or Home: Get verified, the ID's sheet up for the ID. */
-  const addCheck = (check: Check) => go(checkOf(inUse()!, check), true)
+  /** A check to add, from You or Home: Get verified. */
+  const addCheck = () => go(checkOf(inUse()!), true)
   // Where the frame's buttons go: a place in place of this screen, as its tabs do; the rest pushed, as from a card.
   const frameGo: FrameGo = {
     place,

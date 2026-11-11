@@ -2,7 +2,7 @@
 // Selfie and ID, each with its badge's square: a check done its badge, the forest square, and
 // Verified on a mint chip; one not done its badge's outline, dashed, which starts it, one line on
 // what it gives, from the verifier's gifts as Get verified says it, and a plain Add, which opens Get
-// verified too (the ID's sheet up, for the ID). Then one card of rows, each opening its own screen: Passkeys, with how many
+// verified too. Then one card of rows, each opening its own screen: Passkeys, with how many
 // (Passkeys.tsx); Your AI, with the apps' names (AiApps.tsx); Appearance, Auto, Light or Dark, on a
 // sheet whose one choice is a list of rows, a tap picking it and closing the sheet; and About Forest
 // (About.tsx). At the foot, Forget this device, red text, tapped twice (forget.ts). Nothing here

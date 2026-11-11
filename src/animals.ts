@@ -18,10 +18,10 @@
  * OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-// A profile's animal, the app's own drawing of it: one of forty, picked from the profile's address
-// alone (FNV-1a over its bytes, as the shared avatar rule hashes a market's name), so the same
-// profile is the same animal on every device and for everyone using this app. Nothing is stored or
-// published; avatar.tsx draws it. Each is in one color on a 32 grid, from Fluent Emoji's High
+// Someone else's profile's animal, the app's own drawing of it (the person's own show their market's
+// icon): one of forty, picked from the profile's address alone (FNV-1a over its bytes, as the shared
+// avatar rule hashes a market's name), so the same profile is the same animal on every device and for
+// everyone using this app. Nothing is stored or published; avatar.tsx draws it. Each is in one color on a 32 grid, from Fluent Emoji's High
 // Contrast style: its paths as given there, each number rounded to 0.1 and its color dropped, so it
 // takes the color of the text around it; a path with the even-odd rule keeps it.
 

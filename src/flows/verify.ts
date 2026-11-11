@@ -6,7 +6,8 @@
 //      stamp a person: one from the verifier's current ID key is kept, and nothing is paid. Else the
 //      gift's buy, then the payment at the verifier, its id kept on the device (device.ts, `Under`),
 //      since Stripe sends the person back with none. On Stripe's page, $5 is held on their card, and
-//      charged only once a stamp comes from it;
+//      charged only once a stamp comes from it. Back from Stripe's page without paying, the payment
+//      is dropped, and nothing is said;
 //   2. open: the gift's buy (one buy at the host for exactly the check's gift, as services'
 //      end-to-end test buys it), then a session at the verifier, kept on the device with its page, so
 //      a tab closed midway opens the same check again; the ID check's with its payment, each session
@@ -63,6 +64,14 @@ export class NotPassed extends Said {
     this.name = 'NotPassed'
     this.code = code
     this.check = check
+  }
+}
+
+/** Back from Stripe's page without paying: the payment opened no session and holds nothing, so it is dropped, and nothing is said. */
+export class Unpaid extends Error {
+  constructor() {
+    super('Not paid.')
+    this.name = 'Unpaid'
   }
 }
 
@@ -156,7 +165,7 @@ function over(passkey: string): void {
  * the ID check, then the payment, its id kept from now, in place of any check under way; and Stripe's
  * page, which sends the person to `returnUrl`.
  */
-export async function pay(s: Services, passkey: string, returnUrl: string, stampNumber: bigint): Promise<{ stamp: string } | { url: string; test: boolean }> {
+export async function pay(s: Services, passkey: string, returnUrl: string, stampNumber: bigint): Promise<{ stamp: string } | { url: string }> {
   const signed = await stampBack(s.verifier, stampNumber, 'id')
   if (signed) {
     choose(passkey, 'id')
@@ -168,7 +177,7 @@ export async function pay(s: Services, passkey: string, returnUrl: string, stamp
   keepUnder(u)
   const { payment, url } = await idPayment(s.verifier, returnUrl)
   keepUnder({ ...u, payment })
-  return { url, test: payment.startsWith('cs_test_') }
+  return { url }
 }
 
 /** The payment dropped, with its tries: Pay again is the next step. */
@@ -206,8 +215,13 @@ export async function open(s: Services, passkey: string, returnUrl?: string): Pr
   try {
     session = check === 'face' ? await faceSession(s.verifier, returnUrl) : await idSession(s.verifier, u.payment!, returnUrl)
   } catch (err) {
-    // Not paid after all, or its three tries used: Pay again.
-    if (err instanceof Refused && (err.code === 'not_paid' || err.code === 'payment_used')) keepUnder(unpaid(u))
+    // Not paid after all, or its tries used, or its hold over: the payment dropped, so the next tap
+    // pays again. One that opened no session was never paid (back from Stripe's page): nothing said.
+    if (err instanceof Refused && (err.code === 'not_paid' || err.code === 'payment_used')) {
+      keepUnder(unpaid(u))
+      if (err.code === 'not_paid' && !u.tries) throw new Unpaid()
+      throw new NotPassed(err.code, 'id')
+    }
     throw err
   }
   keepUnder({ ...u, session: session.sessionId, url: session.url, ...(check === 'id' && { tries: (u.tries ?? 0) + 1 }) })

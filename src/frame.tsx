@@ -19,6 +19,7 @@ import { Icon, type IconName } from './icons.tsx'
 import { Mark } from './mark.tsx'
 import { pairs } from './markets.ts'
 import { Named, Search } from './ui.tsx'
+import { Wordmark } from './wordmark.tsx'
 
 export type Place = 'home' | 'notifications' | 'you'
 
@@ -135,7 +136,7 @@ function Side({ on, go }: { on: On; go: FrameGo }) {
     <aside className="side">
       <div className="brand">
         <Mark size={26} />
-        <span className="d">Forest</span>
+        <Wordmark />
       </div>
       <Search />
       <nav className="navs" aria-label="Places">
@@ -159,7 +160,7 @@ function Side({ on, go }: { on: On; go: FrameGo }) {
         const here = typeof on === 'object' && on.profile === p.address
         return (
           <button key={p.address} className={here ? 'nav profile on' : 'nav profile'} aria-current={here ? 'page' : undefined} onClick={() => go.profile(p.address)}>
-            <Avatar label={p.label} address={p.address} size="sm" />
+            <Avatar label={p.label} size="sm" />
             <span className="grow">
               <Named label={p.label} />
             </span>

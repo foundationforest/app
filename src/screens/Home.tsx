@@ -1,16 +1,17 @@
 // Home, the person's profiles: on a phone, the mark and Search Forest at the top (on a laptop the
-// search is in the sidebar); then Your profiles, with the person's badges beside it, once, since
-// every profile of one person carries the same checks: a check done its badge (a tap says its
-// words), one not done its badge's outline, dashed and muted, which starts it. Then one card per
-// profile, in the app's order (order.ts): those with something new first, then the most recently
-// used here. A card shows its avatar, its animal on its market's color, with how many things are new
-// on it (messages, and reviews, vouches and reports) in a small green count on its corner; its
-// market in bold and its role muted under it, each line ending short when too long; and at its right
-// the index's rating with its star over how many reviews it counted, or what came with no score yet
-// (1 vouch), or No reviews. Every card is one height, rated or not, so a list never jumps as ratings
-// come; on a laptop, as many columns of about 300px as fit. New profile, while a market's role has no
-// profile of theirs, is always in reach: on a phone, a round-ended forest button floating at the
-// bottom right, above the tabs; on a laptop, a button at the right of Your profiles.
+// search is in the sidebar); then Your profiles. On a laptop, the person's badges beside it, once,
+// since every profile of one person carries the same checks: a check done its badge (a tap says its
+// words), one not done its badge's outline, dashed and muted, which opens Get verified; on a phone
+// they live in You and on each profile's page. Then one card per profile, in the app's order
+// (order.ts): those with something new first, then the most recently used here. A card shows its
+// avatar, its market's icon on its market's color, with how many things are new on it (messages,
+// and reviews, vouches and reports) in a small green count on its corner; its market in bold and its
+// role muted under it, each line ending short when too long; and at its right the index's rating
+// with its star over how many reviews it counted, or what came with no score yet (1 vouch), or No
+// reviews. Every card is one height, rated or not, so a list never jumps as ratings come; on a
+// laptop, as many columns of about 300px as fit. New profile, while a market's role has no profile of
+// theirs, is always in reach: on a phone, a round forest + right after Your profiles; on a laptop, a
+// button at the right of it.
 // Nothing on a card asks the passkey: the device keeps which profiles are the person's, and all a
 // card shows is public. Above them, when the Profiles folder holds a profile made on another
 // device, one row, New profiles from another device: one unlock reads them, and their cards show
@@ -48,10 +49,14 @@ export function Home({ onOpen, onNew, onCheck }: Props) {
     await withSeed(passkey()!, (seed) => takeElsewhere(config, seed))
   })
   const free = pairs.some((p) => !held.has(p.label))
-  const newProfile = (
-    <button className={wide ? 'primary small new-profile' : 'fab'} onClick={onNew}>
+  const newProfile = wide ? (
+    <button className="primary small new-profile" onClick={onNew}>
       <Icon name="plus" bold />
       New profile
+    </button>
+  ) : (
+    <button className="addround" aria-label="New profile" onClick={onNew}>
+      <Icon name="plus" bold />
     </button>
   )
   return (
@@ -64,10 +69,12 @@ export function Home({ onOpen, onNew, onCheck }: Props) {
       )}
       <div className="titled">
         <h1>Your profiles</h1>
-        <span className="badges" role="group" aria-label="How you're verified">
-          {(['face', 'id'] as const).map((c) => (has.has(c) ? <Verified key={c} check={c} big alone /> : <Unverified key={c} check={c} onClick={() => onCheck(c)} />))}
-        </span>
-        {wide && free && newProfile}
+        {wide && (
+          <span className="badges" role="group" aria-label="How you're verified">
+            {(['face', 'id'] as const).map((c) => (has.has(c) ? <Verified key={c} check={c} big alone /> : <Unverified key={c} check={c} onClick={() => onCheck(c)} />))}
+          </span>
+        )}
+        {free && newProfile}
       </div>
       {elsewhere && (
         <div className="rows">
@@ -87,7 +94,7 @@ export function Home({ onOpen, onNew, onCheck }: Props) {
           return (
             <button key={p.address} className="card profile-card" onClick={() => onOpen(p.address)}>
               <span className="avwrap">
-                <Avatar label={p.label} address={p.address} />
+                <Avatar label={p.label} />
                 {fresh > 0 && (
                   <span className="newpip" aria-label={`${fresh} new`}>
                     {fresh}
@@ -112,7 +119,6 @@ export function Home({ onOpen, onNew, onCheck }: Props) {
         })}
       </div>
       {unreached && <p className="line">Can't reach the index.</p>}
-      {!wide && free && newProfile}
     </main>
   )
 }

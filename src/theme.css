@@ -4,8 +4,10 @@
    what is soft, sun for stars and warnings, red for errors, reports and removing. Dark is its own
    set; the device's setting picks one unless data-theme on <html> says otherwise. Every text 4.5:1
    against what is behind it, every icon and needed edge 3:1, light and dark (test/contrast.test.ts);
-   the star beside a rating, decorative, is the one left out. Figtree for words; Bricolage Grotesque
-   for titles, prices and scores. Phone first; from 900px the sidebar (frame.tsx). */
+   the star beside a rating, decorative, is the one left out. Figtree sets every word: titles,
+   prices and scores at 800, a little tight. The name Forest, where the app writes it as a name, is
+   drawn from Fraunces once (wordmark.tsx), so no other font is downloaded. Phone first; from 900px
+   the sidebar (frame.tsx). */
 :root {
   --bg: #f2f0e8;
   --card: #fdfcf8;
@@ -37,14 +39,15 @@
   --cream: #f2f0e8;
   --on-cream: #123a2a;
   --on-deep-danger: #f08a78;
-  /* A market's tile: its color on this much of it over the card. */
+  /* A market's tile: its color on this much of it over the card; its first word, over the rest of
+     its name, this much of it toward the ink (the light avatar's). */
   --tile-tint: 13%;
+  --tile-word: 60%;
   /* A light avatar: its market's color on this much of it over the card, its icon this much of it toward the ink. */
   --look-tint: 16%;
   --look-icon: 85%;
   --look-to: var(--ink);
   --text: 'Figtree Variable', system-ui, sans-serif;
-  --display: 'Bricolage Grotesque Variable', 'Figtree Variable', system-ui, sans-serif;
   --touch: 48px;
   color-scheme: light;
 }
@@ -142,13 +145,12 @@ p {
   margin: 0;
 }
 
-/* Titles, prices and scores: Bricolage Grotesque, bold. */
+/* Titles, prices and scores: Figtree at its heaviest, a little tight. */
 h1,
 .d,
 .big {
-  font-family: var(--display);
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  font-weight: 800;
+  letter-spacing: -0.025em;
 }
 
 h1 {
@@ -229,6 +231,14 @@ main {
 
 .mark {
   color: var(--ink);
+}
+
+/* The name Forest, drawn (wordmark.tsx): as tall as its letters at the font size it's given. */
+.wordmark {
+  display: block;
+  flex: none;
+  width: auto;
+  height: 0.73em;
 }
 
 .start .brand {
@@ -801,8 +811,7 @@ span.chip.beta {
 }
 
 .av .letter {
-  font-family: var(--display);
-  font-weight: 700;
+  font-weight: 800;
   font-size: 22px;
   line-height: 1;
 }
@@ -1035,7 +1044,7 @@ span.chip.beta {
   padding: 4px 12px 14px;
 }
 
-.side .brand .d {
+.side .brand .wordmark {
   font-size: 21px;
 }
 
@@ -1813,10 +1822,10 @@ button.cream .icon {
 
 .sheet h2 {
   padding: 0;
-  font-family: var(--display);
   font-size: 22px;
+  font-weight: 800;
   line-height: 1.15;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
   color: var(--ink);
 }
 
@@ -1825,66 +1834,11 @@ button.cream .icon {
   gap: 10px;
 }
 
-/* A sheet's title with its price at the right: the ID check, $5. */
-.sheet-head {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-}
-
-.sheet-head h2 {
-  flex: 1;
-}
-
-.sheet-head .price {
-  font-size: 30px;
-  line-height: 1;
-}
-
-/* The ID check's price, paid once: $5, then ", one time" smaller and lighter, on one line. */
-.price {
-  white-space: nowrap;
-}
-
-.price .once {
-  font-size: 0.6em;
-  font-weight: 600;
-  letter-spacing: 0;
-}
-
-/* What the ID check keeps: a row, closed until tapped, then the verifier's words. */
-details.keeps {
-  margin-top: 8px;
-  border-radius: 16px;
-  background: var(--card);
-  box-shadow: inset 0 0 0 1px var(--line);
-}
-
-details.keeps summary {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 14px 16px;
-  font-weight: 700;
-  list-style: none;
-}
-
-details.keeps summary::-webkit-details-marker {
-  display: none;
-}
-
-details.keeps summary .icon {
-  margin-left: auto;
-  color: var(--ink2);
-}
-
-details.keeps[open] summary .icon {
-  transform: rotate(180deg);
-}
-
-details.keeps .consent {
-  padding: 0 16px 14px;
+/* What the checks keep: the verifier's words, as it serves them. */
+.sheet .consent {
   white-space: pre-wrap;
+  line-height: 1.5;
+  color: var(--ink2);
 }
 
 /* A setup screen on a laptop: the deep green panel on the left, the screen centred on the right; on
@@ -1921,9 +1875,8 @@ details.keeps .consent {
     color: var(--on-deep);
   }
 
-  .setup-panel .d {
-    font-size: 40px;
-    line-height: 1;
+  .setup-panel .wordmark {
+    font-size: 60px;
   }
 
   .setup-main > main {
@@ -1986,14 +1939,16 @@ details.keeps .consent {
   color: inherit;
 }
 
-/* Get verified: two cards, each one tap; its icon square, its name and line, its price, a chevron,
-   then under a hairline what it gives. Greyed while it can't be picked. */
+/* Get verified: two cards, each one tap while its check is to do: its icon square, its name and
+   line, its price, a chevron, then under a hairline what it gives. Done, the mint Verified chip
+   alone; one that can't help any more, greyed, its name and line alone. */
 .vcards {
   display: grid;
   gap: 12px;
 }
 
-button.vcard {
+.vcard {
+  display: flex;
   flex-direction: column;
   align-items: stretch;
   gap: 14px;
@@ -2009,8 +1964,12 @@ button.vcard {
   line-height: 1.45;
 }
 
-button.vcard:disabled {
-  opacity: 0.45;
+button.vcard:disabled,
+.vcard.tried {
+  opacity: 0.5;
+}
+
+.vcard.tried {
   box-shadow: inset 0 0 0 1px var(--line);
 }
 
@@ -2022,12 +1981,49 @@ button.vcard:disabled {
 
 .vhead .two > strong {
   font-size: 17px;
+  font-weight: 800;
 }
 
-.vhead .price {
+/* A check's price: Free, or $5 with "one time" small under it, one column of one width, so the
+   chevrons line up. */
+.price3 {
   flex: none;
-  font-size: 22px;
-  line-height: 1;
+  min-width: 64px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.05;
+}
+
+.price3 .d {
+  font-size: 24px;
+}
+
+.price3 .once {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink3);
+}
+
+/* A check done: Verified, on mint. */
+.donechip {
+  flex: none;
+  height: 30px;
+  padding: 0 11px;
+  border-radius: 999px;
+  background: var(--mint);
+  color: var(--on-mint);
+  font-weight: 700;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.donechip .icon {
+  width: 15px;
+  height: 15px;
+  color: inherit;
 }
 
 .vhead > .icon {
@@ -2040,8 +2036,8 @@ button.vcard:disabled {
   flex: none;
   display: grid;
   place-items: center;
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   border-radius: 14px;
   background: var(--forest);
   color: var(--on-forest);
@@ -2056,7 +2052,7 @@ button.vcard:disabled {
 .vlist {
   list-style: none;
   margin: 0;
-  padding: 12px 0 0 58px;
+  padding: 12px 0 0 62px;
   display: grid;
   gap: 9px;
   border-top: 1px solid var(--line);
@@ -2078,10 +2074,40 @@ button.vcard:disabled {
   color: var(--leaf);
 }
 
-.quiet-foot {
-  text-align: center;
-  font-size: 12.5px;
-  color: var(--ink3);
+/* A quiet green word under Get verified's cards: I already use Forest, in the middle; What the
+   checks keep, smaller, at the left. */
+button.green-text {
+  align-self: center;
+  min-height: 34px;
+  padding: 0 2px;
+  background: none;
+  box-shadow: none;
+  font-size: 15px;
+  color: var(--forest);
+  gap: 6px;
+}
+
+button.green-text.keeps-link {
+  align-self: flex-start;
+  min-height: 30px;
+  font-size: 14.5px;
+}
+
+button.green-text > .icon {
+  width: 18px;
+  height: 18px;
+}
+
+/* Get verified from Start on a laptop: Continue right under the cards, not at the foot. */
+@media (min-width: 900px) {
+  .setup-main > main.verify > .fill {
+    display: none;
+  }
+
+  .setup-main > main.verify > .foot {
+    position: static;
+    margin-top: 8px;
+  }
 }
 
 /* Waiting for something: the loader and one line, in the middle of the screen. */
@@ -2135,39 +2161,78 @@ button.vcard:disabled {
   gap: 12px;
 }
 
+/* A market's tile: its icon at the top left, Beta quietly at the top right, its name at the bottom,
+   its first word small over the rest where another market shares it. */
 button.market-tile {
   position: relative;
   flex-direction: column;
   align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  min-height: 104px;
-  padding: 14px;
+  justify-content: flex-start;
+  gap: 14px;
+  min-height: 124px;
+  padding: 16px;
   border-radius: 20px;
   background: color-mix(in srgb, var(--h) var(--tile-tint), var(--card));
   box-shadow: none;
   text-align: left;
-  font-size: 16.5px;
   line-height: 1.2;
 }
 
 button.market-tile .icon,
 button.market-tile .letter {
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
   color: color-mix(in srgb, var(--h) var(--look-icon), var(--look-to));
 }
 
 button.market-tile .letter {
-  font-family: var(--display);
   font-size: 26px;
-  line-height: 30px;
+  font-weight: 800;
+  line-height: 28px;
 }
 
-button.market-tile .chip.beta {
+button.market-tile .beta {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: 14px;
+  right: 14px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--ink3);
+}
+
+button.market-tile .tile-name {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+button.market-tile .fam {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: color-mix(in srgb, var(--h) var(--tile-word), var(--look-to));
+}
+
+button.market-tile .kind {
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+
+/* New profile on a laptop: wider, its tiles four to a row. */
+.content > main.new-profile {
+  max-width: calc(980px + 72px);
+}
+
+.content > main.new-profile input[type='search'] {
+  max-width: 420px;
+}
+
+.content > main.new-profile .market-tiles {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 /* A sheet's title with a chip after it: Tutoring, Beta. */
@@ -2580,10 +2645,10 @@ button.card.said-card {
 
 .unopened h2 {
   padding: 0;
-  font-family: var(--display);
   font-size: 22px;
+  font-weight: 800;
   line-height: 1.15;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
   color: var(--ink);
 }
 
@@ -3111,30 +3176,24 @@ button.card.profile-card {
   white-space: nowrap;
 }
 
-/* New profile, always in reach: on a phone, floating at the bottom right above the tabs, Home
-   leaving room under its last card; on a laptop, at the right of Your profiles. */
-button.fab {
-  position: fixed;
-  z-index: 6;
-  right: 18px;
-  bottom: calc(78px + max(10px, env(safe-area-inset-bottom)));
-  min-height: 54px;
-  padding: 0 20px 0 16px;
-  border-radius: 999px;
+/* New profile, always in reach: on a phone, a round forest + right after Your profiles; on a
+   laptop, a button at the right of it. */
+button.addround {
+  flex: none;
+  width: 38px;
+  min-height: 38px;
+  height: 38px;
+  padding: 0;
+  border-radius: 50%;
   background: var(--forest);
   color: var(--on-forest);
-  box-shadow: 0 10px 24px -8px rgb(17 26 21 / 0.45);
-  font-size: 16px;
-  gap: 8px;
+  box-shadow: none;
 }
 
-button.fab .icon {
-  width: 22px;
-  height: 22px;
-}
-
-main.home:has(> button.fab) {
-  padding-bottom: 88px;
+button.addround .icon {
+  width: 20px;
+  height: 20px;
+  color: inherit;
 }
 
 main.home .titled > button.new-profile {
@@ -3153,10 +3212,10 @@ main.home .titled > button.new-profile {
 }
 
 .rated .rate {
-  font-family: var(--display);
   font-size: 44px;
+  font-weight: 800;
   line-height: 1;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
 }
 
 .rated .rate .icon {
@@ -3250,6 +3309,16 @@ main.home .titled > button.new-profile {
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+/* Messages loading on a laptop: the loader alone, across both panes. */
+.panes:has(> .pane-list > .loading) > .pane-list {
+  flex: 1;
+  border-right: 0;
+}
+
+.panes:has(> .pane-list > .loading) > .pane-open {
+  display: none;
 }
 
 .pane-list .filters {
@@ -3534,6 +3603,7 @@ button.convo-head {
 .said-text.big {
   font-size: 18px;
   font-weight: 400;
+  letter-spacing: 0;
   line-height: 1.45;
 }
 

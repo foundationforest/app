@@ -1,4 +1,4 @@
-// Start: the deep green, the mark, Forest, and one cream button, Start. On a device that knows a
+// Start: the deep green, the mark, the name Forest (wordmark.tsx), and one cream button, Start. On a device that knows a
 // Forest passkey (any id it keeps), Start asks for those alone, so nobody makes a second one by
 // mistake. On a device that knows none, Start opens a sheet, First time here?: Yes, I'm new makes
 // the passkey (then Get verified); I use Forest on another device asks for any Forest passkey, one
@@ -36,6 +36,7 @@ import { drop, hold } from '../held.ts'
 import { Icon } from '../icons.tsx'
 import { makerOf } from '../managers.ts'
 import { Loader, Mark } from '../mark.tsx'
+import { Wordmark } from '../wordmark.tsx'
 import { NoAnswer, type Passkey, ask, make, withSeed } from '../passkey.ts'
 import { proveInWorker } from '../proof/prove.ts'
 import { Line, Sheet, UnlockIcon, useAction } from '../ui.tsx'
@@ -125,7 +126,9 @@ export function Start({ onEntered, onWords, connecting = false, noPasskey = fals
       <div className="fill" />
       <div className="brand">
         <Mark size={120} />
-        <h1>Forest</h1>
+        <h1>
+          <Wordmark />
+        </h1>
       </div>
       <div className="fill" />
       {!sheet && <Line note={note} />}

@@ -134,6 +134,23 @@ test("an animal on its market's color, solid or light as the market's icon was; 
   }
 })
 
+test("the person's own profiles show their market's icon, wherever they show; anyone else's its animal", async () => {
+  const device = await import('../src/device.ts')
+  const { freshDevice } = await import('./world.ts')
+  freshDevice()
+  try {
+    device.saveProfiles([{ label: OFFERS, address: 'MINE' }])
+    const mine = renderToStaticMarkup(Avatar({ label: OFFERS, address: 'MINE' }))
+    const theirs = renderToStaticMarkup(Avatar({ label: OFFERS, address: 'THEIRS' }))
+    expect(mine).not.toMatch(/data-animal=/)
+    const icon = iconOf(split(OFFERS).market)
+    if (icon) expect(mine).toContain(`data-icon="${icon}"`)
+    expect(theirs).toMatch(/data-animal=/)
+  } finally {
+    freshDevice()
+  }
+})
+
 test('markets keep their icons: an avatar with no profile behind it (a market, a role) draws its market', () => {
   for (const n of names) {
     const icon = iconOf(n)

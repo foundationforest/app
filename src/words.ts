@@ -42,8 +42,9 @@ const VERIFIER: Record<string, Line> = {
   bad_session_id: OURS,
   bad_stamp_number: OURS,
   bad_payment: OURS,
-  // 402: no hold on the person's card for this check: never paid, held over a day ago, or held for another check.
-  not_paid: ['Nothing is held on your card for this check. Pay to continue.', false],
+  // 402: no hold on the person's card for this check: held over a day ago, or held for another
+  // check. (Never paid at all, back from Stripe's page: flows/verify.ts says nothing of it.)
+  not_paid: ['{triesUsed}', false],
   // 403: the check does not count. All but not_approved end the session; every one the person can
   // try again after says one line, the same whatever Didit saw.
   not_approved: ['Not finished.', false],
@@ -60,13 +61,14 @@ const VERIFIER: Record<string, Line> = {
   face_match_not_passed: DIDNT_PASS,
   no_document_data: DIDNT_PASS,
   // One ID stamp a person: this ID, and the face that goes with it, already gave one to another seed.
-  duplicate_document: ["You've already verified with ID in another Forest. Nothing was charged.", true],
+  duplicate_document: ['This ID is already verified with another passkey. Nothing was charged.', false],
   // A face Didit has seen verified before: the selfie check can't give this seed a stamp.
-  face_seen: ['A similar face is already verified. Verify with your ID to continue.', false],
+  face_seen: ['A similar face is already verified. Verify with your ID instead.', false],
   // 409
   session_used: [`That check was already used. ${START_AGAIN}`, false],
-  // Its three tries opened, or its stamp given, which was charged: nothing said of a charge.
-  payment_used: ['This payment is used up. Pay again to continue.', false],
+  // Its three tries opened, or its hold cancelled. One whose stamp was given is never said: the
+  // stamp is asked back first (flows/verify.ts).
+  payment_used: ['{triesUsed}', false],
   // 502, 503
   face_check_unavailable: ["The {check} isn't available right now. Try again in a minute.", false],
   payment_unavailable: ["Payment isn't available right now. Try again in a minute.", false],
@@ -81,8 +83,8 @@ const VERIFIER: Record<string, Line> = {
   another_stamp_number: VERIFIER_DOWN,
 }
 
-/** What the app says when a payment's third try didn't pass: its hold ends, and no stamp came from it. */
-export const TRIES_USED = 'Your three tries are used up. Nothing was charged. Pay again to continue.'
+/** What the app says when a payment ends with no stamp from it (its third try didn't pass, its tries used, or its hold over): nothing was charged. */
+export const TRIES_USED = 'Your tries are used up. Nothing was charged. Pay again to continue.'
 
 /** The codes the verifier answers that the app has its own line for. */
 export const VERIFIER_CODES = Object.keys(VERIFIER)
@@ -91,6 +93,7 @@ export const VERIFIER_CODES = Object.keys(VERIFIER)
 export function verifierSays(code: string, check: 'face' | 'id' = 'face'): Said {
   const [text, red] = VERIFIER[code] ?? [SOMETHING, false]
   if (text === DIDNT_PASS[0]) return new Said(check === 'id' ? "That ID check didn't pass. Try again." : "That selfie didn't pass. Try again, or use your ID.")
+  if (text === '{triesUsed}') return new Said(TRIES_USED)
   return new Said(text.replace('{check}', check === 'id' ? 'ID check' : 'selfie check'), red)
 }
 
