@@ -21,7 +21,7 @@
 // someone who made a passkey here by mistake: it asks for the passkey they use, and adds this one to
 // it (flows/backups.ts, `linkTo`), and they're in. From You or Home it never shows: there the person
 // is inside a working Forest already. While the ID can be tapped, What the checks keep, a quiet link
-// under the cards, opens the verifier's words.
+// under the cards, opens the verifier's words under itself, and closes them on a second tap.
 //
 // Continue, once a check is done, from Start alone: at the foot on a phone, under the cards on a
 // laptop; it goes on to the first profile, and back is gone, since being verified can't be undone.
@@ -54,7 +54,7 @@ import { proveInWorker } from '../proof/prove.ts'
 import { Line, type Note, Notice, Top, UnlockIcon, YoureVerified, noteOf, useAction } from '../ui.tsx'
 import { Reloading } from '../version.ts'
 import { FACE_SEEN_NOT_FOR_SALE } from '../words.ts'
-import { CheckCard, KeepsSheet, type Standing } from './Checks.tsx'
+import { CheckCard, Keeps, type Standing } from './Checks.tsx'
 
 /** How often the stamp is asked for while the check is open, and for how long. */
 const AWAY_EVERY_MS = 3_000
@@ -445,9 +445,12 @@ export function Verify({ setup, id, step: first, failed: failedFirst, from, onVe
         </>
       )}
       {idCheck.forSale && standing('id') === 'open' && (
-        <button className="green-text keeps-link" onClick={() => setKeeps(true)}>
-          <Icon name="info" /> What the checks keep
-        </button>
+        <>
+          <button className="green-text keeps-link" aria-expanded={keeps} aria-controls="keeps" onClick={() => setKeeps(!keeps)}>
+            <Icon name="info" /> What the checks keep
+          </button>
+          {keeps && <Keeps consent={consent} note={noConsent} />}
+        </>
       )}
       <div className="fill" />
       {setup && anyDone && (
@@ -457,7 +460,6 @@ export function Verify({ setup, id, step: first, failed: failedFirst, from, onVe
           </button>
         </div>
       )}
-      {keeps && <KeepsSheet consent={consent} note={noConsent} onClose={() => setKeeps(false)} />}
     </main>
   )
 }

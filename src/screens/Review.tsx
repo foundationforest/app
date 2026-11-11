@@ -1,5 +1,5 @@
 // Review someone, one screen, from a conversation's Review or a review received, who it is about
-// known; or from a profile, which first asks who on a sheet (WhoSheet.tsx). At the top, Close, then
+// known; or from a profile, which first asks who, on a page of its own (WhoStep.tsx). At the top, Close, then
 // their avatar, market and role and badge. A switch of three, Score, Vouch and Report, and one quiet
 // line under it saying what the one picked is. Score: the score big with its star, over a slider, 1
 // to 10 in tenths, its thumb hidden until touched, so no score looks chosen. Vouch: says they're
@@ -10,7 +10,7 @@
 // listings. Before the unlock, the app checks it as for any entry: they are on the other side of
 // the same market, and none of the person's own profiles (flows/entries.ts); a refusal shows once.
 // One of a kind about someone this profile wrote before goes in its place (writtenAbout). An edit
-// keeps its kind, so shows no switch, keeps a listing an older review named, and has Delete; a
+// keeps its kind, so shows no switch, keeps a listing an older review named, and has Delete, asking again in place; a
 // review an older market shaped opens with what still fits once who it is about is known
 // (form.ts), so it is posted again in the market's shape today.
 
@@ -30,11 +30,11 @@ import { Loader } from '../mark.tsx'
 import { type Field as MarketField, type Kind, fieldsOf, markets, pairOf } from '../markets.ts'
 import { withSeed } from '../passkey.ts'
 import { choiceWords } from '../show.ts'
-import { Line, type Note, Quiet, Seg, Top, UnlockIcon, noteOf, useAction } from '../ui.tsx'
+import { AskAgain, Line, type Note, Quiet, Seg, Top, UnlockIcon, noteOf, useAction } from '../ui.tsx'
 import { fieldWords } from '../words.ts'
 import { clean } from './Listing.tsx'
 import { Who, WhoAvatar } from './Who.tsx'
-import { WhoSheet } from './WhoSheet.tsx'
+import { WhoStep } from './WhoStep.tsx'
 
 type Props = {
   me: Profile
@@ -77,7 +77,6 @@ export function Review({ me, subject: given, edit, report = false, onDone, onBac
   // The listing an older review named, kept as it was: this screen names none, and dropping it would make it another review at the index.
   const [named, setNamed] = useState(typeof edit?.body.listing === 'string' ? edit.body.listing : undefined)
   const [text, setText] = useState(typeof edit?.body.text === 'string' ? edit.body.text : '')
-  const [sure, setSure] = useState(false)
   const [picked] = useState<Picked>(() => new Map())
   const paths = useState(() => ({ review: newPath('review'), vouch: newPath('vouch'), report: newPath('report') }))[0]
 
@@ -129,17 +128,15 @@ export function Review({ me, subject: given, edit, report = false, onDone, onBac
   if (!market) return null
   if (asking)
     return (
-      <main>
-        <WhoSheet
-          me={me}
-          mine={mine}
-          onPick={(picked) => {
-            setAbout(picked)
-            setAsking(false)
-          }}
-          onClose={onBack}
-        />
-      </main>
+      <WhoStep
+        me={me}
+        mine={mine}
+        onPick={(picked) => {
+          setAbout(picked)
+          setAsking(false)
+        }}
+        onClose={onBack}
+      />
     )
   const fields = kind === 'review' ? Object.entries(fieldsOf(market, 'review', role, subject?.role)).filter(([n]) => !SHARED.includes(n)) : []
   const busy = send.busy || remove.busy
@@ -216,10 +213,7 @@ export function Review({ me, subject: given, edit, report = false, onDone, onBac
         </button>
         {edit && (
           <>
-            <Line note={remove.note} />
-            <button type="button" className={sure ? 'danger solid' : 'danger'} disabled={busy} onClick={() => (sure ? remove.run() : setSure(true))}>
-              {remove.busy ? <Loader /> : sure ? <><UnlockIcon /> Delete</> : 'Delete'}
-            </button>
+            <AskAgain words="Delete" ask={`Delete this ${kind}?`} look="danger" unlock busy={remove.busy} disabled={busy} note={remove.note} onYes={() => remove.run()} />
           </>
         )}
       </div>

@@ -1,7 +1,8 @@
 // Readable, light and dark: every text 4.5:1 against what is behind it, every icon and every edge
 // that alone marks a control 3:1, computed from theme.css's own tokens, and every avatar, solid and
-// light, in each of the palette's ten colors. The star beside a rating is decorative, the number
-// beside it says the score, so it is left out.
+// light, and every market's badge on a picture, in each of the palette's ten colors. The star beside
+// a rating is decorative, the number beside it says the score, so it is left out. And green's one
+// rule: dark green only on what finishes something.
 
 import { readFileSync } from 'node:fs'
 
@@ -54,6 +55,8 @@ const TEXT: Array<[string, string]> = [
   ['forest', 'bg'],
   ['forest', 'card'],
   ['on-mint', 'mint'],
+  ['on-mint', 'bg'],
+  ['on-mint', 'card'],
   ['on-sun', 'sun-bg'],
   ['danger', 'bg'],
   ['danger', 'card'],
@@ -72,8 +75,10 @@ const ICONS: Array<[string, string]> = [
   ['ink2', 'card'],
   ['on-mint', 'mint'],
   ['on-forest', 'forest'],
-  ['leaf', 'card'],
-  ['leaf', 'bg'],
+  ['forest', 'card'],
+  ['forest', 'bg'],
+  ['on-mint', 'card'],
+  ['on-mint', 'bg'],
   ['edge', 'card'],
   ['edge', 'bg'],
 ]
@@ -103,6 +108,10 @@ for (const [theme, t] of [
     }
   })
 
+  test(`${theme}: a market's badge on a picture, in each of the palette's ten colors, its white icon 3:1`, () => {
+    for (const color of PALETTE) expect(ratio(rgb('#ffffff'), mix(rgb(color), percent(/\.avb > \.mb \{[^}]*color-mix\(in srgb, var\(--h\) ([\d.]+%), black\)/.exec(css)![1]!), rgb('#000000'))), color).toBeGreaterThanOrEqual(3)
+  })
+
   test(`${theme}: a market's tile, in each of the palette's ten colors, its first word in its color 4.5:1`, () => {
     const card = rgb(t.card!)
     for (const color of PALETTE) {
@@ -116,4 +125,13 @@ for (const [theme, t] of [
 
 test("the device's dark is the chosen dark", () => {
   expect(tokens(":root:not([data-theme='light']) {", LIGHT)).toEqual(DARK)
+})
+
+/** What finishes something, the one place dark green goes: the main button and Create, unread counts and the dot, your own messages, ticked boxes and picked radios. */
+const FINISHES = ['button.primary', 'a.button.primary', 'button.create', '.count', '.newpip', '.dot', '.said.mine', '.tick.on', '.radio.on']
+
+test('green, one rule: dark green finishes something; everything else green is light green', () => {
+  const dark = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].filter(([, , body]) => body!.includes('var(--forest)')).map(([, selector]) => selector!.split('*/').at(-1)!.trim())
+  expect(dark.sort()).toEqual([...FINISHES].sort())
+  expect(css).not.toMatch(/--leaf/)
 })

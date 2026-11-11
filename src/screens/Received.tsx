@@ -83,7 +83,7 @@ export function Received({ mine, at, onBack, onMessage, onReview, onReport, onWh
                 <Icon name="chat-circle" />
                 Message
               </button>
-              <button className="primary" onClick={() => onReview(r.writer)}>
+              <button className="soft" onClick={() => onReview(r.writer)}>
                 <Icon name="star" bold />
                 Review back
               </button>

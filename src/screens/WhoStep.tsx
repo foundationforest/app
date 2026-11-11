@@ -1,8 +1,9 @@
-// Who a review is about, asked first when Review someone opens from a profile, on a sheet: the
-// people that profile has a conversation with, when the messages are open in this page, each by
-// their avatar, market and role and badge; then a box for their link or address. Each is checked
-// before the sheet closes, as for any review (flows/entries.ts, subjectOf): one that can't be
-// reviewed says why in one red line, there. Closed with no one picked, Review someone closes too.
+// Who a review is about, asked first when Review someone opens from a profile, its first step, a
+// page of its own: Close; the question; the people that profile has a conversation with, when the
+// messages are open in this page, each by their avatar, market and role and badge; then a box for
+// their link or address. Each is checked before the review's form opens, as for any review
+// (flows/entries.ts, subjectOf): one that can't be reviewed says why in one red line, there. Closed
+// with no one picked, Review someone closes too.
 
 import { useState } from 'react'
 
@@ -13,12 +14,12 @@ import type { Profile } from '../device.ts'
 import { addressIn, subjectOf } from '../flows/entries.ts'
 import { useOpened } from '../hooks.ts'
 import { Icon } from '../icons.tsx'
-import { Line, type Note, Sheet, noteOf } from '../ui.tsx'
+import { Line, type Note, Top, noteOf } from '../ui.tsx'
 import { Who, WhoAvatar } from './Who.tsx'
 
 type Props = { me: Profile; mine: Profile[]; onPick: (address: string) => void; onClose: () => void }
 
-export function WhoSheet({ me, mine, onPick, onClose }: Props) {
+export function WhoStep({ me, mine, onPick, onClose }: Props) {
   const threads = (useOpened()?.threads ?? []).filter((t) => t.mine === me.address)
   const [typed, setTyped] = useState('')
   const [note, setNote] = useState<Note | null>(null)
@@ -30,8 +31,10 @@ export function WhoSheet({ me, mine, onPick, onClose }: Props) {
     )
   }
   return (
-    <Sheet label="Who are you reviewing?" onClose={onClose}>
-      <h2>Who are you reviewing?</h2>
+    <main>
+      <Top onClose={onClose}>
+        <h1>Who are you reviewing?</h1>
+      </Top>
       <div className="stack">
         {threads.length > 0 && (
           <div className="rows">
@@ -58,6 +61,6 @@ export function WhoSheet({ me, mine, onPick, onClose }: Props) {
         />
         <Line note={note} />
       </div>
-    </Sheet>
+    </main>
   )
 }

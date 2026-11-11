@@ -1,22 +1,24 @@
 // The pieces every screen shares: the one-line note that says why something can't be done (red when
 // what was given is wrong, quiet when something is still missing), an action's busy and its note;
 // the two badges, drawn once here, how a profile shows it is verified, one for each check it holds
-// (the same forest square, the picture inside telling them apart; their words a label, shown on a
+// (the same mint square, the picture inside telling them apart; their words a label, shown on a
 // tap only where a badge stands alone), and a check not done as its badge's outline, which starts it; the unlock icon, the
 // fingerprint before the word on a labeled button that asks the passkey, only while a tap will ask,
 // never on a list row; the round way into messages, always there, with how many are new once any
 // is; a checkbox's box, one choice's radio mark, the dot that marks what is new, a rating with its
 // star, the chips of a review, vouch or report, You're verified, a profile's name (its market in
-// bold, then its role, muted: Clothing seller), Search Forest (the index, in a new tab), a sheet
-// risen over the screen, a notice in the sun, the bars, a choice of a few side by side, a row that
-// opens a screen of its own, how long ago something was, the day something happened (Today in a
-// thread), the time of day, and whether a message's time shows under it.
+// bold, then its role, muted: Clothing seller), Search Forest (the index, in a new tab), a notice in
+// the sun, the bars, a choice of a few side by side, a row that opens a screen of its own, a button
+// that removes something and asks again in its own place, how long ago something was, the day
+// something happened (Today in a thread), the time of day, and whether a message's time shows under
+// it. Nothing floats: only the device's own passkey prompt does.
 
-import { type MouseEvent, type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
+import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 
 import { config } from './config.ts'
 import { useHeld } from './hooks.ts'
 import { Icon, type IconName } from './icons.tsx'
+import { Loader } from './mark.tsx'
 import { marketWords, pairOf } from './markets.ts'
 import type { Check } from './services/verifier.ts'
 import { Reloading } from './version.ts'
@@ -75,43 +77,32 @@ const VERIFIED: Record<Check, string> = { face: 'Verified with a selfie', id: 'V
 export const CHECK_ICON: Record<Check, IconName> = { face: 'scan-smiley', id: 'identification-card' }
 
 /**
- * One check's badge, the one way the app says a profile is verified that way: a forest square, its
- * check's icon in white; the selfie's and the ID's differ only by the picture inside. Its words are
- * its label for screen readers and its title on hover. Inside a row or a card it takes no tap of
- * its own: tapped, it does what the row or card does (tick, open). Only where it stands alone
- * (`alone`: a profile's header, Home's title) does a tap say its words for a moment, above it. A
- * span, not a button, so it can sit inside one. `big` beside a title.
+ * One check's badge, the one way the app says a profile is verified that way: a mint square, its
+ * check's icon in the mint's dark green; the selfie's and the ID's differ only by the picture inside.
+ * Its words are its label for screen readers and its title on hover. Inside a row or a card it
+ * takes no tap of its own: tapped, it does what the row or card does (tick, open). Only where it
+ * stands alone (`alone`: a profile's header, Home's title) does a tap say its words for a moment,
+ * right after it, in place. A span, not a button, so it can sit inside one. `big` beside a title.
  */
 export function Verified({ check, big = false, alone = false }: { check: Check; big?: boolean; alone?: boolean }) {
-  const [at, setAt] = useState<{ x: number; y: number } | null>(null)
+  const [said, setSaid] = useState(false)
   useEffect(() => {
-    if (!at) return
-    const t = setTimeout(() => setAt(null), 2000)
+    if (!said) return
+    const t = setTimeout(() => setSaid(false), 2000)
     return () => clearTimeout(t)
-  }, [at])
+  }, [said])
   const words = VERIFIED[check]
   return (
-    <span
-      className={`vb${big ? ' lg' : ''}${alone ? ' alone' : ''}`}
-      role="img"
-      aria-label={words}
-      title={words}
-      data-check={check}
-      {...(alone && {
-        onClick: (e: MouseEvent<HTMLSpanElement>) => {
-          const r = e.currentTarget.getBoundingClientRect()
-          // Its middle, kept far enough from the screen's edges for its words to fit.
-          setAt({ x: Math.min(Math.max(r.left + r.width / 2, 90), innerWidth - 90), y: r.top })
-        },
-      })}
-    >
-      <Icon name={CHECK_ICON[check]} fill />
-      {at && (
-        <span className="verified-said" style={{ left: at.x, top: at.y }}>
+    <>
+      <span className={`vb${big ? ' lg' : ''}${alone ? ' alone' : ''}`} role="img" aria-label={words} title={words} data-check={check} {...(alone && { onClick: () => setSaid(true) })}>
+        <Icon name={CHECK_ICON[check]} fill />
+      </span>
+      {said && (
+        <span className="verified-said" aria-hidden>
           {words}
         </span>
       )}
-    </span>
+    </>
   )
 }
 
@@ -252,31 +243,6 @@ export const NewVersion = () => (
   </p>
 )
 
-/**
- * A sheet, risen from the screen's bottom over a scrim: its grab, then what it holds, named by its
- * title (`label`). Tapping the scrim, or Escape, closes it. It takes the focus as it opens.
- */
-export function Sheet({ label, onClose, children }: { label: string; onClose: () => void; children: ReactNode }) {
-  const at = useRef<HTMLElement>(null)
-  const close = useRef(onClose)
-  close.current = onClose
-  useEffect(() => {
-    at.current?.focus()
-    const key = (e: KeyboardEvent) => e.key === 'Escape' && close.current()
-    addEventListener('keydown', key)
-    return () => removeEventListener('keydown', key)
-  }, [])
-  return (
-    <>
-      <div className="scrim" onClick={() => close.current()} />
-      <section className="sheet" role="dialog" aria-modal="true" aria-label={label} tabIndex={-1} ref={at}>
-        <div className="grab" />
-        {children}
-      </section>
-    </>
-  )
-}
-
 /** A notice: one line on what came of something, in the sun, with its warning icon. */
 export const Notice = ({ children }: { children: ReactNode }) => (
   <p className="notice" role="status">
@@ -301,19 +267,60 @@ export function Top({ onBack, onClose, clear = false, children, right }: { onBac
   )
 }
 
-/** One choice of a few, side by side on the sunk ground, the one picked raised on a card: each option its words, and its icon, filled when picked. `clears`: the one picked, tapped again, leaves none. */
-export function Seg<V extends string>({ label, options, value, onPick, clears = false }: { label: string; options: Array<{ value: V; words: string; icon?: IconName }>; value: V | undefined; onPick: (v: V | undefined) => void; clears?: boolean }) {
+/** One choice of a few, side by side on the sunk ground, the one picked raised on a card: each option its words, and its icon, filled when picked. `clears`: the one picked, tapped again, leaves none. `icons`: each its icon alone, its words its label (Appearance's Auto, Light and Dark). */
+export function Seg<V extends string>({ label, options, value, onPick, clears = false, icons = false }: { label: string; options: Array<{ value: V; words: string; icon?: IconName }>; value: V | undefined; onPick: (v: V | undefined) => void; clears?: boolean; icons?: boolean }) {
   return (
-    <div className="seg" role="group" aria-label={label}>
+    <div className={icons ? 'seg icons' : 'seg'} role="group" aria-label={label}>
       {options.map((o) => {
         const on = o.value === value
         return (
-          <button key={o.value} type="button" className={on ? 'here' : ''} aria-pressed={on} onClick={() => onPick(on && clears ? undefined : o.value)}>
-            {o.icon && <Icon name={o.icon} fill={on} />}
-            {o.words}
+          <button key={o.value} type="button" className={on ? 'here' : ''} aria-pressed={on} {...(icons && { 'aria-label': o.words, title: o.words })} onClick={() => onPick(on && clears ? undefined : o.value)}>
+            {o.icon && <Icon name={o.icon} fill={on || icons} />}
+            {!icons && o.words}
           </button>
         )
       })}
+    </div>
+  )
+}
+
+/**
+ * A button that removes something (a passkey, an AI app, a listing, this device's Forest), red
+ * text, asking again in its own place: tapped, it gives way to its question, a line under it when
+ * there is one, then Cancel and its word on solid red (`yes`, else the same), which does it, the unlock icon before
+ * it while that tap will ask the passkey (`unlock`, or `always`). Nothing floats. `onAsking`: told
+ * when it asks and when it stops, for what shares its row to make room. `look`: the first button's
+ * classes, red text unless the screen's foot gives it a red edge.
+ */
+export function AskAgain({ words, yes = words, ask, line, icon, unlock = false, always = false, busy = false, disabled = false, note = null, look = 'danger text', onAsking, onYes }: { words: string; yes?: string; ask: string; line?: string; icon?: IconName; unlock?: boolean; always?: boolean; busy?: boolean; disabled?: boolean; note?: Note | null; look?: string; onAsking?: (asking: boolean) => void; onYes: () => void }) {
+  const [asking, setAsked] = useState(false)
+  const setAsking = (on: boolean) => {
+    setAsked(on)
+    onAsking?.(on)
+  }
+  if (!asking)
+    return (
+      <>
+        <Line note={note} />
+        <button type="button" className={look} disabled={disabled || busy} onClick={() => setAsking(true)}>
+          {icon && <Icon name={icon} bold={icon === 'sign-out'} />}
+          {words}
+        </button>
+      </>
+    )
+  return (
+    <div className="ask-again" role="group" aria-label={ask}>
+      <p className="ask">{ask}</p>
+      {line && <p className="line">{line}</p>}
+      <Line note={note} />
+      <div className="ask-buttons">
+        <button type="button" className="small" disabled={busy} onClick={() => setAsking(false)}>
+          Cancel
+        </button>
+        <button type="button" className="danger solid small" disabled={busy || disabled} onClick={onYes}>
+          {busy ? <Loader /> : <>{(unlock || always) && <UnlockIcon always={always} />} {yes}</>}
+        </button>
+      </div>
     </div>
   )
 }

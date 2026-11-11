@@ -3,7 +3,7 @@
 // quiet Not yours. Then its header as a profile of the person's has it: its avatar, large; its
 // market, small, in its color; its role, big, with its badges; and under it who they are to the
 // person, the name they gave them or else their short key, on a chip with a pencil that opens the
-// naming sheet (NameSheet.tsx). Three numbers, as the index counts them: their rating and how many
+// naming, in place under the header (Naming.tsx). Three numbers, as the index counts them: their rating and how many
 // reviews; how many listings they list, in their side's word; how many reviews, vouches and reports
 // they wrote. Message, which opens the conversation with them, or a new message; Review, from the
 // person's profile on the other side of their market, or one line on why it can't be. Reviews they
@@ -19,7 +19,7 @@ import { Icon } from '../icons.tsx'
 import { kindWords, marketWords, otherSide, roleWords } from '../markets.ts'
 import { ratingText, reviewCount } from '../show.ts'
 import { Badges, Line, type Note, Top, short } from '../ui.tsx'
-import { NameSheet } from './NameSheet.tsx'
+import { Naming } from './Naming.tsx'
 import { pageOf } from './Profile.tsx'
 import { SaidCard } from './SaidCard.tsx'
 import { labelOf, useWho } from './Who.tsx'
@@ -60,12 +60,13 @@ export function Them({ address, onBack, onMessage, onReview, onWho }: Props) {
               </span>
             )}
           </h1>
-          <button className={name ? 'idchip' : 'idchip key'} aria-label={`${name ?? short(address)}, name them`} onClick={() => setNaming(true)}>
+          <button className={name ? 'idchip' : 'idchip key'} aria-label={`${name ?? short(address)}, name them`} aria-expanded={naming} onClick={() => setNaming(!naming)}>
             {name ?? short(address)}
             <Icon name="pencil-simple" />
           </button>
         </div>
       </div>
+      {naming && <Naming address={address} onClose={() => setNaming(false)} />}
       {held && 'failed' in held && <p className="line">Can't reach the index.</p>}
       {rated && (
         <div className="stat3">
@@ -88,8 +89,8 @@ export function Them({ address, onBack, onMessage, onReview, onWho }: Props) {
           <Icon name="chat-circle" fill />
           Message
         </button>
-        <button disabled={!who} onClick={review}>
-          <Icon name="star" />
+        <button className="soft" disabled={!who} onClick={review}>
+          <Icon name="star" bold />
           Review
         </button>
       </div>
@@ -108,7 +109,6 @@ export function Them({ address, onBack, onMessage, onReview, onWho }: Props) {
         See everything on the index
         <Icon name="arrow-up-right" bold />
       </a>
-      {naming && <NameSheet address={address} onClose={() => setNaming(false)} />}
     </main>
   )
 }

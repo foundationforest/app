@@ -9,6 +9,9 @@
 // lists takes the quiet ink. The icon is the one its market file names, a Phosphor icon the build
 // brings in (build/markets.ts); a market that names none, or one the app doesn't draw, shows its
 // name's first letter. The animal is the app's own: the index draws the market's icon for every profile.
+// In Messages, the picture of the person a conversation is with carries its market's badge at its
+// bottom right: the market's icon, white on its color, the same icon the person's own profile there
+// shows, so it says which of their profiles the conversation is with.
 
 import type { CSSProperties } from 'react'
 
@@ -55,5 +58,15 @@ function Animal({ address }: { address: string }) {
     <svg className="icon animal" viewBox="0 0 32 32" fill="currentColor" data-animal={name} aria-hidden="true">
       {paths.map((p, i) => (typeof p === 'string' ? <path key={i} d={p} /> : <path key={i} d={p.d} fillRule="evenodd" clipRule="evenodd" />))}
     </svg>
+  )
+}
+
+/** A market's badge on a picture's bottom right corner: its icon (else its first letter), white on its color. Hidden from screen readers, as the avatar is. */
+export function MarketBadge({ market }: { market: string }) {
+  const icon = iconOf(market)
+  return (
+    <span className="mb" style={{ '--h': colorOf(market) } as CSSProperties} data-market={market} aria-hidden>
+      {icon ? <MarketIcon name={icon} /> : <span className="letter">{market.charAt(0).toUpperCase()}</span>}
+    </span>
   )
 }

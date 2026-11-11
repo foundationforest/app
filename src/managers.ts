@@ -6,7 +6,6 @@
 // Before the device kept makers it kept each manager's full name, from the same ids
 // (Google Password Manager): read now as its maker.
 
-import type { IconName } from './icons.tsx'
 
 const MAKERS: Record<string, string> = {
   'ea9b8d66-4d01-1d21-3ce4-b6b48cb575d4': 'Google',
@@ -77,9 +76,6 @@ export const makerBefore = (name: string): string | undefined => (Object.hasOwn(
 
 /** A passkey with nothing to name it by. */
 export const PASSKEY = 'Passkey'
-
-/** The square a maker's passkey shows: its logo for Apple and Google, else a key. */
-export const logoOf = (maker: string | undefined): IconName => (maker === 'Apple' ? 'apple-logo' : maker === 'Google' ? 'google-logo' : 'key')
 
 /** What a passkey is called: the name it was given, else its maker's, else Passkey. */
 export const nameOf = (made: { maker?: string; name?: string } | undefined): string => made?.name ?? made?.maker ?? PASSKEY

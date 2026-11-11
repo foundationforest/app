@@ -10,6 +10,9 @@ import { letGo } from './opened.ts'
 import { letGoRated } from './rated.ts'
 import { applyTheme } from './theme.ts'
 
+/** What Forget this device says as it asks again: what it leaves where it is. */
+export const FORGET_LINE = 'Your passkey stays in your password manager.'
+
 export function forgetDevice(): void {
   forget()
   drop()

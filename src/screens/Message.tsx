@@ -1,7 +1,7 @@
 // A new message, all of it there from the start. To: a box for an address or a Share link (a
 // profile's page on the index, as Share hands it out), until it holds a profile; then their card,
 // their avatar, who they are to the person (the name they gave them, else their short key) with
-// their badges, and their market and role, with a cross to change it.
+// their badges, and their market alone, as everywhere in Messages, with a cross to change it.
 // It comes filled in when an address came with the screen (/message?to=<address>, or Message on a
 // review received). From: the card of the person's profile on the other side of that profile's
 // market (the same role where the market has one), picked for them, with its badges, from its
@@ -91,7 +91,7 @@ export function Message({ to: given, onSent, onBack }: Props) {
             <div className="person to">
               <WhoAvatar address={to} {...(who !== undefined && { who })} />
               <span className="two">
-                <Who address={to} {...(who !== undefined && { who })} />
+                <Who address={to} {...(who !== undefined && { who })} market />
               </span>
               <button type="button" className="round clear" aria-label="Change" onClick={() => setTyped('')}>
                 <Icon name="x" />
