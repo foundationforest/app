@@ -8,7 +8,7 @@
 // name until it is answered again. Everything is checked before the unlock (flows/entries.ts); then one unlock
 // signs it, writes it and sends its new photos. Its path is set as the form opens, so posting again
 // after a photo did not go writes the same listing, never a second. Post stays at the foot as the
-// form scrolls; an edit's Delete is under it, in red, asking once more.
+// form scrolls; an edit's Delete is under it, in red, asking again in its own place: Delete this offer?, Cancel and Delete.
 
 import { useRef, useState } from 'react'
 
@@ -26,7 +26,7 @@ import { useProfiles } from '../hooks.ts'
 import { Loader } from '../mark.tsx'
 import { BETA, kindWords, markets, pairOf } from '../markets.ts'
 import { withSeed } from '../passkey.ts'
-import { Line, Top, UnlockIcon, useAction } from '../ui.tsx'
+import { AskAgain, Line, Top, UnlockIcon, useAction } from '../ui.tsx'
 
 type Props = { me: Profile; edit?: Posted; onDone: () => void; onBack: () => void }
 
@@ -42,7 +42,6 @@ export function Listing({ me, edit, onDone, onBack }: Props) {
   const [start] = useState(() => (edit ? fitted(name, role, edit.body) : { body: {}, dropped: [] }))
   const [values, setValues] = useState<Body>(start.body)
   const [path] = useState(() => edit?.path ?? newPath('listing'))
-  const [sure, setSure] = useState(false)
   const picked = useRef<Picked>(new Map()).current
 
   const photoFields = fields.filter(([, f]) => f.type === 'file').map(([n]) => n)
@@ -87,10 +86,7 @@ export function Listing({ me, edit, onDone, onBack }: Props) {
         </button>
         {edit && (
           <>
-            <Line note={remove.note} />
-            <button type="button" className={sure ? 'danger solid' : 'danger'} disabled={send.busy || remove.busy} onClick={() => (sure ? remove.run() : setSure(true))}>
-              {remove.busy ? <Loader /> : sure ? <><UnlockIcon /> Delete</> : 'Delete'}
-            </button>
+            <AskAgain words="Delete" ask={`Delete this ${word.toLowerCase()}?`} look="danger" unlock busy={remove.busy} disabled={send.busy || remove.busy} note={remove.note} onYes={() => remove.run()} />
           </>
         )}
       </div>

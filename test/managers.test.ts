@@ -6,7 +6,7 @@
 import { beforeEach, expect, test } from 'vitest'
 
 import * as device from '../src/device.ts'
-import { PASSKEY, aaguidOf, logoOf, makerBefore, makerOf, nameOf, numbered } from '../src/managers.ts'
+import { PASSKEY, aaguidOf, makerBefore, makerOf, nameOf, numbered } from '../src/managers.ts'
 import { freshDevice } from './world.ts'
 
 beforeEach(freshDevice)
@@ -36,9 +36,8 @@ test("each maker by its short name, whichever of its ids it sends, in either cas
   expect(makerOf('constructor'), 'nothing the table inherits').toBeUndefined()
 })
 
-test("a passkey's name: the one it was given, else its maker's, else Passkey; its square, Apple's or Google's logo, else a key", () => {
+test("a passkey's name: the one it was given, else its maker's, else Passkey", () => {
   expect([nameOf({ maker: 'Apple', name: 'Work phone' }), nameOf({ maker: 'Apple' }), nameOf({}), nameOf(undefined)]).toEqual(['Work phone', 'Apple', PASSKEY, 'Passkey'])
-  expect([logoOf('Apple'), logoOf('Google'), logoOf('1Password'), logoOf(undefined)]).toEqual(['apple-logo', 'google-logo', 'key', 'key'])
 })
 
 test('two with the same name in a list: the second takes 2, the third 3, the first keeps its own; a number already taken is passed over', () => {

@@ -5,7 +5,6 @@
 // files name and the build brings in (build/markets.ts, avatar.tsx).
 
 import {
-  AppleLogoIcon,
   ArrowLeftIcon,
   ArrowSquareOutIcon,
   ArrowUpIcon,
@@ -13,6 +12,7 @@ import {
   BellIcon,
   CaretDownIcon,
   CaretRightIcon,
+  CaretUpIcon,
   ChatCircleIcon,
   CheckCircleIcon,
   CheckIcon,
@@ -23,7 +23,6 @@ import {
   ExportIcon,
   FingerprintSimpleIcon,
   FlagIcon,
-  GoogleLogoIcon,
   HandshakeIcon,
   HouseIcon,
   IdentificationCardIcon,
@@ -35,6 +34,7 @@ import {
   MapPinIcon,
   MoonIcon,
   NotePencilIcon,
+  PaintBrushIcon,
   PencilSimpleIcon,
   PlusIcon,
   QrCodeIcon,
@@ -52,7 +52,6 @@ import {
 } from '@phosphor-icons/react'
 
 const ICONS = {
-  'apple-logo': AppleLogoIcon,
   'arrow-left': ArrowLeftIcon,
   'arrow-square-out': ArrowSquareOutIcon,
   'arrow-up': ArrowUpIcon,
@@ -60,6 +59,7 @@ const ICONS = {
   bell: BellIcon,
   'caret-down': CaretDownIcon,
   'caret-right': CaretRightIcon,
+  'caret-up': CaretUpIcon,
   'chat-circle': ChatCircleIcon,
   check: CheckIcon,
   'check-circle': CheckCircleIcon,
@@ -70,7 +70,6 @@ const ICONS = {
   export: ExportIcon,
   'fingerprint-simple': FingerprintSimpleIcon,
   flag: FlagIcon,
-  'google-logo': GoogleLogoIcon,
   handshake: HandshakeIcon,
   house: HouseIcon,
   'identification-card': IdentificationCardIcon,
@@ -82,6 +81,7 @@ const ICONS = {
   'map-pin': MapPinIcon,
   moon: MoonIcon,
   'note-pencil': NotePencilIcon,
+  'paint-brush': PaintBrushIcon,
   'pencil-simple': PencilSimpleIcon,
   plus: PlusIcon,
   'qr-code': QrCodeIcon,

@@ -28,7 +28,7 @@ export function Written({ entries, onEdit, onReview, onWho }: Props) {
       )}
       {onReview && (
         <div className="foot">
-          <button onClick={onReview}>
+          <button className="soft" onClick={onReview}>
             <Icon name="star" bold />
             Review someone
           </button>

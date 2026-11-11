@@ -1,5 +1,5 @@
 // What Get verified draws (Verify.tsx runs it): the two checks, each a card, and what the checks keep.
-// A card: its icon square as its badge draws it (the forest green, a face being scanned for the
+// A card: its icon square as its badge draws it (the mint, a face being scanned for the
 // selfie, an ID card for the ID), its name and one line, and then, by where the check stands:
 // - not done, a button: its price (Free; $5 with "one time" small under it, the two in one column of
 //   one size), a chevron, and under a hairline what it gives, each with its tick: the selfie its
@@ -11,14 +11,14 @@
 // - done, the mint Verified chip alone, and no tap;
 // - tried, one that can't help this person any more (a face seen before, an ID already used):
 //   greyed, its name and line alone, and no tap.
-// What the checks keep: a sheet (on a laptop, a dialog in the middle) with the consent screen the
-// verifier serves (GET /), word for word, the one text it gives for its checks.
+// What the checks keep: under its link, in place, the consent screen the verifier serves (GET /),
+// word for word, the one text it gives for its checks.
 
 import type { Check } from '../device.ts'
 import type { CreditLines } from '../flows/verify.ts'
 import { Icon } from '../icons.tsx'
 import { Loader } from '../mark.tsx'
-import { Line, type Note, Sheet } from '../ui.tsx'
+import { Line, type Note } from '../ui.tsx'
 import { TEST_PAYMENTS } from '../words.ts'
 
 /** What paying for the ID check costs: nothing, unless its check passes. */
@@ -94,14 +94,13 @@ export function CheckCard({ check, standing, credits, testPayments = false, disa
   )
 }
 
-type KeepsProps = { consent: string | null; note: Note | null; onClose: () => void }
+type KeepsProps = { consent: string | null; note: Note | null }
 
-/** What the checks keep: the verifier's words, as it serves them; the loader until they come, or one line when they can't. */
-export function KeepsSheet({ consent, note, onClose }: KeepsProps) {
+/** What the checks keep, opened under its link: the verifier's words, as it serves them; the loader until they come, or one line when they can't. */
+export function Keeps({ consent, note }: KeepsProps) {
   return (
-    <Sheet label="What the checks keep" onClose={onClose}>
-      <h2>What the checks keep</h2>
+    <section id="keeps" className="exp card keeps" aria-label="What the checks keep">
       {consent ? <p className="consent">{consent}</p> : note ? <Line note={note} /> : <Loader />}
-    </Sheet>
+    </section>
   )
 }

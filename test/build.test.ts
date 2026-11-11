@@ -8,7 +8,7 @@
 // client gets its packages at the host's own versions; and every colour the app writes outside
 // theme.css is theme.css's.
 
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync } from 'node:fs'
 
 import { expect, test } from 'vitest'
 
@@ -137,7 +137,7 @@ test("a market's name on its tile, from the directory alone: its first word smal
   }
 })
 
-test("a market's role sheet: its summary, the line its file gives for where someone picks a market", () => {
+test("a market's page: its summary, the line its file gives for where someone picks a market", () => {
   for (const m of marketList) {
     const { summary } = markets.directory.markets.find((d) => d.name === m.market)!
     expect(summary.length, m.market).toBeGreaterThan(0)
@@ -192,6 +192,13 @@ test("every colour the app writes outside theme.css: theme.css's ground and ink,
   const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8')
   const meta = (scheme: string) => new RegExp(`<meta name="theme-color" content="(#[0-9a-f]{6})" media="\\(prefers-color-scheme: ${scheme}\\)"`, 'i').exec(html)?.[1]?.toLowerCase()
   expect([meta('light'), meta('dark')], "index.html's theme colours").toEqual([light.bg, dark.bg])
+})
+
+test('nothing floats: no sheet, no dialog, no scrim, anywhere in the app; only the device\'s own passkey prompt floats', () => {
+  const code = (dir: URL): string[] =>
+    readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? code(new URL(`${e.name}/`, dir)) : /\.(tsx?|css)$/.test(e.name) ? [readFileSync(new URL(e.name, dir), 'utf8')] : []))
+  const all = code(new URL('../src/', import.meta.url)).join('\n')
+  expect(all).not.toMatch(/role="dialog"|aria-modal|<Sheet\b|\.sheet\b|\.scrim\b|--scrim/)
 })
 
 test("CI runs in Playwright's own image at the version package.json pins, so its Chromium is the one the browser test drives", () => {

@@ -3,11 +3,12 @@
 // entry says: its market in its color and its role, muted, and a badge for each check whose
 // verification from this app's verifier checks. The profile entry is read from the host once a page
 // (useWho), unless it is known already: a list of twelve reviews by one writer reads it once. Its
-// name or key shows at once; the rest once read.
+// name or key shows at once; the rest once read. In Messages its market alone, no role: in a market
+// a person talks only with the other side.
 
 import { type CSSProperties, type ReactNode, useEffect, useState } from 'react'
 
-import { Avatar, colorOf } from '../avatar.tsx'
+import { Avatar, MarketBadge, colorOf } from '../avatar.tsx'
 import { config } from '../config.ts'
 import { type Who as Known, whoIs } from '../flows/inbox.ts'
 import { useNames } from '../hooks.ts'
@@ -60,15 +61,16 @@ export function NameOf({ address }: { address: string }) {
   return name ? <b className="name">{name}</b> : <b className="name key">{short(address)}</b>
 }
 
-/** A profile's market in its color, then its role, muted: Tennis matches player. */
-export const MarketRole = ({ market, role }: { market: string; role: string }) => (
+/** A profile's market in its color, then its role, muted, when given: Tennis matches player. */
+export const MarketRole = ({ market, role }: { market: string; role?: string }) => (
   <span className="mkr" style={{ '--h': colorOf(market) } as CSSProperties}>
-    <span className="m">{marketWords(market)}</span> <span className="r">{role}</span>
+    <span className="m">{marketWords(market)}</span>
+    {role && <> <span className="r">{role}</span></>}
   </span>
 )
 
-/** Who another profile is, in two lines: its name or key, with its badges; then its market and role. `aside`, at the first line's right (a time). */
-export function Who({ address, who: known, aside }: { address: string; who?: Known; aside?: ReactNode }) {
+/** Who another profile is, in two lines: its name or key, with its badges; then its market and role, or its market alone (`market`, in Messages). `aside`, at the first line's right (a time). */
+export function Who({ address, who: known, aside, market = false }: { address: string; who?: Known; aside?: ReactNode; market?: boolean }) {
   const who = useWho(address, known)
   return (
     <span className="who">
@@ -79,13 +81,20 @@ export function Who({ address, who: known, aside }: { address: string; who?: Kno
         </span>
         {aside}
       </span>
-      {who && <MarketRole market={who.market} role={who.role} />}
+      {who && <MarketRole market={who.market} {...(!market && { role: who.role })} />}
     </span>
   )
 }
 
-/** The avatar of the profile at `address`, at `size`; a blank square while it is read, or when it can't be. */
-export function WhoAvatar({ address, who: known, size }: { address: string; who?: Known; size?: 'sm' | 'md' | 'lg' }) {
+/** The avatar of the profile at `address`, at `size`; a blank square while it is read, or when it can't be. `badge`: a market, its badge on the picture's corner (Messages). */
+export function WhoAvatar({ address, who: known, size, badge }: { address: string; who?: Known; size?: 'sm' | 'md' | 'lg'; badge?: string }) {
   const who = useWho(address, known)
-  return who ? <Avatar label={labelOf(who)} address={address} {...(size && { size })} /> : <span className={`av ${size ?? 'md'} blank`} aria-hidden />
+  const picture = who ? <Avatar label={labelOf(who)} address={address} {...(size && { size })} /> : <span className={`av ${size ?? 'md'} blank`} aria-hidden />
+  if (!badge) return picture
+  return (
+    <span className="avb">
+      {picture}
+      <MarketBadge market={badge} />
+    </span>
+  )
 }

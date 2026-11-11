@@ -1,6 +1,6 @@
 // One AI app, from Your AI: its mint square, its name and the day it connected; under Acts for, the
-// person's profiles as checkboxes, ticked for those it acts for; and Disconnect at the foot, red
-// text. Ticking adds a profile and unticking removes one, each with one unlock,
+// person's profiles as checkboxes, ticked for those it acts for; and Disconnect at the foot, red,
+// asking again in its own place: Disconnect Claude?, with Cancel and Disconnect. Ticking adds a profile and unticking removes one, each with one unlock,
 // with no new login (flows/connections.ts, as the reference app adds and ends a key). The last one
 // stays ticked: its note is what finds the connection from the seed, and ending its key deletes it,
 // so a connection left with none could never be found again, to tick or to end. Disconnect ends the
@@ -13,9 +13,8 @@ import { type Connection, passkey } from '../device.ts'
 import { addTo, end, removeFrom } from '../flows/connections.ts'
 import { useConnections, useProfiles } from '../hooks.ts'
 import { Icon } from '../icons.tsx'
-import { Loader } from '../mark.tsx'
 import { withSeed } from '../passkey.ts'
-import { Line, Top, UnlockIcon, day, useAction } from '../ui.tsx'
+import { AskAgain, Line, Top, day, useAction } from '../ui.tsx'
 import { Ticks } from './Ticks.tsx'
 
 type Props = { address: string; onBack: () => void }
@@ -59,12 +58,10 @@ export function AiApp({ address, onBack }: Props) {
         <h2>Acts for</h2>
         <Ticks labels={labels} ticked={new Set(conn.labels)} onTick={(label) => void tick.run(label)} disabled={working} fixed={conn.labels.length === 1 ? conn.labels[0] : null} busy={busy} />
       </div>
-      <Line note={tick.note ?? off.note} />
+      <Line note={tick.note} />
       <div className="fill" />
       <div className="foot">
-        <button className="danger" disabled={working} onClick={() => off.run()}>
-          {off.busy ? <Loader /> : <><UnlockIcon /> Disconnect</>}
-        </button>
+        <AskAgain words="Disconnect" ask={`Disconnect ${conn.name}?`} look="danger" unlock busy={off.busy} disabled={working} note={off.note} onYes={() => off.run()} />
       </div>
     </main>
   )

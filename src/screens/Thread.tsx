@@ -1,7 +1,9 @@
-// One conversation: the messages between one of the person's profiles and another. At the top, who it
-// is with (their avatar, the person's name for them or their short key, their badges, their market
-// and role), to which of the person's profiles under it, a tap opening their profile (Them.tsx); and
-// Review, for a review, a vouch or a report about them. Then the
+// One conversation: the messages between one of the person's profiles and another. At the top, one
+// block: their picture with their market's badge (the icon of the person's own profile there); their
+// name or short key with their badges, on one line; their market under it, no role, since in a
+// market a person talks only with the other side; a tap opening their profile (Them.tsx); and at the
+// right Review, for a review, a vouch or a report about them: on a laptop the soft button with its
+// star, on a phone, after Back, a round star button. Then the
 // messages, theirs on the card with an edge, the person's own in forest green; a quiet line with
 // the day ("Today") wherever the day changes; the time under the last message of each run, quietly.
 // At the bottom, the reply: a pill that grows with what is typed and a round Send, which shows its own
@@ -22,7 +24,8 @@ import { Loader } from '../mark.tsx'
 import { holdThread, looked } from '../opened.ts'
 import { useOpening } from '../opening.ts'
 import { withSeed } from '../passkey.ts'
-import { Line, Named, Top, UnlockIcon, clock, dayWords, lastOfRun, newDay, useAction } from '../ui.tsx'
+import { pairOf } from '../markets.ts'
+import { Line, Top, UnlockIcon, clock, dayWords, lastOfRun, newDay, useAction } from '../ui.tsx'
 import { Who, WhoAvatar } from './Who.tsx'
 
 type Props = { mine: string; them: string; pane?: boolean; onBack: () => void; onReview: (mine: string, them: string) => void; onWho: (them: string) => void }
@@ -52,19 +55,22 @@ export function Thread({ mine, them, pane = false, onBack, onReview, onWho }: Pr
         {...(!pane && { onBack })}
         clear
         right={
-          <button className="soft small" onClick={() => onReview(mine, them)}>
-            <Icon name="star" bold />
-            Review
-          </button>
+          pane ? (
+            <button className="soft small" onClick={() => onReview(mine, them)}>
+              <Icon name="star" bold />
+              Review
+            </button>
+          ) : (
+            <button className="round soft" aria-label="Review" onClick={() => onReview(mine, them)}>
+              <Icon name="star" bold />
+            </button>
+          )
         }
       >
         <button type="button" className="convo-head" onClick={() => onWho(them)}>
-          <WhoAvatar address={them} {...(thread && { who: thread.who })} size="sm" />
+          <WhoAvatar address={them} {...(thread && { who: thread.who })} badge={pairOf(me.label).market} {...(!pane && { size: 'sm' as const })} />
           <span className="two">
-            <Who address={them} {...(thread && { who: thread.who })} />
-            <span className="xs">
-              to your <Named label={me.label} />
-            </span>
+            <Who address={them} {...(thread && { who: thread.who })} market />
           </span>
         </button>
       </Top>

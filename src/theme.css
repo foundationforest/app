@@ -1,7 +1,9 @@
 /* The app's look. Tokens by role: the page's ground (bg), cards on it (card), what sits sunk in it
    (sunk); three inks, strongest first; two hairlines; the edge that alone marks a field or a tick
-   box; forest green for the one main action, deep green for Start, leaf for what is new, mint for
-   what is soft, sun for stars and warnings, red for errors, reports and removing. Dark is its own
+   box; two greens, one rule: dark green (forest) finishes something (Create, Post, Save, Send,
+   Continue, and unread counts, your own messages, ticked boxes), light green (mint, and its own
+   dark ink) starts or marks something (New, Review, Add, badges, chips, links); deep green for
+   Start's ground; sun for stars and warnings, red for errors, reports and removing. Dark is its own
    set; the device's setting picks one unless data-theme on <html> says otherwise. Every text 4.5:1
    against what is behind it, every icon and needed edge 3:1, light and dark (test/contrast.test.ts);
    the star beside a rating, decorative, is the one left out. Figtree sets every word: titles,
@@ -23,7 +25,6 @@
   --deep: #123a2a;
   --on-deep: #f2f0e8;
   --on-deep2: #a9c4b5;
-  --leaf: #2f9a63;
   --mint: #dcedde;
   --on-mint: #174a35;
   --sun: #e8a317;
@@ -34,7 +35,6 @@
   --on-danger: #ffffff;
   --seg-on: var(--card);
   --shadow: 0 1px 2px rgb(17 26 21 / 0.05), 0 10px 28px -14px rgb(17 26 21 / 0.18);
-  --scrim: rgb(17 26 21 / 0.42);
   /* Start's one button, cream on the deep green in both looks; a red that reads on the deep green. */
   --cream: #f2f0e8;
   --on-cream: #123a2a;
@@ -68,7 +68,6 @@
     --deep: #1c3d2d;
     --on-deep: #eef0ea;
     --on-deep2: #9dbcab;
-    --leaf: #7fd1a3;
     --mint: #1f3529;
     --on-mint: #a8dfc0;
     --sun: #f0b93b;
@@ -79,7 +78,6 @@
     --on-danger: #1a0c09;
     --seg-on: var(--line2);
     --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 10px 28px -14px rgb(0 0 0 / 0.6);
-    --scrim: rgb(0 0 0 / 0.6);
     --tile-tint: 18%;
     --look-tint: 24%;
     --look-icon: 45%;
@@ -103,7 +101,6 @@
   --deep: #1c3d2d;
   --on-deep: #eef0ea;
   --on-deep2: #9dbcab;
-  --leaf: #7fd1a3;
   --mint: #1f3529;
   --on-mint: #a8dfc0;
   --sun: #f0b93b;
@@ -114,7 +111,6 @@
   --on-danger: #1a0c09;
   --seg-on: var(--line2);
   --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 10px 28px -14px rgb(0 0 0 / 0.6);
-  --scrim: rgb(0 0 0 / 0.6);
   --tile-tint: 18%;
   --look-tint: 24%;
   --look-icon: 45%;
@@ -255,7 +251,7 @@ main {
   height: 22px;
 }
 
-/* Buttons: one filled forest green per screen, for the main action; plain (the card, with an edge),
+/* Buttons: one filled dark green per screen, for the main action, what finishes something; plain (the card, with an edge),
    soft (mint) and text (quiet) for the rest; red text only to remove or report, filled red to
    confirm it. */
 button {
@@ -284,7 +280,7 @@ button:disabled {
 
 button:focus-visible,
 a:focus-visible {
-  outline: 2px solid var(--forest);
+  outline: 2px solid var(--on-mint);
   outline-offset: 2px;
 }
 
@@ -448,7 +444,7 @@ button.solid .icon {
 .loader.big {
   display: block;
   margin: 24px auto;
-  color: var(--forest);
+  color: var(--on-mint);
   /* Only once the wait passes half a second: a shorter one shows nothing. */
   animation: late 0s linear 0.5s both;
 }
@@ -734,7 +730,7 @@ span.chip .icon {
   color: var(--danger);
 }
 
-/* A beta market's chip: small, on its tile's corner and beside its sheet's title. */
+/* A beta market's chip: small, on its tile's corner and beside its page's title. */
 span.chip.beta {
   height: 22px;
   padding: 0 8px;
@@ -765,7 +761,7 @@ span.chip.beta {
   width: 9px;
   height: 9px;
   border-radius: 50%;
-  background: var(--leaf);
+  background: var(--forest);
   flex: none;
 }
 
@@ -836,8 +832,8 @@ span.chip.beta {
   font-size: 32px;
 }
 
-/* The two badges: one forest square each, a white icon inside telling them apart (a face being
-   scanned, an ID card); tapped where one stands alone, its words, above it. */
+/* The two badges: one mint square each, an icon in the mint's dark green inside telling them apart
+   (a face being scanned, an ID card); tapped where one stands alone, its words, right after it. */
 .vb {
   position: relative;
   display: inline-grid;
@@ -846,8 +842,8 @@ span.chip.beta {
   width: 22px;
   height: 22px;
   border-radius: 7px;
-  background: var(--forest);
-  color: var(--on-forest);
+  background: var(--mint);
+  color: var(--on-mint);
 }
 
 .vb.alone {
@@ -880,11 +876,11 @@ span.chip.beta {
 }
 
 .verified-said {
-  position: fixed;
-  z-index: 10;
-  transform: translate(-50%, calc(-100% - 6px));
-  padding: 5px 10px;
-  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 7px;
   background: var(--ink);
   color: var(--bg);
   font-family: var(--text);
@@ -893,7 +889,6 @@ span.chip.beta {
   line-height: 1.4;
   letter-spacing: 0;
   white-space: nowrap;
-  pointer-events: none;
 }
 
 /* Who another profile is, in two lines: who it is to the person (the name they gave it, else its
@@ -983,7 +978,7 @@ span.chip.beta {
 }
 
 .tabbar button.on {
-  color: var(--forest);
+  color: var(--on-mint);
   font-weight: 800;
 }
 
@@ -1157,6 +1152,34 @@ button.nav.profile .role {
   color: var(--ink2);
 }
 
+.seg.icons {
+  display: inline-flex;
+  flex: none;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 12px;
+}
+
+.seg.icons button {
+  flex: none;
+  width: 42px;
+  min-height: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: 9px;
+  color: var(--ink3);
+}
+
+.seg.icons button .icon {
+  width: 18px;
+  height: 18px;
+}
+
+.row.looks > strong {
+  flex: 1;
+  font-size: 16.5px;
+}
+
 .choice .here,
 .tabs .here,
 .seg .here {
@@ -1283,13 +1306,13 @@ input[type='range'] {
   box-shadow: none;
   background: none;
   padding: 0;
-  accent-color: var(--forest);
+  accent-color: var(--on-mint);
 }
 
 input:focus,
 textarea:focus,
 select:focus {
-  outline: 2px solid var(--forest);
+  outline: 2px solid var(--on-mint);
   outline-offset: 1px;
 }
 
@@ -1344,7 +1367,7 @@ button.chip.here {
   overflow-wrap: anywhere;
 }
 
-/* Drawn here, not the browser's, so Safari hides its thumb too: a plain track, the thumb in forest green. */
+/* Drawn here, not the browser's, so Safari hides its thumb too: a plain track, the thumb in the mint's dark green. */
 .score input[type='range'] {
   -webkit-appearance: none;
   appearance: none;
@@ -1372,7 +1395,7 @@ button.chip.here {
   margin-top: -10px;
   border: none;
   border-radius: 50%;
-  background: var(--forest);
+  background: var(--on-mint);
 }
 
 .score input[type='range']::-moz-range-thumb {
@@ -1380,7 +1403,7 @@ button.chip.here {
   height: 26px;
   border: none;
   border-radius: 50%;
-  background: var(--forest);
+  background: var(--on-mint);
 }
 
 .score input.untouched::-webkit-slider-thumb {
@@ -1708,7 +1731,7 @@ button.chip.here {
 }
 
 .map-pin {
-  color: var(--forest);
+  color: var(--on-mint);
   cursor: grab;
 }
 
@@ -1756,7 +1779,7 @@ main.start {
   color: var(--on-deep);
 }
 
-main.start > :not(.sheet):not(.scrim) {
+main.start > * {
   width: 100%;
   max-width: 32rem;
   margin-inline: auto;
@@ -1790,63 +1813,58 @@ button.cream .icon {
   color: inherit;
 }
 
-/* A sheet, risen from the bottom over a scrim: its grab, its title, then what it holds. */
-.scrim {
-  position: fixed;
-  inset: 0;
-  z-index: 30;
-  background: var(--scrim);
-}
-
-.sheet {
-  position: fixed;
-  z-index: 31;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  width: 100%;
-  max-width: 520px;
-  max-height: 92dvh;
-  margin: 0 auto;
-  overflow-y: auto;
+/* What Start asks, in its own place, where its button was: First time here?, No passkey found, Save
+   a passkey on this device?; the first way on cream, the other quiet, in Start's light tones. */
+.asked {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 10px 20px max(30px, env(safe-area-inset-bottom));
-  border-radius: 30px 30px 0 0;
-  background: var(--bg);
-  color: var(--ink);
 }
 
-.sheet:focus {
-  outline: none;
-}
-
-.grab {
-  flex: none;
-  width: 40px;
-  height: 5px;
-  margin: 0 auto 10px;
-  border-radius: 3px;
-  background: var(--line2);
-}
-
-.sheet h2 {
+.asked h2 {
   padding: 0;
   font-size: 22px;
   font-weight: 800;
   line-height: 1.15;
   letter-spacing: -0.025em;
-  color: var(--ink);
+  color: var(--on-deep);
 }
 
-.sheet .stack {
-  margin-top: 12px;
+.asked p {
+  color: var(--on-deep2);
+}
+
+.asked .stack {
+  margin-top: 8px;
   gap: 10px;
 }
 
+.asked .line {
+  color: var(--on-deep2);
+}
+
+.asked .line.red {
+  color: var(--on-deep-danger);
+}
+
+.asked button.quiet {
+  min-height: 44px;
+  color: var(--on-deep2);
+  font-size: 16px;
+}
+
+button.ghost {
+  background: none;
+  color: var(--on-deep);
+  box-shadow: inset 0 0 0 1px var(--on-deep2);
+}
+
+button.ghost .icon {
+  color: inherit;
+}
+
 /* What the checks keep: the verifier's words, as it serves them. */
-.sheet .consent {
+.keeps .consent {
   white-space: pre-wrap;
   line-height: 1.5;
   color: var(--ink2);
@@ -1894,32 +1912,6 @@ button.cream .icon {
     max-width: calc(520px + 40px);
     padding-top: 28px;
     padding-bottom: 28px;
-  }
-
-  .setup .sheet {
-    left: 70%;
-  }
-}
-
-/* On a laptop, a small choice or edit opens in the middle of the screen instead, about 420px wide,
-   over the dimmed page: the same sheet, with no grab. */
-@media (min-width: 900px) {
-  .sheet {
-    left: 50%;
-    right: auto;
-    top: 50%;
-    bottom: auto;
-    width: 420px;
-    max-width: calc(100vw - 48px);
-    max-height: calc(100dvh - 48px);
-    transform: translate(-50%, -50%);
-    padding: 24px;
-    border-radius: 26px;
-    box-shadow: 0 30px 60px -20px rgb(0 0 0 / 0.5);
-  }
-
-  .sheet > .grab {
-    display: none;
   }
 }
 
@@ -2060,8 +2052,8 @@ button.vcard:disabled,
   width: 48px;
   height: 48px;
   border-radius: 14px;
-  background: var(--forest);
-  color: var(--on-forest);
+  background: var(--mint);
+  color: var(--on-mint);
 }
 
 .vico .icon {
@@ -2092,7 +2084,7 @@ button.vcard:disabled,
 .vlist .icon {
   width: 18px;
   height: 18px;
-  color: var(--leaf);
+  color: var(--on-mint);
 }
 
 /* A quiet green word under Get verified's cards: I already use Forest, in the middle; What the
@@ -2104,7 +2096,7 @@ button.green-text {
   background: none;
   box-shadow: none;
   font-size: 15px;
-  color: var(--forest);
+  color: var(--on-mint);
   gap: 6px;
 }
 
@@ -2256,7 +2248,31 @@ button.market-tile .kind {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
-/* A sheet's title with a chip after it: Tutoring, Beta. */
+/* A market's page: its icon on a tint of its color, as its tile has it, over its name. */
+.market-icon {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--h) var(--tile-tint), var(--card));
+  color: color-mix(in srgb, var(--h) var(--look-icon), var(--look-to));
+}
+
+.market-icon .icon {
+  width: 34px;
+  height: 34px;
+  color: inherit;
+}
+
+.market-icon .letter {
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+/* A title with a chip after it: Tutoring, Beta. */
+h1.with-chip,
 h2.with-chip {
   display: flex;
   align-items: center;
@@ -2599,13 +2615,77 @@ button.card.said-card {
   flex: none;
 }
 
-.rows > button.thread-row {
+/* Messages' conversations: each a row on the ground, rounded, in two lines; their picture with its
+   market's badge. */
+.threads {
+  display: grid;
+  gap: 4px;
+}
+
+button.thread-row {
+  display: flex;
   align-items: center;
   justify-content: flex-start;
+  gap: 12px;
+  width: 100%;
+  min-height: 70px;
+  padding: 12px 14px;
+  border-radius: 18px;
+  background: none;
+  box-shadow: none;
+  text-align: left;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.4;
 }
 
 .thread-row .two {
   gap: 3px;
+}
+
+/* A market's badge on a picture's bottom right corner: its icon, white on its color made a little
+   deeper, ringed in what is behind it. */
+.avb {
+  position: relative;
+  flex: none;
+  display: inline-flex;
+}
+
+.avb > .mb {
+  position: absolute;
+  right: -5px;
+  bottom: -5px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--h) 88%, black);
+  color: #ffffff;
+  box-shadow: 0 0 0 2.5px var(--bg);
+}
+
+.avb > .av.sm + .mb {
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+}
+
+.mb .icon {
+  width: 13px;
+  height: 13px;
+  color: inherit;
+}
+
+.av.sm + .mb .icon {
+  width: 11px;
+  height: 11px;
+}
+
+.mb .letter {
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
 }
 
 /* A conversation's first line: who it is with, bold (a key in its own face), and when, at its right. */
@@ -2685,16 +2765,36 @@ button.card.said-card {
   margin-left: -12px;
 }
 
-/* A conversation's header: their avatar, who they are and to which of yours, Review at the right. */
+/* A conversation's header, one block: their picture with its market's badge; their name or key with
+   their badges on one line; their market under it; Review at the right. */
 .convo-head {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   min-width: 0;
 }
 
 .convo-head .two > .who {
   font-size: 16.5px;
+  gap: 2px;
+}
+
+button.convo-head .name {
+  font-size: 17px;
+  font-weight: 800;
+}
+
+button.convo-head .name.key {
+  font-size: 15.5px;
+  font-weight: 700;
+}
+
+button.convo-head .mkr {
+  font-size: 14px;
+}
+
+button.round.soft {
+  box-shadow: none;
 }
 
 .top-right button.soft.small {
@@ -2771,11 +2871,11 @@ button.card.said-card {
 }
 
 .score input[type='range']::-webkit-slider-runnable-track {
-  background: linear-gradient(to right, var(--forest) var(--at, 0%), var(--edge) var(--at, 0%));
+  background: linear-gradient(to right, var(--on-mint) var(--at, 0%), var(--edge) var(--at, 0%));
 }
 
 .score input[type='range']::-moz-range-track {
-  background: linear-gradient(to right, var(--forest) var(--at, 0%), var(--edge) var(--at, 0%));
+  background: linear-gradient(to right, var(--on-mint) var(--at, 0%), var(--edge) var(--at, 0%));
 }
 
 .score input[type='range']::-webkit-slider-thumb {
@@ -2783,14 +2883,14 @@ button.card.said-card {
   height: 32px;
   margin-top: -13px;
   background: var(--card);
-  box-shadow: 0 0 0 2px var(--forest), 0 4px 10px -2px rgb(17 26 21 / 0.3);
+  box-shadow: 0 0 0 2px var(--on-mint), 0 4px 10px -2px rgb(17 26 21 / 0.3);
 }
 
 .score input[type='range']::-moz-range-thumb {
   width: 32px;
   height: 32px;
   background: var(--card);
-  box-shadow: 0 0 0 2px var(--forest), 0 4px 10px -2px rgb(17 26 21 / 0.3);
+  box-shadow: 0 0 0 2px var(--on-mint), 0 4px 10px -2px rgb(17 26 21 / 0.3);
 }
 
 .score .ends {
@@ -2818,7 +2918,7 @@ button.card.said-card {
   text-align: center;
 }
 
-/* A field's row that opens a screen or a sheet of its own: its icon, what it holds, a chevron. */
+/* A field's row that opens a screen of its own: its icon, what it holds, a chevron. */
 button.open-row {
   justify-content: flex-start;
   gap: 10px;
@@ -3013,21 +3113,9 @@ button.chip .icon {
   gap: 16px;
 }
 
-/* A picker's sheet: its search, then each value with its tick. */
-.sheet .pick-list {
-  max-height: 55dvh;
-  overflow-y: auto;
-}
-
-.sheet .pick-list .row {
+/* A long list's screen: its search, then each value with its tick. */
+.pick-list .row {
   min-height: 52px;
-}
-
-.thread-row .two > .thread-last {
-  overflow: visible;
-  white-space: normal;
-  font-size: 16.5px;
-  color: var(--ink);
 }
 
 /* A profile's name inside a quiet line stays quiet: to your Tutoring tutor. */
@@ -3038,7 +3126,7 @@ button.chip .icon {
   font-weight: inherit;
 }
 
-/* A square in a row: smaller; on the sunk ground for a place to go, forest green for the ID. */
+/* A square in a row: smaller; on the sunk ground for a place to go, mint for a check done. */
 .sq.sm {
   width: 40px;
   height: 40px;
@@ -3055,11 +3143,6 @@ button.chip .icon {
   color: var(--ink2);
 }
 
-.sq.forest {
-  background: var(--forest);
-  color: var(--on-forest);
-}
-
 /* A check not done, in You: its badge's outline, dashed, its icon quiet; a tap starts it. */
 button.sq.outline {
   min-height: 0;
@@ -3071,26 +3154,71 @@ button.sq.outline {
   cursor: pointer;
 }
 
-/* A sheet's buttons in one row: Remove at the left, Cancel and Save at the right. */
-.sheet-buttons {
+/* What opens in place, under the row, chip or link that opened it, and closes on a second tap of
+   it: inside the card it opens in (a passkey), or on a card of its own (naming someone, What the
+   checks keep). Nothing floats. */
+.exp {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 4px 16px 16px;
+}
+
+.exp.card {
+  padding: 16px;
+  border-radius: 22px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+}
+
+.opens > .row[aria-expanded='true'] {
+  padding-bottom: 8px;
+}
+
+/* A passkey opened: Remove at the left, Save at the right; Remove asking again takes the row. */
+.exp-buttons {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-top: 4px;
 }
 
-.sheet-buttons > .grow {
+.exp-buttons > .grow {
   flex: 1;
 }
 
-.sheet-buttons > button.small {
+.exp-buttons > button.small {
   min-height: 46px;
   padding: 0 18px;
   font-size: 16px;
 }
 
-.sheet-buttons > button.danger.text {
-  padding: 0 4px;
+/* A button that removes something, asking again in its own place: the question, a line under it
+   when there is one, then Cancel and the red word, side by side. */
+.ask-again {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.ask {
+  font-size: 16.5px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.ask-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.ask-buttons > button {
+  flex: 1;
+}
+
+.ask-buttons > button.small {
+  min-height: 46px;
+  font-size: 16px;
 }
 
 /* Red text, a button that removes or leaves: Remove on a row, Forget this device. */
@@ -3238,7 +3366,7 @@ button.card.profile-card {
   white-space: nowrap;
 }
 
-/* New profile, always in reach: on a phone, a round forest + right after Your profiles; on a
+/* New profile, always in reach: on a phone, a round mint + right after Your profiles; on a
    laptop, a button at the right of it. */
 button.addround {
   flex: none;
@@ -3247,8 +3375,8 @@ button.addround {
   height: 38px;
   padding: 0;
   border-radius: 50%;
-  background: var(--forest);
-  color: var(--on-forest);
+  background: var(--mint);
+  color: var(--on-mint);
   box-shadow: none;
 }
 
@@ -3311,14 +3439,6 @@ main.home .titled > button.new-profile {
   min-width: 1.3em;
   text-align: right;
   font-variant-numeric: tabular-nums;
-}
-
-.sheet > .sq {
-  margin-bottom: 8px;
-}
-
-.sheet-line {
-  color: var(--ink2);
 }
 
 /* One AI app's head: its mint square, its name and when it connected. */
@@ -3411,9 +3531,14 @@ main.home .titled > button.new-profile {
   margin: auto;
 }
 
-/* The conversation open beside the list: a forest green edge, its words on the card as before. */
-.rows > button.thread-row.here {
-  box-shadow: inset 3px 0 0 var(--forest);
+/* The conversation open beside the list: raised, a card of its own. */
+button.thread-row.here {
+  background: var(--card);
+  box-shadow: var(--shadow);
+}
+
+button.thread-row.here .mb {
+  box-shadow: 0 0 0 2.5px var(--card);
 }
 
 /* The laptop sidebar's New, at the right of Profiles: a small mint pill. */
@@ -3439,8 +3564,8 @@ button.minipill .icon {
   height: 14px;
 }
 
-/* A market's role on New profile's sheet: its avatar and its name; the check where the person has
-   it, else Create. */
+/* A market's role on its page: its avatar and its name; the check where the person has it, else
+   Create. */
 .big-choice {
   display: flex;
   align-items: center;
@@ -3458,7 +3583,7 @@ button.minipill .icon {
 
 .big-choice .have {
   display: inline-flex;
-  color: var(--forest);
+  color: var(--on-mint);
 }
 
 .big-choice .have .icon {
@@ -3747,7 +3872,7 @@ a.out {
   min-height: 40px;
   padding: 0 4px;
   align-self: flex-start;
-  color: var(--forest);
+  color: var(--on-mint);
   font-weight: 600;
   text-decoration: none;
 }
@@ -3757,7 +3882,7 @@ a.out .icon {
   height: 16px;
 }
 
-/* The naming sheet: the full key in a box, with Copy. */
+/* Naming someone, in place: the full key in a box, with Copy. */
 .keybox {
   display: flex;
   align-items: flex-start;
@@ -3784,11 +3909,6 @@ a.out .icon {
   height: 32px;
   min-height: 32px;
   margin: -4px -6px -4px 0;
-}
-
-.sheet h2.key {
-  font-family: ui-monospace, Menlo, monospace;
-  font-size: 19px;
 }
 
 /* Messages' chips: a dot in the profile's market's color, then its market and role. */

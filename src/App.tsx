@@ -21,9 +21,9 @@
 // Each screen the person can come back to has its own path, so a reload opens on it and the phone's
 // back goes back; what a screen is about (a profile's address and its tab, a thread, an entry being
 // edited, whose messages, the market picked on New profile, Connect your AI in setup) is kept in the
-// page's history, never in its path, which a host's logs would keep. Your 24 words, once Passkeys
-// had the passkey give them, are kept in the page's memory alone, never its history, while their
-// screen is open; reloaded there, the page opens Passkeys. A Share link's address arrives
+// page's history, never in its path, which a host's logs would keep. Your 24 words, once their page
+// had the passkey give them, are kept in that page's memory alone, never its history, while it is
+// open; reloaded there, it asks again. A Share link's address arrives
 // in its query: it is moved into the history at once, and waits there through
 // Start and the verification when no one is verified here yet. So does an AI app's login, the
 // connect page's connector and request: through Start, the verification and the first profile,
@@ -172,9 +172,9 @@ function here(): Screen {
       return { at: 'passkeys' }
     case '/passkey':
       return { at: 'add-passkey' }
-    // The words were in the page's memory alone: reloaded, Passkeys, to ask for them again.
+    // The words were in the page's memory alone: reloaded, their page asks for them again.
     case '/words':
-      return { at: 'passkeys' }
+      return { at: 'words' }
     case '/ai-apps':
       return { at: 'ai-apps' }
     case '/about':
@@ -241,9 +241,6 @@ export function App() {
 function Screens() {
   const [screen, setScreen] = useState<Screen>(here)
   const wide = useWide()
-  // Your 24 words, while their screen is open: in the page's memory alone, dropped as it closes.
-  const words = useRef<string[] | null>(null)
-  if (screen.at !== 'words') words.current = null
   // The Share link's address, or the AI app's login, while Start, the verification and a first profile come first.
   const waiting = useRef<Waiting | null>(waitingAt(screen) ?? waitedThrough)
   useEffect(() => {
@@ -348,7 +345,8 @@ function Screens() {
         return (
           <NewProfile
             {...(screen.market && { market: screen.market })}
-            // A market's roles on a sheet, the market kept in the history so a reload keeps it open.
+            // A market's page in place of the tiles, the market kept in the history so a reload keeps it
+            // open; its Back, the tiles again. Made from it, back from the profile goes where New profile came from.
             onMarket={(market) => go(market ? { at: 'new', market } : { at: 'new' })}
             onMade={made}
             // A role the person has: its profile, so back comes back to New profile.
@@ -432,14 +430,7 @@ function Screens() {
         return <You onForgot={() => go({ at: 'start' })} onCheck={addCheck} onPasskeys={() => go({ at: 'passkeys' }, true)} onAiApps={() => go({ at: 'ai-apps' }, true)} onAbout={() => go({ at: 'about' }, true)} />
       case 'passkeys':
         return (
-          <Passkeys
-            onBack={back}
-            onAdd={() => go({ at: 'add-passkey' }, true)}
-            onWords={(given) => {
-              words.current = given
-              go({ at: 'words' }, true)
-            }}
-          />
+<Passkeys onBack={back} onAdd={() => go({ at: 'add-passkey' }, true)} onWords={() => go({ at: 'words' }, true)} />
         )
       case 'ai-apps':
         return <AiApps onBack={back} onAiApp={(address) => go({ at: 'ai', address }, true)} onConnect={() => go({ at: 'connect-ai' }, true)} />
@@ -454,7 +445,7 @@ function Screens() {
       case 'add-passkey':
         return <AddPasskey onDone={back} onBack={back} />
       case 'words':
-        return words.current ? <Words words={words.current} onDone={back} /> : null
+        return <Words onDone={back} />
     }
   }
 }

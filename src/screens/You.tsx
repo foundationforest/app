@@ -1,13 +1,13 @@
 // You, one column on a phone and a laptop alike. At the top, one card: how the person is verified,
-// Selfie and ID, each with its badge's square: a check done its badge, the forest square, and
+// Selfie and ID, each with its badge's square: a check done its badge, the mint square, and
 // Verified on a mint chip; one not done its badge's outline, dashed, which starts it, one line on
 // what it gives, from the verifier's gifts as Get verified says it, and a plain Add, which opens Get
 // verified too. The ID shows only where the verifier sells it (GET /, `forSale`), or once it is done.
-// Then one card of rows, each opening its own screen: Passkeys, with how many
-// (Passkeys.tsx); Your AI, with the apps' names (AiApps.tsx); Appearance, Auto, Light or Dark, on a
-// sheet whose one choice is a list of rows, a tap picking it and closing the sheet; and About Forest
-// (About.tsx). At the foot, Forget this device, red text, tapped twice (forget.ts). Nothing here
-// asks the passkey.
+// Then one card of rows: Your AI, with the apps' names (AiApps.tsx), and Passkeys, with how many
+// (Passkeys.tsx), and About Forest (About.tsx), each opening its own screen; last, Appearance, with
+// three icon buttons at its right, Auto, Light and Dark, each named for screen readers, a tap
+// applying it at once. At the foot, Forget this device, red text, asking again in its own place, Forget
+// this device?, with Cancel and Forget (forget.ts). Nothing here asks the passkey.
 
 import { useEffect, useState } from 'react'
 
@@ -18,7 +18,8 @@ import { forgetDevice } from '../forget.ts'
 import { useBackups, useChecks, useConnections, useIdCheck } from '../hooks.ts'
 import { type IconName, Icon } from '../icons.tsx'
 import { applyTheme } from '../theme.ts'
-import { CHECK_ICON, Opens, RadioMark, Sheet, Top } from '../ui.tsx'
+import { FORGET_LINE } from '../forget.ts'
+import { AskAgain, CHECK_ICON, Opens, Seg, Top } from '../ui.tsx'
 
 type Props = { onForgot: () => void; onCheck: (check: Check) => void; onPasskeys: () => void; onAiApps: () => void; onAbout: () => void }
 
@@ -55,15 +56,11 @@ export function You({ onForgot, onCheck, onPasskeys, onAiApps, onAbout }: Props)
     return () => void (live = false)
   }, [])
   const [theme, setTheme] = useState(savedTheme)
-  const [looks, setLooks] = useState(false)
-  const [forgetting, setForgetting] = useState(false)
   const pick = (t: Theme) => {
     saveTheme(t)
     applyTheme(t)
     setTheme(t)
-    setLooks(false)
   }
-  const look = THEMES.find(([t]) => t === theme)!
   return (
     <main>
       <Top>
@@ -73,7 +70,7 @@ export function You({ onForgot, onCheck, onPasskeys, onAiApps, onAbout }: Props)
         {CHECKS.filter(({ check }) => check === 'face' || forSale || has.has(check)).map(({ check, name, add }) => (
           <div key={check} className="row">
             {has.has(check) ? (
-              <span className="sq sm forest">
+              <span className="sq sm mint">
                 <Icon name={CHECK_ICON[check]} fill />
               </span>
             ) : (
@@ -91,7 +88,7 @@ export function You({ onForgot, onCheck, onPasskeys, onAiApps, onAbout }: Props)
                 Verified
               </span>
             ) : (
-              <button className="small" onClick={() => onCheck(check)}>
+              <button className="soft small" onClick={() => onCheck(check)}>
                 {add}
               </button>
             )}
@@ -99,39 +96,30 @@ export function You({ onForgot, onCheck, onPasskeys, onAiApps, onAbout }: Props)
         ))}
       </div>
       <div className="rows">
-        <Opens icon="key" words="Passkeys" line={backups ? passkeyCount(backups.length + 1) : ''} onClick={onPasskeys} />
         <Opens icon="sparkle" words="Your AI" line={aiApps.map((c) => c.name).join(', ')} onClick={onAiApps} />
-        <Opens icon="circle-half" words="Appearance" line={look[1]} onClick={() => setLooks(true)} />
+        <Opens icon="key" words="Passkeys" line={backups ? passkeyCount(backups.length + 1) : ''} onClick={onPasskeys} />
         <Opens icon="info" words="About Forest" onClick={onAbout} />
+        <div className="row looks">
+          <span className="sq sm plain">
+            <Icon name="paint-brush" />
+          </span>
+          <strong className="grow">Appearance</strong>
+          <Seg label="Appearance" icons options={THEMES.map(([value, words, icon]) => ({ value, words, icon }))} value={theme} onPick={(t) => t && pick(t)} />
+        </div>
       </div>
       <div className="lone">
-        {forgetting && <p className="line">Your passkey stays in your password manager.</p>}
-        <button
-          className={forgetting ? 'danger solid small' : 'danger text'}
-          onClick={() => {
-            if (!forgetting) return setForgetting(true)
+        <AskAgain
+          words="Forget this device"
+          yes="Forget"
+          ask="Forget this device?"
+          line={FORGET_LINE}
+          icon="sign-out"
+          onYes={() => {
             forgetDevice()
             onForgot()
           }}
-        >
-          <Icon name="sign-out" bold />
-          {forgetting ? 'Forget' : 'Forget this device'}
-        </button>
+        />
       </div>
-      {looks && (
-        <Sheet label="Appearance" onClose={() => setLooks(false)}>
-          <h2>Appearance</h2>
-          <div className="rows pick-list" role="radiogroup" aria-label="Appearance">
-            {THEMES.map(([t, words, icon]) => (
-              <button key={t} type="button" role="radio" aria-checked={theme === t} className="row pick" onClick={() => pick(t)}>
-                <Icon name={icon} />
-                <span className="grow">{words}</span>
-                <RadioMark on={theme === t} />
-              </button>
-            ))}
-          </div>
-        </Sheet>
-      )}
     </main>
   )
 }

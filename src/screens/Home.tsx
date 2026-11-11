@@ -11,8 +11,8 @@
 // with its star over how many reviews it counted, or what came with no score yet (1 vouch), or No
 // reviews. Every card is one height, rated or not, so a list never jumps as ratings come; on a
 // laptop, as many columns of about 300px as fit. New profile, while a market's role has no profile of
-// theirs, is always in reach: on a phone, a round forest + right after Your profiles; on a laptop, a
-// button at the right of it.
+// theirs, is always in reach: on a phone, a round mint + right after Your profiles; on a laptop, a
+// soft button at the right of it: light green, since it starts something.
 // Nothing on a card asks the passkey: the device keeps which profiles are the person's, and all a
 // card shows is public. Above them, when the Profiles folder holds a profile made on another
 // device, one row, New profiles from another device: one unlock reads them, and their cards show
@@ -52,7 +52,7 @@ export function Home({ onOpen, onNew, onCheck }: Props) {
   })
   const free = pairs.some((p) => !held.has(p.label))
   const newProfile = wide ? (
-    <button className="primary small new-profile" onClick={onNew}>
+    <button className="soft small new-profile" onClick={onNew}>
       <Icon name="plus" bold />
       New profile
     </button>

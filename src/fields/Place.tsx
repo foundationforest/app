@@ -158,7 +158,7 @@ function PlaceScreen({ label, start, was, onDone, onBack }: { label: string; sta
   const [asking, setAsking] = useState(false)
   const [failed, setFailed] = useState<keyof typeof NO_LOCATION | null>(null)
   const [noMap, setNoMap] = useState(false)
-  const self = useRef<HTMLDivElement>(null)
+  const self = useRef<HTMLElement>(null)
   const live = useRef(true)
   const circled = useRef(centre !== null)
   circled.current = centre !== null
@@ -225,7 +225,7 @@ function PlaceScreen({ label, start, was, onDone, onBack }: { label: string; sta
     ['spot', 'Exact spot'],
   ]
   return (
-    <div className="placing" role="dialog" aria-modal="true" aria-label={label} ref={self} tabIndex={-1}>
+    <section className="placing" aria-label={label} ref={self} tabIndex={-1}>
       <div className="placing-screen">
         <Top onBack={onBack}>
           <h1>{label}</h1>
@@ -276,6 +276,6 @@ function PlaceScreen({ label, start, was, onDone, onBack }: { label: string; sta
           Done
         </button>
       </div>
-    </div>
+    </section>
   )
 }

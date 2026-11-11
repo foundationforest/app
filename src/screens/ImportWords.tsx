@@ -2,7 +2,7 @@
 // there are ("19 of 24"), and Continue, off until all 24 are there. The words are checked before any
 // passkey is made (flows/imported.ts), so words that can't be used say why in one line, red: a word
 // wrong, words that aren't verified, or words that open a different Forest from the one this device
-// lists. Never two seeds on one device: then Forget this device takes the place of Continue, and
+// lists. Never two seeds on one device: then Forget this device takes the place of Continue, asking again in its own place, and
 // once it has forgotten, Continue is back. Then a new passkey is added to the seed the words spell
 // as You adds one (flows/backups.ts), the seed held for it as after any unlock, and the person is
 // in, as from Start. Unlike Passkeys', it excludes none of the passkeys this device knows: after Forget
@@ -17,12 +17,12 @@ import { config } from '../config.ts'
 import { addBackup } from '../flows/backups.ts'
 import { DifferentForest, seedOfWords, wordCount } from '../flows/imported.ts'
 import { type Entered, enter } from '../flows/start.ts'
-import { forgetDevice } from '../forget.ts'
+import { FORGET_LINE, forgetDevice } from '../forget.ts'
 import { drop as dropHeld, hold } from '../held.ts'
 import { Loader } from '../mark.tsx'
 import { NoAnswer, drop, make, withSeed } from '../passkey.ts'
 import { proveInWorker } from '../proof/prove.ts'
-import { Line, Top, UnlockIcon, useAction } from '../ui.tsx'
+import { AskAgain, Line, Top, UnlockIcon, useAction } from '../ui.tsx'
 
 type Props = { onEntered: (entered: Entered, passkey: string) => void; onBack: () => void }
 
@@ -93,9 +93,7 @@ export function ImportWords({ onEntered, onBack }: Props) {
       <div className="fill" />
       <Line note={create.note} />
       {different ? (
-        <button className="danger" onClick={forgetFirst}>
-          Forget this device
-        </button>
+        <AskAgain words="Forget this device" yes="Forget" ask="Forget this device?" line={FORGET_LINE} look="danger" onYes={forgetFirst} />
       ) : (
         <button className="primary" disabled={create.busy || count !== WORD_COUNT} onClick={() => create.run()}>
           {create.busy ? <Loader /> : <><UnlockIcon always /> Continue</>}
