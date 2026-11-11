@@ -19,7 +19,8 @@
 //     no font), one cream Start, nothing asked; tapped, First time here?, in Start's own place, where
 //     its button was, nothing floating, Yes, I'm new on cream and I use Forest on another device
 //     with its QR code, neither with the unlock icon; the second with the passkey prompt closed: No
-//     passkey found, in the same place, its line, Try again with its QR code and Type my 24 words; Yes, I'm new made
+//     passkey found, in the same place, its line, Try again with its QR code, Type my 24 words, and
+//     quietly Back, to Start's button again; Yes, I'm new made
 //     the passkey for app.forest.foundation and opened Get verified, nothing asked, its title in
 //     Figtree at 800, a little tight, and no font but Figtree fetched. Here and on every screen
 //     below with a filled button, its icon takes its text color.
@@ -1007,7 +1008,7 @@ test("Start, on a device that knows no passkey: one cream Start, nothing asked; 
   await button(page, 'I use Forest on another device').click()
   const none = page.getByRole('region', { name: 'No passkey found' })
   await none.getByText('Try again with the device that has it, or type your 24 words.').waitFor()
-  assert.deepEqual((await none.getByRole('button').allTextContents()).map((t) => t.trim()), ['Try again', 'Type my 24 words'])
+  assert.deepEqual((await none.getByRole('button').allTextContents()).map((t) => t.trim()), ['Try again', 'Type my 24 words', 'Back'])
   assert.equal(await button(page, 'Try again').locator('[data-icon="qr-code"]').count(), 1, 'Try again, with its QR code')
   assert.match((await button(page, 'Type my 24 words').getAttribute('class')) ?? '', /ghost/)
   await nothingFloats(page, 'No passkey found')
@@ -1015,8 +1016,13 @@ test("Start, on a device that knows no passkey: one cream Start, nothing asked; 
   assert.equal(await iconsInTheirButtonsColor(page), 1, "Try again's QR code, in its text color")
   assert.equal(counts.created, 0, 'nothing made')
   await shot(page, 'start-no-passkey')
-  // Opened again, Start: Yes, I'm new makes the passkey, and Get verified.
-  await page.reload()
+  // Back, quietly under them: Start's button again, then Yes, I'm new makes the passkey, and Get verified.
+  assert.match((await none.getByRole('button', { name: 'Back' }).getAttribute('class')) ?? '', /quiet/, 'quiet')
+  const beforeBack = counts.asserted + counts.created
+  await none.getByRole('button', { name: 'Back' }).click()
+  await none.waitFor({ state: 'detached' })
+  await button(page, 'Start').waitFor()
+  assert.equal(counts.asserted + counts.created, beforeBack, 'Back asks nothing')
   await imNew(first)
   await page.getByRole('heading', { name: 'Get verified' }).waitFor({ timeout: 60_000 })
   assert.equal(counts.created, 1)
@@ -1864,7 +1870,7 @@ test('two people: one posts an offer, its price per hour, the place only for ses
   assert.equal(await convo.locator('.convo-head .avb > .mb').getAttribute('data-market'), LESSONS, "their market's badge on their picture")
   const [keyLine, badgeLine] = [(await convo.locator('.who-line .name').boundingBox())!, (await badge(convo).boundingBox())!]
   assert.ok(Math.abs(keyLine.y + keyLine.height / 2 - (badgeLine.y + badgeLine.height / 2)) < 3, 'their key and their badge, one line')
-  assert.deepEqual(await convo.locator('.top > button, .top-right > button').evaluateAll((b) => b.map((x) => x.getAttribute('aria-label'))), ['Back', 'Review'], 'Back first, Review at the right')
+  assert.deepEqual(await convo.locator(':scope > button, .top-right > button').evaluateAll((b) => b.map((x) => x.getAttribute('aria-label'))), ['Back', 'Review'], 'Back first, Review at the right')
   assert.deepEqual([await button(page, 'Review').getAttribute('class'), await button(page, 'Review').textContent(), await button(page, 'Review').locator('.icon').getAttribute('data-icon')], ['round soft', '', 'star'], 'Review, a round star button on mint')
   await nothingFloats(page, 'a conversation')
   await shot(page, 'thread')
@@ -2041,14 +2047,16 @@ test("a message to one of the person's own profiles: To their tutor, From their 
   await shot(page, 'messages-held')
   await button(page, 'New message').click()
   await page.getByLabel('To').fill(tutor)
-  await badge(page.locator('.who', { hasText: TUTOR_WORDS })).waitFor()
+  await badge(page.locator('.person.to .who', { hasText: TUTORING })).waitFor()
   await page.locator('.from', { hasText: STUDENT_WORDS }).waitFor()
   assert.equal(await page.locator('main .line').count(), 0, 'not refused')
   assert.equal(await page.locator('.from button').count(), 0, 'from the student they have')
   await page.getByLabel('Message').fill(NOTE)
   await button(page, 'Send').click()
   await page.locator('.said.mine', { hasText: NOTE }).waitFor({ timeout: 60_000 })
-  await page.getByText(`to your ${STUDENT_WORDS}`).waitFor()
+  // The thread, with their tutor: its header their key and their market alone, no "to your".
+  await page.locator('button.convo-head .name.key', { hasText: short(tutor) }).waitFor()
+  await marketIn(page.locator('button.convo-head'), TUTORING)
   await button(page, 'Back').click()
   // The tutor's messages: it arrives, and with the seed held it opens by itself, from the student, new.
   const row = page.locator('button.thread-row', { hasText: NOTE }).filter({ hasText: ownStudent })
@@ -2058,7 +2066,7 @@ test("a message to one of the person's own profiles: To their tutor, From their 
   await row.locator('.dot').waitFor()
   await row.click()
   await page.locator('.said:not(.mine)', { hasText: NOTE }).waitFor()
-  await page.getByText(`to your ${TUTOR_WORDS}`).waitFor()
+  await page.locator('button.convo-head .name.key', { hasText: ownStudent }).waitFor()
   await button(page, 'Back').click()
   // No back on Messages: the phone's own back, to the profile it was opened from, then Home's.
   await page.goBack()
@@ -2688,13 +2696,13 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   await shot(buyer.page, 'message-empty')
   // Their own profile: taken, From their profile on the other side, to make.
   await buyer.page.getByLabel('To').fill(buyerAddress)
-  await badge(buyer.page.locator('.who', { hasText: BUYER_WORDS })).waitFor()
+  await badge(buyer.page.locator('.person.to .who', { hasText: SHOPPING })).waitFor()
   await buyer.page.locator('.from', { hasText: SELLER_WORDS }).getByRole('button', { name: 'New profile' }).waitFor()
   assert.equal(await buyer.page.locator('main .line').count(), 0, 'not refused')
   // Changed: the box again. The seller's page on the index, as their Share hands it out: taken as their address.
   await button(buyer.page, 'Change').click()
   await buyer.page.getByLabel('To').fill(`${services.index}/profiles/${seller}`)
-  await badge(buyer.page.locator('.who', { hasText: SELLER_WORDS })).waitFor()
+  await badge(buyer.page.locator('.person.to .who', { hasText: SHOPPING })).waitFor()
   await buyer.page.locator('.from', { hasText: BUYER_WORDS }).waitFor()
   assert.equal(await buyer.page.locator('main .line').count(), 0)
   await buyer.page.getByLabel('Message').fill('Is the coat still there?')
@@ -3907,11 +3915,11 @@ test("the ID check through the stand-in Stripe, from You's Add, $5: Get verified
   assert.equal(services.payments.returnUrls.get(payment), `${APP}paid`, "Stripe's way back: the app's /paid")
   await button(page, 'Back').click()
   await page.getByRole('heading', { name: 'Your profiles' }).waitFor()
-  // On a laptop, beside Your profiles, both of the person's badges now, the ID's an ID card on forest green; no outline, and none on a card.
+  // On a laptop, beside Your profiles, both of the person's badges now, the ID's an ID card on the mint square; no outline, and none on a card.
   await page.setViewportSize({ width: 1280, height: 800 })
   const badges = page.getByRole('group', { name: "How you're verified" })
   await badge(badges, 'id').waitFor()
-  assert.deepEqual(await drawnAs(badge(badges, 'id')), ID, "the ID check's badge, an ID card on forest green")
+  assert.deepEqual(await drawnAs(badge(badges, 'id')), ID, "the ID check's badge, an ID card on the mint square")
   assert.deepEqual(await drawnAs(badge(badges)), SELFIE, "and the selfie's")
   assert.equal(await badges.getByRole('button').count(), 0, 'no outline: both done')
   const cards = page.locator('button.card')
@@ -3940,14 +3948,14 @@ test("the ID check through the stand-in Stripe, from You's Add, $5: Get verified
   await page.locator('button.card', { hasText: TUTOR_WORDS }).click()
   const title = page.getByRole('heading', { name: TUTOR_WORDS })
   await badge(title, 'id').waitFor()
-  assert.deepEqual([await drawnAs(badge(title)), await drawnAs(badge(title, 'id'))], [SELFIE, ID], 'both, the same forest square, the picture inside telling them apart')
+  assert.deepEqual([await drawnAs(badge(title)), await drawnAs(badge(title, 'id'))], [SELFIE, ID], 'both, the same mint square, the picture inside telling them apart')
   assert.deepEqual(await title.locator('.vb').evaluateAll((b) => b.map((x) => (x as HTMLElement).dataset.check)), ['face', 'id'], 'the selfie first')
   await shot(page, 'profile-id')
   await page.getByRole('button', { name: /^Messages/ }).click()
   await button(page, 'New message').click()
   await page.getByLabel('To').fill(tutor)
-  await badge(page.locator('.who', { hasText: TUTOR_WORDS }), 'id').waitFor({ timeout: 60_000 })
-  await badge(page.locator('.who', { hasText: TUTOR_WORDS })).waitFor()
+  await badge(page.locator('.person.to .who', { hasText: TUTORING }), 'id').waitFor({ timeout: 60_000 })
+  await badge(page.locator('.person.to .who', { hasText: TUTORING })).waitFor()
   await badge(page.locator('.from', { hasText: STUDENT_WORDS }), 'id').waitFor()
   await badge(page.locator('.from', { hasText: STUDENT_WORDS })).waitFor()
   await shot(page, 'message-id')

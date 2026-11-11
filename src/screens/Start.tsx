@@ -9,7 +9,8 @@
 //
 // A browser can't tell a closed passkey prompt from no passkey, so either way Start's place says No
 // passkey found, with Try again, which asks the same again, and Type my 24 words (ImportWords.tsx),
-// the one door to the words: it opens a Forest that is there already, never a second one. A
+// the one door to the words: it opens a Forest that is there already, never a second one; and,
+// quietly under them, Back, to Start's button again, for someone who tapped the wrong way on. A
 // passkey that answered from another device (a phone through the QR code), letting a verified
 // person in, brings one more question there, once: Save a passkey on this device?, so each unlock here
 // doesn't ask that phone again; Save makes one here and adds it, the one in use here from then
@@ -103,6 +104,12 @@ export function Start({ onEntered, onWords, connecting = false, noPasskey = fals
 
   const busy = asking.busy || making.busy || save.busy
   const note = asking.note ?? making.note ?? save.note
+  /** Back to Start's button, what was said gone with it. */
+  const back = () => {
+    asking.setNote(null)
+    making.setNote(null)
+    setAsked(null)
+  }
 
   // On Start's deep green: the first way on cream, as Start is, the other quiet in Start's light tones.
   const imNew = (
@@ -150,6 +157,9 @@ export function Start({ onEntered, onWords, connecting = false, noPasskey = fals
             </button>
             <button className="ghost" disabled={busy} onClick={onWords}>
               Type my 24 words
+            </button>
+            <button className="quiet" disabled={busy} onClick={back}>
+              Back
             </button>
           </div>
         </Asked>

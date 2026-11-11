@@ -1847,6 +1847,12 @@ button.cream .icon {
   color: var(--on-deep-danger);
 }
 
+.asked button.quiet {
+  min-height: 44px;
+  color: var(--on-deep2);
+  font-size: 16px;
+}
+
 button.ghost {
   background: none;
   color: var(--on-deep);
