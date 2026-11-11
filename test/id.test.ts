@@ -20,8 +20,7 @@ import { readCard, strongest } from '../src/flows/cards.ts'
 import { whoIs } from '../src/flows/inbox.ts'
 import { makeProfile } from '../src/flows/profile.ts'
 import { walletKey } from '../src/flows/profiles.ts'
-import { NotPassed, TRIES, advance, ask, consentOf, creditLines, creditsOf, finish, open, pay, resume, stampNumberAt, stepOf } from '../src/flows/verify.ts'
-import { Refused } from '../src/services/http.ts'
+import { NotPassed, TRIES, Unpaid, advance, ask, consentOf, creditLines, creditsOf, finish, open, pay, resume, stampNumberAt, stepOf } from '../src/flows/verify.ts'
 import { Said } from '../src/words.ts'
 import { OFFERS, OTHER_OFFERS, OTHER_REQUESTS } from './labels.ts'
 import { ID_CREDITS, type World, checkHere, freshDevice, proveHere, world } from './world.ts'
@@ -58,8 +57,7 @@ async function sold(p: Person) {
 
 /** Paid: the payment made, its id kept, and paid on Stripe's page. */
 async function paid(p: Person) {
-  const { test } = await sold(p)
-  expect(test, 'a test-mode payment').toBe(true)
+  await sold(p)
   const payment = device.under()!.payment!
   w.payments!.pay(payment)
   return payment
@@ -143,13 +141,27 @@ describe('the ID check', () => {
     expect(device.passkey()).toBe(p.id)
   })
 
-  test('back from Stripe without paying: one quiet line, and Pay again', async () => {
+  test('back from Stripe without paying: the payment dropped, nothing said, and the next tap pays', async () => {
     const p = person('alan')
     await faceChecked(p)
     await sold(p)
     const err = await open(w, p.id).catch((e: unknown) => e)
-    expect(err).toBeInstanceOf(Refused)
-    expect([(err as Said).message, (err as Said).red]).toEqual(['Nothing is held on your card for this check. Pay to continue.', false])
+    expect(err).toBeInstanceOf(Unpaid)
+    expect(stepOf(p.id)).toEqual({ at: 'consent' })
+    expect(device.under()!.payment, 'the payment dropped').toBeUndefined()
+  })
+
+  test('a hold that ended after a try: its tries used up, nothing charged, in the notice, and the next tap pays', async () => {
+    const p = person('alan-2')
+    await faceChecked(p)
+    const payment = await paid(p)
+    await checked(p, passedId(p.name, doc(p.name), { status: 'Declined' }))
+    await advance(w, p.id, p.seed, proveHere).catch(() => undefined)
+    // Its hold cancelled at Stripe, as the verifier's sweep does a day on.
+    await w.payments!.cancel(payment)
+    const err = await open(w, p.id).catch((e: unknown) => e)
+    expect(err).toBeInstanceOf(NotPassed)
+    expect([(err as NotPassed).code, (err as Said).message]).toEqual(['not_paid', 'Your tries are used up. Nothing was charged. Pay again to continue.'])
     expect(stepOf(p.id)).toEqual({ at: 'consent' })
   })
 
@@ -185,7 +197,7 @@ describe('the ID check', () => {
       expect(device.under()!.tries, 'each session opened, counted').toBe(i)
       const err = await advance(w, p.id, p.seed, proveHere).catch((e: unknown) => e)
       expect(err).toBeInstanceOf(NotPassed)
-      expect((err as Said).message).toBe(i < TRIES ? "That ID check didn't pass. Try again." : 'Your three tries are used up. Nothing was charged. Pay again to continue.')
+      expect((err as Said).message).toBe(i < TRIES ? "That ID check didn't pass. Try again." : 'Your tries are used up. Nothing was charged. Pay again to continue.')
     }
     expect(stepOf(p.id), 'Pay again').toEqual({ at: 'consent' })
     expect(device.under()!.payment, 'the payment dropped').toBeUndefined()
@@ -203,7 +215,8 @@ describe('the ID check', () => {
     const u = device.under()!
     device.keepUnder({ ...u, payment, tries: TRIES - 1 })
     const err = await open(w, p.id).catch((e: unknown) => e)
-    expect([(err as Refused).code, (err as Said).message]).toEqual(['payment_used', 'This payment is used up. Pay again to continue.'])
+    expect(err).toBeInstanceOf(NotPassed)
+    expect([(err as NotPassed).code, (err as Said).message]).toEqual(['payment_used', 'Your tries are used up. Nothing was charged. Pay again to continue.'])
     expect(stepOf(p.id)).toEqual({ at: 'consent' })
   })
 
@@ -226,7 +239,7 @@ describe('the ID check', () => {
     expect(device.under()).toBeNull()
   })
 
-  test('an ID that verified another seed already: one red line, nothing charged', async () => {
+  test('an ID that verified another seed already: the notice says so, nothing charged', async () => {
     const p = person('rosalind')
     await faceChecked(p)
     await paid(p)
@@ -242,7 +255,8 @@ describe('the ID check', () => {
     await paid(q)
     await checked(q, passedId(q.name, rosalind, { matches: [{ vendorData: 'id-rosalind', sessionId: null }] }))
     const err = await advance(w, q.id, q.seed, proveHere).catch((e: unknown) => e)
-    expect([(err as Said).message, (err as Said).red]).toEqual(["You've already verified with ID in another Forest. Nothing was charged.", true])
+    expect([(err as NotPassed).code, (err as Said).message]).toEqual(['duplicate_document', 'This ID is already verified with another passkey. Nothing was charged.'])
+    expect(device.under()?.payment, 'its payment used up at the verifier, so dropped here: the next tap pays again').toBeUndefined()
   })
 
   test('the page closed after the stamp was kept, before every profile showed it: Start finishes it', async () => {

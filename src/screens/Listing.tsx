@@ -7,8 +7,7 @@
 // again in today's. Everything is checked before the unlock (flows/entries.ts); then one unlock
 // signs it, writes it and sends its new photos. Its path is set as the form opens, so posting again
 // after a photo did not go writes the same listing, never a second. Post stays at the foot as the
-// form scrolls; an edit's Delete is under it, in red, asking once more. A profile whose market is
-// gone has no form: one line says so.
+// form scrolls; an edit's Delete is under it, in red, asking once more.
 
 import { useRef, useState } from 'react'
 
@@ -24,7 +23,7 @@ import { type Posted, check, newPath, post, unpost } from '../flows/entries.ts'
 import { applies, fitting, formFields, settled } from '../form.ts'
 import { useProfiles } from '../hooks.ts'
 import { Loader } from '../mark.tsx'
-import { BETA, goneLine, kindWords, markets, pairOf } from '../markets.ts'
+import { BETA, kindWords, markets, pairOf } from '../markets.ts'
 import { withSeed } from '../passkey.ts'
 import { Line, Top, UnlockIcon, useAction } from '../ui.tsx'
 
@@ -56,18 +55,13 @@ export function Listing({ me, edit, onDone, onBack }: Props) {
     onDone()
   })
 
-  if (!market)
-    return (
-      <main>
-        <Top onClose={onBack} />
-        <p className="line">{goneLine(me.label)}</p>
-      </main>
-    )
+  // The device keeps no profile in a market the directory doesn't list (markets.ts, `listed`).
+  if (!market) return null
   const set = (n: string, v: unknown) => setValues((was) => settled(fields, { ...was, [n]: v as Body[string] }))
   const word = kindWords('listing', me.label)
   return (
     <main>
-      <Top onClose={onBack} right={<Avatar label={me.label} address={me.address} size="sm" />}>
+      <Top onClose={onBack} right={<Avatar label={me.label} size="sm" />}>
         <h1 className="bar-title">{edit ? word : `New ${word.toLowerCase()}`}</h1>
       </Top>
       {market.status === 'beta' && <p className="hint">{BETA}</p>}

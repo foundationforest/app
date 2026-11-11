@@ -102,6 +102,16 @@ for (const [theme, t] of [
       expect(ratio(icon, ground), `light ${color}`).toBeGreaterThanOrEqual(3)
     }
   })
+
+  test(`${theme}: a market's tile, in each of the palette's ten colors, its first word in its color 4.5:1`, () => {
+    const card = rgb(t.card!)
+    for (const color of PALETTE) {
+      const h = rgb(color)
+      const ground = mix(h, percent(t['tile-tint']!), card)
+      const word = mix(h, percent(t['tile-word']!), rgb(t['look-to']!))
+      expect(ratio(word, ground), color).toBeGreaterThanOrEqual(4.5)
+    }
+  })
 }
 
 test("the device's dark is the chosen dark", () => {

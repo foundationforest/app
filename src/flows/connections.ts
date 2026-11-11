@@ -22,6 +22,7 @@ import { type AccessKey, type MainKey, accessKey, mainKey, newAccessKey, opening
 
 import type { Config } from '../config.ts'
 import { type Connection, connections, dropConnection, keepConnection, knowKeys, saveConnections, saveKnownKeys } from '../device.ts'
+import { listed as inDirectory } from '../markets.ts'
 import { openKeyOf } from '../services/connector.ts'
 import { readView, writeAll } from '../services/host.ts'
 import { paid } from './paid.ts'
@@ -152,7 +153,7 @@ async function labelsOf(c: Found, listed: Map<string, Set<string>>): Promise<str
  * now. `labels` are the Profiles folder's, read here when not given.
  */
 export async function findConnections(s: Where, seed: Uint8Array, labels?: string[]): Promise<Connection[]> {
-  const { found, listed } = await scan(s.host, seed, labels ?? (await openProfiles(seed, s.host)).labels)
+  const { found, listed } = await scan(s.host, seed, labels ?? (await openProfiles(seed, s.host)).labels.filter(inDirectory))
   const ours: Connection[] = []
   for (const c of found) if (c.connector === s.connector) ours.push({ address: c.address, name: c.name, time: c.time, labels: await labelsOf(c, listed) })
   saveConnections(ours)

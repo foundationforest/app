@@ -1,16 +1,19 @@
-// A profile's avatar: its animal (animals.tsx), picked from its address, on its market's color. Solid,
-// a white animal on the color, when its role's listings are offers; light, the animal in the color on
-// a tint of it, when they are requests. With no profile to draw (a market's role, on the role sheet),
-// the market's icon in its place. The color and the icon follow one rule for the app and the index,
-// services' own (index/src/avatar.ts, imported by path as the host's credits client is): a market's
-// color from the directory, walked in its order, so markets differ up to ten; its icon from a small
-// table of Phosphor's names, a nicety. A market the table doesn't list, or whose icon the app doesn't
-// draw, shows its name's first letter. The animal is the app's own: the index draws the market's icon.
+// A profile's avatar, on its market's color. One of the person's own profiles, wherever it shows, and a
+// market's role with no profile behind it (on the role sheet): the market's icon, so a person tells
+// their own profiles apart by their markets. Anyone else's profile: its animal (animals.ts), picked
+// from its address. Solid, white on the color, when its role's listings are offers; light, in the
+// color on a tint of it, when they are requests. The color and the icon follow one rule for the app
+// and the index, services' own (index/src/avatar.ts, imported by path as the host's credits client
+// is): a market's color from the directory, walked in its order, so markets differ up to ten; its
+// icon from a small table of Phosphor's names, a nicety. A market the table doesn't list, or whose
+// icon the app doesn't draw, shows its name's first letter. The animal is the app's own: the index
+// draws the market's icon for every profile.
 
 import type { CSSProperties } from 'react'
 
 import { colorIn, colorsFor, iconOf as named } from '../services/index/src/avatar.ts'
 import { animalOf } from './animals.ts'
+import { profiles } from './device.ts'
 import { Icon, type IconName, isIcon } from './icons.tsx'
 import { markets, pairOf } from './markets.ts'
 
@@ -28,14 +31,15 @@ export const iconOf = (market: string): IconName | null => {
 
 type Size = 'sm' | 'md' | 'lg'
 
-/** The avatar of the profile at `address`, of `label`, at `size`; with no address, its market's icon. Hidden from screen readers: its name beside it says it. */
+/** The avatar of the profile at `address`, of `label`, at `size`: its animal when it is someone else's; its market's icon when it is one of the person's own (the device lists it), or with no address. Hidden from screen readers: its name beside it says it. */
 export function Avatar({ label, address, size = 'md' }: { label: string; address?: string; size?: Size }) {
   const { market, listings } = pairOf(label)
   const icon = iconOf(market)
   const style = { '--h': colorOf(market) } as CSSProperties
+  const theirs = address !== undefined && !profiles().some((p) => p.address === address)
   return (
     <span className={`av ${size}${listings === 'offers' ? '' : ' look'}`} style={style} data-market={market} aria-hidden>
-      {address ? <Animal address={address} /> : icon ? <Icon name={icon} fill /> : <span className="letter">{market.charAt(0).toUpperCase()}</span>}
+      {theirs ? <Animal address={address} /> : icon ? <Icon name={icon} fill /> : <span className="letter">{market.charAt(0).toUpperCase()}</span>}
     </span>
   )
 }

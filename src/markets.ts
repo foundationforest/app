@@ -3,8 +3,8 @@
 // checkEntry and previewOf. As the app shows them: each market and role a pair, in the market's own words,
 // "Tutoring tutor", no symbol between (on screen, the market in bold and the role muted: Named, in
 // ui.tsx); every market with its roles and whether it is beta, as New profile lists them; each kind
-// of entry's fields for a role; the other side of a market; and a market that is gone, one a profile
-// this device remembers was made in, which the directory no longer lists.
+// of entry's fields for a role; the other side of a market; and whether the directory lists a
+// profile's market, since a profile in a market that is gone is forgotten by the device.
 
 import { type Field, type Fields, type Kind, type Market, type Markets, type Role, SHARED, loadMarkets, previewOf } from '@foundationforest/markets/browser'
 import files from 'virtual:markets'
@@ -38,12 +38,39 @@ export const roleWords = (role: string) => {
   return words.charAt(0).toUpperCase() + words.slice(1)
 }
 
-/** A market as New profile lists it: its name, its words, its roles, and whether it is beta (the markets manual's Status), else live. */
-export type MarketRoles = { market: string; words: string; roles: Pair[]; beta: boolean }
+/**
+ * A market as New profile lists it: its name, its words, its roles, and whether it is beta (the
+ * markets manual's Status), else live; its name as its tile shows it, `family` small over `kind`
+ * where its first word is another market's too (Stays over Work), else `kind` alone; and its
+ * description's first sentence, `about`, for its role sheet.
+ */
+export type MarketRoles = { market: string; words: string; family?: string; kind: string; about: string; roles: Pair[]; beta: boolean }
+
+/** A word as a name starts: Stays. */
+const capital = (words: string) => words.charAt(0).toUpperCase() + words.slice(1)
+
+/** A market's name on its tile, from the directory alone: its first word apart, over the rest, when another market's name starts with it. */
+export function tileName(name: string, names: string[]): { family?: string; kind: string } {
+  const [first, ...rest] = name.split('-')
+  if (!rest.length || !names.some((n) => n !== name && n.split('-')[0] === first)) return { kind: marketWords(name) }
+  return { family: capital(first!), kind: capital(rest.join(' ')) }
+}
+
+/** A description's first sentence: up to its first full stop, question or exclamation mark that ends a sentence; all of it when there is none. */
+export const firstSentence = (text: string) => /^.*?[.!?](?=\s|$)/s.exec(text.trim())?.[0] ?? text.trim()
 
 /** The markets in a directory, in its order, each with every role: live and beta alike. */
-export const listOf = (directory: Markets['directory']): MarketRoles[] =>
-  directory.markets.map((m) => ({ market: m.name, words: marketWords(m.name), roles: pairs.filter((p) => p.market === m.name), beta: m.status === 'beta' }))
+export const listOf = (directory: Markets['directory']): MarketRoles[] => {
+  const names = directory.markets.map((m) => m.name)
+  return directory.markets.map((m) => ({
+    market: m.name,
+    words: marketWords(m.name),
+    ...tileName(m.name, names),
+    about: firstSentence(m.description ?? ''),
+    roles: pairs.filter((p) => p.market === m.name),
+    beta: m.status === 'beta',
+  }))
+}
 
 /** Every market in the directory, in its order, each with every role. */
 export const marketList: MarketRoles[] = listOf(markets.directory)
@@ -51,11 +78,8 @@ export const marketList: MarketRoles[] = listOf(markets.directory)
 /** What the app says, once, where someone makes a profile or a listing in a beta market: word for word as services' pages say it. */
 export const BETA = 'Beta: it works, at your own risk, and may change.'
 
-/** Whether the market of `label`, a profile this device remembers, is gone: the directory no longer lists it. */
-export const gone = (label: string) => !markets.market(pairOf(label).market)
-
-/** The line a profile whose market is gone shows, in the index's words for the same case: Its market, Clothing, is no longer in the markets directory. */
-export const goneLine = (label: string) => `Its market, ${marketWords(pairOf(label).market)}, is no longer in the markets directory, so it can't post.`
+/** Whether the directory lists the market of a profile of `label`. One it no longer lists (a test profile from the old markets) is forgotten by the device and shown nowhere: the device keeps no profile but in a listed market. */
+export const listed = (label: string) => !!markets.market(pairOf(label).market)
 
 /** The pair a label names; one the directory no longer lists is named from the label itself. */
 export function pairOf(label: string): Pair {

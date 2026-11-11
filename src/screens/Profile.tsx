@@ -10,9 +10,7 @@
 // new; "No reviews yet", no pill, while nothing came. Then two tabs, kept in the page's history: its
 // listings, in its role's word (Offers, Requests), each a card (ListingCard.tsx) tapped to edit, one
 // that no longer fits its market saying Needs an update, with New offer at the foot; and Reviews
-// (Written.tsx), the ones it wrote about others, with Review someone at the foot. A profile whose
-// market is gone, which the directory no longer lists, keeps its header and its tabs, but its
-// listings' tab is one line saying so, and neither tab offers to post. Opened, the profile is used:
+// (Written.tsx), the ones it wrote about others, with Review someone at the foot. Opened, the profile is used:
 // the device notes when, for the order the app lists profiles in (device.ts). Nothing here asks the
 // passkey: its folder is public, and so is what the index says.
 
@@ -25,7 +23,7 @@ import { type Posted, readEntries } from '../flows/entries.ts'
 import { fits } from '../form.ts'
 import { useCards, useNews, useProfiles, useRated } from '../hooks.ts'
 import { Icon } from '../icons.tsx'
-import { goneLine, kindWords, marketWords, markets, pairOf, roleWords } from '../markets.ts'
+import { kindWords, marketWords, markets, pairOf, roleWords } from '../markets.ts'
 import { ratingText, reviewCount, saidCount } from '../show.ts'
 import { Badges, Dot, Line, MessagesButton, type Note, Rating, noteOf } from '../ui.tsx'
 import { ListingCard } from './ListingCard.tsx'
@@ -99,7 +97,7 @@ export function Profile({ address, tab, onTab, onBack, onListing, onReviews, onE
           </div>
         </div>
         <div className="titled">
-          <Avatar label={profile.label} address={profile.address} size="lg" />
+          <Avatar label={profile.label} size="lg" />
           <div className="ph2">
             <h1>
               <span className="mk">{marketWords(pair.market)}</span>{' '}
@@ -136,9 +134,7 @@ export function Profile({ address, tab, onTab, onBack, onListing, onReviews, onE
           </button>
         ))}
       </div>
-      {tab === 'listings' && !market ? (
-        <p className="line">{goneLine(profile.label)}</p>
-      ) : tab === 'listings' ? (
+      {tab === 'listings' ? (
         <>
           <Line note={note} />
           {listings && (

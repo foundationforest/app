@@ -21,7 +21,7 @@ import { proofFiles } from '../build/proofs.ts'
 import { BG, INK } from '../build/shell.ts'
 import { config } from '../src/config.ts'
 import { rfc3339 } from '../src/fields/Moment.tsx'
-import { gone, goneLine, kindWords, listOf, marketList, marketWords, markets, otherSide, pairOf, pairs, roleWords } from '../src/markets.ts'
+import { firstSentence, kindWords, listOf, listed, marketList, marketWords, markets, otherSide, pairOf, pairs, roleWords, tileName } from '../src/markets.ts'
 import { PATHS, RETURNS } from '../src/paths.ts'
 import { contactHref } from '../src/show.ts'
 import { BG as THEME_BG } from '../src/theme.ts'
@@ -112,12 +112,36 @@ test('a beta market is beta, a live one is not; both are listed', () => {
   expect(live.slice(1).map((m) => m.beta)).toEqual(marketList.slice(1).map((m) => m.beta))
 })
 
-test("a profile whose market is gone: named from its label, its line in the index's words; every market listed is not gone", () => {
-  for (const p of pairs) expect(gone(p.label), p.label).toBe(false)
+test("a profile whose market is gone is not listed, so the device forgets it; every market's role is; one is named from its label", () => {
+  for (const p of pairs) expect(listed(p.label), p.label).toBe(true)
   expect(markets.market('pottery'), 'a market the directory does not list').toBeUndefined()
-  expect(gone('pottery/potter')).toBe(true)
+  expect(listed('pottery/potter')).toBe(false)
   expect(pairOf('pottery/potter')).toMatchObject({ words: 'Pottery potter', offers: false })
-  expect(goneLine('pottery/potter')).toBe("Its market, Pottery, is no longer in the markets directory, so it can't post.")
+})
+
+test("a market's name on its tile, from the directory alone: its first word small over the rest where another market shares it", () => {
+  const names = ['stays-work', 'stays-free', 'home-cleaning', 'language-exchange', 'goods']
+  expect(names.map((n) => tileName(n, names))).toEqual([
+    { family: 'Stays', kind: 'Work' },
+    { family: 'Stays', kind: 'Free' },
+    { kind: 'Home cleaning' },
+    { kind: 'Language exchange' },
+    { kind: 'Goods' },
+  ])
+  expect(tileName('stays', ['stays', 'stays-free']), 'one word alone: nothing to split').toEqual({ kind: 'Stays' })
+  // Each tile in the directory at MARKETS: its words whole, for the search and its name, and split only where shared.
+  for (const m of marketList) {
+    expect([m.family, m.kind].filter(Boolean).join(' ').toLowerCase(), m.market).toBe(m.words.toLowerCase())
+    const first = m.market.split('-')[0]
+    expect(!!m.family, m.market).toBe(m.market.includes('-') && marketList.some((o) => o.market !== m.market && o.market.split('-')[0] === first))
+  }
+})
+
+test("a market's role sheet: its description's first sentence", () => {
+  expect(firstSentence('Hosts give guests a bed. They help.')).toBe('Hosts give guests a bed.')
+  expect(firstSentence('Coaches teach, e.g. tennis; paid by the hour')).toBe('Coaches teach, e.g.')
+  expect(firstSentence('No full stop')).toBe('No full stop')
+  for (const m of marketList) expect(m.about, m.market).toBe(firstSentence(markets.directory.markets.find((d) => d.name === m.market)!.description))
 })
 
 test("the markets: each role's other side, and its listing in its own word", () => {
@@ -139,9 +163,9 @@ test("every code the verifier, the host and the standard list has its own plain 
   for (const code of HOST_CODES) expect(hostSays(code).message, code).not.toMatch(/[a-z]+_[a-z]+/)
   expect(verifierSays('face_check_unavailable').message).toBe("The selfie check isn't available right now. Try again in a minute.")
   expect([verifierSays('declined').message, verifierSays('no_face_match', 'id').message]).toEqual(["That selfie didn't pass. Try again, or use your ID.", "That ID check didn't pass. Try again."])
-  expect([verifierSays('duplicate_document').message, verifierSays('duplicate_document').red]).toEqual(["You've already verified with ID in another Forest. Nothing was charged.", true])
-  // Ahead of SERVICES: services' next verifier answers face_seen, and not_paid for a hold that ended or was never made.
-  expect([verifierSays('face_seen').message, verifierSays('not_paid', 'id').message]).toEqual(['A similar face is already verified. Verify with your ID to continue.', 'Nothing is held on your card for this check. Pay to continue.'])
+  expect(verifierSays('duplicate_document', 'id').message).toBe('This ID is already verified with another passkey. Nothing was charged.')
+  expect(verifierSays('face_seen').message).toBe('A similar face is already verified. Verify with your ID instead.')
+  for (const code of ['not_paid', 'payment_used']) expect(verifierSays(code, 'id').message, code).toBe('Your tries are used up. Nothing was charged. Pay again to continue.')
   expect(verifierSays('not_for_sale').message).toBe("The ID check isn't available yet.")
   expect(verifierSays('a_code_from_tomorrow').message).toBe(SOMETHING)
 })

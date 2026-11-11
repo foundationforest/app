@@ -1,6 +1,8 @@
 // Your first profile, once the person is verified, or New profile, from Home: every market as a
-// tile, live and beta alike, two to a row, a tint of its color, its icon in its color, its name, and
-// a small Beta chip on a beta one's corner, under a search box over the markets' words and their
+// tile, live and beta alike, two to a row on a phone, four on a laptop: a tint of its color, its icon
+// in its color at the top left, Beta in small quiet text at the top right of a beta one, and its name
+// at the bottom, its first word small above the rest where another market shares it (Stays over
+// Work; markets.ts, `tileName`). Over them, a search box over the markets' whole names and their
 // roles'. A tile opens its roles on a sheet (RoleSheet.tsx); one tap on a role asks the passkey if
 // no seed is held and makes the profile: its folder funded, its verification proven on the device,
 // its profile entry written, its label in the Profiles folder. Meanwhile, the loader and "Making
@@ -65,7 +67,7 @@ export function NewProfile({ market: name, onMarket, onMade, onOpen, onBack, onL
   const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean)
   const shown = marketList.filter((m) => words.every((w) => [m.words, ...m.roles.map((p) => p.role)].join(' ').toLowerCase().includes(w)))
   return (
-    <main>
+    <main className="new-profile">
       {first ? (
         <>
           <div className="titled-row">
@@ -91,8 +93,11 @@ export function NewProfile({ market: name, onMarket, onMade, onOpen, onBack, onL
           return (
             <button key={m.market} className="market-tile" style={{ '--h': colorOf(m.market) } as CSSProperties} aria-label={m.beta ? `${m.words}, beta` : m.words} onClick={() => onMarket(m.market)}>
               {icon ? <Icon name={icon} fill /> : <span className="letter" aria-hidden>{m.words.charAt(0)}</span>}
-              <span className="tile-name">{m.words}</span>
-              {m.beta && <span className="chip beta">Beta</span>}
+              {m.beta && <span className="beta">Beta</span>}
+              <span className="tile-name">
+                {m.family && <span className="fam">{m.family}</span>}
+                <span className="kind">{m.kind}</span>
+              </span>
             </button>
           )
         })}

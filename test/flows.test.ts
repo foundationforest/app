@@ -94,7 +94,7 @@ describe('a verification', () => {
     try {
       const err = await ask(w, p.id, await stampNumberAt(w, p.seed)).catch((e: unknown) => e)
       expect(err).toBeInstanceOf(NotPassed)
-      expect([(err as NotPassed).code, (err as NotPassed).message, (err as NotPassed).red]).toEqual(['face_seen', 'A similar face is already verified. Verify with your ID to continue.', false])
+      expect([(err as NotPassed).code, (err as NotPassed).message, (err as NotPassed).red]).toEqual(['face_seen', 'A similar face is already verified. Verify with your ID instead.', false])
     } finally {
       globalThis.fetch = real
     }
@@ -341,6 +341,22 @@ describe('a profile made on another device', () => {
     expect(await told()).toBe(true)
     expect(await takeElsewhere(w, again(p).seed)).toEqual([])
     expect(await told(), 'read once, nothing to show').toBe(false)
+  })
+
+  test("a profile in a market the directory no longer lists: never told as new, never listed, here or at Start on a new device", async () => {
+    const p = await verified()
+    const tutor = await makeProfile(w, p.seed, OFFERS, proveHere)
+    // A test profile from the old markets: its label in the Profiles folder, as a profile's is.
+    await addTo(await openProfiles(p.seed, w.host), w.host, 'label', { label: 'pottery/potter' })
+    const wallet = (await walletKey(p.seed)).address
+    const told = async () => anyNew(await labelIds(w.host, wallet), device.folder()!, new Set(device.profiles().map((x) => x.label)))
+    expect(await told(), 'read as the folder was opened, and not listed: never told').toBe(false)
+    expect(await takeElsewhere(w, again(p).seed), 'nothing taken').toEqual([])
+    expect(device.profiles()).toEqual([tutor])
+    freshDevice()
+    expect(await enter(w, again(p), proveHere)).toEqual({ to: 'profiles' })
+    expect(device.profiles(), 'Start lists only the profile in a listed market').toEqual([tutor])
+    expect(await told()).toBe(false)
   })
 })
 
