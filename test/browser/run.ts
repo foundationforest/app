@@ -17,10 +17,11 @@
 //     the passkey for app.forest.foundation and opened Get verified, nothing asked. Here and on
 //     every screen below with a filled button, its icon takes its text color.
 //  2. Back on each setup step: Get verified, its title, its line, two cards (Selfie, Free, its
-//     credits; ID, $5, ten times them, stronger trust, Forest supported), and "You can add the other
-//     one later.", back to Start, which now asks for the passkey made alone, never First time here?,
-//     and goes straight back to Get verified; the ID card's sheet, ID check, $5, up to three tries,
-//     What the check keeps closed, then the verifier's words word for word before Pay, and "Payment
+//     credits; ID, $5, one time, ten times them, stronger trust, Forest supported), and "You can add
+//     the other one later.", back to Start, which now asks for the passkey made alone, never First
+//     time here?, and goes straight back to Get verified; the ID card's sheet, ID check, $5, one
+//     time, the hold on the card under it, up to three tries, What the check keeps closed, then the
+//     verifier's words word for word before Pay, which asks nothing with the seed held, and "Payment
 //     isn't available right now." once paying fails, then the sheet closed; the selfie left
 //     unfinished in its tab: Waiting for your check, the loader and Open it again only, back to Get
 //     verified, the check still under way; Start again, straight to Get verified. On a laptop, the
@@ -181,11 +182,13 @@
 //     the connect page, its one profile ticked, no Connect your AI; Connect, nothing asked after
 //     Start;
 //  d. a connector that isn't ours: one line, nothing else; a request that ran out: one line.
-// 10. Held for review: Get verified, its notice that a person at Forest is checking the selfie, the
-//     selfie's card greyed, the app asking all the while; the page hidden meanwhile, which keeps the
-//     seed; approved, on by itself, nothing asked. Then the same, with the page's clock run 5 minutes
-//     past the last action: You're verified and Continue, which asks once; then Later, Connect your
-//     AI.
+// 10. A face seen before (face_seen, which services' next verifier answers; answered here in its
+//     place): Get verified, its notice pointing to the ID, the selfie's card greyed, and, in place of
+//     the line on the other check, I already use Forest, with the unlock icon; for someone verified
+//     in another browser who made a passkey in this one by mistake: their passkey answers, as a phone
+//     does through the QR code, this browser's is added to it as a backup, and they're in; opened
+//     again, the first profile asks this browser's own passkey, which opens their Forest, and
+//     their Profiles folder lists it; the other browser asked nothing more.
 // 11. A manager that gives no PRF secret: its passkey dropped, the line naming another. A browser
 //     that cannot ask for PRF: one quiet line.
 // 12. The passkey belongs to app.forest.foundation: another page under forest.foundation is refused.
@@ -196,7 +199,9 @@
 //     over and the old proof worker is gone; the page reloads once, back on a market's roles, and the
 //     profile is made.
 // 15. The ID check, from You's Add, $5: Get verified, the selfie's card greyed, the ID's sheet open, the
-//     verifier's consent screen word for word, tapped open; paid through the verifier's own stand-in
+//     verifier's consent screen word for word, tapped open; Pay with the unlock icon, since no seed is
+//     held and it asks the verifier first for an ID stamp this seed has, by its stamp number: one
+//     unlock, none there; paid through the verifier's own stand-in
 //     for Stripe (its test card named first), the payment kept on the device through Stripe's page;
 //     the ID card opening its check in its own tab; Waiting for your check with Continue, since no
 //     seed is held after Stripe's page; one unlock; both verifications
@@ -782,7 +787,7 @@ test("back on each setup step: Get verified to Start, which asks for the passkey
   const cards = await page.locator('button.vcard').evaluateAll((b) => b.map((x) => [...x.querySelectorAll('.two > *, .price, .vlist > span')].map((e) => e.textContent)))
   assert.deepEqual(cards, [
     ['Selfie', 'A quick selfie', 'Free', 'Free credits for posts and messages'],
-    ['ID', 'Your ID and a selfie', '$5', '10× the free credits', 'Stronger trust', 'Supports Forest'],
+    ['ID', 'Your ID and a selfie', '$5, one time', '10× the free credits', 'Stronger trust', 'Supports Forest'],
   ])
   const ground = (token: string) =>
     page.evaluate((t) => {
@@ -808,13 +813,14 @@ test("back on each setup step: Get verified to Start, which asks for the passkey
   await page.getByRole('heading', { name: 'Get verified' }).waitFor({ timeout: 60_000 })
   assert.equal(counts.asserted - asked, 1, 'one unlock, by the passkey made, and no question first')
 
-  // The ID: its sheet, its price and tries, what it keeps behind a tap, the verifier's words before Pay; the payment fails, and the sheet closed.
+  // The ID: its sheet, its price once, the hold, its tries, what it keeps behind a tap, the verifier's words before Pay; the payment fails, and the sheet closed.
   let unavailable = true
   await answer(context, `${services.verifier}/id/payment`, 503, { error: 'payment_unavailable' }, () => unavailable)
   await checkCard(page, 'ID').click()
   const sheet = page.getByRole('dialog', { name: 'ID check' })
   await sheet.getByText('Up to three tries.', { exact: true }).waitFor()
-  await sheet.getByText('$5', { exact: true }).waitFor()
+  assert.equal(await sheet.locator('.sheet-head .price').textContent(), '$5, one time')
+  assert.deepEqual(await sheet.locator('.sheet-head ~ p').allTextContents(), ['We hold $5 on your card and only charge it if your ID check passes.', 'Up to three tries.'], 'the hold under the price, then the tries')
   const keeps = sheet.getByText('What the check keeps')
   await keeps.waitFor()
   assert.equal(await page.locator('.consent').isVisible(), false, 'what the check keeps, behind a tap')
@@ -822,6 +828,7 @@ test("back on each setup step: Get verified to Start, which asks for the passkey
   const { consent } = (await (await fetch(`${services.verifier}/`)).json()) as { consent: string }
   assert.equal(await page.locator('.consent').textContent(), consent, "the verifier's words, word for word")
   assert.ok(await button(page, 'Pay $5').isVisible(), 'shown before Pay')
+  assert.equal(await asks(button(page, 'Pay $5')), false, 'the seed held since Start: Pay asks nothing')
   await shot(page, 'id-sheet')
   await button(page, 'Pay $5').click()
   await sheet.getByText("Payment isn't available right now. Try again in a minute.").waitFor()
@@ -903,8 +910,8 @@ test("the selfie: its card, its check in its own tab, back through /back, the pa
   const stamp = stampFromJson(JSON.parse((await openLocked(body, identity)).stamp as string))
   assert.equal(stamp.verifier, services.faceKey, "the stamp from the verifier's face key")
   const local = await kept(page)
-  assert.deepEqual(Object.keys(local).sort(), ['forest.backups', 'forest.checks', 'forest.folder', 'forest.passkey', 'forest.passkeys'])
-  assert.deepEqual(JSON.parse(local['forest.checks']!), ['face'], 'how the person is verified')
+  assert.deepEqual(Object.keys(local).sort(), ['forest.backups', 'forest.folder', 'forest.passkey', 'forest.passkeys', 'forest.verified'])
+  assert.deepEqual(JSON.parse(local['forest.verified']!), ['face'], 'how the person is verified')
   assert.deepEqual(JSON.parse(local['forest.folder']!), { address: wallet.address, labels: {} }, "the Profiles folder's address, never a key")
   for (const secret of [Buffer.from(seed).toString('hex'), Buffer.from(seed).toString('base64url'), String(stamp.signature.S)]) assert.ok(!JSON.stringify(local).includes(secret), 'nothing of the seed or the stamp kept')
   say(`verified: the stamp in the Profiles folder, the wallet at ${left} credits`)
@@ -2751,54 +2758,50 @@ test("a connector that isn't ours: one line, nothing else; a request that ran ou
   await p.context.close()
 })
 
-test("held for review: Get verified, a person at Forest checking the selfie, its card greyed, and the app keeps asking; the page hidden meanwhile keeps the seed; approved, on by itself, nothing asked; after 5 minutes with nothing done, You're verified and Continue, which asks once", async () => {
-  const p = await phone()
-  // Didit holds this person's check in review for the first two asks: the verifier answers 202.
-  let held = 0
-  await p.context.route(`${services.verifier}/face/stamp`, (route) => {
-    const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': 'content-type', 'access-control-allow-methods': 'POST' }
-    if (route.request().method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors })
-    if (held++ < 2) return route.fulfill({ status: 202, headers: { ...cors, 'content-type': 'application/json' }, body: '{"waiting":"review"}' })
-    return route.continue()
-  })
-  await newPerson(p)
-  const notice = p.page.locator('.notice', { hasText: 'A person at Forest is checking your selfie. You can close Forest; it picks up here.' })
-  await notice.waitFor()
-  assert.equal(await notice.locator('[data-icon="warning-circle"]').count(), 1)
-  await p.page.getByRole('heading', { name: 'Get verified' }).waitFor()
-  assert.ok(await checkCard(p.page, 'Selfie').isDisabled(), "the selfie's card greyed")
-  assert.ok(await checkCard(p.page, 'ID').isEnabled(), 'the ID still there')
-  await shot(p.page, 'review')
-  // Away from the app while a person reviews it: hidden is not closed, so the seed stays, and keeping the stamp asks nothing.
-  await away(p.page)
-  const asked = p.counts.asserted
-  await p.page.getByRole('heading', { name: 'Your first profile' }).waitFor({ timeout: 90_000 })
-  assert.equal(p.counts.asserted - asked, 0, 'on by itself, nothing asked: the seed held')
-  assert.ok(held >= 3, 'it kept asking')
-  await p.context.close()
+test("a face seen before: Get verified says so and points to the ID, the selfie greyed; I already use Forest asks for the passkey the person uses, adds the one made here by mistake to it, and they're in; from then this browser's own passkey opens their Forest", async () => {
+  // Someone verified in one browser; in a second, Yes, I'm new by mistake, and the selfie.
+  const a = await phone()
+  await newPerson(a)
+  await a.page.getByRole('heading', { name: 'Your first profile' }).waitFor({ timeout: 90_000 })
+  const b = await phone()
+  // The passkey sheet with no passkey named: the first browser's answers, as a phone does through the QR code.
+  await answerFrom(b, a)
+  // services' next verifier answers face_seen where Didit has seen the face verified before; the one at SERVICES can't yet.
+  await answer(b.context, `${services.verifier}/face/stamp`, 403, { error: 'face_seen' })
+  await newPerson(b)
+  const notice = b.page.locator('.notice', { hasText: 'A similar face is already verified. Verify with your ID to continue.' })
+  await notice.waitFor({ timeout: 60_000 })
+  await b.page.getByRole('heading', { name: 'Get verified' }).waitFor()
+  assert.ok(await checkCard(b.page, 'Selfie').isDisabled(), "the selfie's card greyed")
+  assert.ok(await checkCard(b.page, 'ID').isEnabled(), 'the ID check, to continue')
+  const already = button(b.page, 'I already use Forest')
+  assert.ok(await asks(already), 'it asks a passkey, whatever is held')
+  assert.equal(await b.page.getByText('You can add the other one later.').count(), 0, 'the link in its place')
+  await shot(b.page, 'face-seen')
 
-  // The same, its clock run 5 minutes past the last action while the review waits: You're verified, and Continue asks once.
-  const q = await phone()
-  let waits = 0
-  await q.context.route(`${services.verifier}/face/stamp`, (route) => {
-    const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': 'content-type', 'access-control-allow-methods': 'POST' }
-    if (route.request().method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors })
-    if (waits++ < 1) return route.fulfill({ status: 202, headers: { ...cors, 'content-type': 'application/json' }, body: '{"waiting":"review"}' })
-    return route.continue()
-  })
-  await q.page.clock.install()
-  await newPerson(q)
-  await q.page.locator('.notice', { hasText: 'A person at Forest is checking your selfie.' }).waitFor()
-  await q.page.clock.fastForward('05:01')
-  const again = button(q.page, 'Continue')
-  await again.locator('.unlock').waitFor({ timeout: 90_000 })
-  await q.page.locator('.chip.new', { hasText: "You're verified" }).waitFor()
-  await shot(q.page, 'verified-keep')
-  const before = q.counts.asserted
-  await again.click()
-  await q.page.getByRole('heading', { name: 'Your first profile' }).waitFor({ timeout: 60_000 })
-  assert.equal(q.counts.asserted - before, 1, 'one unlock, to keep the stamp')
-  await q.context.close()
+  const own = JSON.parse((await kept(b.page))['forest.passkeys']!) as string[]
+  assert.equal(own.length, 1, 'the passkey made here')
+  const asked = a.counts.asserted
+  await already.click()
+  await b.page.getByRole('heading', { name: 'Your first profile' }).waitFor({ timeout: 90_000 })
+  assert.equal(a.counts.asserted - asked, 1, 'the passkey the person uses, asked once')
+  const local = await kept(b.page)
+  assert.equal(JSON.parse(local['forest.passkey']!), own[0], "this browser's own passkey, in use here")
+  assert.ok(!('first' in JSON.parse(local['forest.backups'] ?? '{}')), 'a backup now, not a first passkey')
+  assert.equal((await backupsOn(JSON.parse(local['forest.folder']!).address)).length, 1, "added to the person's Forest: a backup/<id> in their Profiles folder")
+  assert.equal(JSON.parse(local['forest.folder']!).address, JSON.parse((await kept(a.page))['forest.folder']!).address, "the first browser's Forest")
+
+  // Opened again, no seed held: the first profile asks this browser's own passkey, in use here, which opens the same Forest; the first browser isn't asked.
+  await b.page.reload()
+  await b.page.getByRole('heading', { name: 'Your first profile' }).waitFor({ timeout: 60_000 })
+  const mine = b.counts.asserted
+  await pickFirst(b.page, 'Tutoring tutor')
+  assert.equal(b.counts.asserted - mine, 1, "this browser's own passkey, asked once")
+  assert.equal(a.counts.asserted - asked, 1, 'nothing more asked of the first browser')
+  assert.equal((await entriesOf(JSON.parse(local['forest.folder']!).address, 'label')).length, 1, "the profile listed in the person's Profiles folder")
+  await a.context.close()
+  await b.context.close()
+  say("a face seen before: the line, the selfie greyed, the ID; I already use Forest added this browser's passkey to the person's, and it opens their Forest from then")
 })
 
 test('a manager that gives no PRF secret: its passkey dropped, and one red line names another; a browser that cannot ask for it: one quiet line', async () => {
@@ -2900,7 +2903,7 @@ test("a deploy while the app is open: one quiet line says a new version is ready
   say('a deploy while open: one reload onto the next version, and the profile made')
 })
 
-test("the ID check through the stand-in Stripe, from You's Add, $5: Get verified, the selfie greyed, the sheet open, consent word for word, paid, checked in its own tab, Continue, one unlock, and both verifications on every profile", async () => {
+test("the ID check through the stand-in Stripe, from You's Add, $5: Get verified, the selfie greyed, the sheet open, consent word for word, Pay asking once, paid, checked in its own tab, Continue, one unlock, and both verifications on every profile", async () => {
   const { page, context, counts } = first
   // Stripe's Checkout page, the verifier's own stand-in's: paid at once, and back to the app's page, paid, as Stripe sends the person.
   await context.route('https://checkout.stripe.example/**', (route) => {
@@ -2919,8 +2922,12 @@ test("the ID check through the stand-in Stripe, from You's Add, $5: Get verified
   await page.getByText('What the check keeps').click()
   assert.equal(await page.locator('.consent').textContent(), consent, "the consent screen the verifier serves, word for word")
   await shot(page, 'consent')
+  // Pay asks the verifier first for an ID stamp it signed this seed already, by its stamp number: one unlock, with no seed held.
+  assert.ok(await asks(button(page, 'Pay $5')), 'Pay, with the unlock icon')
+  const paying = counts.asserted
   await button(page, 'Pay $5').click()
   await page.getByText('Test mode: pay with the card 4242 4242 4242 4242.').waitFor()
+  assert.equal(counts.asserted - paying, 1, 'one unlock, for the stamp number; none signed, so Stripe')
   const payment = JSON.parse((await kept(page))['forest.setup']!).payment as string
   assert.match(payment, /^cs_test_/, "the payment's id kept on the device before Stripe")
   await page.getByRole('link', { name: 'Go to Stripe' }).click()
@@ -3063,7 +3070,7 @@ test("a selfie that doesn't pass: Get verified, its notice; then the ID, its she
   await (await tab).waitForEvent('close')
   await p.page.getByRole('heading', { name: 'Your first profile' }).waitFor({ timeout: 90_000 })
   await p.page.locator('.chip.new', { hasText: "You're verified" }).locator('[data-icon="identification-card"]').waitFor()
-  assert.deepEqual(JSON.parse((await kept(p.page))['forest.checks']!), ['id'], 'verified by the ID alone')
+  assert.deepEqual(JSON.parse((await kept(p.page))['forest.verified']!), ['id'], 'verified by the ID alone')
   await p.context.close()
 })
 

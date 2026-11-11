@@ -42,8 +42,8 @@ const VERIFIER: Record<string, Line> = {
   bad_session_id: OURS,
   bad_stamp_number: OURS,
   bad_payment: OURS,
-  // 402
-  not_paid: ['Not paid.', false],
+  // 402: no hold on the person's card for this check: never paid, held over a day ago, or held for another check.
+  not_paid: ['Nothing is held on your card for this check. Pay to continue.', false],
   // 403: the check does not count. All but not_approved end the session; every one the person can
   // try again after says one line, the same whatever Didit saw.
   not_approved: ['Not finished.', false],
@@ -59,10 +59,14 @@ const VERIFIER: Record<string, Line> = {
   no_face_match: DIDNT_PASS,
   face_match_not_passed: DIDNT_PASS,
   no_document_data: DIDNT_PASS,
-  duplicate_document: ['This ID was already used to verify someone else.', true],
+  // One ID stamp a person: this ID, and the face that goes with it, already gave one to another seed.
+  duplicate_document: ["You've already verified with ID in another Forest. Nothing was charged.", true],
+  // A face Didit has seen verified before: the selfie check can't give this seed a stamp.
+  face_seen: ['A similar face is already verified. Verify with your ID to continue.', false],
   // 409
   session_used: [`That check was already used. ${START_AGAIN}`, false],
-  payment_used: ['This payment is used up. Pay again.', false],
+  // Its three tries opened, or its stamp given, which was charged: nothing said of a charge.
+  payment_used: ['This payment is used up. Pay again to continue.', false],
   // 502, 503
   face_check_unavailable: ["The {check} isn't available right now. Try again in a minute.", false],
   payment_unavailable: ["Payment isn't available right now. Try again in a minute.", false],
@@ -76,6 +80,9 @@ const VERIFIER: Record<string, Line> = {
   not_a_verifier: VERIFIER_DOWN,
   another_stamp_number: VERIFIER_DOWN,
 }
+
+/** What the app says when a payment's third try didn't pass: its hold ends, and no stamp came from it. */
+export const TRIES_USED = 'Your three tries are used up. Nothing was charged. Pay again to continue.'
 
 /** The codes the verifier answers that the app has its own line for. */
 export const VERIFIER_CODES = Object.keys(VERIFIER)

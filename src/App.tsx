@@ -301,6 +301,7 @@ function Screens() {
             step={screen.step}
             {...(screen.failed && { failed: screen.failed })}
             onVerified={inside}
+            onIn={(e) => entered(e, screen.id)}
             onBack={screen.setup ? () => go({ at: 'start' }) : back}
           />
         )

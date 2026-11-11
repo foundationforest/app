@@ -1,20 +1,23 @@
 // Get verified: "So people know you're real.", and two cards, each one tap (Checks.tsx). The selfie
 // opens its check in a tab of its own at once, on the tap itself (iPhone Safari blocks a tab opened
-// after an await). The ID opens its sheet: its price and tries, and, tapped open, the consent screen
-// the verifier serves, word for word, before Pay $5, which sends the person to Stripe's page in this
-// tab; Stripe sends them back to /id, where the payment, kept on the device, makes the ID card open
-// its check at once too.
+// after an await). The ID opens its sheet: its price, once, the hold on the person's card, its tries,
+// and, tapped open, the consent screen the verifier serves, word for word, before Pay $5. Pay asks
+// the verifier first for an ID stamp it signed this seed already (one ID stamp a person): there, it
+// is kept, and nothing is paid. Else Pay sends the person to Stripe's page in this tab; Stripe sends
+// them back to /id, where the payment, kept on the device, makes the ID card open its check at once
+// too. Pay needs the seed's stamp number, so it asks for an unlock when no seed is held.
 //
 // While the check is open in its tab, the screen shows only the loader, Waiting for your check, and
 // Open it again; when the stamp comes, it moves on by itself. A check that didn't pass brings no
 // screen of its own: Get verified again, one line on top in a notice, and its session is done, so
-// the next tap opens a new one. Held for review (a face Didit has seen before), Get verified again,
-// the notice saying a person is checking, that check's card greyed, and the app asking all the while;
-// approved, it moves on by itself too. From Start, Get verified's back goes to Start (App.tsx), and
-// the waiting's to Get verified: the asking stops, nothing under way changes, and a tap on the same
-// card picks it up where it was (flows/verify.ts, `choose`). From You or Home, a check to add: the
-// checks the person has are greyed, the ID's sheet is open when nothing is paid, and back is where
-// it came from.
+// the next tap opens a new one. A face Didit has seen verified before: the notice says so and points
+// to the ID, the selfie's card greyed; from Start, under the cards, the quiet I already use Forest,
+// for someone who made a passkey here by mistake: it asks for the passkey they use, and adds this
+// one to it (flows/backups.ts, `linkTo`), and they're in. From Start, Get verified's back goes to
+// Start (App.tsx), and the waiting's to Get verified: the asking stops, nothing under way changes,
+// and a tap on the same card picks it up where it was (flows/verify.ts, `choose`). From You or Home,
+// a check to add: the checks the person has are greyed, the ID's sheet is open when nothing is paid,
+// and back is where it came from.
 //
 // The screen keeps no seed of its own: it uses the one held after an unlock (held.ts), for 5
 // minutes since the last action, the check's own tab hiding the page meanwhile. So while a seed is
@@ -28,25 +31,25 @@
 import { useEffect, useRef, useState } from 'react'
 
 import { config } from '../config.ts'
-import { type Check, checks, under } from '../device.ts'
-import { type CreditLines, type Step, NotFinished, NotPassed, advance, ask, choose, collect, consentOf, creditsOf, finish, open, pay, stampNumberAt, stepOf } from '../flows/verify.ts'
+import { type Check, knowPasskey, under } from '../device.ts'
+import { linkTo } from '../flows/backups.ts'
+import { follow } from '../flows/seed.ts'
+import { type Entered, enter } from '../flows/start.ts'
+import { type CreditLines, type Step, NotFinished, NotPassed, advance, ask, choose, consentOf, creditsOf, finish, open, pay, stampNumberAt, stepOf } from '../flows/verify.ts'
 import { walletKey } from '../flows/profiles.ts'
-import { isHeldFor } from '../held.ts'
+import { hold, isHeldFor } from '../held.ts'
+import { useChecks } from '../hooks.ts'
 import { Icon } from '../icons.tsx'
 import { Loader } from '../mark.tsx'
-import { withSeed } from '../passkey.ts'
+import { ask as askPasskey, withSeed } from '../passkey.ts'
 import { proveInWorker } from '../proof/prove.ts'
 import { Line, type Note, Notice, Quiet, Top, UnlockIcon, YoureVerified, noteOf, useAction } from '../ui.tsx'
 import { Reloading } from '../version.ts'
 import { CheckCard, IdSheet } from './Checks.tsx'
 
-/** How often the stamp is asked for while the check is open, and for how long; and while it is held for review. */
+/** How often the stamp is asked for while the check is open, and for how long. */
 const AWAY_EVERY_MS = 3_000
 const AWAY_FOR_MS = 20 * 60_000
-const REVIEW_EVERY_MS = 20_000
-
-/** What Get verified says while a person at Forest checks a face Didit has seen before. */
-const REVIEWING = 'A person at Forest is checking your selfie. You can close Forest; it picks up here.'
 
 type Props = {
   /** Opened from Start: back goes there, and the line on adding the other check shows. */
@@ -56,6 +59,8 @@ type Props = {
   /** A check that will never pass, found as Start took the verification up. */
   failed?: NotPassed
   onVerified: () => void
+  /** In with the passkey the person uses, this one added to it: where Start would have taken them. */
+  onIn: (entered: Entered) => void
   /** Back from Get verified: to Start; for someone verified already, to You. */
   onBack: () => void
 }
@@ -71,7 +76,7 @@ type Known = { stampNumber: bigint; wallet: string }
 
 const knownOf = async (seed: Uint8Array): Promise<Known> => ({ stampNumber: await stampNumberAt(config, seed), wallet: (await walletKey(seed)).address })
 
-export function Verify({ setup, id, step: first, failed: failedFirst, onVerified, onBack }: Props) {
+export function Verify({ setup, id, step: first, failed: failedFirst, onVerified, onIn, onBack }: Props) {
   // Worked out at once while a seed is held, before the check's tab hides the page.
   // A failure says itself where it is awaited, as the stamp is asked for.
   const [atOpen] = useState(() => {
@@ -100,6 +105,8 @@ export function Verify({ setup, id, step: first, failed: failedFirst, onVerified
   // The consent screen, as the verifier serves it: Pay shows only once it has come.
   const [consent, setConsent] = useState<string | null>(null)
   const [noConsent, setNoConsent] = useState<Note | null>(null)
+  // The checks the person has: their Profiles folder's, as this device last worked them out, and what their profiles show.
+  const held = useChecks()
 
   /** The check under way for this passkey, if any. */
   const underWay = (): Check | null => {
@@ -163,39 +170,14 @@ export function Verify({ setup, id, step: first, failed: failedFirst, onVerified
     onVerified()
   }
 
-  /** Held for review: Get verified, saying so; the stamp asked for now and then, its gift collected and the stamp kept as it comes, when the wallet is known. */
-  const review = async (at: number, wallet?: string) => {
-    setWaiting(false)
-    setStep({ at: 'review' })
-    try {
-      while (live.current && turn.current === at) {
-        await pause(REVIEW_EVERY_MS)
-        if (!live.current || turn.current !== at) return
-        const next = await ask(config, id, stampNumber.current!).catch((err: unknown) => {
-          if (err instanceof NotPassed) throw err
-          return { at: 'review' } as const
-        })
-        if (turn.current !== at) return
-        if (next.at === 'signed') {
-          if (wallet) await collect(config, id, wallet).catch(() => undefined)
-          return await done(next.stamp)
-        }
-        if (next.at !== 'review') return setStep(next)
-      }
-    } catch (err) {
-      said(err, at)
-    }
-  }
-
   /** The stamp asked for while the check is open in its tab, with what the seed gave, until back. */
-  const wait = async (at: number, { stampNumber: number, wallet }: Known) => {
+  const wait = async (at: number, { stampNumber: number }: Known) => {
     stampNumber.current = number
     const until = Date.now() + AWAY_FOR_MS
     while (live.current && turn.current === at && Date.now() < until) {
       const next = await ask(config, id, stampNumber.current)
       if (turn.current !== at) return
       if (next.at === 'signed') return done(next.stamp)
-      if (next.at === 'review') return review(at, wallet)
       if (next.at !== 'away') {
         setWaiting(false)
         return setStep(next)
@@ -226,17 +208,9 @@ export function Verify({ setup, id, step: first, failed: failedFirst, onVerified
     })()
   }
 
-  // Taken up with the check open, or held for review, with a seed held: the stamp asked for as it would have been.
+  // Taken up with the check open, with a seed held: the stamp asked for as it would have been.
   useEffect(() => {
-    const k = known.current
-    if (!k) return
-    if (first.at === 'away') return askHere(0)
-    if (first.at !== 'review') return
-    void (async () => {
-      const { stampNumber: number, wallet } = await k
-      stampNumber.current = number
-      await review(0, wallet)
-    })().catch((err: unknown) => said(err, 0))
+    if (known.current && first.at === 'away') askHere(0)
   }, [])
 
   /** A tab opened on the tap, then sent to the check's page. */
@@ -279,11 +253,34 @@ export function Verify({ setup, id, step: first, failed: failedFirst, onVerified
     void opening.run(c)
   }
 
-  /** The payment made, then Stripe's page in this tab; in test mode, Stripe's test card said first. */
+  /** An ID stamp the verifier signed this seed already, kept, and nothing paid; else the payment made, then Stripe's page in this tab; in test mode, Stripe's test card said first. */
   const paying = useAction(async () => {
-    const { url, test } = await pay(config, id, paidUrl())
-    if (test) return setStripe(url)
-    location.assign(url)
+    const got = await withSeed(id, async (s) => {
+      const sold = await pay(config, id, paidUrl(), await stampNumberAt(config, s))
+      if ('stamp' in sold) await finish(config, id, s, sold.stamp, proveInWorker)
+      return sold
+    })
+    if ('stamp' in got) return onVerified()
+    if (got.test) return setStripe(got.url)
+    location.assign(got.url)
+  })
+
+  /** I already use Forest: the passkey the person uses asked for, followed, and this one added to it; then in, with the seed it opens held for this one. */
+  const already = useAction(async () => {
+    const seed = await withSeed(id, async (own) => {
+      const answered = await askPasskey()
+      const main = await follow(config.host, answered.seed)
+      try {
+        await linkTo(config, own, main)
+      } catch (err) {
+        main.fill(0)
+        throw err
+      }
+      knowPasskey(answered.id)
+      return main
+    })
+    hold(id, seed)
+    onIn(await withSeed(id, (s) => enter(config, { id, seed: s }, proveInWorker)))
   })
 
   /** One unlock: the verification taken on, as far as it goes, and then asked for from here with the seed held. */
@@ -306,7 +303,6 @@ export function Verify({ setup, id, step: first, failed: failedFirst, onVerified
     if (turn.current !== at) return
     setStep(next)
     if (next.at === 'away') return askHere(at)
-    if (next.at === 'review') return review(at)
     setWaiting(false)
   })
 
@@ -324,7 +320,7 @@ export function Verify({ setup, id, step: first, failed: failedFirst, onVerified
     setWaiting(false)
     setNote(null)
     setStep(stepOf(id))
-    for (const action of [opening, reopen, go, keep]) action.setNote(null)
+    for (const action of [opening, reopen, go, keep, already]) action.setNote(null)
   }
 
   const closeSheet = () => {
@@ -381,9 +377,9 @@ export function Verify({ setup, id, step: first, failed: failedFirst, onVerified
     )
   }
 
-  const reviewing = step.at === 'review' ? underWay() : null
-  const held = checks()
-  const off = (c: Check) => opening.busy || reviewing === c || (!setup && held.includes(c))
+  // A face seen before: the selfie can't pass for this seed, so its card is greyed.
+  const seen = failed?.code === 'face_seen'
+  const off = (c: Check) => opening.busy || already.busy || (c === 'face' && seen) || (!setup && held.has(c))
   return (
     <main>
       <Top onBack={onBack} />
@@ -392,7 +388,7 @@ export function Verify({ setup, id, step: first, failed: failedFirst, onVerified
         <h1>Get verified</h1>
         <p className="lead">So people know you're real.</p>
       </div>
-      {reviewing ? <Notice>{REVIEWING}</Notice> : failed && <Notice>{failed.message}</Notice>}
+      {failed && <Notice>{failed.message}</Notice>}
       <Line note={opening.note} />
       <div className="vcards">
         {(['face', 'id'] as const).map((c) => (
@@ -400,7 +396,16 @@ export function Verify({ setup, id, step: first, failed: failedFirst, onVerified
         ))}
       </div>
       <div className="fill" />
-      {setup && <p className="quiet-foot">You can add the other one later.</p>}
+      {setup && seen ? (
+        <>
+          <Line note={already.note} />
+          <button className="quiet" disabled={already.busy || opening.busy} onClick={() => already.run()}>
+            {already.busy ? <Loader /> : <><UnlockIcon always /> I already use Forest</>}
+          </button>
+        </>
+      ) : (
+        setup && <p className="quiet-foot">You can add the other one later.</p>
+      )}
       {sheet && <IdSheet consent={consent} note={paying.note ?? noConsent} stripe={stripe} paying={paying.busy} onPay={() => paying.run()} onClose={closeSheet} />}
     </main>
   )

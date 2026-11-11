@@ -109,7 +109,9 @@ test("every code the verifier, the host and the standard list has its own plain 
   for (const code of HOST_CODES) expect(hostSays(code).message, code).not.toMatch(/[a-z]+_[a-z]+/)
   expect(verifierSays('face_check_unavailable').message).toBe("The selfie check isn't available right now. Try again in a minute.")
   expect([verifierSays('declined').message, verifierSays('no_face_match', 'id').message]).toEqual(["That selfie didn't pass. Try again, or use your ID.", "That ID check didn't pass. Try again."])
-  expect([verifierSays('duplicate_document').message, verifierSays('duplicate_document').red]).toEqual(['This ID was already used to verify someone else.', true])
+  expect([verifierSays('duplicate_document').message, verifierSays('duplicate_document').red]).toEqual(["You've already verified with ID in another Forest. Nothing was charged.", true])
+  // Ahead of SERVICES: services' next verifier answers face_seen, and not_paid for a hold that ended or was never made.
+  expect([verifierSays('face_seen').message, verifierSays('not_paid', 'id').message]).toEqual(['A similar face is already verified. Verify with your ID to continue.', 'Nothing is held on your card for this check. Pay to continue.'])
   expect(verifierSays('not_for_sale').message).toBe("The ID check isn't available yet.")
   expect(verifierSays('a_code_from_tomorrow').message).toBe(SOMETHING)
 })

@@ -2,18 +2,20 @@
 // kept; then every profile made to show the new stamp. In steps the app can come back to: close the
 // page anywhere, or come back from Stripe, and the next step picks up, losing nothing.
 //
-//   1. pay (the ID check only): the gift's buy, then the payment at the verifier, its id kept on the
-//      device (device.ts, `Under`), since Stripe sends the person back with none. They pay on Stripe's
-//      page;
+//   1. pay (the ID check only): first the stamp number's ID stamp asked back, since there is one ID
+//      stamp a person: one from the verifier's current ID key is kept, and nothing is paid. Else the
+//      gift's buy, then the payment at the verifier, its id kept on the device (device.ts, `Under`),
+//      since Stripe sends the person back with none. On Stripe's page, $5 is held on their card, and
+//      charged only once a stamp comes from it;
 //   2. open: the gift's buy (one buy at the host for exactly the check's gift, as services'
 //      end-to-end test buys it), then a session at the verifier, kept on the device with its page, so
 //      a tab closed midway opens the same check again; the ID check's with its payment, each session
-//      one of its three tries;
+//      one of its three tries, counted on the device, so the third that doesn't pass says so;
 //   3. ask: the session's stamp, with the buy's reference (and the payment); the gift's ticket comes
 //      with it and is kept. The same session and stamp number give the same stamp and ticket within
 //      its hour, and after it the verifier hands the stamp back by its stamp number. A session that
-//      will never pass (declined, expired, or a check that did not count) is dropped, and the next
-//      open is a new one;
+//      will never pass (declined, expired, a face seen before, or a check that did not count) is
+//      dropped, and the next open is a new one;
 //   4. collect: the buy collected with the ticket, its credits spent into the wallet, the Profiles
 //      folder's balance. Collected again, a buy gets the same answer;
 //   5. keep: the stamp in the Profiles folder, its first write paid from the wallet;
@@ -22,35 +24,41 @@
 //      used (paid, then left for the face check), so the ID check added later opens paid.
 //
 // The device keeps the check's session and the gift's buy because both are lost otherwise: a second
-// check of the same face goes to review, and a gift is given once a stamp number. It keeps the
-// payment because it is the person's $5. Going back to the two checks and picking one again changes
-// none of it (`choose`).
+// check of the same face is refused as a face seen before, and a gift is given once a stamp number.
+// It keeps the payment because it holds the person's $5. Going back to the two checks and picking one
+// again changes none of it (`choose`).
+//
+// How the person is verified is worked out fresh from the Profiles folder's stamps each time it is
+// opened here, against the verifier's current keys: a stamp from a key it no longer signs with (the
+// ID key before services#123) counts for nothing.
 
 import { seedNumber, stampNumberOf } from '@foundationforest/keys'
 
 import type { Services } from '../config.ts'
-import { type Check, type Under, checks, endUnder, keepUnder, saveChecks, under, usePasskey } from '../device.ts'
+import { type Check, type Under, endUnder, keepUnder, saveChecks, under, usePasskey } from '../device.ts'
 import { collectGift, giftBuy } from '../services/credits.ts'
 import { Refused } from '../services/http.ts'
 import { type About, about, askStamp, checkOfStamp, faceSession, idPayment, idSession, stampBack, stamps, stampsBack } from '../services/verifier.ts'
-import { Said, verifierSays } from '../words.ts'
+import { Said, TRIES_USED, verifierSays } from '../words.ts'
 import type { Prove } from './profile.ts'
 import { addTo, openProfiles } from './profiles.ts'
 import { showStamps } from './stamps.ts'
 
 /**
  * Where a verification stands: nothing under way, so a check to choose; the ID check not paid yet;
- * a check to open; open in its tab and not finished; held for review; signed; or kept, with only the
- * profiles left to show it.
+ * a check to open; open in its tab and not finished; signed; or kept, with only the profiles left to
+ * show it.
  */
-export type Step = { at: 'choose' } | { at: 'consent' } | { at: 'start' } | { at: 'away' } | { at: 'review' } | { at: 'signed'; stamp: string } | { at: 'kept' }
+export type Step = { at: 'choose' } | { at: 'consent' } | { at: 'start' } | { at: 'away' } | { at: 'signed'; stamp: string } | { at: 'kept' }
 
-/** The check refused for good, in the verifier's words for why: its session is done, and the next open is a new one. */
+/** How many sessions one payment opens. */
+export const TRIES = 3
+
+/** The check refused for good, in the verifier's words for why, or `said`: its session is done, and the next open is a new one. */
 export class NotPassed extends Said {
   readonly code: string
   readonly check: Check
-  constructor(code: string, check: Check) {
-    const said = verifierSays(code, check)
+  constructor(code: string, check: Check, said = verifierSays(code, check)) {
     super(said.message, said.red)
     this.name = 'NotPassed'
     this.code = code
@@ -129,24 +137,31 @@ async function withGift(s: Services, u: Under, check: Check): Promise<Under> {
 export function choose(passkey: string, check: Check): void {
   const was = mine(passkey)
   if (was?.check === check) return
-  keepUnder({ passkey, check, ...(was?.gift && { gift: was.gift }), ...(was?.payment && { payment: was.payment }) })
+  keepUnder({ passkey, check, ...(was?.gift && { gift: was.gift }), ...(was?.payment && { payment: was.payment, ...(was.tries && { tries: was.tries }) }) })
 }
 
-/** The ID check's payment under way that no stamp has used: paid for, then left for the face check. */
-const unused = (u: Under | null): string | undefined => (u?.check === 'face' ? u.payment : undefined)
+/** The ID check's payment under way that no stamp has used, with its tries: paid for, then left for the face check. */
+const unused = (u: Under | null): Pick<Under, 'payment' | 'tries'> => (u?.check === 'face' && u.payment ? { payment: u.payment, ...(u.tries && { tries: u.tries }) } : {})
 
 /** The verification over: nothing of it left on the device but a payment no stamp used, so the ID check opens paid. */
 function over(passkey: string): void {
-  const payment = unused(mine(passkey))
-  if (payment) keepUnder({ passkey, check: 'id', payment })
+  const left = unused(mine(passkey))
+  if (left.payment) keepUnder({ passkey, check: 'id', ...left })
   else endUnder()
 }
 
 /**
- * The ID check's payment: the gift's buy for the ID check, then the payment, its id kept from now,
- * in place of any check under way. Gives back Stripe's page, which sends the person to `returnUrl`.
+ * The ID check sold, unless the verifier signed this stamp number an ID stamp from its current ID key
+ * already (one ID stamp a person): then that stamp, to keep, and nothing paid. Else the gift's buy for
+ * the ID check, then the payment, its id kept from now, in place of any check under way; and Stripe's
+ * page, which sends the person to `returnUrl`.
  */
-export async function pay(s: Services, passkey: string, returnUrl: string): Promise<{ url: string; test: boolean }> {
+export async function pay(s: Services, passkey: string, returnUrl: string, stampNumber: bigint): Promise<{ stamp: string } | { url: string; test: boolean }> {
+  const signed = await stampBack(s.verifier, stampNumber, 'id')
+  if (signed) {
+    choose(passkey, 'id')
+    return { stamp: signed }
+  }
   const was = mine(passkey)
   let u: Under = { passkey, check: 'id', ...(was?.gift && { gift: was.gift }) }
   u = await withGift(s, u, 'id')
@@ -156,11 +171,14 @@ export async function pay(s: Services, passkey: string, returnUrl: string): Prom
   return { url, test: payment.startsWith('cs_test_') }
 }
 
-/** The payment dropped: Pay again is the next step. */
+/** The payment dropped, with its tries: Pay again is the next step. */
 const unpaid = (u: Under): Under => {
-  const { payment: _, session: __, url: ___, ...rest } = u
+  const { payment: _, tries: __, session: ___, url: ____, ...rest } = u
   return rest
 }
+
+/** A payment's last try didn't pass: its hold ends, and no stamp came from it. */
+const triesUsed = () => new NotPassed('payment_used', 'id', new Said(TRIES_USED))
 
 /** The session dropped: the next open is a new one. */
 const noSession = (u: Under): Under => {
@@ -178,6 +196,10 @@ export async function open(s: Services, passkey: string, returnUrl?: string): Pr
   if (u.session && u.url) return u.url
   const check = u.check
   if (check === 'id' && !u.payment) throw new Said('Pay first.')
+  if (check === 'id' && (u.tries ?? 0) >= TRIES) {
+    keepUnder(unpaid(u))
+    throw triesUsed()
+  }
   u = await withGift(s, u, check)
   keepUnder(u)
   let session
@@ -188,7 +210,7 @@ export async function open(s: Services, passkey: string, returnUrl?: string): Pr
     if (err instanceof Refused && (err.code === 'not_paid' || err.code === 'payment_used')) keepUnder(unpaid(u))
     throw err
   }
-  keepUnder({ ...u, session: session.sessionId, url: session.url })
+  keepUnder({ ...u, session: session.sessionId, url: session.url, ...(check === 'id' && { tries: (u.tries ?? 0) + 1 }) })
   return session.url
 }
 
@@ -204,7 +226,6 @@ export async function ask(s: Services, passkey: string, stampNumber: bigint): Pr
     else if (u.gift && got.noGift) keepUnder({ ...u, gift: undefined })
     return { at: 'signed', stamp: got.stamp }
   }
-  if (got.review) return { at: 'review' }
   if (got.code === 'not_approved') return { at: 'away' }
   // Its hour is over, the verifier never knew it, or (the ID check) its payment gave its stamp: the
   // verifier keeps the stamp only by its stamp number, if it signed one.
@@ -216,8 +237,16 @@ export async function ask(s: Services, passkey: string, stampNumber: bigint): Pr
     keepUnder(unpaid(u))
     throw new NotPassed(got.code, check)
   }
+  if (got.code === 'session_used' || got.code === 'unknown_session') {
+    keepUnder(noSession(u))
+    return { at: 'start' }
+  }
+  // The payment's last try, and it didn't pass: Pay again, nothing charged.
+  if (check === 'id' && (u.tries ?? 0) >= TRIES) {
+    keepUnder(unpaid(u))
+    throw triesUsed()
+  }
   keepUnder(noSession(u))
-  if (got.code === 'session_used' || got.code === 'unknown_session') return { at: 'start' }
   throw new NotPassed(got.code, check)
 }
 
@@ -238,10 +267,10 @@ async function sameStamp(a: string, b: string): Promise<boolean> {
   return x.verifier === y.verifier && x.signature.S === y.signature.S
 }
 
-/** How the person is verified, from the stamps their Profiles folder holds, kept on the device. */
+/** How the person is verified, worked out fresh from the stamps their Profiles folder holds, against the verifier's current keys, and kept on the device in place of what it kept before. */
 async function noteChecks(s: Services, held: string[]): Promise<void> {
   const found = await Promise.all(held.map((stamp) => checkOfStamp(s.verifier, stamp)))
-  saveChecks([...checks(), ...found.filter((c): c is Check => c !== null)])
+  saveChecks(found.filter((c): c is Check => c !== null))
 }
 
 /**
@@ -257,8 +286,7 @@ export async function finish(s: Services, passkey: string, seed: Uint8Array, sta
   const held = kept.includes(true) ? folder.stamps : [...folder.stamps, stamp]
   await noteChecks(s, held)
   const u = mine(passkey)
-  const payment = unused(u)
-  if (u) keepUnder({ passkey, check: u.check, kept: true, ...(payment && { payment }) })
+  if (u) keepUnder({ passkey, check: u.check, kept: true, ...unused(u) })
   await showStamps(s, seed, { labels: folder.labels, stamps: held }, prove)
   over(passkey)
   usePasskey(passkey)

@@ -42,11 +42,17 @@ export function about(origin: string): Promise<About> {
   return got
 }
 
-/** The check a stamp is from, by the verifier's key that signed it. */
+/** The check a stamp is from, by the verifier's key that signed it; null for a key it no longer signs with, which counts for nothing. */
 export async function checkOfStamp(origin: string, stamp: string): Promise<Check | null> {
   const [a, { stampFromJson }] = await Promise.all([about(origin), stamps()])
   const key = stampFromJson(JSON.parse(stamp)).verifier
   return key === a.face.key ? 'face' : key === a.id.key ? 'id' : null
+}
+
+/** The stamps among `held` from the verifier's current keys, as GET / names them: the only ones a profile shows a verification of. */
+export async function counted(origin: string, held: string[]): Promise<string[]> {
+  const of = await Promise.all(held.map((stamp) => checkOfStamp(origin, stamp)))
+  return held.filter((_, i) => of[i] !== null)
 }
 
 /** A session that opened: its id, and the page the person does the check on. */
@@ -76,8 +82,8 @@ export async function idSession(origin: string, payment: string, returnUrl?: str
   return sessionOf(status, body, 'id')
 }
 
-/** What asking for the stamp came to: signed, with the gift's ticket or why none; held for review; or the verifier's no, with its code. */
-export type Asked = { signed: true; stamp: string; ticket?: string; noGift?: string } | { signed: false; review: true } | { signed: false; review?: false; code: string; status: number }
+/** What asking for the stamp came to: signed, with the gift's ticket or why none; or the verifier's no, with its code. */
+export type Asked = { signed: true; stamp: string; ticket?: string; noGift?: string } | { signed: false; code: string; status: number }
 
 /**
  * The stamp for the session `sessionId` of `check`, for this stamp number, with `gift`, a buy's
@@ -97,17 +103,21 @@ export async function askStamp(origin: string, check: Check, ask: { sessionId: s
     const noGift = typeof body?.gift?.error === 'string' ? body.gift.error : undefined
     return { signed: true, stamp: await stampText(body.stamp), ...(ticket && { ticket }), ...(noGift && { noGift }) }
   }
-  if (status === 202) return { signed: false, review: true }
   if (typeof body?.error === 'string' && status >= 400 && status < 500) return { signed: false, code: body.error, status }
   throw new Refused(SERVICE, status, body?.error ?? 'internal', check)
 }
 
-/** The stamps the verifier signed for this stamp number, asked back, each as the Profiles folder keeps it, or null. */
+/** The stamps the verifier signed for this stamp number, asked back, each as the Profiles folder keeps it, or null; or null for one not from the current key of its check. */
 export async function stampsBack(origin: string, stampNumber: bigint): Promise<Record<Check, string | null>> {
   const { status, body } = await call(SERVICE, `${origin}/stamp`, { stampNumber: stampNumber.toString() })
   if (status === 404) return { face: null, id: null }
   if (status !== 200) throw new Refused(SERVICE, status, body?.error ?? 'internal')
-  return { face: body?.face ? await stampText(body.face) : null, id: body?.id ? await stampText(body.id) : null }
+  const back = async (check: Check): Promise<string | null> => {
+    if (!body?.[check]) return null
+    const stamp = await stampText(body[check])
+    return (await checkOfStamp(origin, stamp)) === check ? stamp : null
+  }
+  return { face: await back('face'), id: await back('id') }
 }
 
 /** The stamp of `check` the verifier signed for this stamp number, asked back; null when it signed none. */

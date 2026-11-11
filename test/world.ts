@@ -4,7 +4,7 @@
 //                  Stripe and its embedder that knows faces by name (verifier/test/fakes.ts), so the
 //                  verifier's own code says what each decision, payment, try and refusal comes to.
 //                  Didit approves every face check session it opens unless a test says it is
-//                  unfinished, held for review, declined, expired, not passed, or past its hour; an
+//                  unfinished, declined, expired, not passed, or past its hour; an
 //                  ID check's session comes to what a test sets;
 //   the host       services' own host (services/host/src), as `npm start` runs it, the plug and the
 //                  credits, taking the verifier's sponsor's tickets;
@@ -78,7 +78,7 @@ export async function freePort(): Promise<number> {
 }
 
 /** What Didit decided for a face check's session, as a test says it. */
-export type Decision = 'approved' | 'unfinished' | 'review' | 'declined' | 'expired' | 'not_passed' | 'past_its_hour'
+export type Decision = 'approved' | 'unfinished' | 'declined' | 'expired' | 'not_passed' | 'past_its_hour'
 
 /** The face every face check here takes a selfie of: the embedder knows it by name. */
 const FACE = 'ada'
@@ -87,7 +87,6 @@ const FACE = 'ada'
 const AS_DIDIT: Record<Exclude<Decision, 'past_its_hour'>, Decided> = {
   approved: passed(FACE),
   unfinished: passed(FACE, { status: 'In Progress' }),
-  review: passed(FACE, { status: 'In Review' }),
   declined: passed(FACE, { status: 'Declined' }),
   expired: passed(FACE, { status: 'Expired' }),
   not_passed: passed(FACE, { liveness: [{ status: 'Declined' }] }),

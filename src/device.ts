@@ -6,11 +6,12 @@
 // and its profiles' labels), the addresses of the access keys it knows of, where they left off in
 // each profile's inbox, the time of the newest review, vouch or report about each profile its
 // Reviews or Notifications has shown, their theme, and, while a verification is under way, its
-// check and session, the ID check's payment and the gift's buy, then an ID check's payment no stamp
-// has used yet (flows/verify.ts); and, of each passkey it made or added, the password manager's
-// name and whether it made it for itself (flows/backups.ts), which no entry can hold; and the point
-// listings' places are centred on, one for each place a listing's form read the device's location
-// at, moved a little from it (near.ts). Never the seed, its 24 words, a key, a stamp or a message.
+// check and session, the ID check's payment and how many tries it opened, and the gift's buy, then
+// an ID check's payment no stamp has used yet (flows/verify.ts); and, of each passkey it made or
+// added, the password manager's name and whether it made it for itself (flows/backups.ts), which no
+// entry can hold; and the point listings' places are centred on, one for each place a listing's form
+// read the device's location at, moved a little from it (near.ts). Never the seed, its 24 words, a
+// key, a stamp or a message.
 //
 // A label entry in the Profiles folder that this device never read, or whose label it doesn't list,
 // is a profile made elsewhere, on another device with the same seed: Profiles offers to read them
@@ -44,9 +45,10 @@ export type Theme = 'device' | 'light' | 'dark'
  * Session's id, kept from the moment it is made, since Stripe sends the person back with none; the
  * check's session at the verifier and its page, so a tab closed midway opens the same check again; the gift's buy, with its
  * ticket once the verifier signs one; and `kept`, once the stamp is in the Profiles folder and only
- * the profiles are left to show it.
+ * the profiles are left to show it; and `tries`, how many sessions the ID check's payment has opened,
+ * so its third that doesn't pass says it was the last.
  */
-export type Under = { passkey: string; check: Check; payment?: string; session?: string; url?: string; gift?: { reference: string; pending: Pending; ticket?: string }; kept?: true }
+export type Under = { passkey: string; check: Check; payment?: string; tries?: number; session?: string; url?: string; gift?: { reference: string; pending: Pending; ticket?: string }; kept?: true }
 
 const KEYS = {
   passkey: 'forest.passkey',
@@ -54,7 +56,9 @@ const KEYS = {
   profiles: 'forest.profiles',
   theme: 'forest.theme',
   under: 'forest.setup',
-  checks: 'forest.checks',
+  // Not forest.checks, which lists kept before this key counted every stamp the folder held, an old
+  // ID key's among them: cleared once by cleanOld, then worked out fresh at the next unlock.
+  checks: 'forest.verified',
   read: 'forest.read',
   seen: 'forest.seen',
   connections: 'forest.connections',
@@ -121,7 +125,7 @@ export function readLabels(address: string, labels: Record<string, string>): voi
   write(KEYS.folder, { address, labels: { ...(was?.address === address ? was.labels : {}), ...labels } })
 }
 
-/** How the person is verified: the checks whose stamps their Profiles folder holds, as this device last saw it. */
+/** How the person is verified: the checks whose stamps their Profiles folder holds from the verifier's current keys, as this device last worked them out. */
 export const checks = (): Check[] => {
   const kept = read<unknown[]>(KEYS.checks, [])
   return (['face', 'id'] as const).filter((c) => kept.includes(c))
