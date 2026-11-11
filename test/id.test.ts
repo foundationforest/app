@@ -256,6 +256,7 @@ describe('the ID check', () => {
     await checked(q, passedId(q.name, rosalind, { matches: [{ vendorData: 'id-rosalind', sessionId: null }] }))
     const err = await advance(w, q.id, q.seed, proveHere).catch((e: unknown) => e)
     expect([(err as NotPassed).code, (err as Said).message]).toEqual(['duplicate_document', 'This ID is already verified with another passkey. Nothing was charged.'])
+    expect(device.under()?.payment, 'its payment used up at the verifier, so dropped here: the next tap pays again').toBeUndefined()
   })
 
   test('the page closed after the stamp was kept, before every profile showed it: Start finishes it', async () => {

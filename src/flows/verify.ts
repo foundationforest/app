@@ -255,6 +255,12 @@ export async function ask(s: Services, passkey: string, stampNumber: bigint): Pr
     keepUnder(noSession(u))
     return { at: 'start' }
   }
+  // An ID already verified with another seed: the verifier cancels the hold and uses the payment
+  // up, so it is dropped too, and the next tap pays again.
+  if (got.code === 'duplicate_document') {
+    keepUnder(unpaid(u))
+    throw new NotPassed(got.code, check)
+  }
   // The payment's last try, and it didn't pass: Pay again, nothing charged.
   if (check === 'id' && (u.tries ?? 0) >= TRIES) {
     keepUnder(unpaid(u))

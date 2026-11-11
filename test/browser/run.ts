@@ -1921,6 +1921,9 @@ test("a message to one of the person's own profiles: To their tutor, From their 
   await shot(page, 'laptop-messages-loading')
   // On a phone, the same: in the middle of the screen above the tabs.
   await page.setViewportSize({ width: 390, height: 844 })
+  await page.locator('main.panes').waitFor({ state: 'detached' })
+  await page.locator('.tabbar').waitFor()
+  await loader.waitFor()
   const [onPhone, tabs] = [middle((await loader.boundingBox())!), (await page.locator('.tabbar').boundingBox())!]
   assert.ok(Math.abs(onPhone[0]! - 195) < 4 && Math.abs(onPhone[1]! - tabs.y / 2) < 40, `in the middle of the screen: ${onPhone}`)
   await shot(page, 'messages-loading')
@@ -3752,6 +3755,8 @@ test("the ID check through the stand-in Stripe, from You's Add, $5: Get verified
   assert.equal((await kept(page))['forest.setup'], undefined, 'nothing of the verification left on the device')
   await shot(page, 'home-both')
   await page.setViewportSize({ width: 390, height: 844 })
+  await page.locator('.tabbar').waitFor()
+  await page.locator('aside.side').waitFor({ state: 'detached' })
   // A student requests: its avatar light, a tint of the market's color with its market's icon in it, never an animal: one of the person's own.
   const student = await avatarOf(page.locator('button.card', { hasText: STUDENT_WORDS }).locator('.av'))
   assert.deepEqual([student.light, student.h, student.icon], [true, colorOf(LESSONS), iconOf(LESSONS)])
