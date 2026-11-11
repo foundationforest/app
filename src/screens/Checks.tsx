@@ -2,11 +2,11 @@
 // ID check's sheet. A card: its icon square as its badge draws it (the forest green, a face being
 // scanned for the selfie, an ID card for the ID), its name and one line, its price, a chevron; under a
 // hairline, what it gives, each with its tick. A credit line shows only where the verifier gives
-// credits at this host (flows/verify.ts, `creditLines`). The ID's price says it is paid once: $5,
-// one time. The sheet: ID check and its price, the hold on the person's card, its three tries, What
-// the check keeps, closed until tapped, then the consent screen the verifier serves (GET /), word for
-// word, and Pay $5 only once those words have come, with the unlock icon while it will ask: it needs
-// the seed's stamp number first (Verify.tsx).
+// credits at this host (flows/verify.ts, `creditLines`). The ID's price says it is paid once: $5 one
+// time. The sheet (on a laptop, a dialog in the middle): ID check and its price, one line, that the
+// person is only charged if it passes, What the check keeps, closed until tapped, then the consent
+// screen the verifier serves (GET /), word for word, and Pay $5 only once those words have come,
+// with the unlock icon while it will ask: it needs the seed's stamp number first (Verify.tsx).
 
 import type { Check } from '../device.ts'
 import type { CreditLines } from '../flows/verify.ts'
@@ -17,13 +17,13 @@ import { Line, type Note, Sheet, UnlockIcon } from '../ui.tsx'
 /** While the verifier's Stripe key is a test one (a payment id `cs_test_…`), the card that pays: Stripe's test card. */
 const TEST_CARD = 'Test mode: pay with the card 4242 4242 4242 4242.'
 
-/** What paying for the ID check does: a hold on the card, charged only once its check passes. */
-const HOLD = 'We hold $5 on your card and only charge it if your ID check passes.'
+/** What paying for the ID check costs: nothing, unless its check passes. */
+const CHARGED = "You're only charged if it passes."
 
 /** The ID check's price, paid once: $5, and, smaller, one time. */
 const Once = () => (
   <>
-    $5<span className="once">, one time</span>
+    $5<span className="once"> one time</span>
   </>
 )
 
@@ -75,8 +75,7 @@ export function IdSheet({ consent, note, stripe, paying, onPay, onClose }: Sheet
           <Once />
         </span>
       </div>
-      <p>{HOLD}</p>
-      <p>Up to three tries.</p>
+      <p>{CHARGED}</p>
       {consent && (
         <details className="keeps">
           <summary>

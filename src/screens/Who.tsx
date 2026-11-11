@@ -85,7 +85,7 @@ export function Who({ address, who: known, aside }: { address: string; who?: Kno
 }
 
 /** The avatar of the profile at `address`, at `size`; a blank square while it is read, or when it can't be. */
-export function WhoAvatar({ address, who: known, size }: { address: string; who?: Known; size?: 'xs' | 'sm' | 'md' | 'lg' }) {
+export function WhoAvatar({ address, who: known, size }: { address: string; who?: Known; size?: 'sm' | 'md' | 'lg' }) {
   const who = useWho(address, known)
-  return who ? <Avatar label={labelOf(who)} {...(size && { size })} /> : <span className={`av ${size ?? 'md'} blank`} aria-hidden />
+  return who ? <Avatar label={labelOf(who)} address={address} {...(size && { size })} /> : <span className={`av ${size ?? 'md'} blank`} aria-hidden />
 }

@@ -1,15 +1,15 @@
 // The places, and the frame every screen past setup sits in. Three places: Home (the person's
 // profiles), Notifications and You. On a phone, each place has three tabs at its bottom, Home,
-// Notifications and You, the one selected filled on a mint pill; the Notifications tab counts
-// everything new, messages included. From 900px wide, no tabs: a sidebar on the left, on every
-// screen past setup, with the mark and Forest, the search, Home, Notifications (what came about the
-// profiles, and what a market outgrew), Messages and You with their counts, then Profiles, with a
-// small mint New at its right while a market's role has no profile of theirs, which opens New
-// profile; under it the profiles in the app's order (order.ts), those with something new first, then
-// the most recently used here, each with how many things are new on it, eight at most, then All
-// profiles with how many there are, which opens Home. The screen sits to its right. A place opening
-// reads what the index says of every profile, and what a market outgrew of what each posted; the
-// counts elsewhere are what the page holds.
+// Notifications and You, the one selected filled on a mint pill, and so does Messages, reached from
+// Notifications, with Notifications selected; the Notifications tab counts everything new, messages
+// included. From 900px wide, no tabs: a sidebar on the left, on every screen past setup, with the
+// mark and Forest, the search, Home, Notifications (what came about the profiles, and what a market
+// outgrew), Messages and You with their counts, then Profiles, with a small mint New at its right
+// while a market's role has no profile of theirs, which opens New profile; under it every profile,
+// in the app's order (order.ts), those with something new first, then the most recently used here,
+// each with how many things are new on it, the sidebar scrolling on its own when they run long. The
+// screen sits to its right. A place opening reads what the index says of every profile, and what a
+// market outgrew of what each posted; the counts elsewhere are what the page holds.
 
 import { type ReactNode, useEffect, useState } from 'react'
 
@@ -18,7 +18,6 @@ import { useHeldOutgrown, useNews, useOrdered, useOutgrown, useProfiles, useRate
 import { Icon, type IconName } from './icons.tsx'
 import { Mark } from './mark.tsx'
 import { pairs } from './markets.ts'
-import { MOST } from './order.ts'
 import { Named, Search } from './ui.tsx'
 
 export type Place = 'home' | 'notifications' | 'you'
@@ -52,8 +51,8 @@ function useCounts() {
   return { list, news, notices, messages: news.messages }
 }
 
-/** A screen in its frame. `place`, when the screen is one: its tabs on a phone, and the reads it does as it opens. */
-export function Frame({ on, place, go, children }: { on: On; place?: Place; go: FrameGo; children: ReactNode }) {
+/** A screen in its frame. `place`, when the screen is one: its tabs on a phone, and the reads it does as it opens; `tab`, the tabs alone on a screen reached from a place (Messages, from Notifications), that place picked. */
+export function Frame({ on, place, tab = place, go, children }: { on: On; place?: Place; tab?: Place | undefined; go: FrameGo; children: ReactNode }) {
   const wide = useWide()
   // The frame stays as the screens change; what a place reads, it reads each time it opens.
   const opening = place && <Opening key={place} />
@@ -62,7 +61,7 @@ export function Frame({ on, place, go, children }: { on: On; place?: Place; go: 
       <>
         {opening}
         {children}
-        {place && <Tabs at={place} go={go.place} />}
+        {tab && <Tabs at={tab} go={go.place} />}
       </>
     )
   return (
@@ -154,13 +153,13 @@ function Side({ on, go }: { on: On; go: FrameGo }) {
           </button>
         )}
       </div>
-      {shown.slice(0, MOST).map((p) => {
+      {shown.map((p) => {
         const n = news.of[p.address]
         const count = n ? n.messages + n.received.length : 0
         const here = typeof on === 'object' && on.profile === p.address
         return (
           <button key={p.address} className={here ? 'nav profile on' : 'nav profile'} aria-current={here ? 'page' : undefined} onClick={() => go.profile(p.address)}>
-            <Avatar label={p.label} size="sm" />
+            <Avatar label={p.label} address={p.address} size="sm" />
             <span className="grow">
               <Named label={p.label} />
             </span>
@@ -172,11 +171,6 @@ function Side({ on, go }: { on: On; go: FrameGo }) {
           </button>
         )
       })}
-      {list.length > MOST && (
-        <button className="nav all" onClick={() => go.place('home')}>
-          All profiles ({list.length})
-        </button>
-      )}
     </aside>
   )
 }

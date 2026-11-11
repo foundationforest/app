@@ -12,8 +12,10 @@
 // (flows/backups.ts, Passkeys.tsx), which no entry holds; the names the person gave other
 // profiles, a copy of their Profiles folder's own (flows/names.ts), so they show with nothing
 // unlocked; and the point listings' places are centred on, one for each place a listing's form
-// read the device's location at, moved a little from it (near.ts). Never the seed, its 24 words, a
-// key, a stamp or a message.
+// read the device's location at, moved a little from it (near.ts). And in sessionStorage, for one
+// tab: while an AI app's login or a Share link's address waits through Start and the verification,
+// that login or address, since the check runs at Stripe and Didit in the same tab. Never the seed,
+// its 24 words, a key, a stamp or a message.
 //
 // A label entry in the Profiles folder that this device never read, or whose label it doesn't list,
 // is a profile made elsewhere, on another device with the same seed: Profiles offers to read them
@@ -21,7 +23,8 @@
 // by flows that save no profile here (an AI app's ticks, the verification): read is not listed.
 //
 // An access key the person's profile entries list that this device doesn't know was made
-// elsewhere, by another browser with the same seed: You offers to find the AI apps then.
+// elsewhere, by another browser with the same seed: the next unlock finds its AI app
+// (elsewhere-ai.ts).
 //
 // What is new on a profile is what came after those two marks. A profile this device has no mark for
 // yet (on a new device, or after Forget) is marked at what it holds when first read, so nothing old
@@ -73,8 +76,27 @@ const KEYS = {
   names: 'forest.names',
 } as const
 
-/** The key this app keeps in sessionStorage, for one tab (version.ts). */
-export const SESSION_KEYS = [RELOADED]
+/** What waits through a check in this tab, in sessionStorage: an AI app's login, or a Share link's address (App.tsx). */
+const WAITING = 'forest.waiting'
+
+/** The keys this app keeps in sessionStorage, for one tab: version.ts's, and what waits through a check. */
+export const SESSION_KEYS = [RELOADED, WAITING]
+
+/** What waits through Start, the verification and a first profile, kept for this tab while the page closes: the check runs at Stripe and Didit in this tab, and comes back to a new page. */
+export const keepWaiting = (waiting: unknown) => globalThis.sessionStorage?.setItem(WAITING, JSON.stringify(waiting))
+
+/** What waited as the page closed in this tab, taken back once: null when nothing did. */
+export function takeWaiting(): unknown {
+  const session = globalThis.sessionStorage
+  const text = session?.getItem(WAITING)
+  if (text == null) return null
+  session!.removeItem(WAITING)
+  try {
+    return JSON.parse(text) as unknown
+  } catch {
+    return null
+  }
+}
 
 /** The event a change here sends, so what shows it reads it again. */
 export const CHANGED = 'forest:device'

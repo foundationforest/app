@@ -2,7 +2,8 @@
 // its market's color from the directory, walked in its order, each market its name's first choice or
 // the next one free, the same on every device; its icon from a small table, else its name's first
 // letter; solid when its role offers, light when it requests. Nothing here ties the table or the
-// colors to the directory's names, which may change.
+// colors to the directory's names, which may change. On it, the app draws a profile's animal, its own,
+// picked from the profile's address; with no profile behind it (a market, a role), the market's icon.
 
 import { renderToStaticMarkup } from 'react-dom/server'
 import { expect, test } from 'vitest'
@@ -87,5 +88,55 @@ test("solid when the role's listings are offers, light when they are requests; h
   for (const drawn of [solid, light]) {
     expect(drawn).toContain(`--h:${colorOf('tutoring')}`)
     expect(drawn).toMatch(/aria-hidden="true"/)
+  }
+})
+
+test('a profile is its animal, picked from its address alone: the same address, the same animal, every time', async () => {
+  const { ANIMALS, animalOf } = await import('../src/animals.ts')
+  expect(ANIMALS.length, 'forty').toBe(40)
+  expect(new Set(ANIMALS.map(([name]) => name)).size, 'each one once').toBe(40)
+  const address = '46aPq9mVd2XoA7'
+  expect(animalOf(address)).toBe(animalOf(address))
+  expect(animalOf(address)).toBe(ANIMALS[fnv1a(address) % ANIMALS.length])
+  const drawn = (a: string) => renderToStaticMarkup(Avatar({ label: 'tutoring/tutor', address: a }))
+  expect(drawn(address)).toBe(drawn(address))
+  expect(drawn(address)).toContain(`data-animal="${animalOf(address)[0]}"`)
+})
+
+test('different addresses spread across all forty: 2,000 at random use every animal, none more than twice its share', async () => {
+  const { ANIMALS, animalOf } = await import('../src/animals.ts')
+  const counts = new Map<string, number>()
+  for (let i = 0; i < 2000; i++) {
+    const address = Buffer.from(crypto.getRandomValues(new Uint8Array(32))).toString('base64url')
+    const [name] = animalOf(address)
+    counts.set(name, (counts.get(name) ?? 0) + 1)
+  }
+  expect(counts.size).toBe(ANIMALS.length)
+  for (const [name, n] of counts) expect(n, name).toBeLessThanOrEqual((2 * 2000) / ANIMALS.length)
+})
+
+test("an animal on its market's color, solid or light as the market's icon was; each drawn in the text's color, one path or more", async () => {
+  const { ANIMALS } = await import('../src/animals.ts')
+  const solid = renderToStaticMarkup(Avatar({ label: 'tutoring/tutor', address: 'A1' }))
+  const light = renderToStaticMarkup(Avatar({ label: 'tutoring/student', address: 'A1' }))
+  expect(solid).toMatch(/class="av md"/)
+  expect(light).toMatch(/class="av md look"/)
+  for (const drawn of [solid, light]) {
+    expect(drawn).toContain(`--h:${colorOf('tutoring')}`)
+    expect(drawn).toMatch(/fill="currentColor"/)
+    expect(drawn).not.toMatch(/data-icon=/)
+  }
+  for (const [name, paths] of ANIMALS) {
+    expect(paths.length, name).toBeGreaterThan(0)
+    for (const p of paths) expect(typeof p === 'string' ? p : p.d, name).toMatch(/^M[-\d.\sMLHVCZ]+$/)
+  }
+})
+
+test('markets keep their icons: an avatar with no profile behind it (a market, a role) draws its market', () => {
+  for (const n of names) {
+    const icon = iconOf(n)
+    const drawn = renderToStaticMarkup(Avatar({ label: `${n}/x` }))
+    expect(drawn).not.toMatch(/data-animal=/)
+    if (icon) expect(drawn, n).toContain(`data-icon="${icon}"`)
   }
 })

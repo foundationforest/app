@@ -5,9 +5,6 @@
 
 import { type Pair, offersFirst } from './markets.ts'
 
-/** Past this many profiles, the sidebar lists no more (All profiles opens Home), and Home has a search. */
-export const MOST = 8
-
 /** `list` in the app's order: what is `fresh` first, then by when each was last `used`, then offers first and by words. */
 export function ordered<P extends { label: string; address: string }>(list: P[], fresh: (address: string) => boolean, used: Record<string, number>): Array<P & { pair: Pair }> {
   // A stable sort, so what ties keeps offersFirst's order.

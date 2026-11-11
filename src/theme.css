@@ -809,16 +809,6 @@ span.chip .icon {
   font-size: 16px;
 }
 
-.av.xs {
-  width: 22px;
-  height: 22px;
-  border-radius: 7px;
-}
-
-.av.xs .letter {
-  font-size: 11px;
-}
-
 .av.lg {
   width: 68px;
   height: 68px;
@@ -1093,7 +1083,7 @@ button.nav.profile .role {
   color: var(--ink3);
 }
 
-/* Profiles, with its small mint New at its right; All profiles past the eighth. */
+/* Profiles, with its small mint New at its right. */
 .side-head {
   display: flex;
   align-items: center;
@@ -1103,12 +1093,6 @@ button.nav.profile .role {
 
 .side .side-head h2 {
   padding: 0;
-}
-
-button.nav.all {
-  min-height: 40px;
-  font-size: 14.5px;
-  color: var(--ink2);
 }
 
 .content {
@@ -1941,7 +1925,29 @@ details.keeps .consent {
   }
 
   .setup .sheet {
-    left: 40%;
+    left: 70%;
+  }
+}
+
+/* On a laptop, a small choice or edit opens in the middle of the screen instead, about 420px wide,
+   over the dimmed page: the same sheet, with no grab. */
+@media (min-width: 900px) {
+  .sheet {
+    left: 50%;
+    right: auto;
+    top: 50%;
+    bottom: auto;
+    width: 420px;
+    max-width: calc(100vw - 48px);
+    max-height: calc(100dvh - 48px);
+    transform: translate(-50%, -50%);
+    padding: 24px;
+    border-radius: 26px;
+    box-shadow: 0 30px 60px -20px rgb(0 0 0 / 0.5);
+  }
+
+  .sheet > .grab {
+    display: none;
   }
 }
 
@@ -2486,12 +2492,38 @@ button.card.said-card {
 }
 
 .rows > button.thread-row {
-  align-items: flex-start;
+  align-items: center;
   justify-content: flex-start;
 }
 
 .thread-row .two {
-  gap: 2px;
+  gap: 3px;
+}
+
+/* A conversation's first line: who it is with, bold (a key in its own face), and when, at its right. */
+.two > .thread-top {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  color: var(--ink);
+  font-size: 16px;
+}
+
+.thread-top > .name,
+.thread-top > .name.key {
+  font-weight: 700;
+}
+
+.thread-top > .name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.thread-top > .xs {
+  flex: none;
 }
 
 .thread-last {
@@ -2862,6 +2894,28 @@ button.sq.outline {
   cursor: pointer;
 }
 
+/* A sheet's buttons in one row: Remove at the left, Cancel and Save at the right. */
+.sheet-buttons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.sheet-buttons > .grow {
+  flex: 1;
+}
+
+.sheet-buttons > button.small {
+  min-height: 46px;
+  padding: 0 18px;
+  font-size: 16px;
+}
+
+.sheet-buttons > button.danger.text {
+  padding: 0 4px;
+}
+
 /* Red text, a button that removes or leaves: Remove on a row, Forget this device. */
 button.danger.text {
   min-height: 44px;
@@ -3007,22 +3061,35 @@ button.card.profile-card {
   white-space: nowrap;
 }
 
-/* New profile, at the end of Home's cards: dashed, the same height as a card. */
-button.addcard {
-  min-height: 76px;
-  width: 100%;
-  border-radius: 22px;
-  border: 2px dashed var(--edge);
-  background: none;
-  box-shadow: none;
-  color: var(--forest);
+/* New profile, always in reach: on a phone, floating at the bottom right above the tabs, Home
+   leaving room under its last card; on a laptop, at the right of Your profiles. */
+button.fab {
+  position: fixed;
+  z-index: 6;
+  right: 18px;
+  bottom: calc(78px + max(10px, env(safe-area-inset-bottom)));
+  min-height: 54px;
+  padding: 0 20px 0 16px;
+  border-radius: 999px;
+  background: var(--forest);
+  color: var(--on-forest);
+  box-shadow: 0 10px 24px -8px rgb(17 26 21 / 0.45);
   font-size: 16px;
-  gap: 10px;
+  gap: 8px;
 }
 
-button.addcard .icon {
+button.fab .icon {
   width: 22px;
   height: 22px;
+}
+
+main.home:has(> button.fab) {
+  padding-bottom: 88px;
+}
+
+main.home .titled > button.new-profile {
+  flex: none;
+  margin-left: auto;
 }
 
 /* A profile's Reviews: the rating large, how many, and which index rated it. */

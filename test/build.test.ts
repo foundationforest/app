@@ -22,7 +22,7 @@ import { BG, INK } from '../build/shell.ts'
 import { config } from '../src/config.ts'
 import { rfc3339 } from '../src/fields/Moment.tsx'
 import { kindWords, marketList, marketWords, otherSide, pairOf, pairs, roleWords } from '../src/markets.ts'
-import { PATHS } from '../src/paths.ts'
+import { PATHS, RETURNS } from '../src/paths.ts'
 import { contactHref } from '../src/show.ts'
 import { BG as THEME_BG } from '../src/theme.ts'
 import { HOST_CODES, SOMETHING, VERIFIER_CODES, entrySays, fieldWords, hostSays, verifierSays } from '../src/words.ts'
@@ -61,11 +61,12 @@ test("the CSP: the page reaches its own origin, its verifier, host, connector an
   expect(csp.match(/blob:/g), 'blob: only for photos picked and not sent yet').toHaveLength(1)
 })
 
-test("every screen's path is the page; a missing chunk or proving file is a 404", () => {
+test("every screen's path is the page, and Stripe's and Didit's ways back; a missing chunk or proving file is a 404", () => {
   const [rule] = vercel.rewrites
   const page = (path: string) => new RegExp(`^(?:${rule.source})$`).test(path)
   expect(Object.keys(PATHS).length, 'the screens with a path of their own').toBeGreaterThan(10)
-  for (const path of ['/', '/back', ...Object.values(PATHS)]) expect(page(path), path).toBe(true)
+  expect(RETURNS, "Stripe's way back, and Didit's").toEqual({ paid: '/paid', checked: '/back' })
+  for (const path of ['/', ...Object.values(RETURNS), ...Object.values(PATHS)]) expect(page(path), path).toBe(true)
   for (const path of ['/assets/index-abc.js', '/assets/x', '/proofs/abc', '/sw.js', '/manifest.webmanifest']) expect(page(path), path).toBe(false)
   expect(vercel.redirects).toBeUndefined()
 })

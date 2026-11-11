@@ -49,7 +49,7 @@ export function Them({ address, onBack, onMessage, onReview, onWho }: Props) {
     <main className="them">
       <Top onBack={onBack} clear right={<span className="chip">Not yours</span>} />
       <div className="titled" style={who ? ({ '--h': colorOf(who.market) } as CSSProperties) : undefined}>
-        {who ? <Avatar label={labelOf(who)} size="lg" /> : <span className="av lg blank" aria-hidden />}
+        {who ? <Avatar label={labelOf(who)} address={address} size="lg" /> : <span className="av lg blank" aria-hidden />}
         <div className="ph2">
           <h1>
             {who && <span className="mk">{marketWords(who.market)}</span>}{' '}

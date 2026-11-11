@@ -26,11 +26,22 @@ test('at every start: what this app keeps stays, anything else goes, in sessionS
   localStorage.setItem('forest.v', '"2"')
   sessionStorage.setItem('forest.door', '/message')
   sessionStorage.setItem(RELOADED, 'v')
+  device.keepWaiting({ to: 'some-address' })
   device.cleanOld()
   expect(Object.keys(localStorage).sort()).toEqual(['forest.folder', 'forest.names', 'forest.passkey', 'forest.passkeys', 'forest.profiles', 'forest.read', 'forest.seen', 'forest.setup', 'forest.theme', 'forest.used', 'forest.verified'])
-  expect({ ...sessionStorage }, 'the tab\'s reload flag, and nothing else').toEqual({ [RELOADED]: 'v' })
+  expect({ ...sessionStorage }, "the tab's reload flag and what waits through a check, nothing else").toEqual({ [RELOADED]: 'v', 'forest.waiting': JSON.stringify({ to: 'some-address' }) })
   expect(device.under(), "the ID check's payment, kept while it is under way").toEqual({ passkey: ID, check: 'id', payment: 'cs_test_abc' })
   expect(device.theme()).toBe('dark')
+})
+
+test('what waits through a check in this tab: kept as the page closes, taken back once as the next opens', () => {
+  expect(device.takeWaiting(), 'nothing waited').toBeNull()
+  device.keepWaiting({ login: { connector: 'https://mcp.example', request: 'r' } })
+  expect(device.takeWaiting()).toEqual({ login: { connector: 'https://mcp.example', request: 'r' } })
+  expect(device.takeWaiting(), 'taken once').toBeNull()
+  sessionStorage.setItem('forest.waiting', '{not json')
+  expect(device.takeWaiting(), 'what can not be read is nothing').toBeNull()
+  expect(sessionStorage.getItem('forest.waiting')).toBeNull()
 })
 
 test('Forget this device: everything but the ids of the passkeys it knows, so Start never makes a second one', () => {
