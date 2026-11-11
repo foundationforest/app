@@ -105,6 +105,15 @@ export async function consentOf(s: Services): Promise<string> {
   return consent
 }
 
+/** Whether the ID check is for sale, and whether its payments are test payments, as GET / says: each true only when it says so. */
+export type IdCheck = { forSale: boolean; testPayments: boolean }
+
+/** The ID check, from the verifier this app uses: shown only where it is for sale. */
+export async function idCheckOf(s: Services): Promise<IdCheck> {
+  const { id } = await about(s.verifier)
+  return { forSale: id.forSale === true, testPayments: id.testPayments === true }
+}
+
 /** What each check's gift comes to, as its card on Get verified says it; a check with no gift at this host says nothing of credits. */
 export type CreditLines = { face?: string; id?: string }
 

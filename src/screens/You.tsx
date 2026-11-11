@@ -2,7 +2,8 @@
 // Selfie and ID, each with its badge's square: a check done its badge, the forest square, and
 // Verified on a mint chip; one not done its badge's outline, dashed, which starts it, one line on
 // what it gives, from the verifier's gifts as Get verified says it, and a plain Add, which opens Get
-// verified too. Then one card of rows, each opening its own screen: Passkeys, with how many
+// verified too. The ID shows only where the verifier sells it (GET /, `forSale`), or once it is done.
+// Then one card of rows, each opening its own screen: Passkeys, with how many
 // (Passkeys.tsx); Your AI, with the apps' names (AiApps.tsx); Appearance, Auto, Light or Dark, on a
 // sheet whose one choice is a list of rows, a tap picking it and closing the sheet; and About Forest
 // (About.tsx). At the foot, Forget this device, red text, tapped twice (forget.ts). Nothing here
@@ -14,7 +15,7 @@ import { config } from '../config.ts'
 import { type Check, type Theme, saveTheme, theme as savedTheme } from '../device.ts'
 import { type CreditLines, creditsOf } from '../flows/verify.ts'
 import { forgetDevice } from '../forget.ts'
-import { useBackups, useChecks, useConnections } from '../hooks.ts'
+import { useBackups, useChecks, useConnections, useIdCheck } from '../hooks.ts'
 import { type IconName, Icon } from '../icons.tsx'
 import { applyTheme } from '../theme.ts'
 import { CHECK_ICON, Opens, RadioMark, Sheet, Top } from '../ui.tsx'
@@ -41,6 +42,7 @@ const passkeyCount = (n: number) => `${n} passkey${n === 1 ? '' : 's'}`
 
 export function You({ onForgot, onCheck, onPasskeys, onAiApps, onAbout }: Props) {
   const has = useChecks()
+  const { forSale } = useIdCheck()
   const backups = useBackups()
   const aiApps = useConnections()
   const [credits, setCredits] = useState<CreditLines>({})
@@ -68,7 +70,7 @@ export function You({ onForgot, onCheck, onPasskeys, onAiApps, onAbout }: Props)
         <h1>You</h1>
       </Top>
       <div className="rows" role="group" aria-label="Verified">
-        {CHECKS.map(({ check, name, add }) => (
+        {CHECKS.filter(({ check }) => check === 'face' || forSale || has.has(check)).map(({ check, name, add }) => (
           <div key={check} className="row">
             {has.has(check) ? (
               <span className="sq sm forest">

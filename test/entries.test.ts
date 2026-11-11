@@ -21,7 +21,7 @@ import { addressIn, check, newPath, post, readEntries, subjectOf, unpost, writte
 import { fits, fitting } from '../src/form.ts'
 import { type Field, markets } from '../src/markets.ts'
 import { Said, fieldWords } from '../src/words.ts'
-import { fieldWith, isFor, lessons as findLessons, oneRole, sides, twoSides } from './directory.ts'
+import { fieldWith, isFor, lessons as findLessons, oneRole, opening, sides, twoSides } from './directory.ts'
 import { type World, freshDevice, verifiedWith, world } from './world.ts'
 
 let w: World
@@ -39,7 +39,7 @@ const fieldOf = (market: { listing: Record<string, Field> }, role: string, fits:
 /** Lessons, as a tutor posts them (directory.ts): the description, a price per its first value, the first of a long list, and a contact. */
 const lessons = (() => {
   const found = findLessons(markets)
-  const lesson = { description: 'Maths for secondary school, one hour online.', price: { amount: '30', currency: 'USD', per: found.per[0]! }, [found.choice]: [found.market.listing[found.choice]!.values![0]!], contact: 'ada@example.com' }
+  const lesson = { description: 'Maths for secondary school, one hour online.', price: [{ amount: '30', currency: 'USD', per: found.per[0]! }], [found.choice]: [found.market.listing[found.choice]!.values![0]!], contact: 'ada@example.com' }
   return { ...found, lesson }
 })()
 const MATHS = lessons.lesson
@@ -101,7 +101,7 @@ describe('a listing', () => {
     const p = await verifiedWith(w, `${theirs.market.name}/${role}`)
     const me = p.profiles[0]!
     const value = theirs.field.type === 'choice' ? theirs.field.values![0]! : 'none'
-    expect(await refusal(check(w, me, 'listing', { description: 'A leak.', price: { amount: 'thirty', currency: 'USD' } }, [me]))).toEqual(["Price doesn't fit.", true])
+    expect(await refusal(check(w, me, 'listing', { description: 'A leak.', price: [{ amount: 'thirty', currency: 'USD' }] }, [me]))).toEqual(["Price doesn't fit.", true])
     expect(await refusal(check(w, me, 'listing', { description: 'A leak.', [theirs.name]: theirs.field.many ? [value] : value }, [me])), "a field for the other role's listings").toEqual([`${fieldWords(theirs.name)} doesn't fit.`, true])
     expect(await refusal(check(w, me, 'listing', {}, [me]))).toEqual(['Add something first.', false])
     await check(w, me, 'listing', { [many]: [manyField.values![0]!] }, [me])
@@ -215,7 +215,7 @@ describe('photos', () => {
       [shaOf(a), a],
       [shaOf(b), b],
     ])
-    const given: Body = { description: 'A wool coat, worn twice.', price: { amount: '40', currency: 'EUR' }, [shop.place]: { lat: '40.409', lon: '-3.701', radiusKm: 2, area: 'Lavapiés, Madrid' }, [shop.photos]: [shaOf(a), shaOf(b)] }
+    const given: Body = { description: 'A wool coat, worn twice.', price: [{ amount: '40', currency: 'EUR' }], [shop.place]: { lat: '40.409', lon: '-3.701', radiusKm: 2, area: 'Lavapiés, Madrid' }, [shop.photos]: [shaOf(a), shaOf(b)] }
     const body = withFiles(given, [shop.photos], picked)
     expect(body.files).toEqual([
       { sha256: shaOf(a), type: PHOTO_TYPE, size: 20_000 },
@@ -223,7 +223,7 @@ describe('photos', () => {
     ])
     await check(w, me, 'listing', body, [me])
     const place = `${fieldWords(shop.place)} doesn't fit.`
-    expect(await refusal(check(w, me, 'listing', { ...body, price: { amount: '40', currency: 'EUR', per: 'hour' } }, [me])), 'a jacket takes no per').toEqual(["Price doesn't fit.", true])
+    expect(await refusal(check(w, me, 'listing', { ...body, price: [{ amount: '40', currency: 'EUR', per: 'hour' }] }, [me])), 'a jacket takes no per').toEqual(["Price doesn't fit.", true])
     expect(await refusal(check(w, me, 'listing', { ...body, [shop.place]: { area: 'Lavapiés, Madrid' } }, [me])), 'an area alone').toEqual([place, true])
     expect(await refusal(check(w, me, 'listing', { ...body, [shop.place]: { online: true } }, [me])), 'online is never a place').toEqual([place, true])
     const path = await post(w, p.seed, me, 'listing', body, undefined, newPhotos(body, picked))
@@ -246,9 +246,33 @@ describe('photos', () => {
     const p = await verifiedWith(w, TUTOR)
     const me = p.profiles[0]!
     expect(lessons.per, 'a night is none of them').not.toContain('night')
-    await check(w, me, 'listing', { ...MATHS, price: { amount: '30', currency: 'USD', per: lessons.per[1]! } }, [me])
-    await check(w, me, 'listing', { ...MATHS, price: { amount: '300', currency: 'USD' } }, [me])
-    expect(await refusal(check(w, me, 'listing', { ...MATHS, price: { amount: '30', currency: 'USD', per: 'night' } }, [me]))).toEqual(["Price doesn't fit.", true])
+    await check(w, me, 'listing', { ...MATHS, price: [{ amount: '30', currency: 'USD', per: lessons.per[1]! }] }, [me])
+    await check(w, me, 'listing', { ...MATHS, price: [{ amount: '300', currency: 'USD' }] }, [me])
+    expect(await refusal(check(w, me, 'listing', { ...MATHS, price: [{ amount: '30', currency: 'USD', per: 'night' }] }, [me]))).toEqual(["Price doesn't fit.", true])
+  })
+
+  test('a price list: two prices, one a pack with its count; a single price, as before the markets moved, red; a count with no per, red', async () => {
+    const p = await verifiedWith(w, TUTOR)
+    const me = p.profiles[0]!
+    const [one, two = one] = lessons.per as [string, string?]
+    await check(w, me, 'listing', { ...MATHS, price: [{ amount: '30', currency: 'USD', per: one }, { amount: '130', currency: 'USD', per: two, count: 5 }] }, [me])
+    expect(await refusal(check(w, me, 'listing', { ...MATHS, price: { amount: '30', currency: 'USD', per: one } }, [me])), 'one price is a list of one').toEqual(["Price doesn't fit.", true])
+    expect(await refusal(check(w, me, 'listing', { ...MATHS, price: [{ amount: '30', currency: 'USD', count: 5 }] }, [me])), 'a count counts its per').toEqual(["Price doesn't fit.", true])
+  })
+
+  test('a span that ends before it starts, and a range from more to less: each refused before the unlock in its own line; in order, each in its own zone, and open at either end, they fit', async () => {
+    const span = fieldWith(markets, 'a moment', (f) => f.type === 'moment')
+    const range = fieldWith(markets, 'a number that takes a range', (f) => f.type === 'number' && f.range === true)
+    const s = (await verifiedWith(w, span.label)).profiles[0]!
+    const at = (value: Body[string]): Body => ({ ...opening(span.market, span.field), [span.name]: value })
+    expect(await refusal(check(w, s, 'listing', at({ from: '2026-12-02T10:00:00+01:00', to: '2026-12-01T10:00:00+01:00' }), [s]))).toEqual([`${fieldWords(span.name)} ends before it starts.`, true])
+    // 10:00 at +01:00 is 09:00 UTC, before 09:30 at +00:00, though the clocks read the other way.
+    await check(w, s, 'listing', at({ from: '2026-12-01T10:00:00+01:00', to: '2026-12-01T09:30:00+00:00' }), [s])
+    const r = (await verifiedWith(w, range.label)).profiles[0]!
+    const of = (value: Body[string]): Body => ({ ...opening(range.market, range.field), [range.name]: value })
+    expect(await refusal(check(w, r, 'listing', of({ from: '11', to: '9' }), [r]))).toEqual([`${fieldWords(range.name)}: From is more than To.`, true])
+    for (const fine of [{ from: '9', to: '11' }, { from: '18' }, { to: '11' }, '10'] as Body[string][]) await check(w, r, 'listing', of(fine), [r])
+    expect(await refusal(check(w, r, 'listing', of({}), [r])), 'a range with neither end').toEqual([`${fieldWords(range.name)} doesn't fit.`, true])
   })
 
   test('a photo refused for its price: one more credit from the wallet, and sent; posted again at its path after a photo failed, still one listing', async () => {

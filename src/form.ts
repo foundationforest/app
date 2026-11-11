@@ -4,12 +4,14 @@
 // last of them; then the rest, in the file's order; contact last, which every listing may hold. A
 // field with `when` applies only while each answer it names holds one of its values (a `many`
 // answer, any of them); an answer changed drops every field that no longer applies, through a chain
-// too. And what still fits of an entry an older market shaped, a listing or a review: the field
-// checkEntry names, dropped, until the rest fits.
+// too. A span that ends before it starts, or a range from more to less, found before anything is
+// posted, so the form says which in one line. And what still fits of an entry an older market shaped,
+// a listing or a review: the field checkEntry names, dropped, until the rest fits, and which fields
+// were dropped, so the form marks them.
 
 import type { Body } from '@foundationforest/folders'
 
-import { type Field, type Kind, type Market, fieldsOf, markets, previewOf } from './markets.ts'
+import { type Field, type Fields, type Kind, type Market, fieldsOf, markets, previewOf } from './markets.ts'
 
 /** A role's listing fields, each with its name, in the order a form asks them. */
 export function formFields(market: Market, role: string): Array<[string, Field]> {
@@ -55,22 +57,44 @@ export function settled(fields: Array<[string, Field]>, values: Body): Body {
   }
 }
 
+/**
+ * The first field of `fields` whose value runs backwards, if one does: a moment span whose `from` is
+ * later than its `to`, each read in its own zone, or a number range whose `from` is more than its
+ * `to`. The markets' checkEntry refuses both; this names which, so the form says it in words.
+ */
+export function backwards(fields: Fields, body: Body): [name: string, field: Field] | undefined {
+  const turned = (field: Field, v: unknown) => {
+    if (!v || typeof v !== 'object' || Array.isArray(v)) return false
+    const { from, to } = v as { from?: unknown; to?: unknown }
+    if (typeof from !== 'string' || typeof to !== 'string') return false
+    if (field.type === 'moment') return Date.parse(from) > Date.parse(to)
+    return field.type === 'number' && Number(from) > Number(to)
+  }
+  return Object.entries(fields).find(([name, field]) => (Array.isArray(body[name]) ? (body[name] as unknown[]) : [body[name]]).some((v) => turned(field, v)))
+}
+
 /** Whether a listing's body fits its market as the file says today: what the index lists. */
 export const fits = (market: string, role: string, body: Body) => markets.checkEntry(market, role, 'listing', body) === null
 
 /**
- * What still fits of an entry's body in its market today, a listing's unless `kind` says: the field
- * checkEntry names, dropped, one at a time, until the rest fits; a review's checked against the role
- * of the profile it is about (`aboutRole`). Its files stay, which a listing names its photos by.
+ * What still fits of an entry's body in its market today, a listing's unless `kind` says, and which
+ * of its fields were dropped: the field checkEntry names, dropped, one at a time, until the rest fits;
+ * a review's checked against the role of the profile it is about (`aboutRole`). Its files stay, which
+ * a listing names its photos by.
  */
-export function fitting(market: string, role: string, body: Body, kind: Kind = 'listing', aboutRole?: string): Body {
+export function fitted(market: string, role: string, body: Body, kind: Kind = 'listing', aboutRole?: string): { body: Body; dropped: string[] } {
   const now: Body = { ...body }
+  const dropped: string[] = []
   for (;;) {
     const why = markets.checkEntry(market, role, kind, now, aboutRole)
-    if (!why) return now
+    if (!why) return { body: now, dropped }
     // The field it names: first, as most lines say it, or last, for a field the market has no more.
     const named = Object.keys(now).find((name) => name !== 'files' && (why.startsWith(`${name} `) || why.endsWith(` has no field ${name}`)))
-    if (!named) return {}
+    if (!named) return { body: {}, dropped: [...dropped, ...Object.keys(now).filter((name) => name !== 'files')] }
+    dropped.push(named)
     delete now[named]
   }
 }
+
+/** What still fits of an entry's body in its market today (fitted's body). */
+export const fitting = (market: string, role: string, body: Body, kind: Kind = 'listing', aboutRole?: string): Body => fitted(market, role, body, kind, aboutRole).body

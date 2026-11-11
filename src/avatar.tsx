@@ -2,31 +2,35 @@
 // market's role with no profile behind it (on the role sheet): the market's icon, so a person tells
 // their own profiles apart by their markets. Anyone else's profile: its animal (animals.ts), picked
 // from its address. Solid, white on the color, when its role's listings are offers; light, in the
-// color on a tint of it, when they are requests. The color and the icon follow one rule for the app
-// and the index, services' own (index/src/avatar.ts, imported by path as the host's credits client
-// is): a market's color from the directory, walked in its order, so markets differ up to ten; its
-// icon from a small table of Phosphor's names, a nicety. A market the table doesn't list, or whose
-// icon the app doesn't draw, shows its name's first letter. The animal is the app's own: the index
-// draws the market's icon for every profile.
+// color on a tint of it, when they are requests. The color is the index's, services' own
+// (index/src/avatar.ts, imported by path as the host's credits client is): the market's number, from
+// its market file, cycled through the index's ten colors, so a market is the same color in the app
+// and on the index and markets numbered next to each other differ; a market the directory no longer
+// lists takes the quiet ink. The icon is the one its market file names, a Phosphor icon the build
+// brings in (build/markets.ts); a market that names none, or one the app doesn't draw, shows its
+// name's first letter. The animal is the app's own: the index draws the market's icon for every profile.
 
 import type { CSSProperties } from 'react'
 
-import { colorIn, colorsFor, iconOf as named } from '../services/index/src/avatar.ts'
+import { colorFor } from '../services/index/src/avatar.ts'
+import icons from 'virtual:market-icons'
 import { animalOf } from './animals.ts'
 import { profiles } from './device.ts'
-import { Icon, type IconName, isIcon } from './icons.tsx'
 import { markets, pairOf } from './markets.ts'
 
-/** Every market's color, from the directory in its order. */
-const COLORS = colorsFor(markets.directory.markets.map((m) => m.name))
+/** A market's color: its number's, in the index's palette; the quiet ink for one the directory doesn't list. */
+export const colorOf = (market: string): string => colorFor(markets.market(market)?.number)
 
-/** A market's color: the directory's, else its first choice. */
-export const colorOf = (market: string): string => colorIn(COLORS, market)
+/** The icon a market's file names, when the app draws it, else null: its avatar then shows its first letter. */
+export const iconOf = (market: string): string | null => {
+  const name = markets.market(market)?.icon
+  return name && Object.hasOwn(icons, name) ? name : null
+}
 
-/** A market's icon, among those the app draws, or null: its avatar then shows its first letter. */
-export const iconOf = (market: string): IconName | null => {
-  const name = named(market)
-  return name && isIcon(name) ? name : null
+/** A market's icon, filled, by its Phosphor name; hidden from screen readers, as its avatar is. */
+export function MarketIcon({ name }: { name: string }) {
+  const Drawn = icons[name]!
+  return <Drawn className="icon" weight="fill" data-icon={name} focusable="false" aria-hidden />
 }
 
 type Size = 'sm' | 'md' | 'lg'
@@ -39,7 +43,7 @@ export function Avatar({ label, address, size = 'md' }: { label: string; address
   const theirs = address !== undefined && !profiles().some((p) => p.address === address)
   return (
     <span className={`av ${size}${listings === 'offers' ? '' : ' look'}`} style={style} data-market={market} aria-hidden>
-      {theirs ? <Animal address={address} /> : icon ? <Icon name={icon} fill /> : <span className="letter">{market.charAt(0).toUpperCase()}</span>}
+      {theirs ? <Animal address={address} /> : icon ? <MarketIcon name={icon} /> : <span className="letter">{market.charAt(0).toUpperCase()}</span>}
     </span>
   )
 }

@@ -16,6 +16,7 @@ import { sawKeys } from './elsewhere-ai.ts'
 import { CHANGED, type Check, type Connection, type Profile, checks, connections, folder, names, profiles, seen, used } from './device.ts'
 import { type Card, readCard } from './flows/cards.ts'
 import { type Backup, backupsAt } from './flows/backups.ts'
+import { type IdCheck, idCheckOf } from './flows/verify.ts'
 import { anyNew, labelIds } from './flows/elsewhere.ts'
 import { type Received, newOf, rate } from './flows/feedback.ts'
 import type { Posted } from './flows/entries.ts'
@@ -122,6 +123,24 @@ export function useChecks(): Set<Check> {
   useDevice()
   const cards = useCards(useProfiles())
   return new Set<Check>([...checks(), ...Object.values(cards).flatMap((c) => c.checks)])
+}
+
+/**
+ * The ID check as the verifier says it is in GET /, asked once a page: for sale, and whether its
+ * payments are test payments. Neither while it hasn't answered, or when it can't be reached, so a
+ * check that isn't for sale never shows for a moment.
+ */
+export function useIdCheck(): IdCheck {
+  const [id, setId] = useState<IdCheck>({ forSale: false, testPayments: false })
+  useEffect(() => {
+    let live = true
+    idCheckOf(config).then(
+      (got) => live && setId(got),
+      () => undefined,
+    )
+    return () => void (live = false)
+  }, [])
+  return id
 }
 
 /** The new inbox entries of every profile, by address, listed with nothing unlocked: the page's one list (list.ts), followed while the screen is open, the last one shown at once. */

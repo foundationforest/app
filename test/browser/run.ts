@@ -24,7 +24,8 @@
 //     below with a filled button, its icon takes its text color.
 //  2. Back on each setup step: Get verified, its title, its line, two cards (Selfie, Free, its
 //     credits; ID, $5 over "one time", ten times them, stronger trust, "You're only charged if it
-//     passes."), the two prices one size and shape, each its chevron, no warning, no unlock icon,
+//     passes.", and, the stand-in Stripe's key a test one, "Test mode: pay with the card 4242 4242
+//     4242 4242." in one quiet line), the two prices one size and shape, each its chevron, no warning, no unlock icon,
 //     and under them What the checks keep alone, no Continue; What the checks keep, a sheet from the
 //     bottom, the verifier's words word for word; back to Start, which now asks for the passkey made
 //     alone, never First time here?, and goes straight back to Get verified; the ID card, one tap,
@@ -48,7 +49,7 @@
 //     color at the top left, two to a row, Beta in quiet text at a beta one's top right, no chip, and
 //     a live one none, the name at the bottom, a first word another market shares small over the
 //     rest (Stays over Work); a search over the markets, by their roles' words too; a tile's sheet,
-//     Beta after its title, its description's first sentence in one quiet line, and the beta line,
+//     Beta after its title, its summary in one quiet line, and the beta line,
 //     its roles, Seller on a solid avatar and Buyer on a light one, each with Create, in
 //     the forest green, its plus while the seed is held, closed; one Create, nothing asked, the seed held since the last unlock,
 //     Making your Sports coaching coach, the
@@ -203,11 +204,14 @@
 //     answering, has Marta after its one unlock at Start; Show the key instead takes it back, the
 //     key again, the entry deleted, nothing kept; on a laptop, the naming sheet a dialog in the middle,
 //     closed by Escape.
-//     Then a listing an older market shaped, written to the host as the app wrote it before, days
-//     ago: its card says Needs an update and opens its form, and Notifications holds a notice for
-//     it under Earlier, its sun square and no time, the tab counting it; opened there, what still
-//     fits is filled in; posted, it fits, and both go. Then a review an older market shaped: its
-//     notice; opened, its kind kept, what still fits; posted, gone.
+//     Then a listing its market no longer fits, written to the host as the app wrote it before the
+//     market changed, days ago (one price, not a list; answers in shapes gone): its card says Needs
+//     updating and opens its form, and Notifications holds "Your Shopping offer needs updating: its
+//     market changed." under Earlier, its sun square and no time, the tab counting it; opened
+//     there, every answer that still fits filled in, each one that didn't marked "Changed: answer
+//     again." until it is answered; posted, it goes in place of the old one, at its own path, fits,
+//     and the chip and the notice go. Then a review an older market shaped: its notice; opened, its
+//     kind kept, what still fits; posted, gone.
 //     Then a review of one of the person's own profiles, from their student about their tutor:
 //     refused on the who sheet, in one red line, nothing asked. Someone else, their Reviews tab
 //     empty but for its one quiet line, vouches for the tutor: Notifications shows it first, new,
@@ -288,7 +292,7 @@
 // 22. The app on a laptop, 1280px wide: the sidebar's name drawn; New profile's tiles four to a row,
 //     a shared first word small over the rest; Home's cards three to a row of about 300px, every card one
 //     height, rated or not, New profile at Home's top right with the badges, no round +, no dashed card; every name inside its card on
-//     two lines and before its rating, the longest too (Freelance software freelancer, made from
+//     two lines and before its rating, the longest too (the longest market and role, made from
 //     the sidebar's New); Messages in two panes, the
 //     conversations without a back on the left, nothing open on the right until one is tapped, then
 //     it, marked in the list; the sidebar and Home in one order, the most recently used first, then a
@@ -296,7 +300,24 @@
 //     list made longer with the same seed's addresses, never written, so no more proofs), every one
 //     in the sidebar, in Home's order, no All profiles, the sidebar scrolling inside itself and the
 //     page not; Home lists them all, and its one search is Search Forest.
-// 23. Nothing the app did, through all of it, was refused by the CSP.
+// 23. A range (a number field that takes one, such as a child's age in years): 18 typed, then its
+//     small Range, From 18 and To empty, "18 years and over" under them; posted, the field holds
+//     { from: "18" }; reopened a range again, From emptied and To 11, "11 years and under"; posted
+//     again at its own path, no second.
+// 24. A price list, a tutor's: MX$1,300 per lesson for 5, its count once a per is picked, its per's
+//     word after it; Add a price, in the last row's currency, $30 per hour; both rows numbered, each
+//     its remove button; posted, every price in order, the pack with its count; its card the first
+//     price as the index says it, "for 5 lessons", and "+1 more"; reopened, both, one removed, the
+//     last with no remove button.
+// 25. Every market's own icon, from its market file, else its first letter, and its color by its
+//     number, the index's ten in their order, on New profile's tiles; markets numbered next to each
+//     other apart; the tutor's avatar on Home the same.
+// 26. The ID check while the verifier doesn't sell it (its GET / answering forSale false): the
+//     selfie card alone and no What the checks keep on Get verified, no ID row in You, no ID outline
+//     on Home; a face seen before, in a second browser, "A similar face is already verified. The ID
+//     check opens soon.", the selfie greyed, no ID card, I already use Forest alone under the cards;
+//     sold with a live key (testPayments false), the ID card with no test line.
+// 27. Nothing the app did, through all of it, was refused by the CSP.
 //
 // SHOTS=<dir> keeps a screenshot of each screen there, light and dark.
 
@@ -321,7 +342,7 @@ import { loadMarkets, previewOf } from '../../markets/build/dist/index.js'
 import { type Served, serve } from '../../services/mcp/src/server.ts'
 import { App } from '../../services/mcp/test/app.ts'
 import { REDIRECT, aiApp } from '../../services/mcp/test/setup.ts'
-import { colorIn, colorsFor, iconOf } from '../../services/index/src/avatar.ts'
+import { PALETTE, colorFor } from '../../services/index/src/avatar.ts'
 import { animalOf } from '../../src/animals.ts'
 import { radiusSteps } from '../../src/near.ts'
 import { unitWords } from '../../src/units.ts'
@@ -341,6 +362,8 @@ const say = (line: string) => console.log(`  ${line}`)
 // What each walk deals in, found in the directory by its shape (test/directory.ts), never named: a
 // market changing, or a new one, leaves the walks working while some market holds each shape.
 const MARKETS = loadMarkets()
+/** The icon a market's file names, or null: its avatar shows its first letter then. */
+const iconOf = (market: string) => MARKETS.market(market)?.icon ?? null
 /** Lessons: the first person's first profile offers them, the second person's asks for them. */
 const L = lessons(MARKETS)
 const LESSONS = L.market.name
@@ -528,6 +551,8 @@ const drawnAs = (b: Locator) =>
     return { check: (el as HTMLElement).dataset.check, icon: el.querySelector('svg')!.dataset.icon, ground: getComputedStyle(el).backgroundColor === ground }
   })
 const SELFIE = { check: 'face', icon: 'scan-smiley', ground: true }
+/** The ID card's line while the verifier's payments are test payments. */
+const TEST_LINE = 'Test mode: pay with the card 4242 4242 4242 4242.'
 const ID = { check: 'id', icon: 'identification-card', ground: true }
 
 /** A profile's avatar as drawn: its market's color (services' avatar.ts), solid or light, and its animal, or for a market or a role, its market's icon. */
@@ -535,8 +560,8 @@ const avatarOf = (av: Locator) =>
   av.evaluate((el) => ({ light: el.classList.contains('look'), h: getComputedStyle(el).getPropertyValue('--h').trim(), ground: getComputedStyle(el).backgroundColor, icon: el.querySelector('svg')?.dataset.icon ?? el.querySelector('svg')?.dataset.animal }))
 /** The animal the app draws for the profile at `address`. */
 const animal = (address: string) => animalOf(address)[0]
-/** A market's color, as the app gives it: the directory walked in its order (services' avatar.ts). */
-const colorOf = (market: string) => colorIn(colorsFor(loadMarkets().directory.markets.map((m) => m.name)), market)
+/** A market's color, as the app and the index give it: its number cycled through the index's ten colors (services' avatar.ts). */
+const colorOf = (market: string) => colorFor(MARKETS.market(market)?.number)
 /** `#3d76c9` as the page computes it: rgb(61, 118, 201). */
 const rgbOf = (hex: string) => `rgb(${[1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)).join(', ')})`
 
@@ -998,6 +1023,9 @@ test("back on each setup step: Get verified to Start, which asks for the passkey
     ['Selfie', 'A quick selfie', 'Free', 'Free credits for posts and messages'],
     ['ID', 'Your ID and a selfie', '$5', 'one time', '10× the free credits', 'Stronger trust', "You're only charged if it passes."],
   ])
+  // The stand-in Stripe's key is a test one (GET / says testPayments): one quiet line on the ID card, Stripe's test card.
+  assert.deepEqual(await page.locator('.vcard .vtest').evaluateAll((l) => l.map((x) => [x.closest('.vcard')!.getAttribute('data-check'), x.textContent])), [['id', TEST_LINE]], 'the test line, on the ID card alone')
+  assert.equal(await page.locator('.vcard .vtest').evaluate((x) => getComputedStyle(x).color), await muted(page), 'quiet')
   const prices = await page.locator('.price3').evaluateAll((p) => p.map((x) => { const box = x.getBoundingClientRect(); const d = x.querySelector('.d')!; return [Math.round(box.width), Math.round(box.right), getComputedStyle(d).fontSize] }))
   assert.deepEqual(prices[0], prices[1], 'Free and $5: one size and shape, one right edge')
   assert.equal(await page.locator('.vcard [data-icon="caret-right"]').count(), 2, 'each its chevron')
@@ -1232,15 +1260,17 @@ test("the first profile: Later, Connect your AI and Skip, then back; every marke
   assert.ok(found(role).length > 1)
   await page.getByLabel('Search').fill('')
   await shot(page, 'first-profile-markets')
-  // A tile opens its roles on a sheet: its title, with a beta market's chip after it; one quiet line under it, the first
-  // sentence of the market's own description, and a beta market's one line; each role its avatar and the role's name,
-  // nothing else, and Create, in the forest green, its plus.
+  // A tile opens its roles on a sheet: its title, with a beta market's chip after it; one quiet line under it, the
+  // market's own summary, in place of its description, and a beta market's one line; each role its avatar and the
+  // role's name, nothing else, and Create, in the forest green, its plus. The tiles show no summary.
   const shopping = MARKETS.market(SHOP)!
   await tile(page, SHOPPING).click()
   const roles = page.getByRole('dialog', { name: SHOPPING })
   await roles.getByRole('heading', { name: SHOPPING }).waitFor()
-  const description = MARKETS.directory.markets.find((m) => m.name === SHOP)!.description
-  assert.equal(await roles.locator('p.about').textContent(), /^.*?[.!?](?=\s|$)/s.exec(description)?.[0] ?? description, "its description's first sentence")
+  const { summary, description } = MARKETS.directory.markets.find((m) => m.name === SHOP)!
+  assert.equal(await roles.locator('p.about').textContent(), summary, 'its summary')
+  assert.equal(await roles.getByText(description).count(), 0, 'not its description, which is for an AI')
+  assert.equal(await page.locator('.market-tile').getByText(summary).count(), 0, 'no summary on the tiles')
   assert.equal(await roles.locator('p.about').evaluate((p) => getComputedStyle(p).color), await muted(page), 'one quiet line')
   const beta = shopping.status === 'beta'
   assert.deepEqual([await roles.locator('h2 .chip.beta').allTextContents(), await roles.getByText('Beta: it works, at your own risk, and may change.', { exact: true }).count()], beta ? [['Beta'], 1] : [[], 0], 'a beta market says so, once, where its profile is made')
@@ -1520,7 +1550,7 @@ test("You: Selfie Verified on its badge's square, the ID's outline, its line and
   await row.click()
   await page.getByRole('heading', { name: TUTOR_WORDS }).waitFor()
   assert.equal(await side.locator('button[aria-current="page"]').textContent(), TUTOR_WORDS, 'the profile, selected')
-  await side.getByRole('button', { name: 'Home' }).click()
+  await side.getByRole('button', { name: 'Home', exact: true }).click()
   await page.getByRole('heading', { name: 'Your profiles' }).waitFor()
   assert.equal(await page.locator('main .search').count(), 0, 'Search Forest in the sidebar, not on Home')
   // New profile at the top right of Home, in the row of its title; nothing floating.
@@ -1654,7 +1684,7 @@ test('two people: one posts an offer, its price per hour, the place only for ses
   assert.equal(listings.length, 1)
   const [offerPath, offer] = listings[0]!
   assert.match(offerPath, /^listing\/[0-9a-f]{32}$/, 'at a random id')
-  assert.deepEqual(offer.entry.body, { description: OFFER, price: { amount: '30', currency: 'USD', per: L.per[0] }, [L.choice]: [listed[0]], [L.mode]: [L.online], contact: 'ada@example.com' })
+  assert.deepEqual(offer.entry.body, { description: OFFER, price: [{ amount: '30', currency: 'USD', per: L.per[0] }], [L.choice]: [listed[0]], [L.mode]: [L.online], contact: 'ada@example.com' })
   await offerRow.waitFor()
   await shot(page, 'profile-listings')
 
@@ -2440,7 +2470,7 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   const body = coat.entry.body
   assert.deepEqual(
     [body.description, body.price, body[S.opener], body[S.follow], body[S.sized], body[S.one], body[S.several], body.contact],
-    [COAT, { amount: '40', currency: 'USD' }, S.kind, [S.other], size, M[S.one]!.values![1], [pickup, shipped], '@coats'],
+    [COAT, [{ amount: '40', currency: 'USD' }], S.kind, [S.other], size, M[S.one]!.values![1], [pickup, shipped], '@coats'],
     'no per; the kind, who, the size by its value, one condition, several deliveries',
   )
   assert.deepEqual([body[S.place].radiusKm, body[S.place].area], [out, 'Lavapiés, Madrid'])
@@ -2462,7 +2492,7 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   assert.equal(await coatRow.locator('img.thumb').getAttribute('src'), `${services.host}/v1/files/${body[S.photos][0]}`, 'its first photo, from the host')
   await coatRow.locator('img.thumb').evaluate((img: HTMLImageElement) => img.decode())
   await coatRow.getByText('$40', { exact: true }).waitFor()
-  assert.equal(await coatRow.getByText('Needs an update').count(), 0, 'it fits: nothing to update')
+  assert.equal(await coatRow.getByText('Needs updating').count(), 0, 'it fits: nothing to update')
   await shot(page, 'profile-coat')
   // The index lists it: it fits the market as the index reads it.
   const onIndex = `${services.index}/profiles/${seller}/${coatPath}.json`
@@ -2931,10 +2961,16 @@ test("someone else's profile from a conversation, and the names you give others:
 
 const TROUSERS = 'Linen trousers, worn once.'
 
-/** The notice Notifications holds for an entry a market outgrew, by what it needs and its line. */
-const noticeOf = (page: Page, needs: string, line: string) => page.locator('main .rows button', { hasText: needs }).filter({ hasText: line })
+/** The notice Notifications holds for an entry a market outgrew, by its one line. */
+const noticeOf = (page: Page, line: string) => page.locator('main .rows button', { hasText: line })
 
-test('a listing an older market shaped: its row says Update this listing, and Notifications holds a notice for it, the tab counting it; opened there, what still fits is filled in; posted, it fits and both are gone', async () => {
+/** The one line a notice for an outgrown entry says, of a profile in `market` whose role is `role`: "Your Tutoring offer needs updating: its market changed." */
+const needsUpdating = (market: string, role: string, kind: 'listing' | 'review') => {
+  const word = kind === 'review' ? 'review' : MARKETS.market(market)!.roles.find((r) => r.role === role)!.listings === 'offers' ? 'offer' : 'request'
+  return `Your ${marketWords(market)} ${word} needs updating: its market changed.`
+}
+
+test('a listing its market no longer fits: its card says Needs updating, and Notifications says so, the tab counting it; opened there, what still fits filled in, the rest marked; posted, it replaces the old one in place, and both are gone', async () => {
   const { page } = first
   // Written to the host as the app wrote it before the markets moved: one wearer, not a list, a size
   // as text, either for delivery, an area alone for its location.
@@ -2953,9 +2989,10 @@ test('a listing an older market shaped: its row says Update this listing, and No
   // On the profile's Offers, its card says so, in the sun; a tap opens its form.
   await page.locator('button.card', { hasText: SELLER_WORDS }).click()
   const row = page.locator('.listing-card', { hasText: TROUSERS })
-  const chip = row.locator('.chip.warn', { hasText: 'Needs an update' })
+  const chip = row.locator('.chip.warn', { hasText: 'Needs updating' })
   await chip.waitFor()
-  assert.equal(await page.locator('.listing-card', { hasText: COAT }).getByText('Needs an update').count(), 0, 'the coat fits')
+  assert.equal(await page.locator('.listing-card', { hasText: COAT }).getByText('Needs updating').count(), 0, 'the coat fits')
+  assert.equal(await row.locator('.price-col .d').textContent(), '$25', 'its one price, held as before, shown: nothing breaks')
   await shot(page, 'profile-update')
   await row.click()
   await page.getByRole('heading', { name: 'Offer', exact: true }).waitFor()
@@ -2965,25 +3002,34 @@ test('a listing an older market shaped: its row says Update this listing, and No
   await button(page, 'Back').click()
 
   // Notifications: a notice for it, under Earlier, by when it was posted, after what came today: its
-  // sun square, its first line, that the market changed; the tab counting it.
+  // sun square and its one line; the tab counting it.
   await button(page, /Notifications$/).click()
   await page.getByRole('heading', { name: 'Notifications' }).waitFor()
-  const notice = noticeOf(page, `${TROUSERS.replace(/\.$/, '')} needs an update`, `The ${SHOPPING} market changed. Tap to fix it.`)
+  const notice = noticeOf(page, needsUpdating(SHOP, S.seller, 'listing'))
   await notice.waitFor()
   await noticesCounted(page, 1)
   assert.equal(await notice.locator('.sq.sun [data-icon="warning"]').count(), 1, 'its sun square')
   assert.equal(await notice.locator('.xs').count(), 0, 'no time: when the market changed, the app cannot know')
   assert.deepEqual(await page.locator('main h2').allTextContents(), ['Today', 'Earlier'])
   assert.equal(await page.locator('main section', { hasText: 'Earlier' }).locator('.rows button').count(), 1, 'Earlier: the notice alone')
-  assert.equal(await page.locator('main .rows button', { hasText: 'needs an update' }).count(), 1, 'the coat fits: no notice')
+  assert.equal(await notice.locator('strong').textContent(), needsUpdating(SHOP, S.seller, 'listing'), 'one line, in these words')
+  assert.equal(await page.locator('main .rows button', { hasText: 'needs updating' }).count(), 1, 'the coat fits: no notice')
   await shot(page, 'notifications-update')
   await notice.click()
   await page.getByRole('heading', { name: 'Offer', exact: true }).waitFor()
-  // What still fits, filled in: the description, the price, the kind and the contact. Who it's for
-  // and the delivery asked again; the location set again on its screen, round the phone's kept
-  // point at the field's own radius, its old area gone with it.
+  // What still fits, filled in: the description, the kind and the contact. Each answer that didn't
+  // fit marked, under its name: the price, one where the market now takes a list; who it's for, the
+  // size, the delivery and the location, asked again; the location set again on its screen, round the phone's
+  // kept point at the field's own radius, its old area gone with it.
   assert.equal(await page.getByLabel('Description').inputValue(), TROUSERS)
-  assert.equal(await page.getByLabel('Price').inputValue(), '25')
+  assert.equal(await page.getByLabel('Price').inputValue(), '')
+  const marked = async () => (await page.locator('.field.changed > .label').allTextContents()).sort()
+  const SIZE = fieldWords(S.sized)
+  assert.deepEqual(await marked(), ['Price', WEARER, SIZE, SEVERAL, WHERE].sort(), 'what no longer fit, marked')
+  assert.deepEqual([...new Set(await page.locator('.field.changed .changed-line').allTextContents())], ['Changed: answer again.'])
+  assert.equal(await page.locator('.field', { hasText: 'Description' }).locator('.changed-line').count(), 0, 'what fits, not marked')
+  await page.getByLabel('Price').fill('25')
+  assert.deepEqual(await marked(), [WEARER, SIZE, SEVERAL, WHERE].sort(), 'answered, its mark gone')
   assert.equal(await page.getByRole('group', { name: KIND, exact: true }).locator('button.open-row').textContent(), wordOf(S.opener, S.kind, S.market))
   assert.equal(await page.getByLabel('Contact').inputValue(), '@coats')
   assert.equal(await page.getByRole('group', { name: WEARER, exact: true }).locator('[aria-pressed=true]').count(), 0)
@@ -3004,19 +3050,25 @@ test('a listing an older market shaped: its row says Update this listing, and No
   await page.getByRole('heading', { name: 'Notifications' }).waitFor({ timeout: 60_000 })
   await notice.waitFor({ state: 'detached', timeout: 30_000 })
   await noticesCounted(page, 0)
-  const body = (await entriesOf(main.address, 'listing')).find(([p]) => p === path)![1].entry.body as any
+  const listed = await entriesOf(main.address, 'listing')
+  assert.deepEqual(
+    listed.filter(([, e]) => (e.entry.body as any)?.description === TROUSERS).map(([p]) => p),
+    [path],
+    'in place of the old one: its own path, and no second',
+  )
+  const body = listed.find(([p]) => p === path)![1].entry.body as any
   assert.equal(loadMarkets().checkEntry(SHOP, S.seller, 'listing', body), null, 'it fits the market')
   assert.deepEqual(
     [body.description, body.price, body[S.opener], body[S.follow], body[S.chain], body.contact, body[S.place].radiusKm, body[S.place].area],
-    [TROUSERS, { amount: '25', currency: 'USD' }, S.kind, [S.opens], chained, '@coats', start, undefined],
+    [TROUSERS, [{ amount: '25', currency: 'USD' }], S.kind, [S.opens], chained, '@coats', start, undefined],
   )
   assert.deepEqual([body[S.sized], body[S.several]], [undefined, undefined], "what didn't fit, gone")
   await button(page, 'Home').click()
   await page.locator('button.card', { hasText: SELLER_WORDS }).click()
   await page.locator('.listing-card', { hasText: TROUSERS }).waitFor()
-  assert.equal(await page.locator('.listing-card', { hasText: TROUSERS }).getByText('Needs an update').count(), 0, 'nor on its card')
+  assert.equal(await page.locator('.listing-card', { hasText: TROUSERS }).getByText('Needs updating').count(), 0, 'nor on its card')
   await button(page, 'Back').click()
-  say("an old listing: Needs an update on its card and in Notifications, under Earlier, what fits filled in, posted in the market's shape today")
+  say("a listing its market no longer fits: Needs updating on its card, its notice in Notifications under Earlier, what fits filled in and the rest marked, posted in place in the market's shape today")
 })
 
 const PAID = 'Paid on time, picked it up as agreed.'
@@ -3034,7 +3086,7 @@ test('a review an older market shaped: Notifications holds a notice for it, Upda
   assert.ok(outcome?.results.length === 1 && outcome.results[0]!.ok, 'written')
 
   await button(page, /Notifications$/).click()
-  const notice = noticeOf(page, 'Your review needs an update', `The ${SHOPPING} market changed. Tap to fix it.`)
+  const notice = noticeOf(page, needsUpdating(SHOP, S.seller, 'review'))
   await notice.waitFor({ timeout: 30_000 })
   await noticesCounted(page, 1)
   await notice.click()
@@ -3864,6 +3916,7 @@ test("a selfie that doesn't pass: Get verified, its notice, both cards open; the
 /** What a beta market says, once, where someone makes a profile or a listing in it: word for word as services' pages say it. */
 const BETA_LINE = 'Beta: it works, at your own risk, and may change.'
 
+
 /** The first person's profile of `label`, opened from Home: its card, or, with none, made from New profile. */
 async function profileOf(page: Page, label: string) {
   const [market, role] = label.split('/') as [string, string]
@@ -4052,7 +4105,7 @@ test("the app on a laptop: Home's cards fit, the longest name too, three to a ro
   assert.ok(fam.y + fam.height <= kind.y + 1 && fam.height < kind.height, 'its first word small, over the rest')
   await shot(page, 'laptop-new-profile')
   await pickProfile(page, longest.words)
-  await side.getByRole('button', { name: 'Home' }).click()
+  await side.getByRole('button', { name: 'Home', exact: true }).click()
   await page.getByRole('heading', { name: 'Your profiles' }).waitFor()
   const cards = page.locator('main .cards > button.card')
   await cards.nth(4).waitFor()
@@ -4102,7 +4155,7 @@ test("the app on a laptop: Home's cards fit, the longest name too, three to a ro
   // The order: nothing new anywhere now, so the most recently used first, the profile just made; then
   // a listing an older market shaped, one to update, in the profile made across the deploy: it on top.
   const sideRows = side.locator('button.nav.profile .named')
-  await side.getByRole('button', { name: 'Home' }).click()
+  await side.getByRole('button', { name: 'Home', exact: true }).click()
   await page.getByRole('heading', { name: 'Your profiles' }).waitFor()
   assert.equal(await sideRows.first().textContent(), longest.words, 'the most recently used first')
   assert.equal(await cards.first().locator('.nm2').textContent(), longest.words, 'on Home too')
@@ -4113,7 +4166,7 @@ test("the app on a laptop: Home's cards fit, the longest name too, three to a ro
   const view = await readFolder([services.host], updatingKey.address, Date.now())
   await write([services.host], [entry(updatingKey, path, old, nextTime(Date.now(), view, path))])
   await side.getByRole('button', { name: 'You' }).click()
-  await side.getByRole('button', { name: 'Home' }).click()
+  await side.getByRole('button', { name: 'Home', exact: true }).click()
   const updating = `${DEPLOY} ${D.offer.role}`
   await page.waitForFunction((words) => document.querySelector('aside .nav.profile .named')?.textContent === words, updating, { timeout: 30_000 })
   assert.equal(await cards.first().locator('.nm2').textContent(), updating, 'something new on top, on Home too')
@@ -4154,6 +4207,196 @@ test("the app on a laptop: Home's cards fit, the longest name too, three to a ro
   await page.reload()
   await page.setViewportSize({ width: 390, height: 844 })
   say('a laptop: the cards fit, two panes for Messages, the sidebar in order and every profile in it, scrolling, and one search')
+})
+
+/** The index's words for a range in `unit`: 9 to 11 years, 18 years and over, 11 years and under. */
+const rangeWords = (unit: string, from: string, to: string) =>
+  from && to ? `${from} to ${to} ${unitWords(unit, to)}` : from ? `${from} ${unitWords(unit, from)} and over` : `${to} ${unitWords(unit, to)} and under`
+
+test("a range: a number turned into From and To with its small Range, either end left empty; its words as the index says them; posted open at the top, reopened a range, posted again open at the bottom, in place", async () => {
+  const { page } = first
+  const r = fieldWith(MARKETS, 'a number that takes a range, in a market whose listings have a description', (f, _, side) => f.type === 'number' && f.range === true && side.market.listing.description !== undefined)
+  const unit = r.field.unit!
+  await profileOf(page, r.label)
+  await button(page, `New ${r.offers ? 'offer' : 'request'}`).click()
+  for (const [name, value] of Object.entries(opening(r.market, r.field))) await choose(page, r.market.name, name, Array.isArray(value) ? value[0]! : value)
+  const RANGED = 'Open at the top, then at the bottom.'
+  await page.getByLabel('Description').fill(RANGED)
+  const NAME = fieldWords(r.name)
+  const field = page.locator('.field').filter({ has: page.getByText(NAME, { exact: true }) })
+  // One number first, its unit after it, and a small Range beside it.
+  await field.getByLabel(NAME, { exact: true }).fill('18')
+  assert.equal(await field.locator('.number .unit').textContent(), unitWords(unit, '18'))
+  await field.getByRole('button', { name: 'Range', exact: true }).click()
+  // From and To, the number typed kept as From, To empty: no limit that way.
+  const group = page.getByRole('group', { name: NAME, exact: true })
+  assert.deepEqual([await group.getByLabel('From').inputValue(), await group.getByLabel('To').inputValue()], ['18', ''])
+  assert.deepEqual([await group.getByLabel('From').getAttribute('placeholder'), await group.getByLabel('To').getAttribute('placeholder')], ['From', 'To'])
+  assert.equal(await group.locator('.range-words').textContent(), rangeWords(unit, '18', ''), 'open at the top')
+  await group.getByLabel('To').fill('25')
+  assert.equal(await group.locator('.range-words').textContent(), rangeWords(unit, '18', '25'), 'from one to another')
+  await group.getByLabel('To').fill('')
+  await shot(page, 'listing-range')
+  await button(page, 'Post').click()
+  const card = page.locator('.listing-card', { hasText: RANGED })
+  await card.waitFor({ timeout: 60_000 })
+  const address = (await mainKey(seed, r.label)).address
+  const postedOf = async () => (await entriesOf(address, 'listing')).filter(([, c]) => (c.entry.body as Record<string, unknown>).description === RANGED)
+  const [[path, posted]] = (await postedOf()) as unknown as [[string, { entry: { body: Record<string, unknown> } }]]
+  assert.deepEqual(posted.entry.body[r.name], { from: '18' }, 'its top left out')
+  assert.equal(loadMarkets().checkEntry(r.market.name, r.role, 'listing', posted.entry.body), null, 'it fits the market')
+
+  // Reopened: a range again, with its words; open at the bottom now, as the index says it.
+  await card.click()
+  await page.getByRole('heading', { name: r.offers ? 'Offer' : 'Request', exact: true }).waitFor()
+  assert.deepEqual([await group.getByLabel('From').inputValue(), await group.getByLabel('To').inputValue()], ['18', ''])
+  assert.equal(await group.locator('.range-words').textContent(), rangeWords(unit, '18', ''))
+  await group.getByLabel('From').fill('')
+  await group.getByLabel('To').fill('11')
+  assert.equal(await group.locator('.range-words').textContent(), rangeWords(unit, '', '11'), 'open at the bottom')
+  await button(page, 'Post').click()
+  await card.waitFor({ timeout: 60_000 })
+  for (const until = Date.now() + 30_000; ; await page.waitForTimeout(300)) {
+    const now = (await postedOf()) as unknown as Array<[string, { entry: { body: Record<string, unknown> } }]>
+    if (now.length === 1 && JSON.stringify(now[0]![1].entry.body[r.name]) === JSON.stringify({ to: '11' })) {
+      assert.equal(now[0]![0], path, 'in place: its own path, and no second')
+      break
+    }
+    if (Date.now() > until) throw new Error(`the range posted again: ${JSON.stringify(now.map(([p, c]) => [p, c.entry.body[r.name]]))}`)
+  }
+  say(`a range: ${rangeWords(unit, '18', '')}, then ${rangeWords(unit, '', '11')}`)
+})
+
+test('a price list: two prices, the first a pack with its count, posted; its card the first price as the index says it, and +1 more; reopened, both, each with its remove button until one is left', async () => {
+  const { page } = first
+  const [pack, hour] = [L.per[1]!, L.per[0]!]
+  /** A per's word for several, as the index says it: lessons, people. */
+  const several = (per: string) => (per === 'person' ? 'people' : /(s|x|z|ch|sh)$/.test(per) ? `${per}es` : `${per}s`)
+  await profileOf(page, TUTOR_LABEL)
+  await button(page, 'New offer').click()
+  const PRICED = 'Five lessons for less, or by the hour.'
+  await page.getByLabel('Description').fill(PRICED)
+  // One price to start, with no remove button, so the last is never removed; its count once a per is picked.
+  assert.equal(await page.getByRole('button', { name: /^Remove price/ }).count(), 0, 'no remove button on the last price')
+  await page.getByLabel('Currency', { exact: true }).selectOption('MXN')
+  await page.getByLabel('Price', { exact: true }).fill('1300')
+  assert.equal(await page.getByLabel('How many', { exact: true }).count(), 0, 'no count before a per')
+  await page.getByRole('group', { name: 'Per', exact: true }).getByRole('button', { name: `per ${pack}`, exact: true }).click()
+  await page.getByLabel('How many', { exact: true }).fill('5')
+  assert.equal(await page.locator('.price-count .unit').textContent(), several(pack), 'its per, many')
+  // Add a price: a second row, both numbered, each with its remove button.
+  await button(page, 'Add a price').click()
+  await page.getByLabel('Price 2', { exact: true }).fill('30')
+  assert.equal(await page.getByLabel('Currency 2', { exact: true }).inputValue(), 'MXN', "in the last row's currency")
+  await page.getByLabel('Currency 2', { exact: true }).selectOption('USD')
+  await page.getByRole('group', { name: 'Per 2', exact: true }).getByRole('button', { name: `per ${hour}`, exact: true }).click()
+  assert.equal(await page.getByRole('button', { name: /^Remove price/ }).count(), 2, 'each its remove button')
+  await shot(page, 'listing-prices')
+  await button(page, 'Post').click()
+  const card = page.locator('.listing-card', { hasText: PRICED })
+  await card.waitFor({ timeout: 60_000 })
+  // Small, as the index's cards show it: the first price, what it is for, and how many more.
+  assert.deepEqual(await card.locator('.price-col > *').allTextContents(), ['MX$1,300', `for 5 ${several(pack)}`, '+1 more'])
+  const [[, posted]] = (await entriesOf((await mainKey(seed, TUTOR_LABEL)).address, 'listing')).filter(([, c]) => (c.entry.body as Record<string, unknown>).description === PRICED) as unknown as [[string, { entry: { body: Record<string, unknown> } }]]
+  assert.deepEqual(posted.entry.body.price, [{ amount: '1300', currency: 'MXN', per: pack, count: 5 }, { amount: '30', currency: 'USD', per: hour }], 'every price, in order, the pack with its count')
+  assert.equal(loadMarkets().checkEntry(LESSONS, L.offer.role, 'listing', posted.entry.body), null, 'it fits the market')
+  // Reopened: every price, as posted; one removed, the last has no remove button.
+  await card.click()
+  await page.getByRole('heading', { name: 'Offer', exact: true }).waitFor()
+  assert.deepEqual([await page.getByLabel('Price 1', { exact: true }).inputValue(), await page.getByLabel('How many 1', { exact: true }).inputValue(), await page.getByLabel('Price 2', { exact: true }).inputValue()], ['1300', '5', '30'])
+  await button(page, 'Remove price 2').click()
+  assert.equal(await page.getByRole('button', { name: /^Remove price/ }).count(), 0, 'the last one stays')
+  assert.equal(await page.getByLabel('Price', { exact: true }).inputValue(), '1300')
+  await button(page, 'Close').click()
+  await card.waitFor()
+  say(`a price list: MX$1,300 for 5 ${several(pack)}, +1 more`)
+})
+
+test("every market's own icon, from its market file, and its color by its number, the index's ten in their order, so markets numbered next to each other differ; one of the person's own profiles the same", async () => {
+  const { page } = first
+  await page.goto(APP)
+  await page.getByRole('heading', { name: 'Your profiles' }).waitFor()
+  const tutorCard = page.locator('button.card', { hasText: TUTOR_WORDS })
+  const number = MARKETS.market(LESSONS)!.number
+  assert.deepEqual(await avatarOf(tutorCard.locator('.av')).then((a) => [a.h, a.icon]), [PALETTE[(number - 1) % 10], MARKETS.market(LESSONS)!.icon ?? undefined], "the tutor's avatar: its market file's icon, its number's color")
+  await page.locator('main').getByRole('button', { name: 'New profile', exact: true }).click()
+  await page.locator('button.market-tile').first().waitFor()
+  const drawn = await page.locator('button.market-tile').evaluateAll((t) => t.map((x) => [x.querySelector('svg')?.dataset.icon ?? null, x.querySelector('.letter')?.textContent ?? null, (x as HTMLElement).style.getPropertyValue('--h')]))
+  assert.deepEqual(
+    drawn,
+    MARKETS.directory.markets.map((m) => [m.icon ?? null, m.icon ? null : m.name.charAt(0).toUpperCase(), PALETTE[(m.number - 1) % 10]]),
+    "each its file's icon, else its first letter, on its number's color",
+  )
+  const colorAt = new Map(MARKETS.directory.markets.map((m, i) => [m.number, drawn[i]![2]]))
+  for (const [n, color] of colorAt) if (colorAt.has(n + 1)) assert.notEqual(colorAt.get(n + 1), color, `${n} and ${n + 1} apart`)
+  await shot(page, 'market-icons')
+  await page.goto(APP)
+  say(`every market its own icon and its number's color: ${MARKETS.directory.markets.map((m) => `${m.number} ${m.icon}`).join(', ')}`)
+})
+
+/** The verifier's GET / in `context`, as it answers, with its ID check's `forSale` and `testPayments` as given: a verifier with no Stripe key, or a live one. */
+async function idCheckSays(context: BrowserContext, id: { forSale: boolean; testPayments: boolean }) {
+  await context.route(`${services.verifier}/`, async (route) => {
+    if (route.request().method() !== 'GET') return route.continue()
+    const response = await route.fetch()
+    const body = await response.json()
+    await route.fulfill({ response, json: { ...body, id: { ...body.id, ...id } } })
+  })
+}
+
+test("the ID check while the verifier doesn't sell it: nowhere, not on Get verified, You or Home; a face seen before says the ID check opens soon, the selfie greyed; sold with a live key, its card with no test line", async () => {
+  const a = await phone()
+  await idCheckSays(a.context, { forSale: false, testPayments: false })
+  await a.page.goto(APP)
+  await imNew(a)
+  await a.page.getByRole('heading', { name: 'Get verified' }).waitFor({ timeout: 60_000 })
+  await checkCard(a.page, 'Selfie').waitFor()
+  await a.page.waitForTimeout(500)
+  assert.deepEqual(await a.page.locator('.vcard').evaluateAll((c) => c.map((x) => x.getAttribute('data-check'))), ['face'], 'the selfie alone')
+  assert.equal(await a.page.getByText('What the checks keep').count(), 0, 'nor What the checks keep')
+  await faceCheck(a)
+  await onward(a)
+  await a.page.getByRole('heading', { name: 'Your first profile' }).waitFor({ timeout: 90_000 })
+  await pickFirst(a.page, TUTOR_WORDS)
+  await button(a.page, 'Skip').click()
+  await a.page.getByRole('heading', { name: 'Your profiles' }).waitFor()
+  await button(a.page, 'You').click()
+  await a.page.getByRole('heading', { name: 'You', exact: true }).waitFor()
+  const checks = a.page.getByRole('group', { name: 'Verified' })
+  await checks.locator('.row', { hasText: 'Selfie' }).locator('.chip.new').waitFor()
+  assert.deepEqual(await checks.locator('.row strong').allTextContents(), ['Selfie'], "You: no ID row")
+  await a.page.setViewportSize({ width: 1280, height: 800 })
+  await a.page.goto(APP)
+  const badges = a.page.getByRole('group', { name: "How you're verified" })
+  await badges.waitFor()
+  await a.page.waitForTimeout(500)
+  assert.equal(await badges.locator('[data-icon="identification-card"]').count(), 0, "Home: no ID outline")
+  assert.equal(await badges.locator('[data-icon="scan-smiley"]').count(), 1, 'the selfie badge')
+
+  // A second browser, Yes, I'm new by mistake, the same face: the ID check isn't there to point to.
+  const b = await phone()
+  await idCheckSays(b.context, { forSale: false, testPayments: false })
+  await answerFrom(b, a)
+  await answer(b.context, `${services.verifier}/face/stamp`, 403, { error: 'face_seen' })
+  await newPerson(b)
+  const notice = b.page.locator('.notice', { hasText: 'A similar face is already verified. The ID check opens soon.' })
+  await notice.waitFor({ timeout: 60_000 })
+  assert.equal(await b.page.locator('.notice').count(), 1, 'one warning')
+  assert.equal(await b.page.locator('.vcard.tried[data-check="face"]').count(), 1, 'the selfie greyed')
+  assert.equal(await b.page.locator('.vcard[data-check="id"]').count(), 0, 'no ID card')
+  assert.deepEqual((await b.page.locator('.vcards ~ button').allTextContents()).map((t) => t.trim()), ['I already use Forest'], 'I already use Forest, and no What the checks keep')
+  await shot(b.page, 'face-seen-not-for-sale')
+
+  // Sold with a live key: the ID card, as it is, with no test line.
+  const c = await phone()
+  await idCheckSays(c.context, { forSale: true, testPayments: false })
+  await c.page.goto(APP)
+  await imNew(c)
+  await checkCard(c.page, 'ID').getByText('10× the free credits').waitFor({ timeout: 60_000 })
+  assert.equal(await c.page.locator('.vcard .vtest').count(), 0, 'no test line with a live key')
+  assert.equal(await button(c.page, 'What the checks keep').count(), 1)
+  for (const p of [a, b, c]) await p.context.close()
+  say("not for sale: the ID nowhere, a face seen before says it opens soon; a live key: no test line")
 })
 
 test('nothing the app did was refused by the CSP', () => {

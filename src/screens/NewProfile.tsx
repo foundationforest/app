@@ -13,12 +13,11 @@
 
 import { type CSSProperties, useState } from 'react'
 
-import { colorOf, iconOf } from '../avatar.tsx'
+import { MarketIcon, colorOf, iconOf } from '../avatar.tsx'
 import { config } from '../config.ts'
 import { checks, passkey } from '../device.ts'
 import { makeProfile } from '../flows/profile.ts'
 import { useProfiles } from '../hooks.ts'
-import { Icon } from '../icons.tsx'
 import { Loader } from '../mark.tsx'
 import { marketList, pairOf } from '../markets.ts'
 import { withSeed } from '../passkey.ts'
@@ -92,7 +91,7 @@ export function NewProfile({ market: name, onMarket, onMade, onOpen, onBack, onL
           const icon = iconOf(m.market)
           return (
             <button key={m.market} className="market-tile" style={{ '--h': colorOf(m.market) } as CSSProperties} aria-label={m.beta ? `${m.words}, beta` : m.words} onClick={() => onMarket(m.market)}>
-              {icon ? <Icon name={icon} fill /> : <span className="letter" aria-hidden>{m.words.charAt(0)}</span>}
+              {icon ? <MarketIcon name={icon} /> : <span className="letter" aria-hidden>{m.words.charAt(0)}</span>}
               {m.beta && <span className="beta">Beta</span>}
               <span className="tile-name">
                 {m.family && <span className="fam">{m.family}</span>}

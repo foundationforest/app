@@ -1,7 +1,8 @@
 // Home, the person's profiles: on a phone, the mark and Search Forest at the top (on a laptop the
 // search is in the sidebar); then Your profiles. On a laptop, the person's badges beside it, once,
 // since every profile of one person carries the same checks: a check done its badge (a tap says its
-// words), one not done its badge's outline, dashed and muted, which opens Get verified; on a phone
+// words), one not done its badge's outline, dashed and muted, which opens Get verified (the ID's only
+// where the verifier sells it, GET /'s `forSale`); on a phone
 // they live in You and on each profile's page. Then one card per profile, in the app's order
 // (order.ts): those with something new first, then the most recently used here. A card shows its
 // avatar, its market's icon on its market's color, with how many things are new on it (messages,
@@ -22,7 +23,7 @@ import { config } from '../config.ts'
 import { type Check, passkey } from '../device.ts'
 import { takeElsewhere } from '../flows/elsewhere.ts'
 import { useWide } from '../frame.tsx'
-import { useChecks, useElsewhere, useHeldRated, useNews, useOrdered, useProfiles } from '../hooks.ts'
+import { useChecks, useElsewhere, useHeldRated, useIdCheck, useNews, useOrdered, useProfiles } from '../hooks.ts'
 import { Icon } from '../icons.tsx'
 import { Loader, Mark } from '../mark.tsx'
 import { marketWords, pairs } from '../markets.ts'
@@ -37,6 +38,7 @@ export function Home({ onOpen, onNew, onCheck }: Props) {
   const list = useProfiles()
   const shown = useOrdered(list)
   const has = useChecks()
+  const { forSale } = useIdCheck()
   const rated = useHeldRated(list)
   const { of: news } = useNews(list)
   const held = new Set(list.map((p) => p.label))
@@ -71,7 +73,9 @@ export function Home({ onOpen, onNew, onCheck }: Props) {
         <h1>Your profiles</h1>
         {wide && (
           <span className="badges" role="group" aria-label="How you're verified">
-            {(['face', 'id'] as const).map((c) => (has.has(c) ? <Verified key={c} check={c} big alone /> : <Unverified key={c} check={c} onClick={() => onCheck(c)} />))}
+            {(['face', 'id'] as const)
+              .filter((c) => c === 'face' || forSale || has.has(c))
+              .map((c) => (has.has(c) ? <Verified key={c} check={c} big alone /> : <Unverified key={c} check={c} onClick={() => onCheck(c)} />))}
           </span>
         )}
         {free && newProfile}

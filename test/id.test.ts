@@ -20,7 +20,7 @@ import { readCard, strongest } from '../src/flows/cards.ts'
 import { whoIs } from '../src/flows/inbox.ts'
 import { makeProfile } from '../src/flows/profile.ts'
 import { walletKey } from '../src/flows/profiles.ts'
-import { NotPassed, TRIES, Unpaid, advance, ask, consentOf, creditLines, creditsOf, finish, open, pay, resume, stampNumberAt, stepOf } from '../src/flows/verify.ts'
+import { NotPassed, TRIES, Unpaid, advance, ask, consentOf, creditLines, creditsOf, finish, idCheckOf, open, pay, resume, stampNumberAt, stepOf } from '../src/flows/verify.ts'
 import { Said } from '../src/words.ts'
 import { OFFERS, OTHER_OFFERS, OTHER_REQUESTS } from './labels.ts'
 import { ID_CREDITS, type World, checkHere, freshDevice, proveHere, world } from './world.ts'
@@ -286,13 +286,18 @@ describe('the ID check', () => {
   })
 })
 
-test('a verifier with no Stripe: the ID check is not for sale, in one quiet line', async () => {
+test('a verifier with no Stripe: GET / says the ID check is not for sale, and no test payments; a tap that comes anyway, one quiet line', async () => {
   const off = await world({ forSale: false })
   try {
+    expect(await idCheckOf(off)).toEqual({ forSale: false, testPayments: false })
     const err = await pay(off, 'passkey-x', RETURN, 1n).catch((e: unknown) => e)
     expect([(err as Said).message, (err as Said).red]).toEqual(["The ID check isn't available yet.", false])
   } finally {
     await off.close()
   }
+})
+
+test("a verifier with Stripe's test key, as its stand-in is: GET / says the ID check is for sale, with test payments", async () => {
+  expect(await idCheckOf(w)).toEqual({ forSale: true, testPayments: true })
 })
 

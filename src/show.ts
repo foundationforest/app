@@ -1,9 +1,13 @@
 // How an entry's values read on screen, by their type (the markets manual's Types): a choice by its
 // label where its field has one, else in words, a number with its field's unit (1 night, 3 nights),
-// money as people write a price, in the device's own number format ($20, €30 per hour), a place as
-// its area and how far round it reaches (several, each in turn), a moment as a date and time, hours
-// as days and times (and, for the row that opens them, their first days and times); and a listing's
-// preview, the fields its market shows first, and its card.
+// or a range in the index's words (9 to 11 years, 18 years and over, 11 years and under), money as
+// people write a price, in the device's own number format, with its count as the index says it ($20,
+// €30 per hour, MX$1,300 for 5 lessons), every price a listing gives in full and, where a listing
+// shows small, its first and how many more (+1 more); a place as its area and how far round it
+// reaches (several, each in turn), a moment as a date and time, hours as days and times (and, for the
+// row that opens them, their first days and times); and a listing's preview, the fields its market
+// shows first, and its card. Each value is read by its shape: one a market no longer gives that
+// field (a listing it outgrew) shows as nothing, never breaking the screen it is on.
 // A contact opens with a tap when it is a phone number, an email or a link.
 
 import type { Body } from '@foundationforest/folders'
@@ -38,26 +42,49 @@ export function placeLines(place: { area?: unknown; radiusKm?: unknown }): { mai
   return area ? { main: area, more: reach } : { main: reach, more: '' }
 }
 
-/** A number with its field's unit: 60 minutes, 1 night; one with no unit, as it was written. */
-export const numberText = (field: Pick<Field, 'unit'>, value: unknown) => (field.unit ? `${String(value)} ${unitWords(field.unit, value)}` : String(value))
-
 const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v)
+
+/** One number with its unit after it, one or many as the number says: 60 minutes, 1 night; with no unit, the number alone. */
+const withUnit = (unit: string | undefined, n: string) => (unit ? `${n} ${unitWords(unit, n)}` : n)
+
+/**
+ * A number with its field's unit: 60 minutes, 1 night; one with no unit, as it was written. A range,
+ * in the index's words: from one number to another, 9 to 11 years; with an end left out, for no limit
+ * that way, 18 years and over, 11 years and under. Anything else, nothing.
+ */
+export function numberText(field: { unit?: string }, value: unknown): string {
+  if (typeof value === 'string') return withUnit(field.unit, value)
+  if (!isObject(value)) return ''
+  const from = typeof value.from === 'string' && value.from ? value.from : undefined
+  const to = typeof value.to === 'string' && value.to ? value.to : undefined
+  if (from && to) return field.unit ? `${from} to ${to} ${unitWords(field.unit, to)}` : `${from} to ${to}`
+  if (from) return `${withUnit(field.unit, from)} and over`
+  if (to) return `${withUnit(field.unit, to)} and under`
+  return ''
+}
 
 export const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
 
 /** A moment's time, in the device's words for it. */
 const when = (time: unknown) => (typeof time === 'string' && !Number.isNaN(Date.parse(time)) ? new Date(time).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : '')
 
-/** A field's value as one line, or empty when there is nothing to show. */
+/** The strings a value holds: itself, or each of a list. */
+const strings = (v: unknown): string[] => (Array.isArray(v) ? v : [v]).filter((x): x is string => typeof x === 'string')
+
+/** A field's value as one line, or empty when there is nothing to show: every price a listing gives, each in turn. */
 export function valueText(field: Field, value: unknown): string {
   if (value === undefined || value === null) return ''
   switch (field.type) {
     case 'choice':
-      return (Array.isArray(value) ? value : [value]).map((v) => choiceWords(field, String(v))).join(', ')
+      return strings(value)
+        .map((v) => choiceWords(field, v))
+        .join(', ')
     case 'words':
-      return Array.isArray(value) ? value.join(', ') : ''
+      return Array.isArray(value) ? strings(value).join(', ') : ''
     case 'money':
-      return isObject(value) ? priceText(value) : ''
+      return pricesOf(value)
+        .map((m) => priceText(m))
+        .join(', ')
     case 'place':
       // Several, each in turn: Lisbon, within 10 km; Porto, within 10 km.
       return (Array.isArray(value) ? value : [value])
@@ -66,19 +93,23 @@ export function valueText(field: Field, value: unknown): string {
         .filter(Boolean)
         .join('; ')
     case 'number':
-      return numberText(field, value)
+      return (Array.isArray(value) ? value : [value])
+        .map((v) => numberText(field, v))
+        .filter(Boolean)
+        .join(', ')
     case 'moment':
-      return isObject(value) ? `${when(value.from)} to ${when(value.to)}` : when(value)
+      if (!isObject(value)) return when(value)
+      return when(value.from) && when(value.to) ? `${when(value.from)} to ${when(value.to)}` : when(value.from)
     case 'hours':
       if (!isObject(value) || !Array.isArray(value.slots)) return ''
       return value.slots
-        .filter(isObject)
-        .map((slot) => `${[...(slot.days as string[])].sort((a, b) => DAYS.indexOf(a) - DAYS.indexOf(b)).map((d) => valueWords(d).slice(0, 3)).join(' ')} ${slot.from}–${slot.to}`)
+        .filter((slot) => isObject(slot) && typeof slot.from === 'string' && typeof slot.to === 'string')
+        .map((slot) => `${strings(slot.days).sort((a, b) => DAYS.indexOf(a) - DAYS.indexOf(b)).map((d) => valueWords(d).slice(0, 3)).join(' ')} ${slot.from}–${slot.to}`)
         .join(', ')
     case 'file':
       return ''
     default:
-      return String(value)
+      return typeof value === 'string' ? value : typeof value === 'number' ? String(value) : ''
   }
 }
 
@@ -99,18 +130,36 @@ export function hoursLines(value: unknown): { main: string; more: string } | nul
   return { main: daysText(Array.isArray(first.days) ? (first.days as string[]) : []), more: slots.length > 1 ? `${times}, and ${slots.length - 1} more` : times }
 }
 
+/** One price: an amount of a currency, and what it is for, `count` of its `per` (1 when left out), none for the whole deal. */
+export type Money = { amount: string; currency: string; per?: string; count?: number }
+
+/**
+ * Each price a value gives, in its writer's order: a listing's price is always a list of them in the
+ * markets' format; one held as a single money, as an older market had it, shows as a list of one.
+ * Only those that are money.
+ */
+export function pricesOf(value: unknown): Money[] {
+  return (Array.isArray(value) ? value : [value]).filter((m): m is Money => isObject(m) && typeof m.amount === 'string' && typeof m.currency === 'string')
+}
+
+/** A word for several of a `per`, as the index says it: lessons, classes, and a person's people. */
+export const perPlural = (per: string) => (per === 'person' ? 'people' : /(s|x|z|ch|sh)$/.test(per) ? `${per}es` : `${per}s`)
+
 /**
  * A price as people write it, in the device's own number format (or `locale`'s): $20, $12.50, €30
- * per hour, 30 € per hour. An amount that is no number, or a currency that is no code, reads as it
- * was written: 30 coins.
+ * per hour, 30 € per hour, MX$1,300 for 5 lessons. An amount that is no number, or a currency that
+ * is no code, reads as it was written: 30 coins.
  */
-export function priceText(money: { amount?: unknown; currency?: unknown; per?: unknown }, locale?: string): string {
+export function priceText(money: { amount?: unknown; currency?: unknown; per?: unknown; count?: unknown }, locale?: string): string {
   const { amount, per } = priceParts(money, locale)
   return per ? `${amount} ${per}` : amount
 }
 
-/** A price in its two parts, as a listing's card shows them: the amount ($30), and what it is for (per hour), empty for the whole deal. */
-export function priceParts(money: { amount?: unknown; currency?: unknown; per?: unknown }, locale?: string): { amount: string; per: string } {
+/**
+ * A price in its two parts, as a listing's card shows them: the amount ($30), and what it is for, as
+ * the index says it: per hour, or for a pack its count of its per, for 5 lessons; empty for the whole deal.
+ */
+export function priceParts(money: { amount?: unknown; currency?: unknown; per?: unknown; count?: unknown }, locale?: string): { amount: string; per: string } {
   const amount = Number(money.amount)
   let text = `${String(money.amount)} ${String(money.currency)}`
   if (typeof money.amount === 'string' && money.amount.trim() !== '' && Number.isFinite(amount)) {
@@ -120,33 +169,43 @@ export function priceParts(money: { amount?: unknown; currency?: unknown; per?: 
       // Not a currency code: as it was written.
     }
   }
-  return { amount: text, per: typeof money.per === 'string' && money.per ? `per ${money.per}` : '' }
+  const per = typeof money.per === 'string' && money.per ? money.per : ''
+  const count = Number.isInteger(money.count) ? (money.count as number) : 1
+  return { amount: text, per: !per ? '' : count > 1 ? `for ${count} ${perPlural(per)}` : `per ${per}` }
 }
 
-/** A listing's preview: the fields its market shows first, those it has, in one line each. */
+/** How many more prices than the one shown, as the index says it where a listing shows small: +1 more. */
+export const morePrices = (n: number) => `+${n} more`
+
+/** A listing's preview: the fields its market shows first, those it has, in one line each; its price, small, the first and how many more. */
 export function previewLines(market: Market, body: Body): string[] {
   return previewOf(market)
-    .map((name) => (market.listing[name] ? valueText(market.listing[name], body[name]) : ''))
+    .map((name) => {
+      const field = market.listing[name]
+      if (!field) return ''
+      if (field.type !== 'money') return valueText(field, body[name])
+      const [first, ...more] = pricesOf(body[name])
+      return first ? [priceText(first), ...(more.length ? [morePrices(more.length)] : [])].join(', ') : ''
+    })
     .filter(Boolean)
 }
 
 /**
  * A listing's card, in every market: its title, its description's first line, else its preview's
  * first; one quiet line, the next of its preview's fields it holds (but its description, its price
- * and its photos); and its price in its two parts, wherever the market's preview puts it, or none.
+ * and its photos); and its first price in its two parts, with how many more it gives, wherever the
+ * market's preview puts it, or none.
  */
-export function cardLines(market: Market, body: Body): { title: string; line: string; price: { amount: string; per: string } | null } {
+export function cardLines(market: Market, body: Body): { title: string; line: string; price: { amount: string; per: string; more: number } | null } {
   const shown = previewOf(market)
     .filter((name) => name !== 'price' && name !== 'description' && market.listing[name] && market.listing[name].type !== 'file')
     .map((name) => valueText(market.listing[name]!, body[name]))
     .filter(Boolean)
   const description = market.listing.description && typeof body.description === 'string' ? (body.description.trim().split('\n')[0] ?? '').trim() : ''
   const [title = '', line = ''] = description ? [description, ...shown] : shown
-  const money = body.price
-  const price = market.listing.price?.type === 'money' && typeof money === 'object' && money !== null && !Array.isArray(money) ? priceParts(money) : null
-  return { title, line, price }
+  const [first, ...more] = market.listing.price?.type === 'money' ? pricesOf(body.price) : []
+  return { title, line, price: first ? { ...priceParts(first), more: more.length } : null }
 }
-
 /** Where a contact opens with a tap: a phone number, an email, or a link. Undefined for anything else, a handle, which shows as it is. */
 export function contactHref(contact: string): string | undefined {
   const text = contact.trim()

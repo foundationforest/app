@@ -9,7 +9,7 @@ import { expect, test } from 'vitest'
 
 import type { Body } from '@foundationforest/folders'
 
-import { applies, fits, fitting, formFields, settled } from '../src/form.ts'
+import { applies, backwards, fits, fitted, fitting, formFields, settled } from '../src/form.ts'
 import { type Field, markets, pairs, previewOf } from '../src/markets.ts'
 import { choiceWords, valueText, valueWords } from '../src/show.ts'
 import { fieldWith, labelled, marketWith, opening, sides } from './directory.ts'
@@ -144,6 +144,22 @@ test("an old listing: what still fits its market today, kept, its photos' files 
   expect(fits(s.market.name, s.role, kept)).toBe(true)
   expect(fitting(s.market.name, s.role, { description: 'A wool coat.', [s.many]: [value, 'not-a-value'] }), 'a list with one value gone, dropped whole').toEqual({ description: 'A wool coat.' })
   expect(fitting(s.market.name, s.role, { description: 'A wool coat.', colour: 'red' }), 'a field the market has no more, dropped, the rest kept').toEqual({ description: 'A wool coat.' })
+  // Which were dropped, so the form marks each: a price held as one, before every price was a list, among them.
+  const { dropped } = fitted(s.market.name, s.role, { ...old, price: { amount: '40', currency: 'USD' } })
+  expect(dropped.sort()).toEqual([s.one, s.many, s.place, 'colour', 'price'].sort())
+  expect(fitted(s.market.name, s.role, kept).dropped, 'what fits, nothing').toEqual([])
+})
+
+test('a span that ends before it starts, and a range from more to less, found by field; in order, open at either end, or one value, none', () => {
+  const fields: Record<string, Field> = {
+    due: { type: 'moment', description: '.' },
+    ages: { type: 'number', description: '.', unit: 'years', range: true },
+  }
+  expect(backwards(fields, { due: { from: '2026-12-02T10:00:00+01:00', to: '2026-12-01T10:00:00+01:00' } })?.[0]).toBe('due')
+  expect(backwards(fields, { ages: { from: '11', to: '9' } })?.[0]).toBe('ages')
+  expect(backwards(fields, { due: [{ from: '2026-12-02T10:00:00Z', to: '2026-12-01T10:00:00Z' }] })?.[0], 'one of a list').toBe('due')
+  for (const fine of [{ due: { from: '2026-12-01T10:00:00+01:00', to: '2026-12-01T09:30:00+00:00' } }, { ages: { from: '9', to: '11' } }, { ages: { from: '18' } }, { ages: { to: '11' } }, { ages: '10' }, { due: '2026-12-01T10:00:00Z' }] as Body[])
+    expect(backwards(fields, fine), JSON.stringify(fine)).toBeUndefined()
 })
 
 test('an old review: what still fits, checked against the role of whom it is about', () => {

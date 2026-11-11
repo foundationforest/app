@@ -9,9 +9,9 @@
 // profile's Reviews. From now they are seen (device.ts), as a
 // profile's Reviews marks them, so the tab, the card and the profile's Reviews count them new no
 // more. Each entry of the person's own that a market outgrew (flows/outgrown.ts), a listing or a
-// review, vouch or report its market's file no longer takes as it is: a sun square, what needs an
-// update and that the market changed; a tap opens its edit with what still fits. It shows no time:
-// when the market changed, the app can't know; it sits by when it was posted.
+// review, vouch or report its market's file no longer takes as it is: a sun square and one line, "Your
+// Tutoring offer needs updating: its market changed."; a tap opens its edit with what still fits. It
+// shows no time: when the market changed, the app can't know; it sits by when it was posted.
 
 import { useEffect, useState } from 'react'
 
@@ -20,21 +20,15 @@ import type { Posted } from '../flows/entries.ts'
 import { type Notice, newest, notices } from '../flows/feedback.ts'
 import { useHeldOutgrown, useHeldRated, useNews, useProfiles } from '../hooks.ts'
 import { Icon } from '../icons.tsx'
-import { kindWords, marketWords, markets, pairOf } from '../markets.ts'
-import { cardLines } from '../show.ts'
+import { kindWords, marketWords, pairOf } from '../markets.ts'
 import { Dot, MessagesButton, Named, SaidChip, Top, ago, newDay } from '../ui.tsx'
 import { NameOf, WhoAvatar } from './Who.tsx'
 
 type Props = { onMessages: () => void; onReviews: (address: string) => void; onUpdate: (address: string, posted: Posted) => void; onWho: (address: string) => void }
 
-/** What an outgrown entry's notice says needs an update: a listing by its title, else "Your review". */
-function needs(label: string, posted: Posted): string {
-  if (posted.kind !== 'listing') return `Your ${posted.kind} needs an update`
-  const market = markets.market(pairOf(label).market)
-  // Its first line, as a name: "Spanish for adults", a full stop left off.
-  const title = market ? cardLines(market, posted.body).title.replace(/[.!]+$/, '') : ''
-  return `${title || 'Your listing'} needs an update`
-}
+/** What an outgrown entry's notice says, by its market and its kind in the role's word: "Your Tutoring offer needs updating: its market changed." */
+export const needsUpdating = (label: string, posted: Pick<Posted, 'kind'>) =>
+  `Your ${marketWords(pairOf(label).market)} ${kindWords(posted.kind, label).toLowerCase()} needs updating: its market changed.`
 
 /** One row of Notifications: a review, vouch or report that came, or one of the person's entries a market outgrew, and when. */
 type Row = { time: number; notice: Notice } | { time: number; outgrown: Posted; label: string; address: string }
@@ -95,9 +89,8 @@ export function Notifications({ onMessages, onReviews, onUpdate, onWho }: Props)
                   </span>
                   <span className="grow">
                     <span className="nrow-head">
-                      <strong>{needs(r.label, r.outgrown)}</strong>
+                      <strong>{needsUpdating(r.label, r.outgrown)}</strong>
                     </span>
-                    <span className="said-text">The {marketWords(pairOf(r.label).market)} market changed. Tap to fix it.</span>
                   </span>
                 </button>
               ),
