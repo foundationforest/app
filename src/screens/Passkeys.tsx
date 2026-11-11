@@ -4,10 +4,11 @@
 // logo (Apple's, Google's, else a key), its name, a chevron. Its name is the one the person gave it
 // on this device, else its maker's, read from the id it sent as it was made (managers.ts), else
 // Passkey; a name shown already takes the next number (Apple 2). With one alone, a quiet line on why
-// a second. Then Add a passkey (AddPasskey.tsx). A row opens its sheet: the name as its title, a Name
-// field and Save, kept on this device alone, asking nothing; and, on any passkey but the first, Remove
-// this passkey, in red, tapped twice, then one unlock. The first is the seed itself: the app never
-// removes it, so its sheet has no Remove. Under If you lose every passkey, Your 24 words, which opens
+// a second. Then Add a passkey (AddPasskey.tsx). A row opens its sheet (on a laptop, a dialog in the
+// middle): the name as its title, a Name field, then one row of buttons: on any passkey but the
+// first, Remove at its left, in red text, tapped twice, then one unlock; at its right Save, kept on
+// this device alone, asking nothing, with Cancel before it on a laptop. The first is the seed itself:
+// the app never removes it, so its sheet has no Remove. Under If you lose every passkey, Your 24 words, which opens
 // a sheet: its warning, and Show words, which always asks the passkey, even with the seed held, so a
 // device someone else picks up while it is held never shows them; then the words, handed to Your 24
 // words (Words.tsx) in the page's memory alone. A passkey prompt must come from a tap, so it is asked
@@ -18,6 +19,7 @@ import { useState } from 'react'
 import { exportWords } from '@foundationforest/keys'
 
 import { config } from '../config.ts'
+import { useWide } from '../frame.tsx'
 import { FIRST, madeHere, nameMade, passkey } from '../device.ts'
 import { removeBackup } from '../flows/backups.ts'
 import { seedFor } from '../flows/seed.ts'
@@ -38,6 +40,7 @@ type Props = { onBack: () => void; onAdd: () => void; onWords: (words: string[])
 
 export function Passkeys({ onBack, onAdd, onWords }: Props) {
   const backups = useBackups()
+  const wide = useWide()
   const made = madeHere()
   const ids = backups ? [FIRST, ...backups.map((b) => b.id)] : null
   const shown = ids ? numbered(ids.map((id) => nameOf(made[id]))) : []
@@ -119,23 +122,29 @@ export function Passkeys({ onBack, onAdd, onWords }: Props) {
               <span className="label">Name</span>
               <input value={typed} maxLength={40} autoComplete="off" onChange={(e) => setTyped(e.target.value)} />
             </label>
-            <button type="submit" className="primary" disabled={remove.busy}>
-              Save
-            </button>
-            {open !== FIRST && (
-              <>
-                <Line note={remove.note} />
-                <button type="button" className={removing ? 'danger solid' : 'danger text'} disabled={remove.busy} onClick={() => (removing ? remove.run(open) : setRemoving(true))}>
+            <Line note={remove.note} />
+            <div className="sheet-buttons">
+              {open !== FIRST && (
+                <button type="button" className={removing ? 'danger solid small' : 'danger text small'} disabled={remove.busy} onClick={() => (removing ? remove.run(open) : setRemoving(true))}>
                   {remove.busy ? (
                     <Loader />
                   ) : (
                     <>
-                      {removing ? <UnlockIcon /> : <Icon name="trash" />} Remove this passkey
+                      {removing ? <UnlockIcon /> : <Icon name="trash" />} Remove
                     </>
                   )}
                 </button>
-              </>
-            )}
+              )}
+              <span className="grow" />
+              {wide && (
+                <button type="button" className="small" disabled={remove.busy} onClick={shut}>
+                  Cancel
+                </button>
+              )}
+              <button type="submit" className="primary small" disabled={remove.busy}>
+                Save
+              </button>
+            </div>
           </form>
         </Sheet>
       )}

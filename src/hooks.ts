@@ -12,6 +12,7 @@
 import { useEffect, useState } from 'react'
 
 import { config } from './config.ts'
+import { sawKeys } from './elsewhere-ai.ts'
 import { CHANGED, type Check, type Connection, type Profile, checks, connections, folder, names, profiles, seen, used } from './device.ts'
 import { type Card, readCard } from './flows/cards.ts'
 import { type Backup, backupsAt } from './flows/backups.ts'
@@ -96,7 +97,7 @@ export function useConnections(): Connection[] {
   return list
 }
 
-/** Each profile's card, by address, as the host serves its folder: how it is verified and how many listings it holds; filled in as each answers. */
+/** Each profile's card, by address, as the host serves its folder: how it is verified and how many listings it holds; filled in as each answers. A key one lists that this device doesn't know is noted, for the next unlock to find its AI app (elsewhere-ai.ts). */
 export function useCards(list: Profile[], again = 0): Record<string, Card> {
   const [cards, setCards] = useState<Record<string, Card>>({})
   const addresses = list.map((p) => p.address).join(',')
@@ -104,7 +105,10 @@ export function useCards(list: Profile[], again = 0): Record<string, Card> {
     let live = true
     for (const p of list) {
       readCard(config, p.address).then(
-        (card) => live && card && setCards((was) => ({ ...was, [p.address]: card })),
+        (card) => {
+          if (card) sawKeys(card.keys)
+          if (live && card) setCards((was) => ({ ...was, [p.address]: card }))
+        },
         () => undefined,
       )
     }

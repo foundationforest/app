@@ -59,7 +59,7 @@ export function Listing({ me, edit, onDone, onBack }: Props) {
   const word = kindWords('listing', me.label)
   return (
     <main>
-      <Top onClose={onBack} right={<Avatar label={me.label} size="sm" />}>
+      <Top onClose={onBack} right={<Avatar label={me.label} address={me.address} size="sm" />}>
         <h1 className="bar-title">{edit ? word : `New ${word.toLowerCase()}`}</h1>
       </Top>
       <form

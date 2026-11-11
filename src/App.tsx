@@ -9,7 +9,9 @@
 // of the person's own opens as theirs), a listing, Review someone, a thread, a new message, Get verified (a check
 // to add, the ID's sheet up for the ID), Passkeys, Add a passkey and Your 24 words, Your AI, an AI
 // app and Connect your AI, or About Forest. Back wherever there is somewhere to go back to: Get
-// verified to Start, Your 24 words to No passkey found. A step done (a passkey made, verified, a
+// verified to Start, Your 24 words to No passkey found. A check runs at Stripe and Didit in this tab:
+// back from Stripe's page (/paid) or Didit's (/back), the page opens on Get verified, in setup too,
+// which goes on by itself. A step done (a passkey made, verified, a
 // profile made) can't be undone by back: Your first profile has Later, Connect your AI Skip. On a
 // laptop, every setup screen sits beside the deep green panel (screens/Setup.tsx); every screen past
 // setup sits in the frame (frame.tsx): on a phone, the places' tabs at the bottom of each place; on a
@@ -24,16 +26,18 @@
 // in its query: it is moved into the history at once, and waits there through
 // Start and the verification when no one is verified here yet. So does an AI app's login, the
 // connect page's connector and request: through Start, the verification and the first profile,
-// then back to the connect page, Save a passkey on this device? and Connect your AI left out. A
-// login the page can't take (not this app's connector, or run out) says so at once, before Start.
+// then back to the connect page, Save a passkey on this device? and Connect your AI left out; while
+// the page goes to Stripe or Didit and back, what waits is kept for this tab (device.ts,
+// `keepWaiting`). A login the page can't take (not this app's connector, or run out) says so at once,
+// before Start.
 // Above any screen, once a newer version is live, one quiet line says so, with Reload (version.ts).
 
 import { type ReactNode, useEffect, useRef, useState } from 'react'
 
-import { type Check, passkey as inUse, profiles } from './device.ts'
+import { type Check, passkey as inUse, keepWaiting, profiles, takeWaiting, under } from './device.ts'
 import type { Posted } from './flows/entries.ts'
 import { Frame, type FrameGo, type On, type Place, useWide } from './frame.tsx'
-import { PATHS as SCREEN_PATHS } from './paths.ts'
+import { RETURNS, PATHS as SCREEN_PATHS } from './paths.ts'
 import type { Entered } from './flows/start.ts'
 import { NotPassed, type Step, choose, stepOf } from './flows/verify.ts'
 import { useNewVersion, useProfiles } from './hooks.ts'
@@ -42,7 +46,6 @@ import { About } from './screens/About.tsx'
 import { AiApp } from './screens/AiApp.tsx'
 import { AiApps } from './screens/AiApps.tsx'
 import { AddPasskey } from './screens/AddPasskey.tsx'
-import { Back } from './screens/Back.tsx'
 import { Connect, blocked } from './screens/Connect.tsx'
 import { ConnectAi } from './screens/ConnectAi.tsx'
 import { Home } from './screens/Home.tsx'
@@ -70,7 +73,7 @@ import { NewVersion } from './ui.tsx'
 type Screen =
   | { at: 'start'; noPasskey?: boolean }
   | { at: 'import-words' }
-  | { at: 'verify'; setup: boolean; id: string; step: Step; failed?: NotPassed }
+  | { at: 'verify'; setup: boolean; id: string; step: Step; failed?: NotPassed; from?: Back }
   | { at: 'home' }
   | { at: 'new'; market?: string }
   | { at: 'profile'; address: string; tab?: Tab }
@@ -92,7 +95,6 @@ type Screen =
   | { at: 'add-passkey' }
   | { at: 'words' }
   | { at: 'about' }
-  | { at: 'back' }
 
 const PATHS: Partial<Record<Screen['at'], string>> = SCREEN_PATHS
 
@@ -111,8 +113,20 @@ const loginKept = (): Login | null => {
 /** What waits while Start, the verification and a first profile come first: a Share link's address, or an AI app's login. */
 type Waiting = { to: string } | { login: Login }
 
+/** Where the page was opened back from: Stripe's page, paid or not, or Didit's, the check done. */
+type Back = 'paid' | 'checked'
+
+
 const kept = (): Kept => (history.state as Kept | null) ?? {}
 const isText = (v: unknown): v is string => typeof v === 'string' && v.length > 0
+
+/** What waited as this tab's last page closed, the check taken to Stripe or Didit: taken back once, as the page opens. */
+const waitedThrough: Waiting | null = (() => {
+  const w = takeWaiting() as { to?: unknown; login?: { connector?: unknown; request?: unknown } } | null
+  if (isText(w?.to)) return { to: w.to }
+  if (isText(w?.login?.connector) && isText(w.login.request)) return { login: { connector: w.login.connector, request: w.login.request } }
+  return null
+})()
 
 /** A check to add, for the person verified here: Get verified, where it stands, from the device; for the ID with nothing under way, its sheet up, its consent screen. */
 function checkOf(id: string, check: Check): Screen {
@@ -124,7 +138,6 @@ function checkOf(id: string, check: Check): Screen {
 function here(): Screen {
   const path = location.pathname
   const k = kept()
-  if (path === '/back') return { at: 'back' }
   // A Share link: its address out of the path, into the history.
   const query = new URLSearchParams(location.search)
   const to = query.get('to')
@@ -135,6 +148,10 @@ function here(): Screen {
   const id = inUse()
   const login = path === '/connect' ? loginKept() : null
   if (login && (blocked(login.connector, login.request) || (id && profiles().length > 0))) return { at: 'connect', ...login }
+  // Back from Stripe or Didit, a check under way: Get verified, which goes on by itself, in setup too.
+  const from: Back | null = path === RETURNS.paid ? 'paid' : path === RETURNS.checked ? 'checked' : null
+  const u = under()
+  if (from && u && (!id || u.passkey === id)) return { at: 'verify', setup: !id, id: u.passkey, step: stepOf(u.passkey), from }
   if (!id) return { at: 'start' }
   if (login) return { at: 'new' }
   const now = kept()
@@ -228,15 +245,21 @@ function Screens() {
   const words = useRef<string[] | null>(null)
   if (screen.at !== 'words') words.current = null
   // The Share link's address, or the AI app's login, while Start, the verification and a first profile come first.
-  const waiting = useRef<Waiting | null>(waitingAt(screen))
+  const waiting = useRef<Waiting | null>(waitingAt(screen) ?? waitedThrough)
   useEffect(() => {
     const popped = () => setScreen(here())
+    // The page closing with something waiting (to Stripe or Didit, in this tab): kept for the page that opens next.
+    const closing = () => waiting.current && keepWaiting(waiting.current)
     addEventListener('popstate', popped)
-    return () => removeEventListener('popstate', popped)
+    addEventListener('pagehide', closing)
+    return () => {
+      removeEventListener('popstate', popped)
+      removeEventListener('pagehide', closing)
+    }
   }, [])
   // A path this screen does not have (Start's, or one from before Forget) is put right.
   useEffect(() => {
-    const path = PATHS[screen.at] ?? (screen.at === 'back' ? '/back' : '/')
+    const path = PATHS[screen.at] ?? '/'
     if (location.pathname !== path) history.replaceState(kept(), '', path)
   }, [screen.at])
 
@@ -292,17 +315,15 @@ function Screens() {
   // The screen; in setup, on a laptop, the deep green panel beside it; past setup, the frame around it.
   const on = onOf(screen)
   const shown = view()
-  if (!on) return screen.at === 'start' || screen.at === 'back' || screen.at === 'connect' ? shown : <Setup>{shown}</Setup>
+  if (!on) return screen.at === 'start' || screen.at === 'connect' ? shown : <Setup>{shown}</Setup>
   return (
-    <Frame on={on} go={frameGo} {...(isPlace(screen.at) && { place: screen.at })}>
+    <Frame on={on} go={frameGo} {...(isPlace(screen.at) && { place: screen.at })} {...(screen.at === 'messages' && { tab: 'notifications' as const })}>
       {shown}
     </Frame>
   )
 
   function view() {
     switch (screen.at) {
-      case 'back':
-        return <Back />
       case 'start':
         return <Start connecting={connecting()} {...(screen.noPasskey && { noPasskey: true })} onEntered={entered} onWords={() => go({ at: 'import-words' })} />
       case 'import-words':
@@ -314,6 +335,7 @@ function Screens() {
             id={screen.id}
             step={screen.step}
             {...(screen.failed && { failed: screen.failed })}
+            {...(screen.from && { from: screen.from })}
             onVerified={inside}
             onIn={(e) => entered(e, screen.id)}
             onBack={screen.setup ? () => go({ at: 'start' }) : back}
@@ -395,7 +417,6 @@ function Screens() {
             {...(open && { open: { mine: open.mine, them: open.them } })}
             // Whose, in place of the screen as it was, so back leaves Messages.
             onOnly={(only) => go({ at: 'messages', ...(only && { only }) })}
-            onBack={back}
             onThread={(mine, them) => go({ at: 'thread', mine, them, ...(at.only && { only: at.only }) }, true)}
             onNew={() => go({ at: 'message' }, true)}
           />

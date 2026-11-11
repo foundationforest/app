@@ -17,20 +17,22 @@
 //     the passkey for app.forest.foundation and opened Get verified, nothing asked. Here and on
 //     every screen below with a filled button, its icon takes its text color.
 //  2. Back on each setup step: Get verified, its title, its line, two cards (Selfie, Free, its
-//     credits; ID, $5, one time, ten times them, stronger trust, Forest supported), and "You can add
+//     credits; ID, $5 one time, ten times them, stronger trust, Forest supported), and "You can add
 //     the other one later.", back to Start, which now asks for the passkey made alone, never First
-//     time here?, and goes straight back to Get verified; the ID card's sheet, ID check, $5, one
-//     time, the hold on the card under it, up to three tries, What the check keeps closed, then the
+//     time here?, and goes straight back to Get verified; the ID card's sheet, ID check, $5 one time,
+//     "You're only charged if it passes." and nothing more, What the check keeps closed, then the
 //     verifier's words word for word before Pay, which asks nothing with the seed held, and "Payment
-//     isn't available right now." once paying fails, then the sheet closed; the selfie left
-//     unfinished in its tab: Waiting for your check, the loader and Open it again only, back to Get
-//     verified, the check still under way; Start again, straight to Get verified. On a laptop, the
-//     deep green panel beside it, the screen 520px wide at most.
-//  3. The selfie: its card, its check in a tab of its own, opened on the tap, which Didit's page
-//     sends back to /back, where it closes itself; the page hidden meanwhile, as the check's tab
-//     hides it, which keeps the seed: the stamp kept with nothing asked; the gift collected into the
-//     wallet; the stamp kept in the Profiles folder; nothing of the seed kept; then Your first
-//     profile, "You're verified" under it.
+//     isn't available right now." once paying fails, then the sheet closed; the selfie, in this same
+//     tab, left unfinished at Didit: back at /back, the passkey asked by the page itself, nothing
+//     tapped, then Waiting for your check, the loader and Open it again only; Open it again, in this
+//     tab too, the same check, back where the browser wants a tap first: Continue, with the unlock
+//     icon, one tap, one unlock; back to Get verified, the check still under way; Start again,
+//     straight to the wait. On a laptop, the deep green panel beside it, the screen 520px wide at
+//     most.
+//  3. The selfie: its card, its check in this tab, Didit's page sending it back to /back, where the
+//     page, which holds no seed, asks the passkey by itself, once, nothing tapped, and keeps the
+//     stamp; the gift collected into the wallet; the stamp kept in the Profiles folder; nothing of
+//     the seed kept, nothing waiting in the tab; then Your first profile, "You're verified" under it.
 //  4. The first profile: Later, to Connect your AI, Skip, to Home, empty, whose New profile comes
 //     back; every market a tile, a tint of its color with its icon in its color, two to a row; a
 //     search over the markets, by their roles' words too; a tile's sheet, its roles, Seller on a
@@ -44,7 +46,8 @@
 //     avatar, solid, a tutor offering; no badge on its card: beside Your profiles, the person's, once,
 //     the selfie check's, a face being scanned on the forest green, its words its label and title,
 //     and the ID's outline, dashed and muted, which opens Get verified with the ID's sheet up; on the
-//     profile's header, where its badge stands alone, a tap says "Verified with a selfie"; the
+//     profile's header, where its badge stands alone, a tap says "Verified with a selfie"; its
+//     avatar the animal its address picks, white on its market's color, the same on its card; the
 //     header on a tint of its market's color, its bottom corners rounded, in four parts: the market
 //     small, the role big in the titles' face, Tutor, the badge right after it, and under them its
 //     rating, none yet, no pill; two tabs, Offers and Reviews, Offers open, New offer with its plus
@@ -53,16 +56,19 @@
 //     that page where there is; Home with the mark, Search Forest opening the index in a new tab, no
 //     Messages, the three tabs, the card its market in bold over its role, No reviews at its right,
 //     no count while nothing is new, no chevron; New profile's role made shows the check, in Create's
-//     forest green, which opens its profile, and no row anywhere shows the unlock icon.
+//     forest green, which opens its profile, and no row anywhere shows the unlock icon; the role
+//     sheet's avatars its market's icon, no animal; one search on Home, Search Forest, and New
+//     profile floating at the bottom right above the tabs, forest with its plus, no dashed card.
 //  5. You: Selfie, its badge's forest square, Verified on its mint chip; ID, its badge's outline,
 //     dashed, its line from the verifier's gifts and Add, $5;
 //     the rows Passkeys (1 passkey), Your AI, Appearance (Auto) and About Forest; Forget this device
-//     in red with its icon. Appearance's sheet, one choice: radio rows, Dark picked and the sheet
-//     closed, kept through a reload, then Auto. About Forest: Privacy, Terms and Source code, each in
+//     in red with its icon. Appearance's sheet, from the bottom, one choice: radio rows, Dark picked
+//     and the sheet closed, kept through a reload, then Auto. About Forest: Privacy, Terms and Source code, each in
 //     a new tab, and the version. Your AI's Connect another opens Connect your AI, with a back and
-//     no Skip. On a laptop, no tabs: the sidebar, its places, the profiles with their avatars,
+//     no Skip. On a laptop, no tabs: the sidebar, its places, the profiles with their animals,
 //     Profiles with its small mint New, which opens New profile, no New profile row and no AI card;
-//     a profile opened from it.
+//     Appearance a dialog in the middle, about 420px wide, over the dimmed page, closed by Escape and
+//     by a click outside; a profile opened from it; Home's New profile at its top right.
 //  6. Two people: the first, whose phone allows its location, posts an offer from their profile,
 //     its price per hour side by side, its subjects from a long list, a row whose sheet has a search
 //     and ticks, its card its first line, its subjects, then $30 and per hour under it; its form the
@@ -74,18 +80,21 @@
 //     opened again, the phone's back closes it, keeping the form; the place gone again with In person;
 //     a contact, which no market
 //     lists; asking nothing, the seed still held, so Post shows no unlock icon; the second
-//     opens its link with nothing set up, goes through Start, Yes, I'm new and the selfie,
-//     makes the profile on the other side from the compose screen's From, To the link's profile as
-//     its card, by its short key once, its market and role apart, and messages, nothing
-//     asked after Start; the first sees it counted with nothing unlocked, on the card's avatar (1), the
+//     opens its link with nothing set up, goes through Start, Yes, I'm new and the selfie (the link
+//     waiting in the tab through Didit's page and back), makes the profile on the other side from
+//     the compose screen's From, To the link's profile as its card, by its short key once, its
+//     market and role apart, and messages, nothing asked after the unlock back from the check; the
+//     first sees it counted with nothing unlocked, on the card's avatar (1), the
 //     Notifications tab, which counts everything new, and the Messages button of the profile and of
 //     Notifications, Notifications holding no message and the profile no Messages line; the page
 //     closed and opened again, Messages opens every profile's conversations: only what is true before
-//     the unlock, the avatar of the profile it came to, "1 new message" and Open with its unlock
-//     icon, no chips, New message the round pencil at the top; every inbox opens in one unlock, chips
-//     for All and Tutoring tutor, a dot in its market's color and no avatar, who it is from by their
-//     short key with the badge, their market and role apart, its last message bold with its dot, to
-//     which profile; the thread's header, Review soft with its star; the reply in one row, the pill
+//     the unlock, the avatar of the profile it came to, its animal, "1 new message" and Open with its
+//     unlock icon, no chips, New message the round pencil at the top and no back, the tabs below with
+//     Notifications picked; every inbox opens in one unlock, chips for All and Tutoring tutor, a dot
+//     in its market's color and no avatar; each row their animal, their short key, bold, in the key's
+//     face, and the time of day, then the last message, bold with its dot, and nothing else: no
+//     badge, no market or role, no "to your"; the thread with no tabs, its header, to which profile,
+//     Review soft with its star; the reply in one row, the pill
 //     and a round Send with its arrow, the time under each run and Today above them; Notifications
 //     then says "Nothing yet.", its Messages no number; the second, their page closed and opened
 //     again, opens Messages from their profile, picked to it before the unlock and after, reads the
@@ -98,8 +107,9 @@
 //     makes a profile of its own, nothing asked again; the first, with nothing unlocked, shows New
 //     profiles from another device, which, the page closed and opened again, one unlock reads.
 //     Then a message from one of the person's profiles to another of theirs: To their tutor, From
-//     their student; the seed held, the messages open by themselves, no Open, and it is sent, arrives
-//     and opens by itself, new, with nothing asked.
+//     their student; the seed held, the messages open by themselves, no Open, the inbox's read
+//     slowed: the loader, hidden for its first half second, then shown; and it is sent, arrives and
+//     opens by itself, new, with nothing asked.
 //  8. One passkey per person: after Forget, Start finds the passkey, straight to Home, and asks
 //     nothing more; with the sheet closed, No passkey found, Try again, Home, and never First time
 //     here?.
@@ -109,9 +119,11 @@
 //     name its title, a Name field and Save, no Remove at all; renamed My phone, nothing asked, kept
 //     on the device, then its name taken back; the phone's own manager, which keeps the first
 //     passkey the new one excludes, refuses, in one red line; a security key, a second virtual
-//     authenticator, makes one: Passkey 2, no line, renamed Security key; a browser holding only
-//     that one, answered through the QR code, Not now, opens the same profiles; Remove this passkey
-//     on its sheet, tapped twice, the line back, and that browser's next unlock, its page closed and
+//     authenticator, makes one: Passkey 2, no line, renamed Security key; its sheet from the bottom,
+//     Remove in red text at the left, Save at the right, no Cancel; on a laptop a dialog in the
+//     middle, Remove, Cancel and Save, left to right, Cancel closing it, Main's with no Remove; a
+//     browser holding only that one, answered through the QR code, Not now, opens the same profiles;
+//     Remove on its sheet, tapped twice, the line back, and that browser's next unlock, its page closed and
 //     opened again, says "This passkey no longer opens your profiles."; after Forget, its Start
 //     opens its own seed, with no stamp: Get verified.
 //     Then a browser signed in through the QR code saves a passkey: Save makes one there, added to
@@ -174,7 +186,8 @@
 //     Marta in place of the key in the thread's header, Review's, Messages, Notifications (whose
 //     name opens her profile) and the reviews she wrote; another browser, the same passkey
 //     answering, has Marta after its one unlock at Start; Show the key instead takes it back, the
-//     key again, the entry deleted, nothing kept.
+//     key again, the entry deleted, nothing kept; on a laptop, the naming sheet a dialog in the middle,
+//     closed by Escape.
 //     Then a listing an older market shaped, written to the host as the app wrote it before, days
 //     ago: its card says Needs an update and opens its form, and Notifications holds a notice for
 //     it under Earlier, its sun square and no time, the tab counting it; opened there, what still
@@ -191,7 +204,8 @@
 //  a. its login comes to the connect page: the AI app's name, its redirect's host, the profiles
 //     unticked, none with a badge; one ticked, Connect, one unlock; the AI app gets its token,
 //     reads its profile and writes a listing, which shows on the profile; the device keeps the AI app,
-//     never a key;
+//     never a key; a browser with the same seed, as one set up before the AI app connected: Your AI
+//     empty, with no Find AI apps; its next unlock, for the messages, finds the AI app by itself;
 //     Then a whole visit asks exactly once: from a page just opened, post, edit, open messages (by
 //     themselves), message, review from a thread with someone else, the note arriving and opening
 //     by itself, an AI app's profile ticked and unticked, and the listing deleted, the page hidden
@@ -202,8 +216,9 @@
 //     back on Your AI, the AI's next call refused, and its listing stays;
 //  c. a new phone, nothing set up, at a connect page: First time here? with I use Forest on another
 //     device first, the primary, then Yes, I'm new; the selfie and the first profile, then back to
-//     the connect page, its one profile ticked, no Connect your AI; Connect, nothing asked after
-//     Start;
+//     the connect page (the login waiting in the tab through Didit's page and back), its one
+//     profile ticked, no Connect your AI; Connect, nothing asked after the unlock back from the
+//     check;
 //  d. a connector that isn't ours: one line, nothing else; a request that ran out: one line.
 // 10. A face seen before (face_seen, which services' next verifier answers; answered here in its
 //     place): Get verified, its notice pointing to the ID, the selfie's card greyed, and, in place of
@@ -221,13 +236,14 @@
 //     one live, then "A new version is ready." with Reload, above the screen; the next version takes
 //     over and the old proof worker is gone; the page reloads once, back on a market's roles, and the
 //     profile is made.
-// 15. The ID check, from You's Add, $5: Get verified, the selfie's card greyed, the ID's sheet open, the
-//     verifier's consent screen word for word, tapped open; Pay with the unlock icon, since no seed is
-//     held and it asks the verifier first for an ID stamp this seed has, by its stamp number: one
-//     unlock, none there; paid through the verifier's own stand-in
-//     for Stripe (its test card named first), the payment kept on the device through Stripe's page;
-//     the ID card opening its check in its own tab; Waiting for your check with Continue, since no
-//     seed is held after Stripe's page; one unlock; both verifications
+// 15. The ID check, from You's Add, $5: Get verified, the selfie's card greyed, the ID's sheet open:
+//     ID check, $5 one time, "You're only charged if it passes.", What the check keeps, Pay $5, and
+//     nothing more; the verifier's consent screen word for word, tapped open; Pay with the unlock
+//     icon, since no seed is held and it asks the verifier first for an ID stamp this seed has, by
+//     its stamp number: one unlock, none there; paid through the verifier's own stand-in for Stripe
+//     (its test card named first), the payment kept on the device; Stripe's page, then at once,
+//     nothing tapped, Didit's, both in this tab, no tab opened; back from Didit, one unlock asked by
+//     the page itself; both verifications
 //     on every profile, and both badges, the same forest square, the selfie's first, beside Your
 //     profiles (no outline, none on a card), on the profile's header, To and From; You's ID Verified, nothing to add; the connect page's
 //     ticks with no badge; a student's avatar light, a tint of its market's color. Every tick
@@ -236,16 +252,18 @@
 //     icon again.
 // 17. A selfie that doesn't pass: Get verified, its notice, "That selfie didn't pass. Try again, or
 //     use your ID."; then the ID: its sheet, the verifier's words before Pay, the stand-in Stripe,
-//     back at Start, Get verified, the ID card opening its check, and Your first profile.
+//     then the ID check at once, in this tab, no Start between, one unlock back from it by itself,
+//     and Your first profile.
 // 18. The app on a laptop, 1280px wide: Home's cards three to a row of about 300px, every card one
-//     height, rated or not, New profile's dashed card too, the last; every name inside its card on
+//     height, rated or not, New profile at Home's top right, no dashed card; every name inside its card on
 //     two lines and before its rating, the longest too (Software development developer, made from
 //     the sidebar's New); Messages in two panes, the
 //     conversations without a back on the left, nothing open on the right until one is tapped, then
 //     it, marked in the list; the sidebar and Home in one order, the most recently used first, then a
 //     listing an older market shaped putting its profile on top; past eight profiles (the device's
-//     list made longer with the same seed's addresses, never written, so no more proofs), eight in
-//     the sidebar and All profiles, which opens Home with them all and a search.
+//     list made longer with the same seed's addresses, never written, so no more proofs), every one
+//     in the sidebar, in Home's order, no All profiles, the sidebar scrolling inside itself and the
+//     page not; Home lists them all, and its one search is Search Forest.
 // 19. Nothing the app did, through all of it, was refused by the CSP.
 //
 // SHOTS=<dir> keeps a screenshot of each screen there, light and dark.
@@ -272,6 +290,7 @@ import { type Served, serve } from '../../services/mcp/src/server.ts'
 import { App } from '../../services/mcp/test/app.ts'
 import { REDIRECT, aiApp, lesson } from '../../services/mcp/test/setup.ts'
 import { colorIn, colorsFor } from '../../services/index/src/avatar.ts'
+import { animalOf } from '../../src/animals.ts'
 import { type Running, freePort, startServices } from './services.ts'
 import { type Tiles, standInTiles } from './tiles.ts'
 import { serveLikeVercel } from './vercel.ts'
@@ -298,7 +317,9 @@ let csp: string
 let CHROME_ARGS: string[]
 const refused: string[] = []
 
-type Phone = { context: BrowserContext; page: Page; cdp: CDPSession; authenticator: string; counts: { created: number; asserted: number } }
+type Phone = { context: BrowserContext; page: Page; cdp: CDPSession; authenticator: string; counts: { created: number; asserted: number }; went: Went[] }
+/** A stand-in's page the person was sent to, Stripe's or Didit's, and the tab it opened in. */
+type Went = { to: 'stripe' | 'didit'; page: Page }
 /** The first person's browser, its seed (asked of its passkey by the test itself), and their profile. */
 let first: Phone
 let seed: Uint8Array
@@ -370,8 +391,30 @@ async function phone({ prf = true, located = false }: { prf?: boolean; located?:
   })
   await context.exposeFunction('cspRefused', (what: string) => void refused.push(what))
   await context.addInitScript(() => addEventListener('securitypolicyviolation', (e) => (globalThis as any).cspRefused(`${e.violatedDirective} ${e.blockedURI}`)))
+  const went: Went[] = []
   // Didit's page, for the stand-in Didit's sessions: done at once, it sends the person back, as Didit does to the verifier's callback.
-  await context.route('https://fake-didit.invalid/**', (route) => route.fulfill({ contentType: 'text/html', body: `<script>location.replace(${JSON.stringify(`${APP}back`)})</script>` }))
+  await context.route('https://fake-didit.invalid/**', (route) => {
+    went.push({ to: 'didit', page: route.request().frame().page() })
+    return route.fulfill({ contentType: 'text/html', body: `<script>location.replace(${JSON.stringify(`${APP}back`)})</script>` })
+  })
+  // Stripe's Checkout page, the verifier's own stand-in's: paid at once, and back to the app's page, as Stripe sends the person.
+  await context.route('https://checkout.stripe.example/**', (route) => {
+    const payment = new URL(route.request().url()).pathname.split('/').pop()!
+    services.payments.pay(payment)
+    went.push({ to: 'stripe', page: route.request().frame().page() })
+    return route.fulfill({ contentType: 'text/html', body: `<script>location.replace(${JSON.stringify(services.payments.returnUrls.get(payment))})</script>` })
+  })
+  // A browser that wants a tap before the passkey is asked (as Safari may): the next page the app
+  // opens, once the test says so, has its first ask refused, as such a browser refuses it.
+  await context.addInitScript(() => {
+    if (localStorage.getItem('test.tap') !== 'first') return
+    localStorage.removeItem('test.tap')
+    const own = navigator.credentials.get.bind(navigator.credentials)
+    navigator.credentials.get = () => {
+      navigator.credentials.get = own
+      return Promise.reject(new DOMException('A tap first.', 'NotAllowedError'))
+    }
+  })
   const page = await context.newPage()
   page.on('pageerror', (err) => say(`page error: ${err.message}`))
   const cdp = await context.newCDPSession(page)
@@ -382,8 +425,14 @@ async function phone({ prf = true, located = false }: { prf?: boolean; located?:
   const counts = { created: 0, asserted: 0 }
   cdp.on('WebAuthn.credentialAdded', () => void counts.created++)
   cdp.on('WebAuthn.credentialAsserted', () => void counts.asserted++)
-  return { context, page, cdp, authenticator: authenticatorId, counts }
+  return { context, page, cdp, authenticator: authenticatorId, counts, went }
 }
+
+/** The next page the app opens in `p`'s browser wants a tap before it asks the passkey. */
+const wantsATap = (p: Phone) => p.page.evaluate(() => localStorage.setItem('test.tap', 'first'))
+
+/** Where `p` has been sent since `since` stand-in pages: each to and whether it was in `p`'s own tab. */
+const wentFrom = (p: Phone, since: number) => p.went.slice(since).map((w) => [w.to, w.page === p.page])
 
 /** The seed as the app derives it, asked by the test itself: the PRF secret for "forest-seed-v1", relying party app.forest.foundation. One assertion. */
 async function seedOn(page: Page): Promise<Uint8Array> {
@@ -417,9 +466,11 @@ const drawnAs = (b: Locator) =>
 const SELFIE = { check: 'face', icon: 'scan-smiley', ground: true }
 const ID = { check: 'id', icon: 'identification-card', ground: true }
 
-/** A profile's avatar as drawn: its market's color (services' avatar.ts), solid or light, and its icon. */
+/** A profile's avatar as drawn: its market's color (services' avatar.ts), solid or light, and its animal, or for a market or a role, its market's icon. */
 const avatarOf = (av: Locator) =>
-  av.evaluate((el) => ({ light: el.classList.contains('look'), h: getComputedStyle(el).getPropertyValue('--h').trim(), ground: getComputedStyle(el).backgroundColor, icon: el.querySelector('svg')?.dataset.icon }))
+  av.evaluate((el) => ({ light: el.classList.contains('look'), h: getComputedStyle(el).getPropertyValue('--h').trim(), ground: getComputedStyle(el).backgroundColor, icon: el.querySelector('svg')?.dataset.icon ?? el.querySelector('svg')?.dataset.animal }))
+/** The animal the app draws for the profile at `address`. */
+const animal = (address: string) => animalOf(address)[0]
 /** A market's color, as the app gives it: the directory walked in its order (services' avatar.ts). */
 const colorOf = (market: string) => colorIn(colorsFor(loadMarkets().directory.markets.map((m) => m.name)), market)
 /** `#3d76c9` as the page computes it: rgb(61, 118, 201). */
@@ -438,6 +489,25 @@ async function away(page: Page) {
     }
     delete (document as { visibilityState?: string }).visibilityState
   })
+}
+
+/** A small choice or edit on a laptop: a dialog in the middle of the screen, about 420px wide, over the dimmed page, no grab. */
+async function inTheMiddle(page: Page, dialog: Locator) {
+  await dialog.waitFor()
+  const box = (await dialog.boundingBox())!
+  const { width, height } = page.viewportSize()!
+  assert.ok(Math.abs(box.width - 420) < 2, `about 420px wide: ${box.width}`)
+  assert.ok(Math.abs(box.x + box.width / 2 - width / 2) < 2 && Math.abs(box.y + box.height / 2 - height / 2) < 2, `in the middle: ${JSON.stringify(box)}`)
+  assert.ok(await page.locator('.scrim').isVisible(), 'over the dimmed page')
+  assert.equal(await dialog.locator('.grab').isVisible(), false, 'no grab')
+}
+
+/** The same on a phone: a sheet risen from the bottom, its grab on top. */
+async function fromTheBottom(page: Page, dialog: Locator) {
+  await dialog.waitFor()
+  const box = (await dialog.boundingBox())!
+  assert.ok(Math.abs(box.y + box.height - page.viewportSize()!.height) < 2 && box.width === page.viewportSize()!.width, `from the bottom, the screen's width: ${JSON.stringify(box)}`)
+  assert.ok(await dialog.locator('.grab').isVisible(), 'its grab')
 }
 
 /** Whether `b` shows the unlock icon: it does only when a tap on it will ask the passkey. */
@@ -562,12 +632,19 @@ const noLockOnRows = async (page: Page) => assert.equal(await page.locator('butt
 /** Get verified's two cards, by their names. */
 const checkCard = (page: Page, name: 'Selfie' | 'ID') => page.getByRole('button', { name: new RegExp(`^${name}(?![a-z])`) })
 
-/** The selfie's card tapped on Get verified, its check's tab opened on the tap and closed by Didit's page sending it back. */
+/** The selfie's card tapped on Get verified: its check in this tab, Didit's page sending it back to /back, where the page asks the passkey by itself. */
 async function faceCheck(p: Phone) {
   await p.page.getByRole('heading', { name: 'Get verified' }).waitFor({ timeout: 60_000 })
-  const tab = p.context.waitForEvent('page')
+  const since = p.went.length
   await checkCard(p.page, 'Selfie').click()
-  await (await tab).waitForEvent('close')
+  await backFrom(p, since)
+  assert.deepEqual(wentFrom(p, since), [['didit', true]], "Didit's page, in this tab")
+}
+
+/** Back in the app from the stand-in pages `p` was sent to since `since`: once Didit's has been, the app's own page again. */
+async function backFrom(p: Phone, since: number) {
+  for (const until = Date.now() + 60_000; !p.went.slice(since).some((w) => w.to === 'didit'); await p.page.waitForTimeout(100)) if (Date.now() > until) throw new Error("never sent to Didit's page")
+  await p.page.waitForURL(`${APP}id`, { timeout: 60_000 })
 }
 
 /** Start on a device that knows no passkey: its sheet, First time here?, and Yes, I'm new, which makes the passkey. */
@@ -828,7 +905,7 @@ test("Start, on a device that knows no passkey: one cream Start, nothing asked; 
   say("Start: one button, nothing asked first; First time here?; No passkey found; Yes, I'm new made it for app.forest.foundation, then Get verified")
 })
 
-test("back on each setup step: Get verified to Start, which asks for the passkey made alone and goes straight back; the ID's sheet, the verifier's words before Pay, closed after a payment that failed; the selfie's wait to Get verified; on a laptop, the deep green panel beside it", async () => {
+test("back on each setup step: Get verified to Start, which asks for the passkey made alone and goes straight back; the ID's sheet, its few words, the verifier's words before Pay, closed after a payment that failed; the selfie, in this tab, back to a wait that asks the passkey by itself, or with Continue where the browser wants a tap; the wait to Get verified; on a laptop, the deep green panel beside it", async () => {
   const { page, context, counts } = first
   // Get verified: its line, two cards, each in its badge's colors, and one quiet line under them.
   await page.getByText("So people know you're real.").waitFor()
@@ -836,7 +913,7 @@ test("back on each setup step: Get verified to Start, which asks for the passkey
   const cards = await page.locator('button.vcard').evaluateAll((b) => b.map((x) => [...x.querySelectorAll('.two > *, .price, .vlist > span')].map((e) => e.textContent)))
   assert.deepEqual(cards, [
     ['Selfie', 'A quick selfie', 'Free', 'Free credits for posts and messages'],
-    ['ID', 'Your ID and a selfie', '$5, one time', '10× the free credits', 'Stronger trust', 'Supports Forest'],
+    ['ID', 'Your ID and a selfie', '$5 one time', '10× the free credits', 'Stronger trust', 'Supports Forest'],
   ])
   const ground = (token: string) =>
     page.evaluate((t) => {
@@ -862,14 +939,15 @@ test("back on each setup step: Get verified to Start, which asks for the passkey
   await page.getByRole('heading', { name: 'Get verified' }).waitFor({ timeout: 60_000 })
   assert.equal(counts.asserted - asked, 1, 'one unlock, by the passkey made, and no question first')
 
-  // The ID: its sheet, its price once, the hold, its tries, what it keeps behind a tap, the verifier's words before Pay; the payment fails, and the sheet closed.
+  // The ID: its sheet, its price once, one line, what it keeps behind a tap, the verifier's words before Pay; the payment fails, and the sheet closed.
   let unavailable = true
   await answer(context, `${services.verifier}/id/payment`, 503, { error: 'payment_unavailable' }, () => unavailable)
   await checkCard(page, 'ID').click()
   const sheet = page.getByRole('dialog', { name: 'ID check' })
-  await sheet.getByText('Up to three tries.', { exact: true }).waitFor()
-  assert.equal(await sheet.locator('.sheet-head .price').textContent(), '$5, one time')
-  assert.deepEqual(await sheet.locator('.sheet-head ~ p').allTextContents(), ['We hold $5 on your card and only charge it if your ID check passes.', 'Up to three tries.'], 'the hold under the price, then the tries')
+  await sheet.getByText("You're only charged if it passes.", { exact: true }).waitFor()
+  assert.equal(await sheet.locator('.sheet-head h2').textContent(), 'ID check')
+  assert.equal(await sheet.locator('.sheet-head .price').textContent(), '$5 one time')
+  assert.deepEqual(await sheet.locator('.sheet-head ~ p').allTextContents(), ["You're only charged if it passes."], 'one line under the price: no hold, no tries')
   const keeps = sheet.getByText('What the check keeps')
   await keeps.waitFor()
   assert.equal(await page.locator('.consent').isVisible(), false, 'what the check keeps, behind a tap')
@@ -885,23 +963,43 @@ test("back on each setup step: Get verified to Start, which asks for the passkey
   await sheet.waitFor({ state: 'detached' })
   unavailable = false
 
-  // The selfie, left unfinished in its tab: Waiting for your check, the loader and Open it again only; back, the asking stopped.
+  // The selfie, in this tab, left unfinished at Didit: back at /back, the page asks the passkey by
+  // itself, nothing tapped; then Waiting for your check, the loader and Open it again only; back,
+  // the asking stopped.
   let unfinished = true
   await answer(context, `${services.verifier}/face/stamp`, 403, { error: 'not_approved' }, () => unfinished)
-  const tab = context.waitForEvent('page')
+  const opened = context.pages().length
+  let since = first.went.length
+  const byItself = counts.asserted
   await checkCard(page, 'Selfie').click()
-  await (await tab).waitForEvent('close')
+  await backFrom(first, since)
+  assert.deepEqual(wentFrom(first, since), [['didit', true]], "Didit's page, in this tab")
   await page.getByText('Waiting for your check').waitFor()
   await page.locator('.waiting .loader').waitFor()
+  await button(page, 'Continue').waitFor({ state: 'detached' })
+  assert.equal(counts.asserted - byItself, 1, 'the passkey asked by the page itself, once, with no tap')
   assert.deepEqual((await page.locator('main button').allTextContents()).map((t) => t.trim()), ['', 'Open it again'], 'back, and Open it again')
   assert.equal(await button(page, 'Open it again').locator('[data-icon="arrow-square-out"]').count(), 1)
   const session = JSON.parse((await kept(page))['forest.setup']!).session as string
   assert.ok(session, 'the check under way, kept')
   await shot(page, 'face-away')
-  const again = context.waitForEvent('page')
+  // Open it again, where the browser wants a tap before the passkey is asked: back, Continue with the unlock icon, and one tap asks it.
+  await wantsATap(first)
+  since = first.went.length
   await button(page, 'Open it again').click()
-  await (await again).waitForEvent('close')
+  await backFrom(first, since)
+  assert.deepEqual(wentFrom(first, since), [['didit', true]], 'the same tab again')
   assert.equal(JSON.parse((await kept(page))['forest.setup']!).session, session, 'the same check, opened again')
+  const continuing = button(page, 'Continue')
+  await continuing.waitFor()
+  assert.ok(await asks(continuing), 'Continue, with the unlock icon')
+  assert.equal(await page.locator('.line.red').count(), 0, 'nothing said of the passkey')
+  const tapped = counts.asserted
+  await continuing.click()
+  await page.locator('.waiting .loader').waitFor()
+  await continuing.waitFor({ state: 'detached' })
+  assert.equal(counts.asserted - tapped, 1, 'one tap, one unlock')
+  assert.equal(context.pages().length, opened, 'no tab opened')
   await button(page, 'Back').click()
   await page.getByRole('heading', { name: 'Get verified' }).waitFor()
   assert.equal(JSON.parse((await kept(page))['forest.setup']!).session, session, 'and still under way')
@@ -928,19 +1026,17 @@ test("back on each setup step: Get verified to Start, which asks for the passkey
   say('back: Get verified to Start and straight back; the ID sheet after a failed payment, and the selfie waiting, each to Get verified; on a laptop, the panel')
 })
 
-test("the selfie: its card, its check in its own tab, back through /back, the page hidden meanwhile, which keeps the seed, so the stamp kept with nothing asked; the gift in the wallet, the stamp in the Profiles folder; then Your first profile, You're verified", async () => {
+test("the selfie: its card, its check in this tab, back through /back, where the page asks the passkey by itself, once, nothing tapped, and the stamp is kept; the gift in the wallet, the stamp in the Profiles folder; then Your first profile, You're verified", async () => {
   const { page, context, counts } = first
-  // The check's tab hides the app's page, which keeps the seed now, under 5 minutes since the last
-  // action: the stamp is asked for, and once it comes, kept at once, nothing asked.
-  await away(page)
+  // The page that went to Didit's held the seed; the one Didit sends back to holds none: it asks
+  // the passkey at once, by itself, and with it the stamp, kept as soon as it comes.
   const asked = counts.asserted
-  const tab = context.waitForEvent('page')
-  await checkCard(page, 'Selfie').click()
-  const didit = await tab
-  await didit.waitForEvent('close')
-  say(`the check's tab opened on the tap, went to ${new URL(didit.url()).pathname} and closed itself`)
+  const opened = context.pages().length
+  await faceCheck(first)
+  say("the check in this tab: Didit's page, then back at /back")
   await page.getByRole('heading', { name: 'Your first profile' }).waitFor({ timeout: 60_000 })
-  assert.equal(counts.asserted - asked, 0, 'nothing asked: the seed held through the check, the page hidden or not')
+  assert.equal(counts.asserted - asked, 1, 'one unlock, asked by the page itself back from Didit, nothing tapped')
+  assert.equal(context.pages().length, opened, 'no tab opened')
   const chip = page.locator('.chip.new', { hasText: "You're verified" })
   await chip.waitFor()
   assert.equal(await chip.locator('.icon').getAttribute('data-icon'), 'scan-smiley', "the selfie badge's icon")
@@ -960,6 +1056,7 @@ test("the selfie: its card, its check in its own tab, back through /back, the pa
   assert.equal(stamp.verifier, services.faceKey, "the stamp from the verifier's face key")
   const local = await kept(page)
   assert.deepEqual(Object.keys(local).sort(), ['forest.folder', 'forest.passkey', 'forest.passkeys', 'forest.verified'])
+  assert.deepEqual(await page.evaluate(() => Object.keys(sessionStorage)), [], 'nothing waits in this tab')
   assert.deepEqual(JSON.parse(local['forest.verified']!), ['face'], 'how the person is verified')
   assert.deepEqual(JSON.parse(local['forest.folder']!), { address: wallet.address, labels: {} }, "the Profiles folder's address, never a key")
   for (const secret of [Buffer.from(seed).toString('hex'), Buffer.from(seed).toString('base64url'), String(stamp.signature.S)]) assert.ok(!JSON.stringify(local).includes(secret), 'nothing of the seed or the stamp kept')
@@ -1060,8 +1157,9 @@ test("the first profile: Later, Connect your AI and Skip, then back; every marke
   assert.deepEqual(await page.locator('.top-right button').evaluateAll((b) => b.map((x) => x.getAttribute('aria-label'))), ['Messages', 'Share'])
   assert.deepEqual(await page.locator('.top-right button .icon').evaluateAll((i) => i.map((x) => (x as SVGElement).dataset.icon)), ['chat-circle', 'export'])
   assert.deepEqual([await inbox(page).locator('.icon').count(), await inbox(page).locator('.count').count(), await inbox(page).locator('.unlock').count()], [1, 0, 0], 'its own icon, no number, no fingerprint')
-  // Its market's avatar, solid: a tutor offers; and the selfie check's badge.
-  assert.deepEqual(await avatarOf(page.locator('.titled .av')), { light: false, h: colorOf('tutoring'), ground: rgbOf(colorOf('tutoring')), icon: 'graduation-cap' }, "the tutoring market's icon, white on its color")
+  // Its avatar, solid: a tutor offers; its animal, from its address, white on its market's color; and the selfie check's badge.
+  const tutorAnimal = animal((await mainKey(seed, 'tutoring/tutor')).address)
+  assert.deepEqual(await avatarOf(page.locator('.titled .av')), { light: false, h: colorOf('tutoring'), ground: rgbOf(colorOf('tutoring')), icon: tutorAnimal }, 'its animal, white on its color')
   assert.deepEqual(await drawnAs(badge(page.getByRole('heading', { name: 'Tutoring tutor' }))), SELFIE, "the selfie check's badge, a face being scanned on the forest green")
   await shot(page, 'profile')
   const main = await mainKey(seed, 'tutoring/tutor')
@@ -1088,7 +1186,7 @@ test("the first profile: Later, Connect your AI and Skip, then back; every marke
   await card.waitFor()
   await cardNamed(card, 'Tutoring', 'tutor')
   assert.equal(await card.locator('.vb').count(), 0, "no badge on the card: the person's badges are beside the title")
-  assert.equal((await avatarOf(card.locator('.av'))).h, colorOf('tutoring'), 'its avatar')
+  assert.deepEqual([(await avatarOf(card.locator('.av'))).h, (await avatarOf(card.locator('.av'))).icon], [colorOf('tutoring'), tutorAnimal], 'its avatar: the same animal, on its color')
   await card.locator('.rt2', { hasText: 'No reviews' }).waitFor()
   assert.deepEqual([await card.locator('.newpip').count(), await card.locator('[data-icon="caret-right"]').count()], [0, 0], 'nothing new, no count; no chevron')
   assert.deepEqual(JSON.parse((await kept(page))['forest.profiles']!), [{ label: 'tutoring/tutor', address: tutor }])
@@ -1098,6 +1196,12 @@ test("the first profile: Later, Connect your AI and Skip, then back; every marke
   assert.equal(await inbox(page).count(), 0, 'no Messages on Home')
   assert.deepEqual(await page.locator('.tabbar button').allTextContents(), ['Home', 'Notifications', 'You'])
   assert.equal(await page.locator('.tabbar button[aria-current="page"] .icon').getAttribute('data-icon'), 'house')
+  // One search, Search Forest; and New profile floating at the bottom right, above the tabs, forest with its plus; no dashed card.
+  assert.deepEqual([await page.getByRole('searchbox').count(), await page.locator('.addcard').count()], [0, 0], 'no search of their own profiles, no dashed card')
+  const fab = page.locator('button.fab', { hasText: 'New profile' })
+  const [fabBox, tabsBox] = [(await fab.boundingBox())!, (await page.locator('.tabbar').boundingBox())!]
+  assert.ok(fabBox.y + fabBox.height < tabsBox.y && 390 - (fabBox.x + fabBox.width) < 30, `at the bottom right, above the tabs: ${JSON.stringify(fabBox)}`)
+  assert.deepEqual(await fab.evaluate((b) => [getComputedStyle(b).position, getComputedStyle(b).backgroundColor, (b.querySelector('.icon') as SVGElement).dataset.icon]), ['fixed', await page.evaluate(() => { const s = document.body.appendChild(document.createElement('span')); s.style.background = 'var(--forest)'; const c = getComputedStyle(s).backgroundColor; s.remove(); return c }), 'plus'])
   await shot(page, 'home')
   // Beside Your profiles, the person's badges, once: the selfie's, its words its label and its title; the ID's not done, its
   // outline, dashed and muted, a button that starts the ID check: Get verified, the ID's sheet up; closed, and back, Home.
@@ -1110,7 +1214,7 @@ test("the first profile: Later, Connect your AI and Skip, then back; every marke
   assert.equal(await outline.evaluate((b) => getComputedStyle(b).color), await muted(page), 'muted')
   await outline.click()
   const idSheet = page.getByRole('dialog', { name: 'ID check' })
-  await idSheet.getByText('Up to three tries.', { exact: true }).waitFor()
+  await idSheet.getByText("You're only charged if it passes.", { exact: true }).waitFor()
   await page.getByRole('heading', { name: 'Get verified' }).waitFor()
   await page.keyboard.press('Escape')
   await idSheet.waitFor({ state: 'detached' })
@@ -1136,6 +1240,7 @@ test("the first profile: Later, Connect your AI and Skip, then back; every marke
   const [tick, made] = [await yours.locator('[data-icon="check-circle"]').evaluate((i) => getComputedStyle(i).color), await tutoringRoles.getByRole('button', create('student')).evaluate((b) => getComputedStyle(b).backgroundColor)]
   assert.equal(tick, made, "the check in Create's forest green")
   assert.equal(await tutoringRoles.locator('[data-icon="caret-right"]').count(), 0, 'no chevrons')
+  assert.deepEqual(await tutoringRoles.locator('.av').evaluateAll((a) => a.map((x) => [(x.querySelector('svg') as SVGElement).dataset.icon ?? null, (x.querySelector('svg') as SVGElement).dataset.animal ?? null])), [['graduation-cap', null], ['graduation-cap', null]], "the role sheet keeps its market's icon, no animal")
   await shot(page, 'new-profile-made')
   const asked2 = counts.asserted
   await yours.click()
@@ -1181,6 +1286,7 @@ test("You: Selfie Verified on its badge's square, the ID's outline, its line and
   // Appearance: a sheet of one choice, rows with a radio mark; a tap picks it and closes the sheet; kept through a reload.
   await page.locator('button.row', { hasText: 'Appearance' }).click()
   const looks = page.getByRole('dialog', { name: 'Appearance' })
+  await fromTheBottom(page, looks)
   assert.deepEqual(await looks.getByRole('radio').allTextContents(), ['Auto', 'Light', 'Dark'])
   assert.equal(await looks.getByRole('radio', { name: 'Auto' }).getAttribute('aria-checked'), 'true')
   assert.equal(await looks.getByRole('checkbox').count(), 0, 'no tick boxes for one choice')
@@ -1226,7 +1332,7 @@ test("You: Selfie Verified on its badge's square, the ID's outline, its line and
   assert.deepEqual(await side.getByRole('navigation', { name: 'Places' }).getByRole('button').allTextContents(), ['Home', 'Notifications', 'Messages', 'You'])
   assert.equal(await side.locator('button[aria-current="page"]').textContent(), 'You')
   const row = side.getByRole('button', { name: 'Tutoring tutor' })
-  assert.equal((await avatarOf(row.locator('.av.sm'))).h, colorOf('tutoring'))
+  assert.deepEqual([(await avatarOf(row.locator('.av.sm'))).h, (await avatarOf(row.locator('.av.sm'))).icon], [colorOf('tutoring'), animal(tutor)], 'the same animal as on its card')
   const plus = side.locator('.side-head').getByRole('button', { name: 'New profile' })
   assert.deepEqual(await plus.evaluate((b) => [b.textContent, (b.querySelector('.icon') as SVGElement).dataset.icon, b.getBoundingClientRect().height]), ['New', 'plus', 28], 'a small New pill, its plus, beside Profiles')
   assert.equal(await plus.evaluate((b) => getComputedStyle(b).backgroundColor), await page.evaluate(() => {
@@ -1239,6 +1345,16 @@ test("You: Selfie Verified on its badge's square, the ID's outline, its line and
   assert.equal(await side.getByRole('button', { name: 'New profile' }).count(), 1, 'and no New profile row')
   assert.equal(await side.locator('.ai-app, [data-icon="sparkle"]').count(), 0, 'no AI card')
   await shot(page, 'laptop-you')
+  // Appearance, on a laptop: a dialog in the middle; Escape closes it, and so does a click outside it.
+  await page.locator('button.row', { hasText: 'Appearance' }).click()
+  await inTheMiddle(page, looks)
+  await shot(page, 'laptop-appearance')
+  await page.keyboard.press('Escape')
+  await looks.waitFor({ state: 'detached' })
+  await page.locator('button.row', { hasText: 'Appearance' }).click()
+  await looks.waitFor()
+  await page.mouse.click(12, 790)
+  await looks.waitFor({ state: 'detached' })
   await plus.click()
   await page.getByRole('heading', { name: 'New profile' }).waitFor()
   await button(page, 'Back').click()
@@ -1249,6 +1365,11 @@ test("You: Selfie Verified on its badge's square, the ID's outline, its line and
   await side.getByRole('button', { name: 'Home' }).click()
   await page.getByRole('heading', { name: 'Your profiles' }).waitFor()
   assert.equal(await page.locator('main .search').count(), 0, 'Search Forest in the sidebar, not on Home')
+  // New profile at the top right of Home, in the row of its title; nothing floating.
+  const newOne = page.locator('main .titled').getByRole('button', { name: 'New profile' })
+  const [newBox, mainBox] = [(await newOne.boundingBox())!, (await page.locator('main.home').boundingBox())!]
+  assert.ok(mainBox.x + mainBox.width - (newBox.x + newBox.width) < 40, `at the right: ${JSON.stringify(newBox)}`)
+  assert.equal(await page.locator('button.fab').count(), 0, 'nothing floating on a laptop')
   await shot(page, 'laptop-home')
   await page.setViewportSize({ width: 390, height: 844 })
   await page.locator('.tabbar').waitFor()
@@ -1392,11 +1513,11 @@ test('two people: one posts an offer, its price per hour, the place only for ses
   assert.ok(await second.page.locator('.from', { hasText: 'Tutoring student' }).isVisible(), 'from the profile just made')
   await badge(second.page.locator('.from')).waitFor()
   await second.page.getByLabel('Message').fill(ASK)
-  assert.equal(await asks(button(second.page, 'Send')), false, 'the seed held since Start: Send will ask nothing')
+  assert.equal(await asks(button(second.page, 'Send')), false, 'the seed held since the unlock back from the check: Send will ask nothing')
   await shot(second.page, 'message')
   await button(second.page, 'Send').click()
   await second.page.locator('.said.mine', { hasText: ASK }).waitFor({ timeout: 60_000 })
-  assert.equal(second.counts.asserted - secondAsked, 0, 'the profile made and the message sent, nothing asked: the seed held since Start')
+  assert.equal(second.counts.asserted - secondAsked, 0, 'the profile made and the message sent, nothing asked: the seed held since the unlock back from the check')
   const student = JSON.parse((await kept(second.page))['forest.profiles']!)[0].address as string
 
   // The first: counted with nothing unlocked, on the card, on the Notifications tab, which counts
@@ -1429,24 +1550,31 @@ test('two people: one posts an offer, its price per hour, the place only for ses
   const unopened = page.locator('.unopened', { hasText: '1 new message' })
   await unopened.waitFor()
   assert.deepEqual(await unopened.locator('.av').evaluateAll((a) => a.map((x) => (x as HTMLElement).dataset.market)), ['tutoring'], "the avatar of the person's own profile it came to: an envelope shows no one who wrote it")
-  assert.deepEqual(await avatarOf(unopened.locator('.av')), { light: false, h: colorOf('tutoring'), ground: rgbOf(colorOf('tutoring')), icon: 'graduation-cap' }, 'the tutor, solid')
+  assert.deepEqual(await avatarOf(unopened.locator('.av')), { light: false, h: colorOf('tutoring'), ground: rgbOf(colorOf('tutoring')), icon: animal(tutor) }, "the tutor's animal, solid")
   assert.equal(await page.getByText('No new messages').count(), 0)
   assert.equal(await page.locator('.filters').count(), 0, 'no chips before the unlock')
-  assert.deepEqual(await page.locator('.top button').evaluateAll((b) => b.map((x) => x.getAttribute('aria-label'))), ['Back', 'New message'])
+  assert.deepEqual(await page.locator('.top button').evaluateAll((b) => b.map((x) => x.getAttribute('aria-label'))), ['New message'], 'no back: the tabs are there')
+  // On a phone, the tabs stay on Messages, Notifications selected, since Messages opens from there.
+  assert.match((await page.locator('.tabbar button[aria-current="page"]').textContent()) ?? '', /Notifications$/)
   assert.equal(await page.locator('.top-right').getByRole('button', { name: 'New message' }).locator('.icon').getAttribute('data-icon'), 'note-pencil', 'round, its pencil')
   // No seed held: Open asks, and says so.
   assert.equal(await iconsInTheirButtonsColor(page), 1, "Open's unlock icon, in its text color")
   await shot(page, 'messages-asking')
   asked = counts.asserted
   await button(page, 'Open').click()
-  const row = page.locator('button.thread-row', { hasText: 'Tutoring student' })
-  await badge(row).waitFor({ timeout: 60_000 })
+  const row = page.locator('button.thread-row', { hasText: short(student) })
+  await row.waitFor({ timeout: 60_000 })
   assert.equal(counts.asserted - asked, 1, 'one unlock opens every inbox')
-  await mkrIn(row, 'Tutoring', 'student')
-  await row.locator('.name.key', { hasText: short(student) }).waitFor()
+  // A row says only what tells it apart: their animal, their short key, bold in the key's face, and when; the last message, bold
+  // with its dot while new. No badge, no market or role, no "to your": those are on their profile, one tap away.
   await row.locator('.dot').waitFor()
+  assert.equal((await avatarOf(row.locator('.av'))).icon, animal(student), 'their animal')
+  const key = row.locator('.thread-top .name.key')
+  assert.deepEqual(await key.evaluate((k) => [k.textContent, getComputedStyle(k).fontWeight, getComputedStyle(k).fontFamily.includes('monospace')]), [short(student), '700', true], 'their key, bold, in its own face')
+  assert.match((await row.locator('.thread-top .xs').textContent()) ?? '', /^\d{1,2}:\d{2}\s?[AP]M$/, 'today: the time of day')
   assert.equal(await row.locator('.thread-last .text.fresh').textContent(), ASK, 'its last message, bold while new')
-  await row.getByText('to your Tutoring tutor').waitFor()
+  assert.deepEqual([await row.locator('.vb').count(), await row.locator('.mkr').count(), await row.getByText('to your').count()], [0, 0, 0], 'nothing else')
+  assert.deepEqual((await row.locator('.two > *').allTextContents()).length, 2, 'two lines')
   assert.equal(await page.locator('.unopened').count(), 0, 'opened')
   // Chips that pick whose: All, then each profile, a dot in its market's color and its market and role, no avatar.
   assert.deepEqual(await page.locator('.filters button').allTextContents(), ['All', 'Tutoring tutor'])
@@ -1455,6 +1583,7 @@ test('two people: one posts an offer, its price per hour, the place only for ses
   await shot(page, 'messages')
   await row.click()
   await page.getByText(ASK).waitFor()
+  assert.equal(await page.locator('.tabbar').count(), 0, 'a conversation keeps its own full screen')
   // Its header: their avatar, who they are and to which of the person's, and Review, soft, its star.
   const convo = page.locator('.top')
   await convo.getByText('to your Tutoring tutor').waitFor()
@@ -1483,7 +1612,7 @@ test('two people: one posts an offer, its price per hour, the place only for ses
   assert.equal((await entriesOf(tutor, 'sent')).length, 1, "the reply's copy, in the tutor's own folder")
   await button(page, 'Back').click()
   assert.equal(await row.locator('.dot').count(), 0, 'looked at: new no more')
-  await button(page, 'Back').click()
+  await button(page, /Notifications$/).click()
   await inbox(page).locator('.count').waitFor({ state: 'detached' })
   assert.equal(await page.locator('main .rows button').count(), 0, 'nothing yet about the tutor')
   await page.getByText('Nothing yet.').waitFor()
@@ -1499,11 +1628,11 @@ test('two people: one posts an offer, its price per hour, the place only for ses
   await second.page.locator('.unopened', { hasText: '1 new message' }).locator('.av[data-market="tutoring"].look').waitFor()
   await shot(second.page, 'messages-picked-asking')
   await button(second.page, 'Open').click()
-  await second.page.locator('button.thread-row', { hasText: 'Tutoring tutor' }).waitFor({ timeout: 60_000 })
+  await second.page.locator('button.thread-row', { hasText: short(tutor) }).waitFor({ timeout: 60_000 })
   assert.equal(await button(second.page, 'Tutoring student').getAttribute('aria-pressed'), 'true', 'picked to the profile it was opened from')
   assert.equal(await button(second.page, 'All').getAttribute('aria-pressed'), 'false')
   await shot(second.page, 'messages-picked')
-  await second.page.locator('button.thread-row', { hasText: 'Tutoring tutor' }).click()
+  await second.page.locator('button.thread-row', { hasText: short(tutor) }).click()
   await second.page.locator('.said.mine', { hasText: ASK }).waitFor()
   await second.page.locator('.said:not(.mine)', { hasText: YES }).waitFor()
   // Review, from the thread: who it is about known, at the top with Close; Score, Vouch and Report, Score picked, its line.
@@ -1591,12 +1720,25 @@ test("a second browser, the same passkey answering from the first, as a phone an
 
 const NOTE = 'Note to self: Tuesday at six.'
 
-test("a message to one of the person's own profiles: To their tutor, From their student; with the seed held since the last unlock, the messages open by themselves, and it is sent and opens with nothing asked", async () => {
-  const { page, counts } = first
+test("a message to one of the person's own profiles: To their tutor, From their student; with the seed held since the last unlock, the messages open by themselves, the loader showing past half a second, and it is sent and opens with nothing asked", async () => {
+  const { page, context, counts } = first
   const asked = counts.asserted
+  const ownStudent = short((await mainKey(seed, 'tutoring/student')).address)
+  // Reading the inbox, slowed here, is a known long wait: the loader shows, once it passes half a second.
+  const inboxes = `${services.host}/v1/inbox/read`
+  await context.route(inboxes, async (route) => {
+    await new Promise((r) => setTimeout(r, 1_500))
+    await route.continue()
+  })
   await messagesOf(page, 'Tutoring tutor')
+  const loader = page.locator('main .loader.big')
+  await loader.waitFor()
+  assert.equal(await loader.evaluate((l) => getComputedStyle(l).visibility), 'hidden', 'nothing for the first half second')
+  await page.waitForFunction(() => getComputedStyle(document.querySelector('main .loader.big')!).visibility === 'visible')
+  await shot(page, 'messages-loading')
   // The seed held: no Open, the conversations opened by themselves.
-  await page.locator('button.row', { hasText: 'Tutoring student' }).waitFor({ timeout: 60_000 })
+  await page.locator('button.thread-row').first().waitFor({ timeout: 60_000 })
+  await context.unroute(inboxes)
   assert.equal(await page.locator('.unopened').count(), 0, 'no Open')
   await shot(page, 'messages-held')
   await button(page, 'New message').click()
@@ -1611,8 +1753,8 @@ test("a message to one of the person's own profiles: To their tutor, From their 
   await page.getByText('to your Tutoring student').waitFor()
   await button(page, 'Back').click()
   // The tutor's messages: it arrives, and with the seed held it opens by itself, from the student, new.
-  const row = page.locator('button.row', { hasText: NOTE }).filter({ hasText: 'Tutoring student' })
-  await badge(row).waitFor({ timeout: 90_000 })
+  const row = page.locator('button.thread-row', { hasText: NOTE }).filter({ hasText: ownStudent })
+  await row.waitFor({ timeout: 90_000 })
   assert.equal(await page.locator('.unopened').count(), 0, 'never Open')
   assert.equal(counts.asserted - asked, 0, 'opened, sent and opened again, nothing asked')
   await row.locator('.dot').waitFor()
@@ -1620,7 +1762,8 @@ test("a message to one of the person's own profiles: To their tutor, From their 
   await page.locator('.said:not(.mine)', { hasText: NOTE }).waitFor()
   await page.getByText('to your Tutoring tutor').waitFor()
   await button(page, 'Back').click()
-  await button(page, 'Back').click()
+  // No back on Messages: the phone's own back, to the profile it was opened from, then Home's.
+  await page.goBack()
   await button(page, 'Back').click()
   say("a message from the person's student to their own tutor: sent, counted, opened")
 })
@@ -1676,10 +1819,10 @@ async function renamePasskey(page: Page, from: string, to: string) {
   await sheet.getByRole('button', { name: 'Save' }).click()
   await sheet.waitFor({ state: 'detached' })
 }
-/** A passkey removed from its sheet: Remove this passkey, tapped twice, then its row gone. */
+/** A passkey removed from its sheet: Remove, tapped twice, then its row gone. */
 async function removePasskey(page: Page, name: string) {
   const sheet = await passkeySheet(page, name)
-  const remove = sheet.getByRole('button', { name: 'Remove this passkey' })
+  const remove = sheet.getByRole('button', { name: 'Remove', exact: true })
   await remove.click()
   assert.match((await remove.getAttribute('class')) ?? '', /solid/, 'tapped once, it fills red')
   await remove.click()
@@ -1777,6 +1920,31 @@ test("passkeys, every one a row: the first Main, by the name it was given else P
   await renamePasskey(page, 'Passkey 2', 'Security key')
   assert.deepEqual(await passkeyWords(page), [['Passkey', 'Main'], ['Security key']])
   await shot(page, 'settings-passkeys-two')
+  // Its sheet: the name its title, the Name field, then one row: Remove in red text at the left, Save at the right.
+  const buttonsOf = (sheet: Locator) => sheet.locator('.sheet-buttons button').evaluateAll((b) => b.map((x) => [x.textContent!.trim(), Math.round(x.getBoundingClientRect().x), x.className]))
+  const keySheet = await passkeySheet(page, 'Security key')
+  await fromTheBottom(page, keySheet)
+  const onPhone = await buttonsOf(keySheet)
+  assert.deepEqual(onPhone.map(([words, , kind]) => [words, kind]), [['Remove', 'danger text small'], ['Save', 'primary small']], 'Remove, then Save; no Cancel on a phone')
+  assert.ok((onPhone[0]![1] as number) < (onPhone[1]![1] as number), 'Remove at the left')
+  await page.keyboard.press('Escape')
+  await keySheet.waitFor({ state: 'detached' })
+  // On a laptop: a dialog in the middle, Remove at the left, then Cancel and Save; Cancel closes it. Main's, Cancel and Save alone.
+  await page.setViewportSize({ width: 1280, height: 800 })
+  const keyDialog = await passkeySheet(page, 'Security key')
+  await inTheMiddle(page, keyDialog)
+  const onLaptop = await buttonsOf(keyDialog)
+  assert.deepEqual(onLaptop.map(([words]) => words), ['Remove', 'Cancel', 'Save'])
+  assert.ok((onLaptop[0]![1] as number) < (onLaptop[1]![1] as number) && (onLaptop[1]![1] as number) < (onLaptop[2]![1] as number), 'in that order, left to right')
+  await shot(page, 'laptop-passkey-dialog')
+  await keyDialog.getByRole('button', { name: 'Cancel' }).click()
+  await keyDialog.waitFor({ state: 'detached' })
+  const mainDialog = await passkeySheet(page, 'Passkey')
+  await inTheMiddle(page, mainDialog)
+  assert.deepEqual((await buttonsOf(mainDialog)).map(([words]) => words), ['Cancel', 'Save'], 'never Remove on Main')
+  await page.keyboard.press('Escape')
+  await mainDialog.waitFor({ state: 'detached' })
+  await page.setViewportSize({ width: 390, height: 844 })
   assert.equal((await backupsOn(wallet)).length, 1, 'underneath, the standard\'s backup/<id> entry in the Profiles folder')
   assert.ok((JSON.parse((await kept(page))['forest.passkeys']!) as string[]).includes(addedId), 'the device knows it')
 
@@ -1805,8 +1973,8 @@ test("passkeys, every one a row: the first Main, by the name it was given else P
   assert.equal(await gone.getAttribute('class'), 'line red')
   await shot(other.page, 'not-yours')
 
-  // After Forget, Start with it: its own seed, with no stamp, so Get verified.
-  await button(other.page, 'Back').click()
+  // After Forget, Start with it: its own seed, with no stamp, so Get verified. Messages has no back: the phone's own.
+  await other.page.goBack()
   await button(other.page, 'Back').click()
   await button(other.page, 'You').click()
   await button(other.page, 'Forget this device').click()
@@ -2211,7 +2379,7 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   // those it has a conversation with; a vouch, written again in its place, then a report, each about
   // the seller; the tab lists all three, each with the seller's short key, no one having named them.
   await button(buyer.page, 'Back').click()
-  await button(buyer.page, 'Back').click()
+  await buyer.page.goBack()
   await buyer.page.getByRole('heading', { name: 'Clothing buyer' }).waitFor()
   await buyer.page.getByRole('tab', { name: 'Reviews' }).click()
   await buyer.page.getByText("Reviews you've written about others.", { exact: true }).waitFor()
@@ -2419,7 +2587,6 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   await page.getByRole('heading', { name: 'Messages', exact: true }).waitFor()
   await page.getByText('1 new message').waitFor()
   assert.equal(await page.locator('.said-chip').count(), 0, 'messages only: no review, vouch or report')
-  await button(page, 'Back').click()
   await button(page, 'Home').click()
   say("clothing: two photos redrawn and sent, a review with its market's question, a vouch and a report, Written by you; the rating, its dot, the tab counting them and the message, the profile's Reviews, and Notifications")
 })
@@ -2492,8 +2659,9 @@ test("someone else's profile from a conversation, and the names you give others:
   await button(page, 'Back').click()
   await page.locator('button.thread-row', { hasText: 'Marta' }).waitFor()
   assert.equal(await page.locator('button.thread-row', { hasText: key }).count(), 0, 'in Messages, the name alone')
+  assert.equal(await page.locator('button.thread-row', { hasText: 'Marta' }).locator('.thread-top .name:not(.key)').textContent(), 'Marta', 'bold, in the words\' face')
   await shot(page, 'messages-named')
-  await button(page, 'Back').click()
+  await button(page, /Notifications$/).click()
   const fromHer = page.locator('main .rows .nrow', { hasText: 'Clothing seller' })
   await fromHer.first().waitFor()
   assert.deepEqual(await fromHer.locator('.said-head .name').allTextContents(), ['Marta', 'Marta', 'Marta'], 'her three, by her name')
@@ -2535,6 +2703,15 @@ test("someone else's profile from a conversation, and the names you give others:
   assert.deepEqual([await chip.textContent(), await chip.getAttribute('class')], [key, 'idchip key'], 'the key again')
   assert.equal((await kept(page))['forest.names'], undefined, 'nothing kept')
   assert.equal((await readFolder([services.host], wallet.address, Date.now())).current.get('names')?.entry.body, null, 'the entry deleted')
+  // Naming someone, on a laptop: a dialog in the middle; Escape closes it.
+  await page.setViewportSize({ width: 1280, height: 800 })
+  await chip.click()
+  const naming = page.getByRole('dialog', { name: key })
+  await inTheMiddle(page, naming)
+  await shot(page, 'laptop-name-dialog')
+  await page.keyboard.press('Escape')
+  await naming.waitFor({ state: 'detached' })
+  await page.setViewportSize({ width: 390, height: 844 })
   await button(page, 'Back').click()
   await button(page, 'Home').click()
   say("someone else's profile, from a conversation and a notification; named, the name everywhere, on another device after its unlock; the key again")
@@ -2838,6 +3015,42 @@ test("an AI app's login: the connect page, its name and its redirect's host, the
   say('an AI app connected: one unlock, and its listing on the profile')
 })
 
+test('an AI app connected in another browser comes back here by itself, at the next unlock: Your AI has no Find AI apps', async () => {
+  // A browser with the same seed, as one set up before the AI app connected: what it knew of AI apps and their keys taken back.
+  const b = await phone()
+  await answerFrom(b, first)
+  await b.page.goto(APP)
+  await elsewhere(b)
+  await button(b.page, 'Not now').click()
+  await homeWith(b.page, 'Tutoring tutor')
+  await b.page.evaluate(() => ['forest.connections', 'forest.known'].forEach((k) => localStorage.removeItem(k)))
+  await closed(b.page)
+  // Home reads every profile's entry: the tutor's lists the AI app's key, which this browser doesn't know.
+  await homeWith(b.page, 'Tutoring tutor')
+  await b.page.waitForTimeout(1_000)
+  await button(b.page, 'You').click()
+  await b.page.locator('button.row', { hasText: 'Your AI' }).click()
+  await b.page.getByRole('heading', { name: 'Your AI' }).waitFor()
+  assert.deepEqual(await b.page.locator('main .rows button.row').allTextContents(), ['Connect another'], 'none yet, and nothing to tap to find it')
+  assert.equal(await button(b.page, 'Find AI apps').count(), 0, 'no Find AI apps')
+  // The next unlock, for anything (the messages): the AI app found by itself, nothing more asked.
+  const asked = first.counts.asserted
+  await button(b.page, 'Back').click()
+  await button(b.page, /Notifications$/).click()
+  await b.page.locator('.top-right').getByRole('button', { name: /^Messages/ }).click()
+  await button(b.page, 'Open').click()
+  await b.page.locator('.unopened').waitFor({ state: 'detached', timeout: 60_000 })
+  assert.equal(first.counts.asserted - asked, 1, 'one unlock, for the messages')
+  await button(b.page, /Notifications$/).click()
+  await button(b.page, 'You').click()
+  await b.page.locator('button.row', { hasText: 'Your AI' }).locator('.two > span', { hasText: 'An AI app' }).waitFor({ timeout: 30_000 })
+  await b.page.locator('button.row', { hasText: 'Your AI' }).click()
+  await b.page.locator('button.row', { hasText: 'An AI app' }).waitFor()
+  assert.equal(first.counts.asserted - asked, 1, 'and nothing more asked')
+  await b.context.close()
+  say('an AI app made in another browser: found at the next unlock, by itself')
+})
+
 const VISIT = 'Physics for the visit, one hour online.'
 const VISIT_NOTE = 'A note from the visit.'
 
@@ -2870,7 +3083,7 @@ test('a whole visit asks exactly once: post, edit, message, open messages, revie
   await away(page)
   // Open messages: by themselves, the seed held.
   await inbox(page).click()
-  await page.locator('button.row', { hasText: 'Tutoring student' }).first().waitFor({ timeout: 60_000 })
+  await page.locator('button.thread-row').first().waitFor({ timeout: 60_000 })
   assert.equal(await page.locator('.unopened').count(), 0, 'no Open')
   await away(page)
   // Message: from their student to their tutor.
@@ -2884,7 +3097,7 @@ test('a whole visit asks exactly once: post, edit, message, open messages, revie
   await away(page)
   // Review, from a thread: the tutor's with the other person's student, never one of their own.
   await button(page, 'Back').click()
-  await page.locator('button.row', { hasText: YES }).filter({ hasText: 'Tutoring student' }).click()
+  await page.locator('button.thread-row', { hasText: YES }).click()
   await page.getByLabel('Message').waitFor()
   await button(page, 'Review').click()
   await badge(page.locator('.top .who', { hasText: 'Tutoring student' })).waitFor()
@@ -2897,8 +3110,8 @@ test('a whole visit asks exactly once: post, edit, message, open messages, revie
   await away(page)
   // The tutor's messages again: the note arrives and opens by itself.
   await button(page, 'Back').click()
-  await page.locator('button.row', { hasText: VISIT_NOTE }).waitFor({ timeout: 90_000 })
-  await button(page, 'Back').click()
+  await page.locator('button.thread-row', { hasText: VISIT_NOTE }).waitFor({ timeout: 90_000 })
+  await page.goBack()
   await button(page, 'Back').click()
   // Tick an AI app: a profile given to it, and taken back.
   await button(page, 'You').click()
@@ -2941,7 +3154,7 @@ test("Your AI: the AI app, its profiles and its day; its screen, Connected and A
   await page.getByRole('heading', { name: 'Your AI' }).waitFor()
   const row = page.locator('button.row', { hasText: 'An AI app' })
   assert.match((await row.locator('.two > span').textContent()) ?? '', /^1 profile, since (\d{1,2} \w{3}|\w{3} \d{1,2})$/, 'its one profile, since its day')
-  assert.equal(await button(page, 'Find AI apps').count(), 0, 'every key listed is one this device made')
+  assert.equal(await button(page, 'Find AI apps').count(), 0, 'no Find AI apps')
   assert.deepEqual(await page.locator('main .rows button.row').allTextContents().then((t) => t.map((x) => x.replace(/1 profile.*/, ''))), ['An AI app', 'Connect another'])
   await shot(page, 'your-ai')
   await row.click()
@@ -3009,7 +3222,7 @@ test('a new phone at a connect page, nothing set up: I use Forest on another dev
   const code = backToTheAiApp(p.page)
   await button(p.page, 'Connect').click()
   await login.transport.finishAuth(await code)
-  assert.equal(p.counts.asserted - asked, 0, 'nothing asked: the seed held since Start')
+  assert.equal(p.counts.asserted - asked, 0, 'nothing asked: the seed held since the unlock back from the check')
   assert.deepEqual(await tool(login, 'my_profiles'), { profiles: [{ label: 'tutoring/student', can: SWITCHES }] })
   await login.client.close()
   await p.context.close()
@@ -3180,19 +3393,17 @@ test("a deploy while the app is open: one quiet line says a new version is ready
   say('a deploy while open: one reload onto the next version, and the profile made')
 })
 
-test("the ID check through the stand-in Stripe, from You's Add, $5: Get verified, the selfie greyed, the sheet open, consent word for word, Pay asking once, paid, checked in its own tab, Continue, one unlock, and both verifications on every profile", async () => {
+test("the ID check through the stand-in Stripe, from You's Add, $5: Get verified, the selfie greyed, the sheet open, its few words, consent word for word, Pay asking once; paid, then the check, in this same tab with no tap between, and back, one unlock asked by the page itself; both verifications on every profile", async () => {
   const { page, context, counts } = first
-  // Stripe's Checkout page, the verifier's own stand-in's: paid at once, and back to the app's page, paid, as Stripe sends the person.
-  await context.route('https://checkout.stripe.example/**', (route) => {
-    const payment = new URL(route.request().url()).pathname.split('/').pop()!
-    services.payments.pay(payment)
-    return route.fulfill({ contentType: 'text/html', body: `<script>location.replace(${JSON.stringify(services.payments.returnUrls.get(payment))})</script>` })
-  })
   await page.goto(APP)
   await button(page, 'You').click()
   await button(page, 'Add, $5').click()
-  // Get verified, the selfie the person has greyed, and the ID's sheet open: nothing is paid yet.
-  await page.getByRole('dialog', { name: 'ID check' }).waitFor()
+  // Get verified, the selfie the person has greyed, and the ID's sheet open: nothing is paid yet. ID check, $5 one time, one line, What the check keeps, Pay $5.
+  const idSheet = page.getByRole('dialog', { name: 'ID check' })
+  await idSheet.getByRole('button', { name: 'Pay $5' }).waitFor()
+  assert.deepEqual(await idSheet.evaluate((d) => [...d.querySelectorAll('h2, .price, p:not(.consent), summary, button')].map((e) => e.textContent!.trim())), ['ID check', '$5 one time', "You're only charged if it passes.", 'What the check keeps', 'Pay $5'], 'its words, and nothing more')
+  assert.equal(await idSheet.getByText('Up to three tries.').count(), 0, 'no tries')
+  assert.equal(await idSheet.getByText(/hold/).count(), 0, 'no hold')
   assert.ok(await checkCard(page, 'Selfie').isDisabled(), 'the selfie, which they have, greyed')
   assert.equal(await page.getByText('You can add the other one later.').count(), 0, 'and no line on the other one')
   const { consent } = (await (await fetch(`${services.verifier}/`)).json()) as { consent: string }
@@ -3207,23 +3418,18 @@ test("the ID check through the stand-in Stripe, from You's Add, $5: Get verified
   assert.equal(counts.asserted - paying, 1, 'one unlock, for the stamp number; none signed, so Stripe')
   const payment = JSON.parse((await kept(page))['forest.setup']!).payment as string
   assert.match(payment, /^cs_test_/, "the payment's id kept on the device before Stripe")
-  await page.getByRole('link', { name: 'Go to Stripe' }).click()
-  await page.waitForURL(`${APP}id`)
-  assert.equal(JSON.parse((await kept(page))['forest.setup']!).payment, payment, 'back from Stripe, nothing lost')
-  await page.getByRole('heading', { name: 'Get verified' }).waitFor()
-  assert.equal(await page.getByRole('dialog').count(), 0, 'paid: no sheet')
-  const tab = context.waitForEvent('page')
-  await checkCard(page, 'ID').click()
-  await (await tab).waitForEvent('close')
-  // No seed held since Stripe's page: Waiting for your check, with Continue, which asks once.
-  await page.getByText('Waiting for your check').waitFor()
-  assert.ok(await asks(button(page, 'Continue')), 'Continue, with the unlock icon')
-  await button(page, 'Open it again').waitFor()
-  await shot(page, 'id-away')
+  // Go to Stripe (test mode's one tap): paid there, then straight into the ID check, then back, all in
+  // this tab, with no tap between; back from Didit, the page asks the passkey by itself.
+  const opened = context.pages().length
+  const since = first.went.length
   const asked = counts.asserted
-  await button(page, 'Continue').click()
+  await page.getByRole('link', { name: 'Go to Stripe' }).click()
+  await backFrom(first, since)
+  assert.deepEqual(wentFrom(first, since), [['stripe', true], ['didit', true]], "Stripe's page, then Didit's, in this tab, nothing tapped between")
   await button(page, 'New profile').waitFor({ timeout: 180_000 })
-  assert.equal(counts.asserted - asked, 1, 'one unlock: the stamp, its gift, and every profile')
+  assert.equal(counts.asserted - asked, 1, 'one unlock, asked by the page itself: the stamp, its gift, and every profile')
+  assert.equal(context.pages().length, opened, 'no tab opened')
+  assert.equal(JSON.parse(JSON.stringify(services.payments.returnUrls.get(payment))), `${APP}paid`, "Stripe's way back: the app's /paid")
   // Beside Your profiles, both of the person's badges now, the ID's an ID card on forest green; no outline, and none on a card.
   const badges = page.getByRole('group', { name: "How you're verified" })
   await badge(badges, 'id').waitFor()
@@ -3265,7 +3471,7 @@ test("the ID check through the stand-in Stripe, from You's Add, $5: Get verified
   await badge(page.locator('.from', { hasText: 'Tutoring student' })).waitFor()
   await shot(page, 'message-id')
   await button(page, 'Back').click()
-  await button(page, 'Back').click()
+  await page.goBack()
   await button(page, 'Back').click()
   // You: Selfie and ID, both Verified on their mint chips, no Add.
   await button(page, 'You').click()
@@ -3306,12 +3512,12 @@ test('the seed held for 5 minutes after the last action: a button that will not 
   await send.locator('.unlock').waitFor()
   await shot(page, 'message-asks-again')
   await button(page, 'Back').click()
-  await button(page, 'Back').click()
+  await page.goBack()
   await button(page, 'Back').click()
   say('the seed held 5 minutes after the last action, then dropped: the unlock icon back')
 })
 
-test("a selfie that doesn't pass: Get verified, its notice; then the ID, its sheet and the verifier's words before Pay, the stand-in Stripe, Start, the ID card, and Your first profile", async () => {
+test("a selfie that doesn't pass: Get verified, its notice; then the ID, its sheet and the verifier's words before Pay, the stand-in Stripe, then the check, in this tab with no tap between and no Start, and Your first profile", async () => {
   const p = await phone()
   // The verifier answers the first stamp asked for as Didit declined it; then as it is.
   let asked = 0
@@ -3320,11 +3526,6 @@ test("a selfie that doesn't pass: Get verified, its notice; then the ID, its she
     if (route.request().method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors })
     if (asked++ === 0) return route.fulfill({ status: 403, headers: { ...cors, 'content-type': 'application/json' }, body: '{"error":"declined"}' })
     return route.continue()
-  })
-  await p.context.route('https://checkout.stripe.example/**', (route) => {
-    const payment = new URL(route.request().url()).pathname.split('/').pop()!
-    services.payments.pay(payment)
-    return route.fulfill({ contentType: 'text/html', body: `<script>location.replace(${JSON.stringify(services.payments.returnUrls.get(payment))})</script>` })
   })
   await newPerson(p)
   // No screen of its own: Get verified again, one line on top in a notice.
@@ -3341,21 +3542,21 @@ test("a selfie that doesn't pass: Get verified, its notice; then the ID, its she
   await p.page.getByText('What the check keeps').click()
   assert.equal(await p.page.locator('.consent').textContent(), consent, "the verifier's words, word for word, before Pay")
   await button(p.page, 'Pay $5').click()
+  // Not in yet here, and no Start: back from Stripe's page, the ID check at once, then back from Didit's, one unlock by itself.
+  const since = p.went.length
+  const unlocks = p.counts.asserted
   await p.page.getByRole('link', { name: 'Go to Stripe' }).click()
-  await p.page.waitForURL(`${APP}id`)
-  // Not in yet here: Start, one unlock, Get verified, paid, and the ID card opens its check.
-  await button(p.page, 'Start').click()
-  await p.page.getByRole('heading', { name: 'Get verified' }).waitFor({ timeout: 60_000 })
-  const tab = p.context.waitForEvent('page')
-  await checkCard(p.page, 'ID').click()
-  await (await tab).waitForEvent('close')
+  await backFrom(p, since)
+  assert.deepEqual(wentFrom(p, since), [['stripe', true], ['didit', true]], 'in this tab, nothing tapped between')
   await p.page.getByRole('heading', { name: 'Your first profile' }).waitFor({ timeout: 90_000 })
+  assert.equal(p.counts.asserted - unlocks, 1, 'one unlock, by the page itself')
+  assert.equal(await button(p.page, 'Start').count(), 0)
   await p.page.locator('.chip.new', { hasText: "You're verified" }).locator('[data-icon="identification-card"]').waitFor()
   assert.deepEqual(JSON.parse((await kept(p.page))['forest.verified']!), ['id'], 'verified by the ID alone')
   await p.context.close()
 })
 
-test("the app on a laptop: Home's cards fit, the longest name too, three to a row, every card one height, rated or not, New profile's too, dashed, last; Messages in two panes; the sidebar's order, something new on top, then the most recently used; eight at most, then All profiles, and Home's search past eight", async () => {
+test("the app on a laptop: Home's cards fit, the longest name too, three to a row, every card one height, rated or not, New profile at the top right and no dashed card; Messages in two panes; the sidebar's order, something new on top, then the most recently used; past eight, every profile, the sidebar scrolling, and one search, Search Forest", async () => {
   const { page } = first
   await page.setViewportSize({ width: 1280, height: 800 })
   await page.goto(APP)
@@ -3369,7 +3570,7 @@ test("the app on a laptop: Home's cards fit, the longest name too, three to a ro
   await page.getByRole('heading', { name: 'Your profiles' }).waitFor()
   const cards = page.locator('main .cards > button.card')
   await cards.nth(4).waitFor()
-  // Three columns of about 300px; every card one height, those rated and those not, and New profile's, dashed, the last.
+  // Three columns of about 300px; every card one height, those rated and those not; New profile at the top right, no dashed card.
   await cards.filter({ hasText: 'Clothing seller' }).locator('.rt2 .rate').waitFor({ timeout: 30_000 })
   await cards.filter({ hasText: 'Software development' }).locator('.rt2', { hasText: 'No reviews' }).waitFor({ timeout: 30_000 })
   const all8 = page.locator('main .cards > button')
@@ -3377,8 +3578,8 @@ test("the app on a laptop: Home's cards fit, the longest name too, three to a ro
   assert.equal(new Set(boxes.map((b) => b.x)).size, 3, 'three columns')
   assert.ok(boxes.every((b) => b.w >= 290), 'each about 300px wide or more')
   assert.equal(new Set(boxes.map((b) => b.h)).size, 1, 'every card one height')
-  const last = all8.last()
-  assert.deepEqual(await last.evaluate((b) => [b.className, b.textContent, getComputedStyle(b).borderTopStyle]), ['addcard', 'New profile', 'dashed'], 'New profile, dashed, last')
+  assert.equal(await page.locator('main .cards .addcard, main .cards > button:not(.card)').count(), 0, 'no dashed card: every one a profile')
+  await page.locator('main .titled').getByRole('button', { name: 'New profile' }).waitFor()
   // Every name inside its card, in two lines, before its rating: the longest too.
   const dev = cards.filter({ hasText: 'Software development' })
   await cardNamed(dev, 'Software development', 'developer')
@@ -3432,28 +3633,33 @@ test("the app on a laptop: Home's cards fit, the longest name too, three to a ro
   await write([services.host], [entry(electronics, path, null, nextTime(Date.now(), now, path))])
 
   // Past eight: the device's list made longer with profiles of the same seed (their addresses as any app works them out, never
-  // written: nine more proofs would add minutes), the sidebar lists eight, then All profiles, which opens Home, with a search.
+  // written: nine more proofs would add minutes). The sidebar lists every one, in Home's order, scrolling inside itself; Home
+  // lists them all, with one search, Search Forest, in the sidebar.
   const listed = (await kept(page))['forest.profiles']!
   const more = await Promise.all(['home-cleaning/cleaner', 'home-cleaning/client', 'home-repair/repairer', 'sports-coaching/coach', 'tennis-matches/player'].map(async (label) => ({ label, address: (await mainKey(seed, label)).address })))
   const all = [...(JSON.parse(listed) as Array<{ label: string; address: string }>), ...more]
+  assert.ok(all.length > 8, `more than eight: ${all.length}`)
   await page.evaluate((list) => localStorage.setItem('forest.profiles', JSON.stringify(list)), all)
   await page.reload()
-  await side.getByRole('button', { name: `All profiles (${all.length})` }).waitFor()
-  assert.equal(await side.locator('button.nav.profile').count(), 8, 'eight in the sidebar')
-  await side.getByRole('button', { name: 'You' }).click()
-  await side.getByRole('button', { name: `All profiles (${all.length})` }).click()
   await page.getByRole('heading', { name: 'Your profiles' }).waitFor()
+  await cards.nth(all.length - 1).waitFor()
+  assert.equal(await side.locator('button.nav.profile').count(), all.length, 'every profile in the sidebar')
+  assert.equal(await side.getByRole('button', { name: /^All profiles/ }).count(), 0, 'no All profiles')
+  assert.deepEqual(await sideRows.allTextContents(), await cards.locator('.nm2').allTextContents(), "in Home's order")
+  const scrolls = await side.evaluate((s) => [s.scrollHeight > s.clientHeight, getComputedStyle(s).overflowY, s.getBoundingClientRect().height])
+  assert.deepEqual(scrolls, [true, 'auto', 800], 'the sidebar scrolls inside itself, the screen tall')
+  const lastRow = side.locator('button.nav.profile').last()
+  await lastRow.scrollIntoViewIfNeeded()
+  assert.ok(await lastRow.isVisible(), 'the last, scrolled to')
+  assert.equal(await side.evaluate((s) => s.scrollTop > 0), true, 'scrolled inside the sidebar')
+  assert.equal(await page.evaluate(() => scrollY), 0, 'the page itself did not scroll')
   assert.equal(await cards.count(), all.length, 'Home lists them all')
-  const search = page.getByRole('searchbox', { name: 'Search your profiles' })
-  await search.fill('home clean')
-  await page.waitForFunction(() => document.querySelectorAll('main .cards > button.card').length === 2)
-  assert.deepEqual((await cards.locator('.nm2').allTextContents()).sort(), ['Home cleaning cleaner', 'Home cleaning client'])
-  await shot(page, 'laptop-home-search')
+  assert.deepEqual([await page.getByRole('searchbox').count(), await page.getByRole('link', { name: 'Search Forest' }).count()], [0, 1], 'one search: Search Forest')
+  await shot(page, 'laptop-many')
   await page.evaluate((list) => localStorage.setItem('forest.profiles', list), listed)
   await page.reload()
-  assert.equal(await page.getByRole('searchbox', { name: 'Search your profiles' }).count(), 0, 'eight or fewer: no search')
   await page.setViewportSize({ width: 390, height: 844 })
-  say('a laptop: the cards fit, two panes for Messages, the sidebar in order, eight at most, and Home searched past eight')
+  say('a laptop: the cards fit, two panes for Messages, the sidebar in order and every profile in it, scrolling, and one search')
 })
 
 test('nothing the app did was refused by the CSP', () => {

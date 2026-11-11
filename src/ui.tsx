@@ -330,6 +330,15 @@ export function ago(time: number, now = Date.now()): string {
   return new Date(time).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
 }
 
+/** When `time` was, as a conversation's row says it: the time of day today, the weekday within the week, else the day: 7:52 PM, Mon, Nov 2. */
+export function when(time: number, now = Date.now()): string {
+  if (!newDay(now, time)) return clock(time)
+  const midnight = (t: number) => new Date(t).setHours(0, 0, 0, 0)
+  // Days between them on the device's calendar: under seven, no weekday is today's.
+  if (Math.round((midnight(now) - midnight(time)) / 86_400_000) < 7) return new Date(time).toLocaleDateString(undefined, { weekday: 'short' })
+  return day(time, now)
+}
+
 /** The day `time` was, as a thread's line says it: Today, else the day. */
 export const dayWords = (time: number, now = Date.now()) => (newDay(now, time) ? day(time, now) : 'Today')
 

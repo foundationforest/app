@@ -1,6 +1,8 @@
 // Each screen the person can come back to, by its own path, so a reload opens on it and the phone's
-// back goes back (App.tsx); every other screen is at the page's root, but Didit's way back, /back.
-// A module of its own, so a test reads the paths without the screens.
+// back goes back (App.tsx); every other screen is at the page's root. Two more paths are ways back
+// into the app, in the tab a check runs in: where Stripe sends the person after paying for the ID
+// check, and where Didit sends them after a check. A module of its own, so a test reads the paths
+// without the screens.
 
 export const PATHS = {
   verify: '/id',
@@ -25,3 +27,6 @@ export const PATHS = {
   'ai-apps': '/ai-apps',
   about: '/about',
 } as const
+
+/** Where Stripe sends the person back after paying, and Didit after a check: each opens Get verified, which goes on by itself. */
+export const RETURNS = { paid: '/paid', checked: '/back' } as const

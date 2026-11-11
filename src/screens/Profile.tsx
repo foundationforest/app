@@ -97,7 +97,7 @@ export function Profile({ address, tab, onTab, onBack, onListing, onReviews, onE
           </div>
         </div>
         <div className="titled">
-          <Avatar label={profile.label} size="lg" />
+          <Avatar label={profile.label} address={profile.address} size="lg" />
           <div className="ph2">
             <h1>
               <span className="mk">{marketWords(pair.market)}</span>{' '}
