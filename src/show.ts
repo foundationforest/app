@@ -1,14 +1,16 @@
 // How an entry's values read on screen, by their type (the markets manual's Types): a choice by its
-// label where its field has one, else in words, money as people write a price, in the device's own
-// number format ($20, €30 per hour), a place as its area and how far round it reaches, a moment as
-// a date and time, hours as days and times (and, for the row that opens them, their first days and
-// times); and a listing's preview, the fields its market shows first, and its card.
+// label where its field has one, else in words, a number with its field's unit (1 night, 3 nights),
+// money as people write a price, in the device's own number format ($20, €30 per hour), a place as
+// its area and how far round it reaches (several, each in turn), a moment as a date and time, hours
+// as days and times (and, for the row that opens them, their first days and times); and a listing's
+// preview, the fields its market shows first, and its card.
 // A contact opens with a tap when it is a phone number, an email or a link.
 
 import type { Body } from '@foundationforest/folders'
 
 import type { Field, Market } from './markets.ts'
 import { previewOf } from './markets.ts'
+import { unitWords } from './units.ts'
 
 /** A value in words, hyphens as spaces and a capital first: `new-with-tags` is New with tags. */
 export const valueWords = (value: string) => {
@@ -36,6 +38,9 @@ export function placeLines(place: { area?: unknown; radiusKm?: unknown }): { mai
   return area ? { main: area, more: reach } : { main: reach, more: '' }
 }
 
+/** A number with its field's unit: 60 minutes, 1 night; one with no unit, as it was written. */
+export const numberText = (field: Pick<Field, 'unit'>, value: unknown) => (field.unit ? `${String(value)} ${unitWords(field.unit, value)}` : String(value))
+
 const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v)
 
 export const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
@@ -54,7 +59,14 @@ export function valueText(field: Field, value: unknown): string {
     case 'money':
       return isObject(value) ? priceText(value) : ''
     case 'place':
-      return isObject(value) ? placeText(value) : ''
+      // Several, each in turn: Lisbon, within 10 km; Porto, within 10 km.
+      return (Array.isArray(value) ? value : [value])
+        .filter(isObject)
+        .map(placeText)
+        .filter(Boolean)
+        .join('; ')
+    case 'number':
+      return numberText(field, value)
     case 'moment':
       return isObject(value) ? `${when(value.from)} to ${when(value.to)}` : when(value)
     case 'hours':

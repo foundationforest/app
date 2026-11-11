@@ -27,7 +27,7 @@ import { fitting } from '../form.ts'
 import { useProfiles } from '../hooks.ts'
 import { Icon } from '../icons.tsx'
 import { Loader } from '../mark.tsx'
-import { type Field as MarketField, type Kind, fieldsOf, markets, pairOf } from '../markets.ts'
+import { type Field as MarketField, type Kind, fieldsOf, goneLine, markets, pairOf } from '../markets.ts'
 import { withSeed } from '../passkey.ts'
 import { choiceWords } from '../show.ts'
 import { Line, type Note, Quiet, Seg, Top, UnlockIcon, noteOf, useAction } from '../ui.tsx'
@@ -125,7 +125,13 @@ export function Review({ me, subject: given, edit, report = false, onDone, onBac
     onDone()
   })
 
-  if (!market) return null
+  if (!market)
+    return (
+      <main>
+        <Top onClose={onBack} />
+        <p className="line">{goneLine(me.label)}</p>
+      </main>
+    )
   if (asking)
     return (
       <main>

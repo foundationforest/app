@@ -1,12 +1,14 @@
 // A listing, new or edited, from a profile: an offer or a request, as the profile's role names it.
-// At the top, Close, its title in the middle (New offer), the profile's avatar at the right. Its form:
-// the market's own fields and contact (Field.tsx), in the order form.ts reads from the market's file,
-// each shown once the answers it depends on hold and dropped when they no longer do, the photos
-// among them. An edit opens with what still fits its market today, so a listing an older market
-// shaped is posted again in today's. Everything is checked before the unlock (flows/entries.ts);
-// then one unlock signs it, writes it and sends its new photos. Its path is set as the form opens,
-// so posting again after a photo did not go writes the same listing, never a second. Post stays at
-// the foot as the form scrolls; an edit's Delete is under it, in red, asking once more.
+// At the top, Close, its title in the middle (New offer), the profile's avatar at the right; in a
+// beta market, one line under it (BETA, said once where a listing is made). Its form: the market's
+// own fields and contact (Field.tsx), in the order form.ts reads from the market's file, each shown
+// once the answers it depends on hold and dropped when they no longer do, the photos among them. An
+// edit opens with what still fits its market today, so a listing an older market shaped is posted
+// again in today's. Everything is checked before the unlock (flows/entries.ts); then one unlock
+// signs it, writes it and sends its new photos. Its path is set as the form opens, so posting again
+// after a photo did not go writes the same listing, never a second. Post stays at the foot as the
+// form scrolls; an edit's Delete is under it, in red, asking once more. A profile whose market is
+// gone has no form: one line says so.
 
 import { useRef, useState } from 'react'
 
@@ -22,7 +24,7 @@ import { type Posted, check, newPath, post, unpost } from '../flows/entries.ts'
 import { applies, fitting, formFields, settled } from '../form.ts'
 import { useProfiles } from '../hooks.ts'
 import { Loader } from '../mark.tsx'
-import { kindWords, markets, pairOf } from '../markets.ts'
+import { BETA, goneLine, kindWords, markets, pairOf } from '../markets.ts'
 import { withSeed } from '../passkey.ts'
 import { Line, Top, UnlockIcon, useAction } from '../ui.tsx'
 
@@ -54,7 +56,13 @@ export function Listing({ me, edit, onDone, onBack }: Props) {
     onDone()
   })
 
-  if (!market) return null
+  if (!market)
+    return (
+      <main>
+        <Top onClose={onBack} />
+        <p className="line">{goneLine(me.label)}</p>
+      </main>
+    )
   const set = (n: string, v: unknown) => setValues((was) => settled(fields, { ...was, [n]: v as Body[string] }))
   const word = kindWords('listing', me.label)
   return (
@@ -62,6 +70,7 @@ export function Listing({ me, edit, onDone, onBack }: Props) {
       <Top onClose={onBack} right={<Avatar label={me.label} address={me.address} size="sm" />}>
         <h1 className="bar-title">{edit ? word : `New ${word.toLowerCase()}`}</h1>
       </Top>
+      {market.status === 'beta' && <p className="hint">{BETA}</p>}
       <form
         id="listing"
         className="form"

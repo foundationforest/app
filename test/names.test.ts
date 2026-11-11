@@ -14,6 +14,7 @@ import * as device from '../src/device.ts'
 import { NAMES_PATH, NAME_MOST, saveName } from '../src/flows/names.ts'
 import { openProfiles, walletKey } from '../src/flows/profiles.ts'
 import { readView } from '../src/services/host.ts'
+import { ONE_ROLE, OTHER_OFFERS, OTHER_REQUESTS, split } from './labels.ts'
 import { type World, freshDevice, verifiedWith, world } from './world.ts'
 
 let w: World
@@ -33,27 +34,27 @@ async function namesEntry(seed: Uint8Array) {
 }
 
 test("a name saved: one locked entry in the Profiles folder, locked to it alone, naming no one in the clear, and in no profile's folder; the device keeps a copy", async () => {
-  const p = await verifiedWith(w, 'tennis-matches/player')
-  const rodrigo = (await verifiedWith(w, 'tennis-matches/player')).profiles[0]!
+  const p = await verifiedWith(w, ONE_ROLE)
+  const rodrigo = (await verifiedWith(w, ONE_ROLE)).profiles[0]!
   await saveName(w, p.seed, rodrigo.address, '  Rodrigo  ')
   expect(device.names(), 'trimmed, and kept on the device').toEqual({ [rodrigo.address]: 'Rodrigo' })
   const { body, opened } = await namesEntry(p.seed)
   expect(isLocked(body), 'locked').toBe(true)
   expect(lockCount(body as { private: string }), 'to the folder alone').toBe(1)
-  expect(JSON.stringify(body), 'nothing readable in it').not.toMatch(/Rodrigo|tennis/)
+  expect(JSON.stringify(body), 'nothing readable in it').not.toMatch(new RegExp(`Rodrigo|${split(ONE_ROLE).market}|${split(ONE_ROLE).role}`))
   expect(JSON.stringify(body)).not.toContain(rodrigo.address)
   expect(opened).toEqual({ names: [{ address: rodrigo.address, name: 'Rodrigo' }] })
   const theirs = await readView(w.host, p.profiles[0]!.address)
   expect([...theirs.current.keys()].filter((path) => path.startsWith(NAMES_PATH)), "nothing of it in the person's profile").toEqual([])
 
   const found = await App.find(p.seed, [w.host])
-  expect(found.labels, 'the reference app finds the same profiles beside it').toEqual(['tennis-matches/player'])
+  expect(found.labels, 'the reference app finds the same profiles beside it').toEqual([ONE_ROLE])
   expect(found.stamps).toHaveLength(1)
 })
 
 test('a new device: no names before the unlock; the unlock that opens the Profiles folder brings them; one saved there keeps the rest; one too long is cut', async () => {
-  const p = await verifiedWith(w, 'clothing/seller')
-  const [ana, beto] = [(await verifiedWith(w, 'clothing/buyer')).profiles[0]!, (await verifiedWith(w, 'clothing/buyer')).profiles[0]!]
+  const p = await verifiedWith(w, OTHER_OFFERS)
+  const [ana, beto] = [(await verifiedWith(w, OTHER_REQUESTS)).profiles[0]!, (await verifiedWith(w, OTHER_REQUESTS)).profiles[0]!]
   await saveName(w, p.seed, ana.address, 'Ana')
   freshDevice()
   expect(device.names()).toEqual({})
@@ -67,8 +68,8 @@ test('a new device: no names before the unlock; the unlock that opens the Profil
 })
 
 test('taken back: the key shows again; the last one deletes the entry, and a new device then has none', async () => {
-  const p = await verifiedWith(w, 'clothing/seller')
-  const [ana, beto] = [(await verifiedWith(w, 'clothing/buyer')).profiles[0]!, (await verifiedWith(w, 'clothing/buyer')).profiles[0]!]
+  const p = await verifiedWith(w, OTHER_OFFERS)
+  const [ana, beto] = [(await verifiedWith(w, OTHER_REQUESTS)).profiles[0]!, (await verifiedWith(w, OTHER_REQUESTS)).profiles[0]!]
   await saveName(w, p.seed, ana.address, 'Ana')
   await saveName(w, p.seed, beto.address, 'Beto')
   await saveName(w, p.seed, ana.address, '')

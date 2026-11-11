@@ -19,6 +19,7 @@ import { NotYours, follow, seedFor } from '../src/flows/seed.ts'
 import { enter } from '../src/flows/start.ts'
 import { fund } from '../src/services/credits.ts'
 import { writeAll } from '../src/services/host.ts'
+import { OFFERS } from './labels.ts'
 import { type World, freshDevice, person, proveHere, verifiedWith, world } from './world.ts'
 
 let w: World
@@ -41,7 +42,7 @@ async function profilesOf(host: string, seed: Uint8Array) {
 
 describe('a backup', () => {
   test("added as the standard's example says: backup/<id> holding its seed, its seed entry holding the first, each locked to its own folder alone; its folder funded from the wallet", async () => {
-    const p = await verifiedWith(w, 'tutoring/tutor')
+    const p = await verifiedWith(w, OFFERS)
     const first = await profilesOf(w.host, p.seed)
     const before = await w.balance(first.key.address)
     const b = person()
@@ -70,7 +71,7 @@ describe('a backup', () => {
   })
 
   test("I already use Forest: a passkey made here by mistake, its seed with no stamp, added to the one the person uses; from then it opens their profiles, and what the device noted of it moves to its entry", async () => {
-    const p = await verifiedWith(w, 'tutoring/tutor')
+    const p = await verifiedWith(w, OFFERS)
     const mistake = person()
     device.noteMade(device.FIRST, { maker: 'Apple', name: 'My phone' })
     await expect(linkTo(w, copy(mistake.seed), copy(mistake.seed)), 'the same passkey').rejects.toBeInstanceOf(SamePasskey)
@@ -87,7 +88,7 @@ describe('a backup', () => {
   })
 
   test("Start through a backup: its seed entry followed, one step only, to the first seed's profiles", async () => {
-    const p = await verifiedWith(w, 'tutoring/tutor')
+    const p = await verifiedWith(w, OFFERS)
     const b = person()
     await addBackup(w, p.seed, again(b))
     expect(await follow(w.host, copy(b.seed)), 'a backup opens the first seed').toEqual(p.seed)
@@ -104,7 +105,7 @@ describe('a backup', () => {
 
     expect(await enter(w, { id: b.id, seed: await follow(w.host, copy(b.seed)) }, proveHere)).toEqual({ to: 'profiles' })
     expect(device.passkey(), 'the backup is the passkey in use here').toBe(b.id)
-    expect(device.profiles().map((x) => x.label)).toEqual(['tutoring/tutor'])
+    expect(device.profiles().map((x) => x.label)).toEqual([OFFERS])
     expect(device.profiles()[0]!.address).toBe(p.profiles[0]!.address)
     expect(device.folder()?.address, "the first seed's Profiles folder").toBe((await walletKey(p.seed)).address)
   })

@@ -3,6 +3,11 @@
 # and services at their pins (standard.sh, with services' verifier, host, index and mcp readied to
 # run), then the type-check, the tests (Vitest), the build, and the browser test in Chromium
 # (Playwright). A test that does not run fails its run.
+#
+# In Playwright's own image, at the version package.json pins (build.test.ts holds them equal): its
+# Chromium and every system package it needs come installed, so no run waits on Ubuntu's package
+# servers, which once failed every install for over half an hour. --ipc=host, as Playwright asks of
+# Docker, so Chromium has the shared memory it needs.
 
 name: checks
 
@@ -24,6 +29,9 @@ jobs:
   app:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-noble
+      options: --ipc=host
     steps:
       - uses: actions/checkout@v7
         with:
@@ -35,7 +43,6 @@ jobs:
         run: |
           npm ci --no-audit --no-fund
           ./standard.sh services
-          npx playwright install --with-deps chromium
       - name: Type-check
         run: npm run check
       - name: Tests

@@ -21,11 +21,12 @@ import { proofFiles } from '../build/proofs.ts'
 import { BG, INK } from '../build/shell.ts'
 import { config } from '../src/config.ts'
 import { rfc3339 } from '../src/fields/Moment.tsx'
-import { kindWords, marketList, marketWords, otherSide, pairOf, pairs, roleWords } from '../src/markets.ts'
+import { gone, goneLine, kindWords, listOf, marketList, marketWords, markets, otherSide, pairOf, pairs, roleWords } from '../src/markets.ts'
 import { PATHS, RETURNS } from '../src/paths.ts'
 import { contactHref } from '../src/show.ts'
 import { BG as THEME_BG } from '../src/theme.ts'
 import { HOST_CODES, SOMETHING, VERIFIER_CODES, entrySays, fieldWords, hostSays, verifierSays } from '../src/words.ts'
+import { oneRole, twoSides } from './directory.ts'
 
 const vercel = JSON.parse(readFileSync(new URL('../vercel.json', import.meta.url), 'utf8'))
 const csp: string = vercel.headers.find((h: any) => h.source === '/(.*)').headers.find((h: any) => h.key === 'Content-Security-Policy').value
@@ -80,27 +81,55 @@ test("the proving files: the standard's committed setup, each under the SHA-256 
 
 test("the markets: every role in the directory, in its market's words, no symbol between, one pick each", () => {
   const dir = files().directory
+  const { offer, request } = twoSides(markets)
   expect(pairs.length).toBe(dir.markets.reduce((n, m) => n + m.roles.length, 0))
-  expect(pairOf('tutoring/tutor')).toMatchObject({ words: 'Tutoring tutor', offers: true })
-  expect(pairOf('home-cleaning/client')).toMatchObject({ words: 'Home cleaning client', offers: false })
+  expect(pairOf(offer.label)).toMatchObject({ words: `${marketWords(offer.market.name)} ${offer.role}`, offers: true })
+  expect(pairOf(request.label)).toMatchObject({ words: `${marketWords(request.market.name)} ${request.role}`, offers: false })
   expect(pairs.some((p) => p.words.includes('/')), 'no slash').toBe(false)
-  expect(marketWords('software-development')).toBe('Software development')
+  expect([marketWords('pottery-classes'), marketWords('pottery')]).toEqual(['Pottery classes', 'Pottery'])
   expect(new Set(pairs.map((p) => p.label)).size).toBe(pairs.length)
 })
 
-test('New profile: every market, in the directory\'s order, each with every role', () => {
+test("New profile: every market, live and beta alike, in the directory's order, each with every role", () => {
   expect(marketList.map((m) => m.words)).toEqual(files().directory.markets.map((m) => marketWords(m.name)))
-  expect(marketList.find((m) => m.market === 'clothing')?.roles.map((p) => roleWords(p.role))).toEqual(['Seller', 'Buyer'])
+  const { market, offer, request } = twoSides(markets)
+  expect(marketList.find((m) => m.market === market.name)?.roles.map((p) => roleWords(p.role))).toEqual(market.roles.map((r) => roleWords(r.role)))
+  expect(market.roles.map((r) => r.role)).toEqual(expect.arrayContaining([offer.role, request.role]))
   expect([roleWords('tutor'), roleWords('house-sitter')]).toEqual(['Tutor', 'House sitter'])
-  expect(marketList.find((m) => m.market === 'tennis-matches')?.roles.map((p) => p.label)).toEqual(['tennis-matches/player'])
+  const one = oneRole(markets)
+  expect(marketList.find((m) => m.market === one.market.name)?.roles.map((p) => p.label)).toEqual([one.label])
   expect(marketList.flatMap((m) => m.roles)).toEqual(pairs)
 })
 
-test('the markets: each role\'s other side, and its listing in its own word', () => {
-  expect(otherSide('tutoring', 'tutor')).toEqual(['student'])
-  expect(otherSide('tennis-matches', 'player'), 'one role: a player plays a player').toEqual(['player'])
-  expect(otherSide('tutoring', 'nobody')).toEqual([])
-  expect([kindWords('listing', 'tutoring/tutor'), kindWords('listing', 'tutoring/student'), kindWords('listing', 'tennis-matches/player'), kindWords('vouch', 'tutoring/tutor')]).toEqual(['Offer', 'Request', 'Request', 'Vouch'])
+test('a beta market is beta, a live one is not; both are listed', () => {
+  for (const m of marketList) expect(m.beta, m.market).toBe(markets.market(m.market)!.status === 'beta')
+  // The same directory with its first market live: listed still, not beta; the rest as they were.
+  const dir = files().directory
+  const [first, ...rest] = dir.markets
+  const live = listOf({ markets: [{ ...first!, status: 'live' }, ...rest] })
+  expect(live.map((m) => m.market)).toEqual(marketList.map((m) => m.market))
+  expect(live[0]!.beta).toBe(false)
+  expect(live.slice(1).map((m) => m.beta)).toEqual(marketList.slice(1).map((m) => m.beta))
+})
+
+test("a profile whose market is gone: named from its label, its line in the index's words; every market listed is not gone", () => {
+  for (const p of pairs) expect(gone(p.label), p.label).toBe(false)
+  expect(markets.market('pottery'), 'a market the directory does not list').toBeUndefined()
+  expect(gone('pottery/potter')).toBe(true)
+  expect(pairOf('pottery/potter')).toMatchObject({ words: 'Pottery potter', offers: false })
+  expect(goneLine('pottery/potter')).toBe("Its market, Pottery, is no longer in the markets directory, so it can't post.")
+})
+
+test("the markets: each role's other side, and its listing in its own word", () => {
+  const { market, offer, request } = twoSides(markets)
+  expect(otherSide(market.name, offer.role)).toContain(request.role)
+  expect(otherSide(market.name, offer.role)).not.toContain(offer.role)
+  const one = oneRole(markets)
+  expect(otherSide(one.market.name, one.role), 'one role: its profiles deal with each other').toEqual([one.role])
+  expect(otherSide(market.name, 'nobody')).toEqual([])
+  expect(otherSide('pottery', 'potter'), 'a market that is gone has no other side').toEqual([])
+  const word = (s: { offers: boolean }) => (s.offers ? 'Offer' : 'Request')
+  expect([kindWords('listing', offer.label), kindWords('listing', request.label), kindWords('listing', one.label), kindWords('listing', 'pottery/potter'), kindWords('vouch', offer.label)]).toEqual(['Offer', 'Request', word(one), 'Listing', 'Vouch'])
 })
 
 test("every code the verifier, the host and the standard list has its own plain line, and none reaches the screen", () => {
@@ -140,11 +169,18 @@ test("every colour the app writes outside theme.css: theme.css's ground and ink,
   expect([meta('light'), meta('dark')], "index.html's theme colours").toEqual([light.bg, dark.bg])
 })
 
+test("CI runs in Playwright's own image at the version package.json pins, so its Chromium is the one the browser test drives", () => {
+  const workflow = readFileSync(new URL('../.github/workflows/checks.yml', import.meta.url), 'utf8')
+  const pinned = (JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as { devDependencies: Record<string, string> }).devDependencies.playwright
+  expect(workflow.match(/image: mcr\.microsoft\.com\/playwright:v([^\s-]+)-noble/)?.[1]).toBe(pinned)
+  expect(workflow, 'nothing installed from Ubuntu at run time').not.toMatch(/playwright install/)
+})
+
 test("checkEntry's words, as one line naming the field by its name in words", () => {
   expect(fieldWords('groupSize')).toBe('Group size')
   expect(entrySays('subjects takes a list, each different, each one of maths, physics', ['subjects']).message).toBe("Subjects doesn't fit.")
-  expect(entrySays('a listing in tutoring has no field colour', ['colour']).message).toBe("Colour doesn't fit.")
-  expect(entrySays('tutoring is not a market in the directory', ['description']).message).toBe("This doesn't fit the market.")
+  expect(entrySays('a listing in pottery has no field colour', ['colour']).message).toBe("Colour doesn't fit.")
+  expect(entrySays('pottery is not a market in the directory', ['description']).message).toBe("This doesn't fit the market.")
 })
 
 test('a contact opens with a tap: a phone, an email, a link; a handle shows as it is', () => {

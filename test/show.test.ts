@@ -1,14 +1,19 @@
 // How the screens say things that are not words: a price as people write it, in the device's own
-// number format, whole or in its two parts; a listing's card; a place as its area and how far round
-// it reaches, and in a form's row; hours in a form's row; what came about a profile with no score yet;
+// number format, whole or in its two parts; a number with its unit, one or many; a listing's card; a
+// place as its area and how far round it reaches, several in turn, and in a form's row; hours in a
+// form's row; what came about a profile with no score yet;
 // whether a day line goes before a message, and what it says, and whether a message's time goes under
 // it.
 
 import { expect, test } from 'vitest'
 
-import { markets } from '../src/markets.ts'
-import { cardLines, daysText, hoursLines, placeLines, priceParts, priceText, saidCount, valueText } from '../src/show.ts'
+import { UNITS } from '@foundationforest/markets/browser'
+
+import { type Field, markets, previewOf } from '../src/markets.ts'
+import { cardLines, choiceWords, daysText, hoursLines, placeLines, priceParts, priceText, saidCount, valueText } from '../src/show.ts'
+import { unitWords } from '../src/units.ts'
 import { dayWords, lastOfRun, newDay } from '../src/ui.tsx'
+import { fieldWith, sides } from './directory.ts'
 
 test('a price as people write it, in the number format of the device (here, a locale given)', () => {
   expect(priceText({ amount: '20', currency: 'USD' }, 'en-US')).toBe('$20')
@@ -26,26 +31,67 @@ test("every price on screen reads so: a money field's value", () => {
   expect(valueText(field, { amount: '30', currency: 'EUR', per: 'hour' })).toMatch(/30.*per hour$/)
 })
 
+/** A role whose preview, past its description and price, opens with fields that wait on nothing and are not photos, of these types: its market, role, and those fields' names. */
+function previewing(types: Field['type'][]) {
+  for (const side of sides(markets)) {
+    const { market, role } = side
+    const first = previewOf(market).filter((n) => n !== 'description' && n !== 'price' && market.listing[n] && market.listing[n]!.type !== 'file' && (!market.listing[n]!.roles || market.listing[n]!.roles!.includes(role)))
+    const names = first.slice(0, types.length)
+    const plain = names.every((n, i) => market.listing[n]!.type === types[i] && !market.listing[n]!.when)
+    if (names.length === types.length && plain && market.listing.description && market.listing.price?.type === 'money') return { ...side, names }
+  }
+  throw new Error(`No market in the directory previews ${types.join(', then ')} first`)
+}
+
 test("a listing's card in every market: its description's first line, else its preview's first; the next of its preview it holds; its price in two parts", () => {
-  const tutoring = markets.market('tutoring')!
-  const lesson = { description: 'Maths, one hour online.\nBring a notebook.', subjects: ['maths'], price: { amount: '30', currency: 'USD', per: 'hour' }, mode: ['online'] }
-  expect(cardLines(tutoring, lesson), 'the description first, then the preview: subjects').toEqual({ title: 'Maths, one hour online.', line: 'Maths', price: priceParts(lesson.price) })
-  const { description: _, price: __, ...bare } = lesson
-  expect(cardLines(tutoring, bare), 'no description, no price: the preview as it runs').toEqual({ title: 'Maths', line: 'Online', price: null })
-  const clothing = markets.market('clothing')!
+  const { market, names } = previewing(['choice', 'choice'])
+  const [a, b] = names as [string, string]
+  const value = (n: string) => market.listing[n]!.values![0]!
+  const held = (n: string) => (market.listing[n]!.many ? [value(n)] : value(n))
+  const price = { amount: '30', currency: 'USD', per: 'hour' }
+  const lesson = { description: 'One hour online.\nBring a notebook.', [a]: held(a), price, [b]: held(b) }
+  expect(cardLines(market, lesson), `the description first, then the preview: ${a}`).toEqual({ title: 'One hour online.', line: choiceWords(market.listing[a]!, value(a)), price: priceParts(price) })
+  expect(cardLines(market, { [a]: held(a), [b]: held(b) }), 'no description, no price: the preview as it runs').toEqual({ title: choiceWords(market.listing[a]!, value(a)), line: choiceWords(market.listing[b]!, value(b)), price: null })
+  // A place its preview names, anywhere in it: the only one of its fields the listing holds, so its line.
+  const shop = fieldWith(markets, 'a place its preview names', (f, n, side) => f.type === 'place' && !f.many && !f.when && previewOf(side.market).includes(n) && side.market.listing.price?.type === 'money')
+  const photos = Object.entries(shop.market.listing).find(([, f]) => f.type === 'file')?.[0]
   const coat = { amount: '40', currency: 'USD' }
-  expect(cardLines(clothing, { description: 'A wool coat.', photos: ['ab'], price: coat, location: { lat: '45.764', lon: '4.836', radiusKm: 2, area: 'Lyon' } }), 'photos and the price never a line').toEqual({ title: 'A wool coat.', line: 'Lyon, within 2 km', price: priceParts(coat) })
+  const body = { description: 'A wool coat.', ...(photos && { [photos]: ['ab'] }), price: coat, [shop.name]: { lat: '45.764', lon: '4.836', radiusKm: 2, area: 'Lyon' } }
+  expect(cardLines(shop.market, body), 'photos and the price never a line').toEqual({ title: 'A wool coat.', line: 'Lyon, within 2 km', price: priceParts(coat) })
   expect(priceParts({ amount: '30', currency: 'USD', per: 'hour' }, 'en-US')).toEqual({ amount: '$30', per: 'per hour' })
   expect(priceParts(coat, 'en-US'), 'the whole deal').toEqual({ amount: '$40', per: '' })
 })
 
 test('a place: its area, then how far round it reaches; radius 0, that exact spot; an older place, its area', () => {
-  const field = markets.market('clothing')!.listing.location!
+  const { field } = fieldWith(markets, 'a place', (f) => f.type === 'place' && !f.many)
   expect(valueText(field, { lat: '45.764', lon: '4.836', radiusKm: 2, area: 'Lyon' })).toBe('Lyon, within 2 km')
   expect(valueText(field, { lat: '45.764', lon: '4.836', radiusKm: 2 })).toBe('Within 2 km')
   expect(valueText(field, { lat: '45.76412', lon: '4.83601', radiusKm: 0, area: 'Court 3' })).toBe('Court 3')
   expect(valueText(field, { lat: '45.76412', lon: '4.83601', radiusKm: 0 })).toBe('An exact spot')
   expect([valueText(field, { area: 'Lyon' }), valueText(field, { online: true })]).toEqual(['Lyon', ''])
+})
+
+test('several places in one field: each in turn, as one place reads; what is no place, left out', () => {
+  const { field } = fieldWith(markets, 'a list of places', (f) => f.type === 'place' && f.many === true)
+  const lisbon = { lat: '38.722', lon: '-9.139', radiusKm: 10, area: 'Lisbon' }
+  const porto = { lat: '41.150', lon: '-8.611', radiusKm: 10, area: 'Porto' }
+  expect(valueText(field, [lisbon, porto])).toBe('Lisbon, within 10 km; Porto, within 10 km')
+  expect(valueText(field, [lisbon, 'Porto', { lat: '41.150', lon: '-8.611', radiusKm: 0 }])).toBe('Lisbon, within 10 km; An exact spot')
+  expect(valueText(field, [])).toBe('')
+})
+
+test("a number with its unit, one when it is 1, else many; a unit the app has no words for, as its own name", () => {
+  expect([unitWords('nights', '1'), unitWords('nights', '3'), unitWords('nights', '1.5'), unitWords('nights')]).toEqual(['night', 'nights', 'nights', 'nights'])
+  expect([unitWords('people', '1'), unitWords('people', '4')]).toEqual(['person', 'people'])
+  expect([unitWords('square-metres', '1'), unitWords('square-metres', '30')]).toEqual(['square metre', 'square metres'])
+  expect([unitWords('minutes', '1'), unitWords('minutes', '60')]).toEqual(['minute', 'minutes'])
+  // One the markets add later: its name, hyphens as spaces, one or many; it never stops the app.
+  expect([unitWords('cubic-metres', '1'), unitWords('cubic-metres', '3')]).toEqual(['cubic metres', 'cubic metres'])
+  for (const unit of UNITS) expect(unitWords(unit, '2'), unit).toMatch(/^[a-z]+( [a-z]+)*$/)
+  const { field } = fieldWith(markets, 'a number with a unit', (f) => f.type === 'number' && f.unit !== undefined)
+  expect(valueText(field, '3')).toBe(`3 ${unitWords(field.unit!, '3')}`)
+  expect(valueText(field, '1')).toBe(`1 ${unitWords(field.unit!, '1')}`)
+  expect(valueText({ type: 'number', description: 'An older number, with no unit.' }, '7')).toBe('7')
 })
 
 test("a day line before a thread's first message, and wherever the day changes on the device's calendar", () => {

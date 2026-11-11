@@ -25,6 +25,7 @@ import { NotPassed, ask, choose, collect, finish, open, resume, stampNumberAt, s
 import { NoCredits } from '../src/services/credits.ts'
 import { writeAll } from '../src/services/host.ts'
 import { about, stampsBack } from '../src/services/verifier.ts'
+import { OFFERS, OTHER_OFFERS, OTHER_REQUESTS, REQUESTS, split } from './labels.ts'
 import { FACE_CREDITS, type World, freshDevice, proveHere, world } from './world.ts'
 
 let w: World
@@ -112,7 +113,7 @@ describe('a verification', () => {
     expect(await resume(w, p.id, again(p).seed, proveHere)).toEqual({ verified: true, labels: [] })
     expect(device.checks(), "worked out fresh, against the verifier's current keys").toEqual(['face'])
 
-    const made = await makeProfile(w, p.seed, 'tutoring/tutor', proveHere)
+    const made = await makeProfile(w, p.seed, OFFERS, proveHere)
     const body = (await readFolder([w.host], made.address, Date.now())).current.get('profile')!.entry.body!
     expect(proofsOf(body).map((x) => x.verifier), 'a verification of the face stamp alone').toEqual([w.keys.face])
     expect(await showStamps(w, p.seed, await openProfiles(p.seed, w.host), proveHere), 'nothing more to show').toBe(0)
@@ -249,17 +250,17 @@ describe('a new profile', () => {
     const p = await verified()
     const wallet = (await walletKey(p.seed)).address
     const before = await w.balance(wallet)
-    const made = await makeProfile(w, p.seed, 'tutoring/tutor', proveHere)
-    const main = await mainKey(p.seed, 'tutoring/tutor')
-    expect(made).toEqual({ label: 'tutoring/tutor', address: main.address })
+    const made = await makeProfile(w, p.seed, OFFERS, proveHere)
+    const main = await mainKey(p.seed, OFFERS)
+    expect(made).toEqual({ label: OFFERS, address: main.address })
     expect(device.profiles(), 'the device keeps its label and address').toEqual([made])
 
     const body = (await readFolder([w.host], main.address, Date.now())).current.get('profile')!.entry.body!
-    expect(body.market).toBe('tutoring')
-    expect(body.role).toBe('tutor')
+    expect(body.market).toBe(split(OFFERS).market)
+    expect(body.role).toBe(split(OFFERS).role)
     expect(body.hosts).toEqual([w.host])
     expect(typeof body.openKey).toBe('string')
-    expect(body.pay).toEqual({ ...(await payAddresses(p.seed, 'tutoring/tutor')) })
+    expect(body.pay).toEqual({ ...(await payAddresses(p.seed, OFFERS)) })
     const proof = proofsOf(body).find((x) => x.circuit === 'verification')
     const check = verificationCheck(proof, main.address)
     expect(check && (await checkVerification(check)), 'its verification checks, as any reader checks it').toBe(true)
@@ -270,15 +271,15 @@ describe('a new profile', () => {
     expect(spent, 'one credit to the new folder, and the label entry').toBeGreaterThan(1)
     expect(spent).toBeLessThan(1.1)
     expect(await w.balance(main.address), 'the profile entry paid from it').toBeLessThan(1)
-    expect((await App.find(p.seed, [w.host])).labels, 'the reference app finds it').toEqual(['tutoring/tutor'])
+    expect((await App.find(p.seed, [w.host])).labels, 'the reference app finds it').toEqual([OFFERS])
 
     // The reference app, from another seed with a stamp from the same verifier, writes the same shape.
     const q = await verified()
     const ref = new App({ seed: q.seed, hosts: [w.host] })
     await ref.keep(stampFromJson(JSON.parse(q.stamp)))
-    const theirs = (await mainKey(q.seed, 'tutoring/tutor')).address
+    const theirs = (await mainKey(q.seed, OFFERS)).address
     await ref.fund(theirs, 1)
-    await ref.addProfile('tutoring/tutor')
+    await ref.addProfile(OFFERS)
     const refBody = (await readFolder([w.host], theirs, Date.now())).current.get('profile')!.entry.body!
     const shape = (b: Body) => ({ keys: Object.keys(b).sort(), pay: Object.keys(b.pay as Body).sort(), proof: Object.keys(proofsOf(b)[0]!).sort(), hosts: b.hosts, market: b.market, role: b.role })
     expect(shape(body)).toEqual(shape(refBody))
@@ -293,7 +294,7 @@ describe('a new profile', () => {
       await finish(pricey, p.id, p.seed, (step as { stamp: string }).stamp, proveHere)
       const wallet = (await walletKey(p.seed)).address
       const before = await pricey.balance(wallet)
-      const made = await makeProfile(pricey, p.seed, 'home-cleaning/cleaner', proveHere)
+      const made = await makeProfile(pricey, p.seed, OTHER_REQUESTS, proveHere)
       expect((await readFolder([pricey.host], made.address, Date.now())).current.has('profile')).toBe(true)
       expect(before - (await pricey.balance(wallet)), 'two credits went in: the first did not cover the profile entry').toBeGreaterThan(2)
     } finally {
@@ -305,7 +306,7 @@ describe('a new profile', () => {
 describe('a profile made on another device', () => {
   test('the first device tells it with nothing unlocked, even after opening the folder for something else; one unlock lists it; one that never opens is told once', async () => {
     const p = await verified()
-    const tutor = await makeProfile(w, p.seed, 'tutoring/tutor', proveHere)
+    const tutor = await makeProfile(w, p.seed, OFFERS, proveHere)
     const first = globalThis.localStorage
     const wallet = (await walletKey(p.seed)).address
     const held = () => new Set(device.profiles().map((x) => x.label))
@@ -317,7 +318,7 @@ describe('a profile made on another device', () => {
     freshDevice()
     expect(await enter(w, again(p), proveHere)).toEqual({ to: 'profiles' })
     expect(await told(), 'what Start read').toBe(false)
-    const student = await makeProfile(w, p.seed, 'tutoring/student', proveHere)
+    const student = await makeProfile(w, p.seed, REQUESTS, proveHere)
     expect(await told()).toBe(false)
 
     // Back on the first.
@@ -325,7 +326,7 @@ describe('a profile made on another device', () => {
     expect(await labelIds(w.host, wallet)).toHaveLength(2)
     expect(await told(), 'a label entry it never read').toBe(true)
     await openProfiles(p.seed, w.host)
-    expect(Object.values(device.folder()!.labels).sort(), 'the folder opened for something else: both read').toEqual(['tutoring/student', 'tutoring/tutor'])
+    expect(Object.values(device.folder()!.labels).sort(), 'the folder opened for something else: both read').toEqual([REQUESTS, OFFERS])
     expect(await told(), 'but one not listed here, so still told').toBe(true)
     expect(await takeElsewhere(w, again(p).seed)).toEqual([student])
     expect(device.profiles(), 'kept beside the one listed').toEqual([student, tutor])
@@ -336,7 +337,7 @@ describe('a profile made on another device', () => {
     const key = await walletKey(p.seed)
     const view = await readFolder([w.host], wallet, Date.now())
     const stranger = await newAccessKey()
-    await writeAll(w.host, [entry(key, 'label/00000000000000000000000000000000', await lock({ label: 'clothing/seller' }, [stranger.openKey]), nextTime(Date.now(), view, 'label/00000000000000000000000000000000'))])
+    await writeAll(w.host, [entry(key, 'label/00000000000000000000000000000000', await lock({ label: OTHER_OFFERS }, [stranger.openKey]), nextTime(Date.now(), view, 'label/00000000000000000000000000000000'))])
     expect(await told()).toBe(true)
     expect(await takeElsewhere(w, again(p).seed)).toEqual([])
     expect(await told(), 'read once, nothing to show').toBe(false)
@@ -346,7 +347,7 @@ describe('a profile made on another device', () => {
 describe('Start, on a device that knows nothing', () => {
   test("finds what the person made elsewhere: their profiles' labels and addresses", async () => {
     const p = await verified()
-    const made = await makeProfile(w, p.seed, 'tutoring/student', proveHere)
+    const made = await makeProfile(w, p.seed, REQUESTS, proveHere)
     freshDevice()
     expect(await enter(w, again(p), proveHere)).toEqual({ to: 'profiles' })
     expect(device.profiles()).toEqual([made])
@@ -362,12 +363,12 @@ describe('Start, on a device that knows nothing', () => {
     await collect(w, p.id, (await walletKey(p.seed)).address)
     const ref = new App({ seed: p.seed, hosts: [w.host] })
     await ref.keep(stampFromJson(JSON.parse((step as { stamp: string }).stamp)))
-    const address = (await mainKey(p.seed, 'home-repair/repairer')).address
+    const address = (await mainKey(p.seed, OTHER_REQUESTS)).address
     await ref.fund(address, 1)
-    await ref.addProfile('home-repair/repairer')
+    await ref.addProfile(OTHER_REQUESTS)
     freshDevice()
     expect(await enter(w, again(p), proveHere)).toEqual({ to: 'profiles' })
-    expect(device.profiles()).toEqual([{ label: 'home-repair/repairer', address }])
+    expect(device.profiles()).toEqual([{ label: OTHER_REQUESTS, address }])
     expect(await readCard(w, address)).toEqual({ checks: ['face'], listings: 0, keys: [] })
   })
 })
@@ -378,12 +379,12 @@ test('what the device keeps, through all of it: its own keys, and nothing of the
   const step = await ask(w, p.id, await stampNumberAt(w, p.seed))
   const during = JSON.stringify({ ...localStorage })
   await finish(w, p.id, p.seed, (step as { stamp: string }).stamp, proveHere)
-  await makeProfile(w, p.seed, 'clothing/seller', proveHere)
+  await makeProfile(w, p.seed, OTHER_OFFERS, proveHere)
   const after = JSON.stringify({ ...localStorage })
   expect(Object.keys(localStorage).sort()).toEqual(['forest.folder', 'forest.passkey', 'forest.passkeys', 'forest.profiles', 'forest.read', 'forest.seen', 'forest.verified'])
-  expect([device.folder()?.address, Object.values(device.folder()?.labels ?? {})], "the Profiles folder's address, and its one label entry read here").toEqual([(await walletKey(p.seed)).address, ['clothing/seller']])
-  expect([device.cursors(), device.seen()], 'the profile made here, marked new from its start').toEqual([{ [(await mainKey(p.seed, 'clothing/seller')).address]: 0 }, { [(await mainKey(p.seed, 'clothing/seller')).address]: 0 }])
+  expect([device.folder()?.address, Object.values(device.folder()?.labels ?? {})], "the Profiles folder's address, and its one label entry read here").toEqual([(await walletKey(p.seed)).address, [OTHER_OFFERS]])
+  expect([device.cursors(), device.seen()], 'the profile made here, marked new from its start').toEqual([{ [(await mainKey(p.seed, OTHER_OFFERS)).address]: 0 }, { [(await mainKey(p.seed, OTHER_OFFERS)).address]: 0 }])
   const hex = (b: Uint8Array) => Buffer.from(b).toString('hex')
-  const secrets = [hex(p.seed), Buffer.from(p.seed).toString('base64url'), hex((await walletKey(p.seed)).secret), hex((await mainKey(p.seed, 'clothing/seller')).secret), String(stampFromJson(JSON.parse((step as { stamp: string }).stamp)).signature.S)]
+  const secrets = [hex(p.seed), Buffer.from(p.seed).toString('base64url'), hex((await walletKey(p.seed)).secret), hex((await mainKey(p.seed, OTHER_OFFERS)).secret), String(stampFromJson(JSON.parse((step as { stamp: string }).stamp)).signature.S)]
   for (const kept of [during, after]) for (const s of secrets) expect(kept.includes(s)).toBe(false)
 })

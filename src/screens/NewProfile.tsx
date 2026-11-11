@@ -1,12 +1,13 @@
 // Your first profile, once the person is verified, or New profile, from Home: every market as a
-// tile, two to a row, a tint of its color, its icon in its color, its name, under a search box over
-// the markets' words and their roles'. A tile opens its roles on a sheet (RoleSheet.tsx); one tap on
-// a role asks the passkey if no seed is held and makes the profile: its folder funded, its
-// verification proven on the device, its profile entry written, its label in the Profiles folder.
-// Meanwhile, the loader and "Making your Tutoring tutor". Your first profile is a setup step: being
-// verified can't be undone, so it has no back, but Later, at its top right, which goes on to Connect
-// your AI, and "You're verified" under its title. New profile has a back. The market picked is kept
-// in the page's history (App.tsx), so a reload keeps its sheet open.
+// tile, live and beta alike, two to a row, a tint of its color, its icon in its color, its name, and
+// a small Beta chip on a beta one's corner, under a search box over the markets' words and their
+// roles'. A tile opens its roles on a sheet (RoleSheet.tsx); one tap on a role asks the passkey if
+// no seed is held and makes the profile: its folder funded, its verification proven on the device,
+// its profile entry written, its label in the Profiles folder. Meanwhile, the loader and "Making
+// your Tutoring tutor". Your first profile is a setup step: being verified can't be undone, so it
+// has no back, but Later, at its top right, which goes on to Connect your AI, and "You're verified"
+// under its title. New profile has a back. The market picked is kept in the page's history
+// (App.tsx), so a reload keeps its sheet open.
 
 import { type CSSProperties, useState } from 'react'
 
@@ -88,9 +89,10 @@ export function NewProfile({ market: name, onMarket, onMade, onOpen, onBack, onL
         {shown.map((m) => {
           const icon = iconOf(m.market)
           return (
-            <button key={m.market} className="market-tile" style={{ '--h': colorOf(m.market) } as CSSProperties} onClick={() => onMarket(m.market)}>
+            <button key={m.market} className="market-tile" style={{ '--h': colorOf(m.market) } as CSSProperties} aria-label={m.beta ? `${m.words}, beta` : m.words} onClick={() => onMarket(m.market)}>
               {icon ? <Icon name={icon} fill /> : <span className="letter" aria-hidden>{m.words.charAt(0)}</span>}
-              {m.words}
+              <span className="tile-name">{m.words}</span>
+              {m.beta && <span className="chip beta">Beta</span>}
             </button>
           )
         })}

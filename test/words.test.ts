@@ -16,6 +16,7 @@ import { walletKey } from '../src/flows/profiles.ts'
 import { follow, seedFor } from '../src/flows/seed.ts'
 import { enter } from '../src/flows/start.ts'
 import { Said } from '../src/words.ts'
+import { OFFERS, OTHER_OFFERS, REQUESTS } from './labels.ts'
 import { type World, freshDevice, person, proveHere, verifiedWith, world } from './world.ts'
 
 let w: World
@@ -44,7 +45,7 @@ const kept = () => JSON.stringify(Object.fromEntries(Object.keys(localStorage).m
 
 describe('24 words', () => {
   test('exported on one device, imported on another: a new passkey, added as a backup, opens the same profiles, and nothing of the words is kept', async () => {
-    const p = await verifiedWith(w, 'tutoring/tutor', 'clothing/seller')
+    const p = await verifiedWith(w, OFFERS, OTHER_OFFERS)
     const words = exportWords(p.seed)
     expect(words.split(' ')).toHaveLength(24)
 
@@ -67,7 +68,7 @@ describe('24 words', () => {
   })
 
   test("words that can't be used, each in one line, before any passkey: some missing, quiet; too many, a word wrong or out of place, or none verified, red", async () => {
-    const p = await verifiedWith(w, 'tutoring/tutor')
+    const p = await verifiedWith(w, OFFERS)
     const words = exportWords(p.seed).split(' ')
     freshDevice()
     expect(await refusal('')).toEqual(['Add all 24 words.', false])
@@ -86,7 +87,7 @@ describe('24 words', () => {
   })
 
   test("a backup's own words: followed one step, to the seed it backs up", async () => {
-    const p = await verifiedWith(w, 'tutoring/tutor')
+    const p = await verifiedWith(w, OFFERS)
     const b = person()
     await addBackup(w, p.seed, { ...b, seed: copy(b.seed) })
     freshDevice()
@@ -94,8 +95,8 @@ describe('24 words', () => {
   })
 
   test('never two seeds on one device: words that open a different Forest from the one it lists, refused; its own taken; after Forget, the others taken', async () => {
-    const a = await verifiedWith(w, 'tutoring/tutor')
-    const b = await verifiedWith(w, 'tutoring/student')
+    const a = await verifiedWith(w, OFFERS)
+    const b = await verifiedWith(w, REQUESTS)
     await enter(w, { id: a.id, seed: copy(a.seed) }, proveHere)
     expect(device.folder()?.address).toBe((await walletKey(a.seed)).address)
 

@@ -1,15 +1,16 @@
 // A profile's second tab, Reviews: the reviews, vouches and reports this profile wrote, from its own
 // folder, newest first, under one quiet line that says what they are. Each a card: its score or
 // chip, who it is about, by the person's name for them or their short key, never this profile's own
-// name; a tap on the card edits it, a tap on who opens their profile. Review someone at its foot.
-// Nothing here asks the passkey.
+// name; a tap on the card edits it, a tap on who opens their profile. Review someone at its foot,
+// but for a profile whose market is gone, which can't post (`onReview` left out). Nothing here asks
+// the passkey.
 
 import type { Posted } from '../flows/entries.ts'
 import { givenOf } from '../flows/feedback.ts'
 import { Icon } from '../icons.tsx'
 import { SaidCard } from './SaidCard.tsx'
 
-type Props = { entries: Posted[] | null; onEdit: (given: Posted) => void; onReview: () => void; onWho: (address: string) => void }
+type Props = { entries: Posted[] | null; onEdit: (given: Posted) => void; onReview?: () => void; onWho: (address: string) => void }
 
 export function Written({ entries, onEdit, onReview, onWho }: Props) {
   const written = entries ? givenOf(entries) : null
@@ -26,12 +27,14 @@ export function Written({ entries, onEdit, onReview, onWho }: Props) {
           })}
         </div>
       )}
-      <div className="foot">
-        <button onClick={onReview}>
-          <Icon name="star" bold />
-          Review someone
-        </button>
-      </div>
+      {onReview && (
+        <div className="foot">
+          <button onClick={onReview}>
+            <Icon name="star" bold />
+            Review someone
+          </button>
+        </div>
+      )}
     </>
   )
 }

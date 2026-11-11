@@ -1,24 +1,26 @@
 // One field of an entry, as suits its type on a phone (the markets manual's Types), its name above it:
-// text in a line (a box for a description), a number on the number keys, words in a line with commas
-// between them, a choice by how many values it has (Choice: side by side, chips, or a picker), one
-// value or several as the field itself says (`many`), each value by its label where the field has
-// one, else in words; money as an amount with its currency
-// and, only when the field lists what its amount may be for, a pick of exactly those, side by side;
-// photos as tiles; and place, moment and hours in their own modules. A contact says, beside its
-// name, that it is public.
+// text in a line (a box for a description), a number on the number keys with its unit after it, one
+// or many as the number typed says (1 night, 3 nights), words in a line with commas between them, a
+// choice by how many values it has (Choice: side by side, chips, or a picker), one value or several
+// as the field itself says (`many`), each value by its label where the field has one, else in words;
+// money as an amount with its currency and, only when the field lists what its amount may be for, a
+// pick of exactly those, side by side; photos as tiles; and place (one, or several where the field
+// holds a list), moment and hours in their own modules. A contact says, beside its name, that it is
+// public.
 
 import { useState } from 'react'
 
 import { Icon } from '../icons.tsx'
 import type { Field as MarketField } from '../markets.ts'
 import { choiceWords } from '../show.ts'
+import { unitWords } from '../units.ts'
 import { Seg } from '../ui.tsx'
 import { fieldWords } from '../words.ts'
 import { Hours } from './Hours.tsx'
 import { Moment } from './Moment.tsx'
 import { type Picked, Photos } from './Photos.tsx'
 import { Picker } from './Picker.tsx'
-import { Place } from './Place.tsx'
+import { Place, Places } from './Place.tsx'
 
 export type FieldProps = { name: string; field: MarketField; value: unknown; onChange: (value: unknown) => void; picked: Picked }
 
@@ -54,7 +56,7 @@ function Input({ name, field, value, onChange, picked }: FieldProps) {
         <input aria-label={label} autoComplete="off" defaultValue={typeof value === 'string' ? value : ''} onChange={(e) => onChange(given(e.target.value))} />
       )
     case 'number':
-      return <input aria-label={label} inputMode="decimal" defaultValue={typeof value === 'string' ? value : ''} onChange={(e) => onChange(given(e.target.value))} />
+      return <NumberInput label={label} unit={field.unit} value={value} onChange={onChange} />
     case 'words':
       return (
         <input
@@ -72,7 +74,7 @@ function Input({ name, field, value, onChange, picked }: FieldProps) {
     case 'money':
       return <Money label={label} field={field} value={value} onChange={onChange} />
     case 'place':
-      return <Place label={label} field={field} value={value} onChange={onChange} />
+      return field.many ? <Places label={label} field={field} value={value} onChange={onChange} /> : <Place label={label} field={field} value={value} onChange={onChange} />
     case 'moment':
       return <Moment label={label} value={value} onChange={onChange} />
     case 'hours':
@@ -116,6 +118,29 @@ export function Choice({ label, field, value, onChange }: { label: string; field
           </button>
         )
       })}
+    </div>
+  )
+}
+
+/** A number on the number keys, its unit after it in words, one or many as what is typed says. */
+function NumberInput({ label, unit, value, onChange }: { label: string; unit?: string; value: unknown; onChange: (v: unknown) => void }) {
+  const [text, setText] = useState(typeof value === 'string' ? value : '')
+  const input = (
+    <input
+      aria-label={label}
+      inputMode="decimal"
+      value={text}
+      onChange={(e) => {
+        setText(e.target.value)
+        onChange(given(e.target.value))
+      }}
+    />
+  )
+  if (!unit) return input
+  return (
+    <div className="number">
+      {input}
+      <span className="unit">{unitWords(unit, text)}</span>
     </div>
   )
 }

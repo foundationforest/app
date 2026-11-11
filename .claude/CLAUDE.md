@@ -26,7 +26,7 @@ it.
 
 - entry: anything in a folder, the standard's word.
 - listing: an offer or a request, at `listing/<id>`; the role's `listings` (`offers` or
-  `requests`) says which. Tennis players post requests. "listing" means only that: a host's list of
+  `requests`) says which. Language-exchange partners post requests. "listing" means only that: a host's list of
   entries is a list.
 - review, vouch, report: the markets' kinds, each about one profile.
 - feedback: what people say about a profile, its reviews, vouches and reports. A word, never a

@@ -4,6 +4,7 @@
 
 import { beforeEach, expect, test, vi } from 'vitest'
 
+import { OFFERS } from './labels.ts'
 import { freshDevice } from './world.ts'
 
 const found = vi.hoisted(() => ({ calls: [] as Array<{ seed: Uint8Array; labels: string[] | undefined }>, fail: false }))
@@ -32,7 +33,7 @@ async function page() {
   const held = await import('../src/held.ts')
   const ai = await import('../src/elsewhere-ai.ts')
   device.usePasskey(ID)
-  device.saveProfiles([{ label: 'tutoring/tutor', address: 'A' }])
+  device.saveProfiles([{ label: OFFERS, address: 'A' }])
   device.saveKnownKeys(['K1'])
   return { device, held, ai }
 }
@@ -56,7 +57,7 @@ test('a key made elsewhere: the next unlock finds the AI apps, with the seed hel
   held.hold(ID, SEED())
   await settled()
   expect(found.calls).toHaveLength(1)
-  expect(found.calls[0]!.labels).toEqual(['tutoring/tutor'])
+  expect(found.calls[0]!.labels).toEqual([OFFERS])
   expect([...found.calls[0]!.seed]).toEqual([...SEED()])
   expect(ai.toFind()).toBe(false)
   held.drop()
