@@ -1,8 +1,8 @@
 // You, one column on a phone and a laptop alike. At the top, one card: how the person is verified,
-// Selfie and ID, each with its badge's icon square (the selfie's mint, the ID's forest green); a
-// check done says Verified on a mint chip, one not done one line on what it gives, from the
-// verifier's gifts as Get verified says it, and a plain Add, which opens Get verified (the ID's sheet
-// up, for the ID). Then one card of rows, each opening its own screen: Passkeys, with how many
+// Selfie and ID, each with its badge's square: a check done its badge, the forest square, and
+// Verified on a mint chip; one not done its badge's outline, dashed, which starts it, one line on
+// what it gives, from the verifier's gifts as Get verified says it, and a plain Add, which opens Get
+// verified too (the ID's sheet up, for the ID). Then one card of rows, each opening its own screen: Passkeys, with how many
 // (Passkeys.tsx); Your AI, with the apps' names (AiApps.tsx); Appearance, Auto, Light or Dark, on a
 // sheet whose one choice is a list of rows, a tap picking it and closing the sheet; and About Forest
 // (About.tsx). At the foot, Forget this device, red text, tapped twice (forget.ts). Nothing here
@@ -17,7 +17,7 @@ import { forgetDevice } from '../forget.ts'
 import { useBackups, useChecks, useConnections } from '../hooks.ts'
 import { type IconName, Icon } from '../icons.tsx'
 import { applyTheme } from '../theme.ts'
-import { Opens, RadioMark, Sheet, Top } from '../ui.tsx'
+import { CHECK_ICON, Opens, RadioMark, Sheet, Top } from '../ui.tsx'
 
 type Props = { onForgot: () => void; onCheck: (check: Check) => void; onPasskeys: () => void; onAiApps: () => void; onAbout: () => void }
 
@@ -28,9 +28,9 @@ export const THEMES: Array<[Theme, string, IconName]> = [
   ['dark', 'Dark', 'moon'],
 ]
 
-const CHECKS: Array<{ check: Check; name: string; icon: IconName; add: string }> = [
-  { check: 'face', name: 'Selfie', icon: 'smiley', add: 'Add, free' },
-  { check: 'id', name: 'ID', icon: 'identification-card', add: 'Add, $5' },
+const CHECKS: Array<{ check: Check; name: string; add: string }> = [
+  { check: 'face', name: 'Selfie', add: 'Add, free' },
+  { check: 'id', name: 'ID', add: 'Add, $5' },
 ]
 
 /** What a check not done gives, in one line: the selfie its credits, the ID stronger trust and its credits. */
@@ -68,11 +68,17 @@ export function You({ onForgot, onCheck, onPasskeys, onAiApps, onAbout }: Props)
         <h1>You</h1>
       </Top>
       <div className="rows" role="group" aria-label="Verified">
-        {CHECKS.map(({ check, name, icon, add }) => (
+        {CHECKS.map(({ check, name, add }) => (
           <div key={check} className="row">
-            <span className={check === 'id' ? 'sq sm forest' : 'sq sm mint'}>
-              <Icon name={icon} fill />
-            </span>
+            {has.has(check) ? (
+              <span className="sq sm forest">
+                <Icon name={CHECK_ICON[check]} fill />
+              </span>
+            ) : (
+              <button type="button" className="sq sm outline" aria-label={`Verify with ${check === 'id' ? 'ID' : 'a selfie'}`} onClick={() => onCheck(check)}>
+                <Icon name={CHECK_ICON[check]} />
+              </button>
+            )}
             <span className="two">
               <strong>{name}</strong>
               {!has.has(check) && givesOf(check, credits) && <span className="wraps">{givesOf(check, credits)}</span>}

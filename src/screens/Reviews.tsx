@@ -3,9 +3,9 @@
 // its star (or, with no score yet, what came: 1 vouch), how many reviews, and quietly which index
 // rated it. Then each a card: its score with its star, or its chip, when, and a dot on those that
 // came after the newest its Reviews or Notifications had shown of it, as the screen opened; from now
-// they are seen (device.ts), so the profile's card and its rating count them new no more; what they
-// wrote; and From, who wrote it, its avatar, its name and its badge. A tap opens it (Received.tsx).
-// Nothing here asks the passkey.
+// they are seen (device.ts), so the profile's card and its rating count them new no more; who wrote
+// it, right after its score, by the person's name for them or their short key; and what they wrote.
+// A tap opens it (Received.tsx), whose From opens who wrote it. Nothing here asks the passkey.
 
 import { useEffect, useState } from 'react'
 
@@ -13,11 +13,9 @@ import { config } from '../config.ts'
 import { saveSeen, seen } from '../device.ts'
 import { newest } from '../flows/feedback.ts'
 import { useProfiles, useRated } from '../hooks.ts'
-import { Loader } from '../mark.tsx'
 import { ratingText, reviewCount, saidCount } from '../show.ts'
 import { Named, Rating, Top } from '../ui.tsx'
 import { SaidCard } from './SaidCard.tsx'
-import { Who } from './Who.tsx'
 
 type Props = { address: string; onBack: () => void; onOpen: (at: string) => void }
 
@@ -43,9 +41,7 @@ export function Reviews({ address, onBack, onOpen }: Props) {
       <p className="s">
         Of your <Named label={me.label} />
       </p>
-      {!held ? (
-        <Loader big />
-      ) : !rated ? (
+      {!held ? null : !rated ? (
         <p className="line">Can't reach the index.</p>
       ) : (
         <>
@@ -56,9 +52,7 @@ export function Reviews({ address, onBack, onOpen }: Props) {
           </div>
           <div className="cards">
             {rated.received.map((r) => (
-              <SaidCard key={r.address} kind={r.kind} score={r.body.score} text={r.body.text} {...(r.time !== undefined && { time: r.time })} fresh={(r.time ?? 0) > since} from onClick={() => onOpen(r.address)}>
-                <Who address={r.writer} />
-              </SaidCard>
+              <SaidCard key={r.address} kind={r.kind} score={r.body.score} text={r.body.text} who={r.writer} {...(r.time !== undefined && { time: r.time })} fresh={(r.time ?? 0) > since} onClick={() => onOpen(r.address)} />
             ))}
           </div>
         </>

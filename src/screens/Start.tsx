@@ -34,7 +34,7 @@ import { follow } from '../flows/seed.ts'
 import { type Entered, enter } from '../flows/start.ts'
 import { drop, hold } from '../held.ts'
 import { Icon } from '../icons.tsx'
-import { managerOf } from '../managers.ts'
+import { makerOf } from '../managers.ts'
 import { Loader, Mark } from '../mark.tsx'
 import { NoAnswer, type Passkey, ask, make, withSeed } from '../passkey.ts'
 import { proveInWorker } from '../proof/prove.ts'
@@ -85,8 +85,8 @@ export function Start({ onEntered, onWords, connecting = false, noPasskey = fals
   const making = useAction(async () => {
     try {
       const made = await make()
-      const name = managerOf(made.aaguid)
-      noteMade(FIRST, { ...(name && { name }), here: true })
+      const maker = makerOf(made.aaguid)
+      noteMade(FIRST, { ...(maker && { maker }) })
       await entered(made, false)
     } catch (err) {
       if (!(err instanceof NoAnswer)) throw err

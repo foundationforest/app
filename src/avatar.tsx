@@ -1,14 +1,15 @@
 // A profile's avatar: its market's icon on its market's color. Solid, a white icon on the color, when
 // its role's listings are offers; light, the icon in the color on a tint of it, when they are
-// requests. A market's color comes from the directory, walked in its order (colors.ts), so markets
-// differ up to ten. Its icon comes from a small table, a nicety: a market the table doesn't list
-// shows its name's first letter. The table may hold names the directory no longer has, and miss
-// new ones.
+// requests. The color and the icon follow one rule for the app and the index, services' own
+// (index/src/avatar.ts, imported by path as the host's credits client is): a market's color from the
+// directory, walked in its order, so markets differ up to ten; its icon from a small table of
+// Phosphor's names, a nicety. A market the table doesn't list, or whose icon the app doesn't draw,
+// shows its name's first letter.
 
 import type { CSSProperties } from 'react'
 
-import { colorIn, colorsFor } from './colors.ts'
-import { Icon, type IconName } from './icons.tsx'
+import { colorIn, colorsFor, iconOf as named } from '../services/index/src/avatar.ts'
+import { Icon, type IconName, isIcon } from './icons.tsx'
 import { markets, pairOf } from './markets.ts'
 
 /** Every market's color, from the directory in its order. */
@@ -17,20 +18,11 @@ const COLORS = colorsFor(markets.directory.markets.map((m) => m.name))
 /** A market's color: the directory's, else its first choice. */
 export const colorOf = (market: string): string => colorIn(COLORS, market)
 
-/** The markets with an icon of their own. */
-const ICONS: Record<string, IconName> = {
-  tutoring: 'graduation-cap',
-  clothing: 't-shirt',
-  electronics: 'laptop',
-  'home-cleaning': 'broom',
-  'home-repair': 'wrench',
-  'software-development': 'code',
-  'sports-coaching': 'soccer-ball',
-  'tennis-matches': 'tennis-ball',
+/** A market's icon, among those the app draws, or null: its avatar then shows its first letter. */
+export const iconOf = (market: string): IconName | null => {
+  const name = named(market)
+  return name && isIcon(name) ? name : null
 }
-
-/** A market's icon, or null: its avatar then shows its first letter. */
-export const iconOf = (market: string): IconName | null => (Object.hasOwn(ICONS, market) ? ICONS[market]! : null)
 
 type Size = 'xs' | 'sm' | 'md' | 'lg'
 

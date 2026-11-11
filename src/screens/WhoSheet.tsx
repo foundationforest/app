@@ -38,7 +38,7 @@ export function WhoSheet({ me, mine, onPick, onClose }: Props) {
             {threads.map((t) => (
               <button key={t.them} className="row" onClick={() => pick(t.them)}>
                 <WhoAvatar address={t.them} who={t.who} size="sm" />
-                <Who address={t.them} who={t.who} avatar={false} />
+                <Who address={t.them} who={t.who} />
                 <Icon name="caret-right" className="car" />
               </button>
             ))}

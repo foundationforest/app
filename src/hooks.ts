@@ -5,13 +5,14 @@
 // each, read as a screen showing it opens and held in the page meanwhile, and what a market outgrew
 // of what each posted, the same way; what is new on each;
 // whether a profile was made on another device; the messages opened in this page; the passkeys added
-// to the Profiles folder (backups, as the standard names them); whether a seed is held in it; and
-// whether a newer version of the app is live.
+// to the Profiles folder (backups, as the standard names them); whether a seed is held in it;
+// the names the person gave others; what the index says of anyone's profile; and whether a newer
+// version of the app is live.
 
 import { useEffect, useState } from 'react'
 
 import { config } from './config.ts'
-import { CHANGED, type Check, type Connection, type Profile, checks, connections, folder, profiles, seen, used } from './device.ts'
+import { CHANGED, type Check, type Connection, type Profile, checks, connections, folder, names, profiles, seen, used } from './device.ts'
 import { type Card, readCard } from './flows/cards.ts'
 import { type Backup, backupsAt } from './flows/backups.ts'
 import { anyNew, labelIds } from './flows/elsewhere.ts'
@@ -23,6 +24,7 @@ import { newMessagesList } from './list.ts'
 import { onOpened, opened } from './opened.ts'
 import { ordered } from './order.ts'
 import { type Held, onRated, ratedOf } from './rated.ts'
+import { readRated } from './services/index.ts'
 import { entryIn, newerLive } from './version.ts'
 
 /** A render again whenever what the device keeps changes. */
@@ -44,6 +46,43 @@ export function useProfiles(): Profile[] {
     return () => removeEventListener(CHANGED, changed)
   }, [])
   return list
+}
+
+/** The names the person gave other profiles, by address, as this device keeps them, read again whenever that changes. */
+export function useNames(): Record<string, string> {
+  const [all, setAll] = useState(names)
+  useEffect(() => {
+    const changed = () => setAll(names())
+    addEventListener(CHANGED, changed)
+    return () => removeEventListener(CHANGED, changed)
+  }, [])
+  return all
+}
+
+/** What the index said of profiles, read once a page by address: public, so held while the page is open, never stored; a read that failed is read again next time. */
+const indexed = new Map<string, Promise<Held>>()
+
+/** What the index says of the profile at `address`, anyone's: undefined while it is read. */
+export function useIndexed(address: string): Held | undefined {
+  const [h, setH] = useState<Held | undefined>(undefined)
+  useEffect(() => {
+    setH(undefined)
+    let live = true
+    let got = indexed.get(address)
+    if (!got) {
+      got = readRated(config.index, address).then(
+        (rated): Held => ({ rated }),
+        (): Held => {
+          indexed.delete(address)
+          return { failed: true }
+        },
+      )
+      indexed.set(address, got)
+    }
+    void got.then((r) => live && setH(r))
+    return () => void (live = false)
+  }, [address])
+  return h
 }
 
 /** The person's AI apps, as this device keeps them, read again whenever that changes. */

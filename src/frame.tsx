@@ -4,7 +4,7 @@
 // everything new, messages included. From 900px wide, no tabs: a sidebar on the left, on every
 // screen past setup, with the mark and Forest, the search, Home, Notifications (what came about the
 // profiles, and what a market outgrew), Messages and You with their counts, then Profiles, with a
-// small round plus beside it while a market's role has no profile of theirs, which opens New
+// small mint New at its right while a market's role has no profile of theirs, which opens New
 // profile; under it the profiles in the app's order (order.ts), those with something new first, then
 // the most recently used here, each with how many things are new on it, eight at most, then All
 // profiles with how many there are, which opens Home. The screen sits to its right. A place opening
@@ -148,8 +148,9 @@ function Side({ on, go }: { on: On; go: FrameGo }) {
       <div className="side-head">
         <h2 className="sect">Profiles</h2>
         {pairs.some((p) => !held.has(p.label)) && (
-          <button className={at === 'new' ? 'round tiny on' : 'round tiny'} aria-label="New profile" onClick={go.newProfile}>
+          <button className={at === 'new' ? 'minipill on' : 'minipill'} aria-label="New profile" onClick={go.newProfile}>
             <Icon name="plus" bold />
+            New
           </button>
         )}
       </div>

@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs'
 
 import { expect, test } from 'vitest'
 
-import { PALETTE } from '../src/colors.ts'
+import { PALETTE } from '../services/index/src/avatar.ts'
 
 const css = readFileSync(new URL('../src/theme.css', import.meta.url), 'utf8')
 const block = (selector: string) => css.slice(css.indexOf(selector)).split('}')[0]!

@@ -1,8 +1,8 @@
 // The pieces every screen shares: the one-line note that says why something can't be done (red when
 // what was given is wrong, quiet when something is still missing), an action's busy and its note;
-// the two badges, drawn once here, how a profile shows it is verified, by its strongest check (a
-// selfie check's light, an ID check's solid; their words a label, shown on a tap only where a badge
-// stands alone), and a check not done as its badge's outline, which starts it; the unlock icon, the
+// the two badges, drawn once here, how a profile shows it is verified, one for each check it holds
+// (the same forest square, the picture inside telling them apart; their words a label, shown on a
+// tap only where a badge stands alone), and a check not done as its badge's outline, which starts it; the unlock icon, the
 // fingerprint before the word on a labeled button that asks the passkey, only while a tap will ask,
 // never on a list row; the round way into messages, always there, with how many are new once any
 // is; a checkbox's box, one choice's radio mark, the dot that marks what is new, a rating with its
@@ -71,12 +71,15 @@ export function UnlockIcon({ always = false }: { always?: boolean }) {
 /** What each check's badge says, tapped: its words, and its accessible name. */
 const VERIFIED: Record<Check, string> = { face: 'Verified with a selfie', id: 'Verified with ID' }
 
+/** Each check's icon: a face being scanned for the selfie, an ID card for the ID. */
+export const CHECK_ICON: Record<Check, IconName> = { face: 'scan-smiley', id: 'identification-card' }
+
 /**
- * How a profile is verified, by its strongest check: the one way the app says so, one of two badges.
- * A selfie check's is light, a face on mint; an ID check's solid, an ID card on the forest green.
- * Its words are its label for screen readers and its title on hover. Inside a row or a card it
- * takes no tap of its own: tapped, it does what the row or card does (tick, open). Only where it
- * stands alone (`alone`: a profile's header) does a tap say its words for a moment, above it. A
+ * One check's badge, the one way the app says a profile is verified that way: a forest square, its
+ * check's icon in white; the selfie's and the ID's differ only by the picture inside. Its words are
+ * its label for screen readers and its title on hover. Inside a row or a card it takes no tap of
+ * its own: tapped, it does what the row or card does (tick, open). Only where it stands alone
+ * (`alone`: a profile's header, Home's title) does a tap say its words for a moment, above it. A
  * span, not a button, so it can sit inside one. `big` beside a title.
  */
 export function Verified({ check, big = false, alone = false }: { check: Check; big?: boolean; alone?: boolean }) {
@@ -87,13 +90,13 @@ export function Verified({ check, big = false, alone = false }: { check: Check; 
     return () => clearTimeout(t)
   }, [at])
   const words = VERIFIED[check]
-  const id = check === 'id'
   return (
     <span
-      className={`vb${id ? ' id' : ''}${big ? ' lg' : ''}${alone ? ' alone' : ''}`}
+      className={`vb${big ? ' lg' : ''}${alone ? ' alone' : ''}`}
       role="img"
       aria-label={words}
       title={words}
+      data-check={check}
       {...(alone && {
         onClick: (e: MouseEvent<HTMLSpanElement>) => {
           const r = e.currentTarget.getBoundingClientRect()
@@ -102,7 +105,7 @@ export function Verified({ check, big = false, alone = false }: { check: Check; 
         },
       })}
     >
-      <Icon name={id ? 'identification-card' : 'smiley'} fill />
+      <Icon name={CHECK_ICON[check]} fill />
       {at && (
         <span className="verified-said" style={{ left: at.x, top: at.y }}>
           {words}
@@ -112,22 +115,35 @@ export function Verified({ check, big = false, alone = false }: { check: Check; 
   )
 }
 
+/** Every check a profile holds, each its badge, the selfie's first; nothing with none. */
+export function Badges({ checks, big = false, alone = false }: { checks: readonly Check[]; big?: boolean; alone?: boolean }) {
+  const shown = (['face', 'id'] as const).filter((c) => checks.includes(c))
+  if (shown.length === 0) return null
+  return (
+    <span className="vbs">
+      {shown.map((c) => (
+        <Verified key={c} check={c} big={big} alone={alone} />
+      ))}
+    </span>
+  )
+}
+
 /** What each check's outline says: what a tap on it starts. */
 const UNVERIFIED: Record<Check, string> = { face: 'Verify with a selfie', id: 'Verify with ID' }
 
-/** A check the person hasn't done, beside the badges they have: its badge's outline, dashed and muted, a button that starts it. */
+/** A check the person hasn't done, beside the badges they have, on Home and in You: its badge's outline, dashed, its icon quiet, a button that starts it. */
 export function Unverified({ check, onClick }: { check: Check; onClick: () => void }) {
   return (
-    <button type="button" className="vb lg outline" aria-label={UNVERIFIED[check]} title={UNVERIFIED[check]} onClick={onClick}>
-      <Icon name={check === 'id' ? 'identification-card' : 'smiley'} />
+    <button type="button" className="vb lg outline" aria-label={UNVERIFIED[check]} title={UNVERIFIED[check]} data-check={check} onClick={onClick}>
+      <Icon name={CHECK_ICON[check]} />
     </button>
   )
 }
 
-/** You're verified: the mint chip, with the badge's icon of the check that verified the person. */
+/** You're verified: the mint chip, with the icon of the check that verified the person. */
 export const YoureVerified = ({ check }: { check: Check }) => (
   <span className="chip new">
-    <Icon name={check === 'id' ? 'identification-card' : 'smiley'} fill />
+    <Icon name={CHECK_ICON[check]} fill />
     You're verified
   </span>
 )

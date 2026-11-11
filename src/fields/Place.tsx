@@ -182,7 +182,7 @@ function PlaceScreen({ label, start, was, onDone, onBack }: { label: string; sta
             <p className="line">{PLACE_SAYS.noMap}</p>
           ) : (
             allowed !== null && (
-              <Suspense fallback={<Loader big />}>
+              <Suspense fallback={null}>
                 <PlaceMap
                   mode={mode}
                   centre={centreSpot}

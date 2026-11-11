@@ -25,7 +25,7 @@ beforeEach(() => {
 type Said = { writer: string; id: string; body: Record<string, unknown>; time: number; counted?: boolean }
 
 /** A profile's page as services' index writes it (index/src/pages/profile.ts), holding these. */
-function page(address: string, o: { rating?: number; reviews?: Said[]; vouches?: Said[]; reports?: Said[]; listings?: Array<{ id: string; body: Record<string, unknown> }> }): IndexPage {
+function page(address: string, o: { rating?: number; reviews?: Said[]; vouches?: Said[]; reports?: Said[]; listings?: Array<{ id: string; body: Record<string, unknown>; listed?: boolean }>; wrote?: { reviews?: Said[]; vouches?: Said[]; reports?: Said[] } }): IndexPage {
   const said = (kind: string, by: 'reviewer' | 'writer') => (list: Said[] = []) =>
     list.map((s) => ({ [by]: s.writer, address: `${s.writer}/${kind}/${s.id}`, body: { subject: address, ...s.body }, counted: s.counted ?? true, ...(s.counted === false && { why: 'its writer does not count here' }), time: s.time, ...(kind === 'review' && { weight: 0.28 }) }))
   return {
@@ -36,17 +36,17 @@ function page(address: string, o: { rating?: number; reviews?: Said[]; vouches?:
     ratings: { value: o.rating ?? null, count: o.reviews?.length ?? 0 },
     trust: 38,
     uniqueness: 75,
-    listings: (o.listings ?? []).map((l) => ({ address: `${address}/listing/${l.id}`, body: l.body, listed: true, time: 1 })),
-    reviews: { received: said('review', 'reviewer')(o.reviews), given: [] },
-    vouches: { received: said('vouch', 'writer')(o.vouches), given: [] },
-    reports: { received: said('report', 'writer')(o.reports), given: [] },
+    listings: (o.listings ?? []).map((l) => ({ address: `${address}/listing/${l.id}`, body: l.body, listed: l.listed ?? true, time: 1 })),
+    reviews: { received: said('review', 'reviewer')(o.reviews), given: said('review', 'reviewer')(o.wrote?.reviews) },
+    vouches: { received: said('vouch', 'writer')(o.vouches), given: said('vouch', 'writer')(o.wrote?.vouches) },
+    reports: { received: said('report', 'writer')(o.reports), given: said('report', 'writer')(o.wrote?.reports) },
     words: { received: [], given: [] },
     proofs: [],
   }
 }
 
 describe('what the index says of a profile', () => {
-  test('what it counted, newest first, by kind; its rating and how many reviews; its listings by address; a 404 is nothing yet; down, one quiet line', async () => {
+  test('what it counted, newest first, by kind; its rating and how many reviews; its listings by address, and how many it lists; how many it wrote; a 404 is nothing yet; down, one quiet line', async () => {
     const seller = (await verifiedWith(w, 'clothing/seller')).profiles[0]!
     const buyer = (await verifiedWith(w, 'clothing/buyer')).profiles[0]!
     w.indexSays(
@@ -59,7 +59,11 @@ describe('what the index says of a profile', () => {
         ],
         vouches: [{ writer: buyer.address, id: 'c', body: { text: 'Real.' }, time: 300 }],
         reports: [{ writer: buyer.address, id: 'd', body: { text: 'Late.' }, time: 200 }],
-        listings: [{ id: 'coat', body: { description: 'A wool coat.' } }],
+        listings: [
+          { id: 'coat', body: { description: 'A wool coat.' } },
+          { id: 'old', body: { description: 'An old shape.' }, listed: false },
+        ],
+        wrote: { reviews: [{ writer: seller.address, id: 'e', body: { score: '8' }, time: 50 }], vouches: [{ writer: seller.address, id: 'f', body: {}, time: 60 }] },
       }),
     )
     const rated = await readRated(w.index, seller.address)
@@ -71,9 +75,11 @@ describe('what the index says of a profile', () => {
       ['review', buyer.address, 'As described.', 100],
     ])
     expect(rated.listings[`${seller.address}/listing/coat`]?.description).toBe('A wool coat.')
+    expect(rated.listed, 'the listings it lists, not one it no longer does').toBe(1)
+    expect(rated.written, 'what the profile wrote: a review and a vouch').toBe(2)
     expect(newest(rated)).toBe(300)
 
-    expect(await readRated(w.index, buyer.address), 'nothing yet: the index holds no profile entry for it').toEqual({ rating: null, reviews: 0, received: [], listings: {} })
+    expect(await readRated(w.index, buyer.address), 'nothing yet: the index holds no profile entry for it').toEqual({ rating: null, reviews: 0, received: [], listings: {}, listed: 0, written: 0 })
     w.indexDown(true)
     const err = await readRated(w.index, seller.address).catch((e: unknown) => e)
     expect(err).toBeInstanceOf(Unreachable)

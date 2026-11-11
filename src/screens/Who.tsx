@@ -1,17 +1,19 @@
-// Who another profile is, as its profile entry says: its avatar (unless the row it sits in leads with
-// one), its market and role, "Clothing seller", and the badge of its strongest check whose
-// verification from this app's verifier checks; with its address cut short when asked. Read from
-// the host once a page (useWho), unless it is known already: a list of twelve reviews by one writer
-// reads them once.
+// Who another profile is. Who it is to the person first: the name they gave it, else its short key,
+// for them alone (flows/names.ts), never both side by side; then, apart from it, what its profile
+// entry says: its market in its color and its role, muted, and a badge for each check whose
+// verification from this app's verifier checks. The profile entry is read from the host once a page
+// (useWho), unless it is known already: a list of twelve reviews by one writer reads it once. Its
+// name or key shows at once; the rest once read.
 
-import { useEffect, useState } from 'react'
+import { type CSSProperties, type ReactNode, useEffect, useState } from 'react'
 
-import { Avatar } from '../avatar.tsx'
+import { Avatar, colorOf } from '../avatar.tsx'
 import { config } from '../config.ts'
 import { type Who as Known, whoIs } from '../flows/inbox.ts'
-import { Loader } from '../mark.tsx'
+import { useNames } from '../hooks.ts'
+import { marketWords } from '../markets.ts'
 import { checkInWorker } from '../proof/prove.ts'
-import { Named, Verified, short } from '../ui.tsx'
+import { Badges, short } from '../ui.tsx'
 
 /** Who each profile is, as read in this page: what a profile entry says is public, so it is held while the page is open; and each answer once it came. */
 const read = new Map<string, Promise<Known>>()
@@ -52,21 +54,38 @@ export function useWho(address: string, known?: Known): Known | undefined {
 /** The label of a profile someone is, for its avatar. */
 export const labelOf = (who: NonNullable<Known>) => `${who.market}/${who.role}`
 
-export function Who({ address, who: known, withAddress = false, avatar = true }: { address: string; who?: Known; withAddress?: boolean; avatar?: boolean }) {
+/** Who the profile at `address` is to the person, alone: the name they gave it, else its short key, in the key's own face. */
+export function NameOf({ address }: { address: string }) {
+  const name = useNames()[address]
+  return name ? <b className="name">{name}</b> : <b className="name key">{short(address)}</b>
+}
+
+/** A profile's market in its color, then its role, muted: Tennis matches player. */
+export const MarketRole = ({ market, role }: { market: string; role: string }) => (
+  <span className="mkr" style={{ '--h': colorOf(market) } as CSSProperties}>
+    <span className="m">{marketWords(market)}</span> <span className="r">{role}</span>
+  </span>
+)
+
+/** Who another profile is, in two lines: its name or key, with its badges; then its market and role. `aside`, at the first line's right (a time). */
+export function Who({ address, who: known, aside }: { address: string; who?: Known; aside?: ReactNode }) {
   const who = useWho(address, known)
-  if (who === undefined) return <Loader />
   return (
     <span className="who">
-      {who && avatar && <Avatar label={labelOf(who)} size="xs" />}
-      {who ? <Named label={labelOf(who)} /> : <span>A profile Forest can't read</span>}
-      {who?.check && <Verified check={who.check} />}
-      {withAddress && <span className="addr">{short(address)}</span>}
+      <span className="who-line">
+        <span className="who-name">
+          <NameOf address={address} />
+          {who && <Badges checks={who.checks} />}
+        </span>
+        {aside}
+      </span>
+      {who && <MarketRole market={who.market} role={who.role} />}
     </span>
   )
 }
 
 /** The avatar of the profile at `address`, at `size`; a blank square while it is read, or when it can't be. */
-export function WhoAvatar({ address, who: known, size }: { address: string; who?: Known; size?: 'xs' | 'sm' | 'md' }) {
+export function WhoAvatar({ address, who: known, size }: { address: string; who?: Known; size?: 'xs' | 'sm' | 'md' | 'lg' }) {
   const who = useWho(address, known)
   return who ? <Avatar label={labelOf(who)} {...(size && { size })} /> : <span className={`av ${size ?? 'md'} blank`} aria-hidden />
 }

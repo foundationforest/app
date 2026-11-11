@@ -1,6 +1,6 @@
 // What Get verified draws (Verify.tsx runs it): the two checks, each a card that is one tap, and the
-// ID check's sheet. A card: its icon square in its badge's colors (the selfie's a face on mint, the
-// ID's an ID card on the forest green), its name and one line, its price, a chevron; under a
+// ID check's sheet. A card: its icon square as its badge draws it (the forest green, a face being
+// scanned for the selfie, an ID card for the ID), its name and one line, its price, a chevron; under a
 // hairline, what it gives, each with its tick. A credit line shows only where the verifier gives
 // credits at this host (flows/verify.ts, `creditLines`). The ID's price says it is paid once: $5,
 // one time. The sheet: ID check and its price, the hold on the person's card, its three tries, What
@@ -28,7 +28,7 @@ const Once = () => (
 )
 
 const CARD = {
-  face: { name: 'Selfie', what: 'A quick selfie', price: 'Free', icon: 'smiley' },
+  face: { name: 'Selfie', what: 'A quick selfie', price: 'Free', icon: 'scan-smiley' },
   id: { name: 'ID', what: 'Your ID and a selfie', price: <Once />, icon: 'identification-card' },
 } as const
 
@@ -40,7 +40,7 @@ export function CheckCard({ check, credits, off, busy, onPick }: CardProps) {
   return (
     <button className="vcard" disabled={off} onClick={onPick}>
       <span className="vhead">
-        <span className={check === 'id' ? 'vico id' : 'vico'}>
+        <span className="vico">
           <Icon name={icon} fill />
         </span>
         <span className="two">

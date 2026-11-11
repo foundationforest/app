@@ -1,11 +1,11 @@
 // A new message, all of it there from the start. To: a box for an address or a Share link (a
 // profile's page on the index, as Share hands it out), until it holds a profile; then their card,
-// their avatar, market and role, the badge and their address cut short, with a cross to change it.
+// their avatar, who they are to the person (the name they gave them, else their short key) with
+// their badges, and their market and role, with a cross to change it.
 // It comes filled in when an address came with the screen (/message?to=<address>, or Message on a
 // review received). From: the card of the person's profile on the other side of that profile's
-// market (the same role where the market has one), picked for them, with the badge of its
-// strongest check, from its card; or, when they have none, that profile to make, New profile, one
-// unlock. The message, and Send at the foot, one unlock. When Send can't work, one line says why,
+// market (the same role where the market has one), picked for them, with its badges, from its
+// card; or, when they have none, that profile to make, New profile, one unlock. The message, and Send at the foot, one unlock. When Send can't work, one line says why,
 // once. To may be one of the person's own profiles, From their profile on the other side, as for
 // anyone's; only where that would be the same profile, in a market with one role, is it refused.
 
@@ -18,7 +18,6 @@ import { config } from '../config.ts'
 import { passkey } from '../device.ts'
 import { type Who as Known, send, whoIs } from '../flows/inbox.ts'
 import { makeProfile } from '../flows/profile.ts'
-import { strongest } from '../flows/cards.ts'
 import { addressIn } from '../flows/entries.ts'
 import { useCards, useProfiles } from '../hooks.ts'
 import { Icon } from '../icons.tsx'
@@ -27,7 +26,7 @@ import { otherSide } from '../markets.ts'
 import { holdThread, opened } from '../opened.ts'
 import { withSeed } from '../passkey.ts'
 import { checkInWorker, proveInWorker } from '../proof/prove.ts'
-import { Line, Named, type Note, Top, UnlockIcon, Verified, short, useAction } from '../ui.tsx'
+import { Badges, Line, Named, type Note, Top, UnlockIcon, useAction } from '../ui.tsx'
 import { Who, WhoAvatar } from './Who.tsx'
 
 type Props = { to?: string; onSent: (mine: string, them: string) => void; onBack: () => void }
@@ -57,7 +56,6 @@ export function Message({ to: given, onSent, onBack }: Props) {
   const label = !self && who && side ? `${who.market}/${side}` : null
   const me = label ? list.find((p) => p.label === label) : undefined
   const card = useCards(me ? [me] : [])[me?.address ?? '']
-  const fromCheck = card ? strongest(card.checks) : null
 
   const make = useAction(async () => {
     if (!label) return
@@ -93,8 +91,7 @@ export function Message({ to: given, onSent, onBack }: Props) {
             <div className="person to">
               <WhoAvatar address={to} {...(who !== undefined && { who })} />
               <span className="two">
-                <Who address={to} {...(who !== undefined && { who })} avatar={false} />
-                <span className="addr">{short(to)}</span>
+                <Who address={to} {...(who !== undefined && { who })} />
               </span>
               <button type="button" className="round clear" aria-label="Change" onClick={() => setTyped('')}>
                 <Icon name="x" />
@@ -110,9 +107,9 @@ export function Message({ to: given, onSent, onBack }: Props) {
             <div className="person from">
               <Avatar label={label} />
               <span className="two">
-                <span className="who">
+                <span className="who-name">
                   <Named label={label} />
-                  {me && fromCheck && <Verified check={fromCheck} />}
+                  {me && card && <Badges checks={card.checks} />}
                 </span>
               </span>
               {!me && (

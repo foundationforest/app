@@ -21,7 +21,7 @@ import { proofFiles } from '../build/proofs.ts'
 import { BG, INK } from '../build/shell.ts'
 import { config } from '../src/config.ts'
 import { rfc3339 } from '../src/fields/Moment.tsx'
-import { doesWords, kindWords, marketList, marketWords, otherSide, pairOf, pairs, withArticle } from '../src/markets.ts'
+import { kindWords, marketList, marketWords, otherSide, pairOf, pairs, roleWords } from '../src/markets.ts'
 import { PATHS } from '../src/paths.ts'
 import { contactHref } from '../src/show.ts'
 import { BG as THEME_BG } from '../src/theme.ts'
@@ -89,8 +89,8 @@ test("the markets: every role in the directory, in its market's words, no symbol
 
 test('New profile: every market, in the directory\'s order, each with every role', () => {
   expect(marketList.map((m) => m.words)).toEqual(files().directory.markets.map((m) => marketWords(m.name)))
-  expect(marketList.find((m) => m.market === 'clothing')?.roles.map((p) => `I'm ${withArticle(p.role)}: ${doesWords(p.offers)}`)).toEqual(["I'm a seller: You offer", "I'm a buyer: You look for"])
-  expect([withArticle('tutor'), withArticle('owner'), withArticle('employer')]).toEqual(['a tutor', 'an owner', 'an employer'])
+  expect(marketList.find((m) => m.market === 'clothing')?.roles.map((p) => roleWords(p.role))).toEqual(['Seller', 'Buyer'])
+  expect([roleWords('tutor'), roleWords('house-sitter')]).toEqual(['Tutor', 'House sitter'])
   expect(marketList.find((m) => m.market === 'tennis-matches')?.roles.map((p) => p.label)).toEqual(['tennis-matches/player'])
   expect(marketList.flatMap((m) => m.roles)).toEqual(pairs)
 })
