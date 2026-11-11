@@ -3451,9 +3451,9 @@ test("the ID check through the stand-in Stripe, from You's Add, $5: Get verified
   }
   assert.equal((await kept(page))['forest.setup'], undefined, 'nothing of the verification left on the device')
   await shot(page, 'home-both')
-  // A student requests: its avatar light, a tint of the market's color with its icon in it.
+  // A student requests: its avatar light, a tint of the market's color with its animal in it.
   const student = await avatarOf(page.locator('button.card', { hasText: 'Tutoring student' }).locator('.av'))
-  assert.deepEqual([student.light, student.h, student.icon], [true, colorOf('tutoring'), 'graduation-cap'])
+  assert.deepEqual([student.light, student.h, student.icon], [true, colorOf('tutoring'), animal((await mainKey(seed, 'tutoring/student')).address)])
   assert.notEqual(student.ground, rgbOf(colorOf('tutoring')), 'a tint of it, not the color itself')
   // Both badges everywhere, the selfie's first: the profile's header, right after its role; New message's To, who it is, and From.
   await page.locator('button.card', { hasText: 'Tutoring tutor' }).click()
