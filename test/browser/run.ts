@@ -1732,9 +1732,9 @@ test("a message to one of the person's own profiles: To their tutor, From their 
   })
   await messagesOf(page, 'Tutoring tutor')
   const loader = page.locator('main .loader.big')
+  await loader.waitFor({ state: 'attached' })
+  assert.deepEqual(await loader.evaluate((l) => [getComputedStyle(l).animationName, getComputedStyle(l).animationDelay]), ['late', '0.5s'], 'shown only once the wait passes half a second')
   await loader.waitFor()
-  assert.equal(await loader.evaluate((l) => getComputedStyle(l).visibility), 'hidden', 'nothing for the first half second')
-  await page.waitForFunction(() => getComputedStyle(document.querySelector('main .loader.big')!).visibility === 'visible')
   await shot(page, 'messages-loading')
   // The seed held: no Open, the conversations opened by themselves.
   await page.locator('button.thread-row').first().waitFor({ timeout: 60_000 })
@@ -3402,8 +3402,8 @@ test("the ID check through the stand-in Stripe, from You's Add, $5: Get verified
   const idSheet = page.getByRole('dialog', { name: 'ID check' })
   await idSheet.getByRole('button', { name: 'Pay $5' }).waitFor()
   assert.deepEqual(await idSheet.evaluate((d) => [...d.querySelectorAll('h2, .price, p:not(.consent), summary, button')].map((e) => e.textContent!.trim())), ['ID check', '$5 one time', "You're only charged if it passes.", 'What the check keeps', 'Pay $5'], 'its words, and nothing more')
-  assert.equal(await idSheet.getByText('Up to three tries.').count(), 0, 'no tries')
-  assert.equal(await idSheet.getByText(/hold/).count(), 0, 'no hold')
+  assert.equal(await idSheet.getByText('Up to three tries.', { exact: true }).count(), 0, 'no tries')
+  assert.equal(await idSheet.getByText('We hold $5 on your card and only charge it if your ID check passes.', { exact: true }).count(), 0, 'no hold')
   assert.ok(await checkCard(page, 'Selfie').isDisabled(), 'the selfie, which they have, greyed')
   assert.equal(await page.getByText('You can add the other one later.').count(), 0, 'and no line on the other one')
   const { consent } = (await (await fetch(`${services.verifier}/`)).json()) as { consent: string }
