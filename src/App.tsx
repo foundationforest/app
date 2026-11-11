@@ -345,8 +345,9 @@ function Screens() {
         return (
           <NewProfile
             {...(screen.market && { market: screen.market })}
-            // A market's page, a step in the history, the market kept there so a reload keeps it open.
-            onMarket={(market) => go({ at: 'new', market }, true)}
+            // A market's page in place of the tiles, the market kept in the history so a reload keeps it
+            // open; its Back, the tiles again. Made from it, back from the profile goes where New profile came from.
+            onMarket={(market) => go(market ? { at: 'new', market } : { at: 'new' })}
             onMade={made}
             // A role the person has: its profile, so back comes back to New profile.
             onOpen={(address) => go({ at: 'profile', address }, true)}

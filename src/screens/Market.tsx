@@ -1,5 +1,5 @@
-// A market's page, from its tile on New profile (NewProfile.tsx), a page of its own, so back goes
-// back to the tiles: Back; the market's icon, on a tint of its color as its tile has it; its name,
+// A market's page, from its tile on New profile (NewProfile.tsx), a page of its own in the tiles'
+// place: Back, to the tiles; the market's icon, on a tint of its color as its tile has it; its name,
 // with a small Beta chip after it for a beta market; one quiet line under it, the market's own
 // summary; and for a beta market one more (BETA, said once where a profile is made); then one big
 // row per role, its avatar as a profile of it shows (solid when it offers, light when it looks for)

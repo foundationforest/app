@@ -8,8 +8,8 @@
 // its profile entry written, its label in the Profiles folder. Meanwhile, the loader and "Making
 // your Tutoring tutor". Your first profile is a setup step: being verified can't be undone, so it
 // has no back, but Later, at its top right, which goes on to Connect your AI, and "You're verified"
-// under its title. New profile has a back. The market's page is a step in the page's history, the
-// market kept there (App.tsx), so back goes back to the tiles and a reload keeps it open.
+// under its title. New profile has a back. The market's page takes the tiles' place, the market
+// kept in the page's history (App.tsx), so a reload keeps it open; its Back is the tiles again.
 
 import { type CSSProperties, useState } from 'react'
 
@@ -27,8 +27,8 @@ import { Market } from './Market.tsx'
 
 type Props = {
   market?: string
-  /** A tile tapped: its market's page. */
-  onMarket: (name: string) => void
+  /** A tile tapped, its market's page open; null, the tiles again. */
+  onMarket: (name: string | null) => void
   onMade: (address: string, first: boolean) => void
   onOpen: (address: string) => void
   onBack: () => void
@@ -63,7 +63,7 @@ export function NewProfile({ market: name, onMarket, onMade, onOpen, onBack, onL
       </main>
     )
 
-  if (market) return <Market market={market} mine={list} note={make.note} busy={make.busy} onPick={(label) => void make.run(label)} onOpen={onOpen} onBack={onBack} />
+  if (market) return <Market market={market} mine={list} note={make.note} busy={make.busy} onPick={(label) => void make.run(label)} onOpen={onOpen} onBack={() => onMarket(null)} />
 
   const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean)
   const shown = marketList.filter((m) => words.every((w) => [m.words, ...m.roles.map((p) => p.role)].join(' ').toLowerCase().includes(w)))
