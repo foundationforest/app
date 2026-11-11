@@ -3,7 +3,8 @@
 // paid on Stripe's page, the payment's id kept on the device from the moment it is made; the check
 // in its session, each one of the payment's three tries; its stamp and its gift; then every profile showing it, in one unlock. And
 // every way it stops: not paid, declined, expired, its tries used up, not for sale, an ID already
-// used, a page closed after the stamp was kept.
+// used, a page closed after the stamp was kept. And before it is sold, an ID stamp the verifier signed
+// this seed already, kept with nothing paid.
 
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'vitest'
 
@@ -19,7 +20,7 @@ import { readCard, strongest } from '../src/flows/cards.ts'
 import { whoIs } from '../src/flows/inbox.ts'
 import { makeProfile } from '../src/flows/profile.ts'
 import { walletKey } from '../src/flows/profiles.ts'
-import { NotPassed, advance, ask, consentOf, creditLines, creditsOf, finish, open, pay, resume, stampNumberAt, stepOf } from '../src/flows/verify.ts'
+import { NotPassed, TRIES, advance, ask, consentOf, creditLines, creditsOf, finish, open, pay, resume, stampNumberAt, stepOf } from '../src/flows/verify.ts'
 import { Refused } from '../src/services/http.ts'
 import { Said } from '../src/words.ts'
 import { ID_CREDITS, type World, checkHere, freshDevice, proveHere, world } from './world.ts'
@@ -47,9 +48,16 @@ async function faceChecked(p: Person) {
   await finish(w, p.id, p.seed, step.stamp, proveHere)
 }
 
+/** The ID check sold: Stripe's page, since the verifier signed this seed no ID stamp yet. */
+async function sold(p: Person) {
+  const got = await pay(w, p.id, RETURN, await stampNumberAt(w, p.seed))
+  if (!('url' in got)) throw new Error('an ID stamp already, nothing sold')
+  return got
+}
+
 /** Paid: the payment made, its id kept, and paid on Stripe's page. */
 async function paid(p: Person) {
-  const { test } = await pay(w, p.id, RETURN)
+  const { test } = await sold(p)
   expect(test, 'a test-mode payment').toBe(true)
   const payment = device.under()!.payment!
   w.payments!.pay(payment)
@@ -137,10 +145,10 @@ describe('the ID check', () => {
   test('back from Stripe without paying: one quiet line, and Pay again', async () => {
     const p = person('alan')
     await faceChecked(p)
-    await pay(w, p.id, RETURN)
+    await sold(p)
     const err = await open(w, p.id).catch((e: unknown) => e)
     expect(err).toBeInstanceOf(Refused)
-    expect([(err as Said).message, (err as Said).red]).toEqual(['Not paid.', false])
+    expect([(err as Said).message, (err as Said).red]).toEqual(['Nothing is held on your card for this check. Pay to continue.', false])
     expect(stepOf(p.id)).toEqual({ at: 'consent' })
   })
 
@@ -167,20 +175,57 @@ describe('the ID check', () => {
     expect(device.checks()).toEqual(['face', 'id'])
   })
 
-  test("a payment's three tries used: Pay again", async () => {
+  test("a payment's three tries: the third that doesn't pass says they're used up and nothing was charged, then Pay again", async () => {
     const p = person('hedy')
     await faceChecked(p)
     await paid(p)
-    for (let i = 0; i < 3; i++) {
+    for (let i = 1; i <= TRIES; i++) {
       await checked(p, passedId(p.name, doc(p.name), { status: 'Declined' }))
-      await expect(advance(w, p.id, p.seed, proveHere)).rejects.toBeInstanceOf(NotPassed)
+      expect(device.under()!.tries, 'each session opened, counted').toBe(i)
+      const err = await advance(w, p.id, p.seed, proveHere).catch((e: unknown) => e)
+      expect(err).toBeInstanceOf(NotPassed)
+      expect((err as Said).message).toBe(i < TRIES ? "That ID check didn't pass. Try again." : 'Your three tries are used up. Nothing was charged. Pay again to continue.')
     }
+    expect(stepOf(p.id), 'Pay again').toEqual({ at: 'consent' })
+    expect(device.under()!.payment, 'the payment dropped').toBeUndefined()
+  })
+
+  test("a payment the verifier says is used up, which may have given its stamp: no word of a charge", async () => {
+    const p = person('lise')
+    await faceChecked(p)
+    const payment = await paid(p)
+    for (let i = 0; i < TRIES; i++) {
+      await checked(p, passedId(p.name, doc(p.name), { status: 'Declined' }))
+      await advance(w, p.id, p.seed, proveHere).catch(() => undefined)
+    }
+    // Its tries counted as one fewer, so the device asks once more, and the verifier answers.
+    const u = device.under()!
+    device.keepUnder({ ...u, payment, tries: TRIES - 1 })
     const err = await open(w, p.id).catch((e: unknown) => e)
-    expect((err as Said).message).toBe('This payment is used up. Pay again.')
+    expect([(err as Refused).code, (err as Said).message]).toEqual(['payment_used', 'This payment is used up. Pay again to continue.'])
     expect(stepOf(p.id)).toEqual({ at: 'consent' })
   })
 
-  test('an ID already used by someone else: one red line', async () => {
+  test('before the ID check is sold: an ID stamp the verifier signed this seed already, from its current key, is kept, and nothing is paid', async () => {
+    const p = person('chien-shiung')
+    await faceChecked(p)
+    await paid(p)
+    await checked(p)
+    const n = await stampNumberAt(w, p.seed)
+    expect((await ask(w, p.id, n)).at, 'signed, then the device lost before it was kept').toBe('signed')
+    freshDevice()
+    expect(await resume(w, p.id, p.seed, proveHere)).toEqual({ verified: true, labels: [] })
+    expect(device.checks()).toEqual(['face'])
+
+    const got = await pay(w, p.id, RETURN, n)
+    expect(got, 'its ID stamp, and no Stripe page').toEqual({ stamp: expect.any(String) })
+    expect(device.under()?.payment, 'no payment made').toBeUndefined()
+    await finish(w, p.id, p.seed, (got as { stamp: string }).stamp, proveHere)
+    expect(device.checks()).toEqual(['face', 'id'])
+    expect(device.under()).toBeNull()
+  })
+
+  test('an ID that verified another seed already: one red line, nothing charged', async () => {
     const p = person('rosalind')
     await faceChecked(p)
     await paid(p)
@@ -192,7 +237,7 @@ describe('the ID check', () => {
     await paid(q)
     await checked(q, passedId(q.name, doc('rosalind')))
     const err = await advance(w, q.id, q.seed, proveHere).catch((e: unknown) => e)
-    expect([(err as Said).message, (err as Said).red]).toEqual(['This ID was already used to verify someone else.', true])
+    expect([(err as Said).message, (err as Said).red]).toEqual(["You've already verified with ID in another Forest. Nothing was charged.", true])
   })
 
   test('the page closed after the stamp was kept, before every profile showed it: Start finishes it', async () => {
@@ -225,7 +270,7 @@ describe('the ID check', () => {
 test('a verifier with no Stripe: the ID check is not for sale, in one quiet line', async () => {
   const off = await world({ forSale: false })
   try {
-    const err = await pay(off, 'passkey-x', RETURN).catch((e: unknown) => e)
+    const err = await pay(off, 'passkey-x', RETURN, 1n).catch((e: unknown) => e)
     expect([(err as Said).message, (err as Said).red]).toEqual(["The ID check isn't available yet.", false])
   } finally {
     await off.close()

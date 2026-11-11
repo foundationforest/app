@@ -13,7 +13,7 @@ import { SEED_PATH, lock, seedOf } from '@foundationforest/folders/locked'
 import { newSeed, openingHalf } from '@foundationforest/keys'
 
 import * as device from '../src/device.ts'
-import { NotAdded, addBackup, backupsAt, removeBackup } from '../src/flows/backups.ts'
+import { NotAdded, NotVerified, SamePasskey, addBackup, backupsAt, linkTo, removeBackup } from '../src/flows/backups.ts'
 import { walletKey } from '../src/flows/profiles.ts'
 import { NotYours, follow, seedFor } from '../src/flows/seed.ts'
 import { enter } from '../src/flows/start.ts'
@@ -68,6 +68,23 @@ describe('a backup', () => {
 
     expect(device.passkeys(), 'the device knows it: Start asks for it, the next backup excludes it').toContain(b.id)
     expect(device.madeHere(), "its manager's name, by its entry").toEqual({ [listed[0]!.id]: { name: '1Password' } })
+  })
+
+  test("I already use Forest: a passkey made here by mistake, its seed with no stamp, added to the one the person uses; from then it opens their profiles, and what the device noted of it moves to its entry", async () => {
+    const p = await verifiedWith(w, 'tutoring/tutor')
+    const mistake = person()
+    device.noteMade(device.FIRST, { name: 'iCloud Keychain', here: true })
+    await expect(linkTo(w, copy(mistake.seed), copy(mistake.seed)), 'the same passkey').rejects.toBeInstanceOf(SamePasskey)
+    await expect(linkTo(w, copy(mistake.seed), newSeed()), 'one not verified').rejects.toBeInstanceOf(NotVerified)
+
+    await linkTo(w, copy(mistake.seed), copy(p.seed))
+    expect(await follow(w.host, copy(mistake.seed)), "it opens the person's seed").toEqual(p.seed)
+    const listed = await backupsAt(w.host, (await walletKey(p.seed)).address)
+    expect(listed).toHaveLength(1)
+    expect(device.madeHere(), 'a backup now, noted by its entry, This device').toEqual({ [listed[0]!.id]: { name: 'iCloud Keychain', here: true } })
+    expect(await enter(w, { id: mistake.id, seed: await follow(w.host, copy(mistake.seed)) }, proveHere)).toEqual({ to: 'profiles' })
+    expect(device.passkey()).toBe(mistake.id)
+    expect(device.profiles()[0]!.address).toBe(p.profiles[0]!.address)
   })
 
   test("Start through a backup: its seed entry followed, one step only, to the first seed's profiles", async () => {

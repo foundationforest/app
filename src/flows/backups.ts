@@ -22,14 +22,14 @@ import { SEED_PATH, isLocked, lock, seedOf } from '@foundationforest/folders/loc
 import { type MainKey, openingHalf } from '@foundationforest/keys'
 
 import type { Services } from '../config.ts'
-import { knowPasskey, noteMade, unnoteMade } from '../device.ts'
+import { FIRST, knowPasskey, madeHere, noteMade, unnoteMade } from '../device.ts'
 import { managerOf } from '../managers.ts'
 import type { Made } from '../passkey.ts'
 import { NoCredits, fund } from '../services/credits.ts'
 import { NotWritten, readView, writeAll } from '../services/host.ts'
 import { Said } from '../words.ts'
 import { paid } from './paid.ts'
-import { addTo, walletKey } from './profiles.ts'
+import { addTo, opened, walletKey } from './profiles.ts'
 
 /** A backup the Profiles folder lists: the random id of its entry, `backup/<id>`, and when that was written. */
 export type Backup = { id: string; time: number }
@@ -42,6 +42,22 @@ export class NotAdded extends Said {
   constructor() {
     super("The passkey wasn't added.", true)
     this.name = 'NotAdded'
+  }
+}
+
+/** The passkey asked for opens the same seed as the one in use: it can't be added to itself. */
+export class SamePasskey extends Said {
+  constructor() {
+    super("That's this passkey. Choose the one you use.", true)
+    this.name = 'SamePasskey'
+  }
+}
+
+/** The passkey asked for opens a seed whose Profiles folder holds no stamp: not one the person uses. */
+export class NotVerified extends Said {
+  constructor() {
+    super("That passkey isn't verified.", true)
+    this.name = 'NotVerified'
   }
 }
 
@@ -110,6 +126,26 @@ export async function addBackup(s: Services, seed: Uint8Array, made: Made, { her
     knowPasskey(made.id)
   } finally {
     made.seed.fill(0)
+  }
+}
+
+const same = (a: Uint8Array, b: Uint8Array) => a.length === b.length && a.every((x, i) => x === b[i])
+
+/**
+ * The passkey made here by mistake (Yes, I'm new, for someone who already uses Forest), whose seed
+ * `own` holds no stamp, added as a backup of `seed`, the one the person uses, which must hold one:
+ * from now it opens their profiles. What the device noted of it as the first passkey it made (its
+ * manager's name, This device) moves to its `backup/<id>` entry, since it is a backup now.
+ */
+export async function linkTo(s: Services, own: Uint8Array, seed: Uint8Array): Promise<void> {
+  if (same(own, seed)) throw new SamePasskey()
+  const folder = await profilesOf(s.host, seed)
+  if (!(await opened(folder.view, 'stamp', (await openingHalf(folder.key.secret)).identity)).length) throw new NotVerified()
+  const id = await link(s.host, folder, seed, own)
+  const note = madeHere()[FIRST]
+  if (note) {
+    noteMade(id, note)
+    unnoteMade(FIRST)
   }
 }
 

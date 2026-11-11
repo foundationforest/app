@@ -1,6 +1,7 @@
 // The flows, against services' own verifier and host on loopback (world.ts), with the device's
 // storage in memory: a verification, from its gift to its stamp kept; Start picking one up
-// wherever it stopped; review; back to the two checks, losing nothing; a new profile, its folder
+// wherever it stopped; a face seen before; a stamp from a key the verifier no longer signs with,
+// which counts for nothing; back to the two checks, losing nothing; a new profile, its folder
 // funded and topped up; a profile made on another device, told with nothing unlocked and listed in
 // one unlock; and the same seed read the same way by the app and by the reference app (services'
 // mcp/test/app.ts).
@@ -10,18 +11,20 @@ import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'vitest'
 import { type Body, entry, nextTime, proofsOf, readFolder, verificationCheck } from '@foundationforest/folders'
 import { lock } from '@foundationforest/folders/locked'
 import { mainKey, newAccessKey, newSeed, payAddresses } from '@foundationforest/keys'
-import { checkVerification, stampFromJson } from '@foundationforest/proofs'
+import { checkVerification, signStamp, stampFromJson, stampToJson } from '@foundationforest/proofs'
 
 import { App } from '../services/mcp/test/app.ts'
 import * as device from '../src/device.ts'
 import { readCard } from '../src/flows/cards.ts'
 import { anyNew, labelIds, takeElsewhere } from '../src/flows/elsewhere.ts'
 import { makeProfile } from '../src/flows/profile.ts'
-import { openProfiles, walletKey } from '../src/flows/profiles.ts'
+import { addTo, openProfiles, walletKey } from '../src/flows/profiles.ts'
+import { showStamps } from '../src/flows/stamps.ts'
 import { enter } from '../src/flows/start.ts'
 import { NotPassed, ask, choose, collect, finish, open, resume, stampNumberAt, stepOf } from '../src/flows/verify.ts'
 import { NoCredits } from '../src/services/credits.ts'
 import { writeAll } from '../src/services/host.ts'
+import { about, stampsBack } from '../src/services/verifier.ts'
 import { FACE_CREDITS, type World, freshDevice, proveHere, world } from './world.ts'
 
 let w: World
@@ -79,17 +82,41 @@ describe('a verification', () => {
     expect(folder.current.get('profile')?.entry.body, 'its profile entry holds only its hosts').toEqual({ hosts: [w.host] })
   })
 
-  test('held for review: the app keeps asking, and the same session gives the stamp once approved', async () => {
+  // services' next verifier answers face_seen where it held a face for review; the one at SERVICES
+  // can't yet, so here its answer stands in front of it, for that one route.
+  test("a face seen before (face_seen): its session ends, and the line points to the ID", async () => {
     const p = person()
-    w.decideAll('review')
     await open(w, p.id)
-    const opened = w.faceCheck.created
+    const real = globalThis.fetch
+    globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) =>
+      String(input) === `${w.verifier}/face/stamp` ? new Response(JSON.stringify({ error: 'face_seen' }), { status: 403 }) : real(input, init)) as typeof fetch
+    try {
+      const err = await ask(w, p.id, await stampNumberAt(w, p.seed)).catch((e: unknown) => e)
+      expect(err).toBeInstanceOf(NotPassed)
+      expect([(err as NotPassed).code, (err as NotPassed).message, (err as NotPassed).red]).toEqual(['face_seen', 'A similar face is already verified. Verify with your ID to continue.', false])
+    } finally {
+      globalThis.fetch = real
+    }
+    expect(stepOf(p.id), 'the session done: the next open is a new one').toEqual({ at: 'start' })
+  })
+
+  test("a stamp from a key the verifier no longer signs with (the ID key before services#123): how the person is verified drops it, and no profile shows a verification of it", async () => {
+    const p = await verified()
     const n = await stampNumberAt(w, p.seed)
-    expect((await ask(w, p.id, n)).at).toBe('review')
-    expect((await resume(w, p.id, p.seed, proveHere)).verified, 'Start, meanwhile, takes it up held for review').toBe(false)
-    w.decideAll('approved')
-    expect((await ask(w, p.id, n)).at).toBe('signed')
-    expect(w.faceCheck.created, 'no other session opened').toBe(opened)
+    const old = signStamp(crypto.getRandomValues(new Uint8Array(32)), { stampNumber: n, facts: 1n, verifierName: (await about(w.verifier)).name })
+    await addTo(await openProfiles(p.seed, w.host), w.host, 'stamp', { stamp: JSON.stringify(stampToJson(old)) })
+    expect((await openProfiles(p.seed, w.host)).stamps, 'the folder holds both').toHaveLength(2)
+
+    // As a device kept it before: every stamp the folder held, the old key's among them.
+    device.saveChecks(['face', 'id'])
+    expect(await resume(w, p.id, again(p).seed, proveHere)).toEqual({ verified: true, labels: [] })
+    expect(device.checks(), "worked out fresh, against the verifier's current keys").toEqual(['face'])
+
+    const made = await makeProfile(w, p.seed, 'tutoring/tutor', proveHere)
+    const body = (await readFolder([w.host], made.address, Date.now())).current.get('profile')!.entry.body!
+    expect(proofsOf(body).map((x) => x.verifier), 'a verification of the face stamp alone').toEqual([w.keys.face])
+    expect(await showStamps(w, p.seed, await openProfiles(p.seed, w.host), proveHere), 'nothing more to show').toBe(0)
+    expect(await stampsBack(w.verifier, n), 'the verifier hands back only its own').toEqual({ face: expect.any(String), id: null })
   })
 
   test('not finished: still away; declined, expired or not passed: its session ends, in the one line for a check that didn\'t pass, and the next open is a new check', async () => {
@@ -353,7 +380,7 @@ test('what the device keeps, through all of it: its own keys, and nothing of the
   await finish(w, p.id, p.seed, (step as { stamp: string }).stamp, proveHere)
   await makeProfile(w, p.seed, 'clothing/seller', proveHere)
   const after = JSON.stringify({ ...localStorage })
-  expect(Object.keys(localStorage).sort()).toEqual(['forest.checks', 'forest.folder', 'forest.passkey', 'forest.passkeys', 'forest.profiles', 'forest.read', 'forest.seen'])
+  expect(Object.keys(localStorage).sort()).toEqual(['forest.folder', 'forest.passkey', 'forest.passkeys', 'forest.profiles', 'forest.read', 'forest.seen', 'forest.verified'])
   expect([device.folder()?.address, Object.values(device.folder()?.labels ?? {})], "the Profiles folder's address, and its one label entry read here").toEqual([(await walletKey(p.seed)).address, ['clothing/seller']])
   expect([device.cursors(), device.seen()], 'the profile made here, marked new from its start').toEqual([{ [(await mainKey(p.seed, 'clothing/seller')).address]: 0 }, { [(await mainKey(p.seed, 'clothing/seller')).address]: 0 }])
   const hex = (b: Uint8Array) => Buffer.from(b).toString('hex')

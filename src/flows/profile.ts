@@ -2,10 +2,11 @@
 // `addProfile`), its folder funded first (its `fund`): one credit from the wallet into the new
 // folder, since a folder's first entry costs a write; the profile entry, with its market and role,
 // its host, its main key's open key (so it takes messages), both pay addresses, and a verification
-// for each stamp the Profiles folder holds, made on the device; then its label in the Profiles
-// folder. When the host refuses a write for its price, one more credit goes in and it is written
-// again (paid.ts). The device keeps its label and address, and marks it new: all that comes to it
-// from now shows as new.
+// for each stamp the Profiles folder holds from the verifier's current keys, made on the device (the
+// reference app makes one for every stamp it holds; one from a key the verifier no longer signs with
+// counts for nothing); then its label in the Profiles folder. When the host refuses a write for its
+// price, one more credit goes in and it is written again (paid.ts). The device keeps its label and
+// address, and marks it new: all that comes to it from now shows as new.
 
 import { type Body, entry, nextTime } from '@foundationforest/folders'
 import { mainKey, openingHalf, payAddresses } from '@foundationforest/keys'
@@ -14,6 +15,7 @@ import type { Services } from '../config.ts'
 import { type Profile, addProfile, markNew } from '../device.ts'
 import { fund } from '../services/credits.ts'
 import { readView, writeAll } from '../services/host.ts'
+import { counted } from '../services/verifier.ts'
 import { paid } from './paid.ts'
 import { addTo, openProfiles } from './profiles.ts'
 
@@ -25,7 +27,7 @@ export async function makeProfile(s: Services, seed: Uint8Array, label: string, 
   const folder = await openProfiles(seed, s.host)
   const main = await mainKey(seed, label)
   const proofs: Body[] = []
-  for (const stamp of folder.stamps) proofs.push({ circuit: 'verification', ...(await prove(seed, stamp, label)) })
+  for (const stamp of await counted(s.verifier, folder.stamps)) proofs.push({ circuit: 'verification', ...(await prove(seed, stamp, label)) })
   const body: Body = {
     market,
     role,

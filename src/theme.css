@@ -1819,6 +1819,17 @@ button.cream .icon {
   line-height: 1;
 }
 
+/* The ID check's price, paid once: $5, then ", one time" smaller and lighter, on one line. */
+.price {
+  white-space: nowrap;
+}
+
+.price .once {
+  font-size: 0.6em;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
 /* What the ID check keeps: a row, closed until tapped, then the verifier's words. */
 details.keeps {
   margin-top: 8px;
