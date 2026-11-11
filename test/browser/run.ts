@@ -1706,7 +1706,7 @@ test('two people: one posts an offer, its price per hour, the place only for ses
   await second.page.locator('button.card', { hasText: STUDENT_WORDS }).locator('.newpip[aria-label="1 new"]').waitFor({ timeout: 45_000 })
   // From the profile's own Messages button: Messages picked to it, before the unlock its avatar and how many, after it its chip pressed.
   await messagesOf(second.page, STUDENT_WORDS)
-  await second.page.locator('.unopened', { hasText: '1 new message' }).locator('.av[data-market="tutoring"].look').waitFor()
+  await second.page.locator('.unopened', { hasText: '1 new message' }).locator(`.av[data-market="${LESSONS}"].look`).waitFor()
   await shot(second.page, 'messages-picked-asking')
   await button(second.page, 'Open').click()
   await second.page.locator('button.thread-row', { hasText: short(tutor) }).waitFor({ timeout: 60_000 })
@@ -1792,10 +1792,14 @@ test("a second browser, the same passkey answering from the first, as a phone an
   await page.locator('button.card', { hasText: STUDENT_WORDS }).waitFor({ timeout: 60_000 })
   assert.equal(counts.asserted - before, 1, 'one unlock')
   await row.waitFor({ state: 'detached' })
-  assert.deepEqual(JSON.parse((await kept(page))['forest.profiles']!), [
-    { label: STUDENT_LABEL, address: student },
-    { label: TUTOR_LABEL, address: tutor },
-  ])
+  // In label order.
+  assert.deepEqual(
+    JSON.parse((await kept(page))['forest.profiles']!),
+    [
+      { label: STUDENT_LABEL, address: student },
+      { label: TUTOR_LABEL, address: tutor },
+    ].sort((a, b) => a.label.localeCompare(b.label)),
+  )
   say('a second browser found the profile and its verification, answered by the same passkey; the profile it made, the first read in one unlock')
 })
 
@@ -2038,7 +2042,7 @@ test("passkeys, every one a row: the first Main, by the name it was given else P
   await homeWith(other.page, TUTOR_WORDS)
   const there = await kept(other.page)
   assert.equal(JSON.parse(there['forest.passkey']!), addedId, 'that passkey, the one in use there')
-  assert.deepEqual((JSON.parse(there['forest.profiles']!) as Array<{ label: string }>).map((x) => x.label), [STUDENT_LABEL, TUTOR_LABEL])
+  assert.deepEqual((JSON.parse(there['forest.profiles']!) as Array<{ label: string }>).map((x) => x.label), [STUDENT_LABEL, TUTOR_LABEL].sort(), 'in label order')
   assert.equal(JSON.parse(there['forest.folder']!).address, wallet, "the first passkey's Profiles folder")
 
   // Removed from its sheet, tapped twice: one passkey again, the line back, and that passkey opens the profiles no more.
@@ -2260,7 +2264,7 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   // for takes several: each chip picked shows its tick.
   const M = S.market.listing
   const [KIND, WEARER, SIZE, ONE, SEVERAL, WHERE] = [S.opener, S.follow, S.sized, S.one, S.several, S.place].map(fieldWords) as [string, string, string, string, string, string]
-  const kindsOpened = Object.keys(M).filter((n) => M[n]!.when?.[S.opener] && Object.keys(M[n]!.when!).length === 1 && isFor(M[n]!, S.seller)).map(fieldWords)
+  const kindsOpened = Object.keys(M).filter((n) => M[n]!.when?.[S.opener]?.includes(S.kind) && Object.keys(M[n]!.when!).length === 1 && isFor(M[n]!, S.seller)).map(fieldWords)
   assert.deepEqual(await page.getByRole('group', { name: WEARER, exact: true }).count(), 0, `no ${WEARER.toLowerCase()} before the kind`)
   for (const opened of kindsOpened) assert.equal(await page.locator('form > .field > .label', { hasText: new RegExp(`^${opened}$`) }).count(), 0, `no ${opened} before the kind`)
   await page.getByRole('group', { name: KIND, exact: true }).locator('button.open-row').click()
@@ -3284,7 +3288,7 @@ test("Your AI: the AI app, its profiles and its day; its screen, Connected and A
     await button(page, 'Disconnect').and(page.locator(':enabled')).waitFor()
     assert.equal(await page.locator('p.line').count(), 0, (await page.locator('p.line').allTextContents()).join(' '))
     assert.equal(counts.asserted - asked, unlocks, unlocks ? 'one unlock' : 'nothing asked: the seed held')
-    assert.deepEqual(await tool(ai, 'my_profiles'), { profiles: profiles.map((label) => ({ label, can: SWITCHES })) })
+    assert.deepEqual(await tool(ai, 'my_profiles'), { profiles: [...profiles].sort().map((label) => ({ label, can: SWITCHES })) }, 'in label order')
   }
   await tickOne(SELLER_WORDS, true, [SELLER_LABEL, TUTOR_LABEL], 1)
   assert.equal(await asks(button(page, 'Disconnect')), false, 'Disconnect, with the seed held, shows no unlock icon')
