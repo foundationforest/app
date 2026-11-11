@@ -169,6 +169,13 @@ test("every colour the app writes outside theme.css: theme.css's ground and ink,
   expect([meta('light'), meta('dark')], "index.html's theme colours").toEqual([light.bg, dark.bg])
 })
 
+test("CI runs in Playwright's own image at the version package.json pins, so its Chromium is the one the browser test drives", () => {
+  const workflow = readFileSync(new URL('../.github/workflows/checks.yml', import.meta.url), 'utf8')
+  const pinned = (JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as { devDependencies: Record<string, string> }).devDependencies.playwright
+  expect(workflow.match(/image: mcr\.microsoft\.com\/playwright:v([^\s-]+)-noble/)?.[1]).toBe(pinned)
+  expect(workflow, 'nothing installed from Ubuntu at run time').not.toMatch(/playwright install/)
+})
+
 test("checkEntry's words, as one line naming the field by its name in words", () => {
   expect(fieldWords('groupSize')).toBe('Group size')
   expect(entrySays('subjects takes a list, each different, each one of maths, physics', ['subjects']).message).toBe("Subjects doesn't fit.")
