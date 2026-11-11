@@ -7,7 +7,7 @@
 
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'vitest'
 
-import { exportWords, newSeed } from '@foundationforest/keys'
+import { exportWords, importWords, newSeed } from '@foundationforest/keys'
 
 import * as device from '../src/device.ts'
 import { addBackup, backupsAt } from '../src/flows/backups.ts'
@@ -38,6 +38,19 @@ const refusal = async (text: string) => {
   )
   if (!(err instanceof Said)) throw new Error(`not refused in words: ${String(err)}`)
   return [err.message, err.red]
+}
+
+/** The 24 words, with the two at `i` and `i + 1` swapped. */
+const swapped = (words: string[], i: number) => words.with(i, words[i + 1]).with(i + 1, words[i]).join(' ')
+
+/** Whether `text` spells a seed, as the standard reads 24 words. */
+const spells = (text: string) => {
+  try {
+    importWords(text)
+    return true
+  } catch {
+    return false
+  }
 }
 
 /** Everything a device keeps, as one text. */
@@ -75,7 +88,11 @@ describe('24 words', () => {
     expect(await refusal(words.slice(0, 23).join(' '))).toEqual(['Add all 24 words.', false])
     expect(await refusal([...words, 'abandon'].join(' '))).toEqual(["That's more than 24 words.", true])
     expect(await refusal([...words.slice(0, 23), 'forest1'].join(' ')), 'no such word').toEqual(['A word is wrong, or in the wrong place.', true])
-    expect(await refusal([words[1], words[0], ...words.slice(2)].join(' ')), 'two swapped: the checksum').toEqual(['A word is wrong, or in the wrong place.', true])
+    // Two side by side swapped, the first pair the checksum catches: a swap it lets through (about 1
+    // in 256) or of two equal words still spells a seed.
+    const i = words.findIndex((_, i) => i + 1 < words.length && !spells(swapped(words, i)))
+    expect(i, 'two side by side the checksum catches when swapped').toBeGreaterThanOrEqual(0)
+    expect(await refusal(swapped(words, i)), 'two swapped: the checksum').toEqual(['A word is wrong, or in the wrong place.', true])
     const nobody = newSeed()
     await expect(seedOfWords(w.host, exportWords(nobody)), 'a seed no verifier stamped').rejects.toBeInstanceOf(WordsNotVerified)
     expect(await refusal(exportWords(nobody))).toEqual(["These words aren't verified.", true])
