@@ -123,8 +123,8 @@ describe('the ID check', () => {
     for (const address of [tutor.address, seller.address]) {
       expect(await shown(address), 'every profile shows both').toEqual(keys)
       expect((await readCard(w, address))?.checks).toEqual(['face', 'id'])
-      expect(strongest((await readCard(w, address))!.checks), 'its own profile shows the ID check').toBe('id')
-      expect((await whoIs(w, address, checkHere)).who?.check, 'and so does what anyone reads of it').toBe('id')
+      expect(strongest((await readCard(w, address))!.checks), 'its strongest check, the ID').toBe('id')
+      expect((await whoIs(w, address, checkHere)).who?.checks, 'and anyone who reads it sees both badges').toEqual(['face', 'id'])
     }
     const found = await App.find(p.seed, [w.host])
     expect(found.stamps.map((s) => stampFromJson(JSON.parse(s)).verifier).sort(), 'the reference app finds both stamps').toEqual(keys)

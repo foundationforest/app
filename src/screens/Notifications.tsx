@@ -3,8 +3,10 @@
 // newest first. Messages open from the round button at the top right, with how many are new, which
 // opens all their conversations. A review, vouch or report the index counted about any of them, in
 // full: the avatar of who wrote it, "Review on your Tutoring tutor" in bold, when, a dot on those
-// that came after what the device had seen as the screen opened, then its score or chip, then what
-// they wrote; a tap opens that profile's Reviews. From now they are seen (device.ts), as a
+// that came after what the device had seen as the screen opened, then its score or chip with who
+// wrote it after it, by the person's name for them or their short key, then what they wrote; a tap
+// on who wrote it, their avatar or name, opens their profile (Them.tsx), and anywhere else that
+// profile's Reviews. From now they are seen (device.ts), as a
 // profile's Reviews marks them, so the tab, the card and the profile's Reviews count them new no
 // more. Each entry of the person's own that a market outgrew (flows/outgrown.ts), a listing or a
 // review, vouch or report its market's file no longer takes as it is: a sun square, what needs an
@@ -21,9 +23,9 @@ import { Icon } from '../icons.tsx'
 import { kindWords, marketWords, markets, pairOf } from '../markets.ts'
 import { cardLines } from '../show.ts'
 import { Dot, MessagesButton, Named, SaidChip, Top, ago, newDay } from '../ui.tsx'
-import { WhoAvatar } from './Who.tsx'
+import { NameOf, WhoAvatar } from './Who.tsx'
 
-type Props = { onMessages: () => void; onReviews: (address: string) => void; onUpdate: (address: string, posted: Posted) => void }
+type Props = { onMessages: () => void; onReviews: (address: string) => void; onUpdate: (address: string, posted: Posted) => void; onWho: (address: string) => void }
 
 /** What an outgrown entry's notice says needs an update: a listing by its title, else "Your review". */
 function needs(label: string, posted: Posted): string {
@@ -37,7 +39,7 @@ function needs(label: string, posted: Posted): string {
 /** One row of Notifications: a review, vouch or report that came, or one of the person's entries a market outgrew, and when. */
 type Row = { time: number; notice: Notice } | { time: number; outgrown: Posted; label: string; address: string }
 
-export function Notifications({ onMessages, onReviews, onUpdate }: Props) {
+export function Notifications({ onMessages, onReviews, onUpdate, onWho }: Props) {
   const list = useProfiles()
   const { messages } = useNews(list)
   // Read by the frame as the screen opens, and held in the page meanwhile.
@@ -85,7 +87,7 @@ export function Notifications({ onMessages, onReviews, onUpdate }: Props) {
           <div className="rows">
             {g.rows.map((r) =>
               'notice' in r ? (
-                <Came key={r.notice.received.address} n={r.notice} label={label(r.notice.on)} onOpen={() => onReviews(r.notice.on)} />
+                <Came key={r.notice.received.address} n={r.notice} label={label(r.notice.on)} onOpen={() => onReviews(r.notice.on)} onWho={() => onWho(r.notice.received.writer)} />
               ) : (
                 <button key={`${r.address}/${r.outgrown.path}`} className="nrow" onClick={() => onUpdate(r.address, r.outgrown)}>
                   <span className="sq sun">
@@ -108,12 +110,15 @@ export function Notifications({ onMessages, onReviews, onUpdate }: Props) {
   )
 }
 
-/** A review, vouch or report that came to the profile of `label`: who wrote it, what it is, when, its score or chip, what they wrote. */
-function Came({ n, label, onOpen }: { n: Notice; label: string; onOpen: () => void }) {
+/** A review, vouch or report that came to the profile of `label`: who wrote it, what it is, when, its score or chip and who wrote it, what they wrote. The row's tap sits under who wrote it, since a button holds no button. */
+function Came({ n, label, onOpen, onWho }: { n: Notice; label: string; onOpen: () => void; onWho: () => void }) {
   const r = n.received
   return (
-    <button className="nrow" onClick={onOpen}>
-      <WhoAvatar address={r.writer} />
+    <div className="nrow came">
+      <button type="button" className="said-open" aria-label={`${kindWords(r.kind, label)} on your ${pairOf(label).words}`} onClick={onOpen} />
+      <button type="button" className="said-who" tabIndex={-1} aria-hidden onClick={onWho}>
+        <WhoAvatar address={r.writer} />
+      </button>
       <span className="grow">
         <span className="nrow-head">
           <strong>
@@ -121,12 +126,15 @@ function Came({ n, label, onOpen }: { n: Notice; label: string; onOpen: () => vo
           </strong>
           {r.time !== undefined && <span className="xs">{ago(r.time)}</span>}
         </span>
-        <span>
+        <span className="said-head">
           <SaidChip kind={r.kind} score={r.body.score} />
+          <button type="button" className="said-who" onClick={onWho}>
+            <NameOf address={r.writer} />
+          </button>
         </span>
         {typeof r.body.text === 'string' && r.body.text && <span className="said-text">{r.body.text}</span>}
       </span>
       {n.fresh && <Dot />}
-    </button>
+    </div>
   )
 }

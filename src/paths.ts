@@ -8,6 +8,7 @@ export const PATHS = {
   profile: '/profile',
   reviews: '/reviews',
   received: '/received',
+  them: '/them',
   listing: '/listing',
   review: '/review',
   notifications: '/notifications',

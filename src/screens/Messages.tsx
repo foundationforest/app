@@ -7,13 +7,17 @@
 // overlapped, with how many ("3 new messages"); with none new, a lock and Open your messages. Open,
 // one unlock, opens every profile's inbox and what it sent, into threads that stay open while the
 // page is; with a seed held they open by themselves (opening.ts).
-// Opened: chips that pick whose, All, then each of the person's profiles by its avatar and role; then
-// the conversations in one card, newest first: who each is with (their avatar, market and role, the
-// badge), when, the last message, bold with a dot while it holds a new one, and to which profile.
+// Opened: chips that pick whose, All, then each of the person's profiles, a dot in its market's color
+// and its market and role (Clothing seller); then the conversations in one card, newest first: who
+// each is with (their avatar, the person's name for them or their short key, their badges, their
+// market and role), when, the last message, bold with a dot while it holds a new one, and to which
+// profile.
 // On a laptop it is the left of two panes (`pane`, Panes.tsx), with no Back, the sidebar beside it,
 // and the conversation open on the right marked here.
 
-import { Avatar } from '../avatar.tsx'
+import type { CSSProperties } from 'react'
+
+import { Avatar, colorOf } from '../avatar.tsx'
 import { type Thread } from '../flows/inbox.ts'
 import { useNewMessages, useOpened, useProfiles } from '../hooks.ts'
 import { Icon } from '../icons.tsx'
@@ -90,18 +94,16 @@ export function Messages({ only, pane = false, open: shown, onOnly, onBack, onTh
           </button>
           <div className="fill" />
         </>
-      ) : held && open.busy && !opened?.all ? (
-        <Loader big />
-      ) : (
+      ) : held && open.busy && !opened?.all ? null : (
         <>
           <div className="filters" role="group" aria-label="Whose">
             <button className={only ? 'chip' : 'chip here'} aria-pressed={!only} onClick={() => onOnly()}>
               All
             </button>
             {offersFirst(all).map((p) => (
-              <button key={p.address} className={only === p.address ? 'chip here' : 'chip'} aria-pressed={only === p.address} aria-label={p.pair.words} onClick={() => onOnly(p.address)}>
-                <Avatar label={p.label} size="xs" />
-                {p.pair.role}
+              <button key={p.address} className={only === p.address ? 'chip here' : 'chip'} aria-pressed={only === p.address} style={{ '--h': colorOf(p.pair.market) } as CSSProperties} onClick={() => onOnly(p.address)}>
+                <span className="fdot" aria-hidden />
+                {p.pair.words}
               </button>
             ))}
           </div>
@@ -126,10 +128,7 @@ function ThreadRow({ t, mine, here, onOpen }: { t: Thread; mine: string; here: b
     <button className={here ? 'row thread-row here' : 'row thread-row'} aria-current={here ? 'true' : undefined} onClick={onOpen}>
       <WhoAvatar address={t.them} who={t.who} />
       <span className="two">
-        <span className="thread-head">
-          <Who address={t.them} who={t.who} avatar={false} />
-          {last && <span className="xs">{ago(last.time)}</span>}
-        </span>
+        <Who address={t.them} who={t.who} aside={last && <span className="xs">{ago(last.time)}</span>} />
         <span className="thread-last">
           <span className={fresh ? 'text fresh' : 'text'}>{last?.text}</span>
           {fresh && <Dot />}

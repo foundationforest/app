@@ -1,6 +1,7 @@
 // One conversation: the messages between one of the person's profiles and another. At the top, who it
-// is with (their avatar, market and role, the badge when their verification checks), to which of
-// the person's profiles under it, and Review, for a review, a vouch or a report about them. Then the
+// is with (their avatar, the person's name for them or their short key, their badges, their market
+// and role), to which of the person's profiles under it, a tap opening their profile (Them.tsx); and
+// Review, for a review, a vouch or a report about them. Then the
 // messages, theirs on the card with an edge, the person's own in forest green; a quiet line with
 // the day ("Today") wherever the day changes; the time under the last message of each run, quietly.
 // At the bottom, the reply: a pill that grows with what is typed and a round Send, which shows its own
@@ -24,9 +25,9 @@ import { withSeed } from '../passkey.ts'
 import { Line, Named, Top, UnlockIcon, clock, dayWords, lastOfRun, newDay, useAction } from '../ui.tsx'
 import { Who, WhoAvatar } from './Who.tsx'
 
-type Props = { mine: string; them: string; pane?: boolean; onBack: () => void; onReview: (mine: string, them: string) => void }
+type Props = { mine: string; them: string; pane?: boolean; onBack: () => void; onReview: (mine: string, them: string) => void; onWho: (them: string) => void }
 
-export function Thread({ mine, them, pane = false, onBack, onReview }: Props) {
+export function Thread({ mine, them, pane = false, onBack, onReview, onWho }: Props) {
   const list = useProfiles()
   const me = list.find((p) => p.address === mine)
   const held = useOpened()
@@ -57,15 +58,15 @@ export function Thread({ mine, them, pane = false, onBack, onReview }: Props) {
           </button>
         }
       >
-        <span className="convo-head">
+        <button type="button" className="convo-head" onClick={() => onWho(them)}>
           <WhoAvatar address={them} {...(thread && { who: thread.who })} size="sm" />
           <span className="two">
-            <Who address={them} {...(thread && { who: thread.who })} avatar={false} />
+            <Who address={them} {...(thread && { who: thread.who })} />
             <span className="xs">
               to your <Named label={me.label} />
             </span>
           </span>
-        </span>
+        </button>
       </Top>
       <div className="fill" />
       <div className="thread">
@@ -96,9 +97,7 @@ export function Thread({ mine, them, pane = false, onBack, onReview }: Props) {
             </button>
           </div>
         </>
-      ) : seedHeld && !open.note ? (
-        <Loader big />
-      ) : (
+      ) : seedHeld && !open.note ? null : (
         <>
           <Line note={open.note} />
           <button className="primary" disabled={open.busy} onClick={() => open.run()}>

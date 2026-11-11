@@ -23,7 +23,7 @@ import { type MainKey, openingHalf } from '@foundationforest/keys'
 
 import type { Services } from '../config.ts'
 import { FIRST, knowPasskey, madeHere, noteMade, unnoteMade } from '../device.ts'
-import { managerOf } from '../managers.ts'
+import { makerOf } from '../managers.ts'
 import type { Made } from '../passkey.ts'
 import { NoCredits, fund } from '../services/credits.ts'
 import { NotWritten, readView, writeAll } from '../services/host.ts'
@@ -115,14 +115,14 @@ async function link(host: string, folder: { key: MainKey; view: View }, seed: Ui
 
 /**
  * The passkey just made, `made`, added as a backup of `seed`: from now the device knows it, so Start
- * asks for it too and the next backup excludes it, and keeps its manager's name when its AAGUID
- * names one, and whether it was made for this device (`here`). Its seed is zeroed.
+ * asks for it too and the next backup excludes it, and keeps its maker when its AAGUID names one.
+ * Its seed is zeroed.
  */
-export async function addBackup(s: Services, seed: Uint8Array, made: Made, { here = false }: { here?: boolean } = {}): Promise<void> {
+export async function addBackup(s: Services, seed: Uint8Array, made: Made): Promise<void> {
   try {
     const id = await link(s.host, await profilesOf(s.host, seed), seed, made.seed)
-    const name = managerOf(made.aaguid)
-    noteMade(id, { ...(name && { name }), ...(here && { here: true }) })
+    const maker = makerOf(made.aaguid)
+    noteMade(id, { ...(maker && { maker }) })
     knowPasskey(made.id)
   } finally {
     made.seed.fill(0)
@@ -135,7 +135,7 @@ const same = (a: Uint8Array, b: Uint8Array) => a.length === b.length && a.every(
  * The passkey made here by mistake (Yes, I'm new, for someone who already uses Forest), whose seed
  * `own` holds no stamp, added as a backup of `seed`, the one the person uses, which must hold one:
  * from now it opens their profiles. What the device noted of it as the first passkey it made (its
- * manager's name, This device) moves to its `backup/<id>` entry, since it is a backup now.
+ * maker, its name) moves to its `backup/<id>` entry, since it is a backup now.
  */
 export async function linkTo(s: Services, own: Uint8Array, seed: Uint8Array): Promise<void> {
   if (same(own, seed)) throw new SamePasskey()

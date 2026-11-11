@@ -1,29 +1,32 @@
 // Passkeys, from You: every passkey that opens the person's profiles, in one card, read with nothing
-// unlocked. Their first passkey, then each added after it (a backup, as the standard names it),
-// oldest first. Each by its password manager's name where this device knows it, else the day it was
-// added (the first's day isn't known: Your first passkey); under it, quietly, This device for one
-// this device made for itself, Backup for any other added after the first. Each added after the
-// first has Remove, in red: tapped twice, then one unlock, though a row shows no unlock icon; the
-// first is the seed itself, so never. With one alone, a quiet line on why a second. Then Add a
-// passkey (AddPasskey.tsx). Under If you lose every passkey, Your 24 words, which opens a sheet: its
-// warning, and Show words, which always asks the passkey, even with the seed held, so a device
-// someone else picks up while it is held never shows them; then the words, handed to Your 24 words
-// (Words.tsx) in the page's memory alone. A passkey prompt must come from a tap, so it is asked here,
-// on the sheet's button, not as the next screen opens.
+// unlocked. Their first passkey, the one the seed comes from, with a mint Main chip; then each added
+// after it (a backup, as the standard names it), oldest first. Each a row: a square with its maker's
+// logo (Apple's, Google's, else a key), its name, a chevron. Its name is the one the person gave it
+// on this device, else its maker's, read from the id it sent as it was made (managers.ts), else
+// Passkey; a name shown already takes the next number (Apple 2). With one alone, a quiet line on why
+// a second. Then Add a passkey (AddPasskey.tsx). A row opens its sheet: the name as its title, a Name
+// field and Save, kept on this device alone, asking nothing; and, on any passkey but the first, Remove
+// this passkey, in red, tapped twice, then one unlock. The first is the seed itself: the app never
+// removes it, so its sheet has no Remove. Under If you lose every passkey, Your 24 words, which opens
+// a sheet: its warning, and Show words, which always asks the passkey, even with the seed held, so a
+// device someone else picks up while it is held never shows them; then the words, handed to Your 24
+// words (Words.tsx) in the page's memory alone. A passkey prompt must come from a tap, so it is asked
+// here, on the sheet's button, not as the next screen opens.
 
 import { useState } from 'react'
 
 import { exportWords } from '@foundationforest/keys'
 
 import { config } from '../config.ts'
-import { FIRST, madeHere, passkey } from '../device.ts'
+import { FIRST, madeHere, nameMade, passkey } from '../device.ts'
 import { removeBackup } from '../flows/backups.ts'
 import { seedFor } from '../flows/seed.ts'
 import { backupsChanged, useBackups } from '../hooks.ts'
 import { Icon } from '../icons.tsx'
+import { logoOf, nameOf, numbered } from '../managers.ts'
 import { Loader } from '../mark.tsx'
 import { ask, withSeed } from '../passkey.ts'
-import { Line, Opens, Sheet, Top, UnlockIcon, day, useAction } from '../ui.tsx'
+import { Line, Opens, Sheet, Top, UnlockIcon, useAction } from '../ui.tsx'
 
 /** The line that says why a second passkey, while there is one alone. */
 const WHY_SECOND = "Add a second, so losing one doesn't lose your profiles."
@@ -36,11 +39,15 @@ type Props = { onBack: () => void; onAdd: () => void; onWords: (words: string[])
 export function Passkeys({ onBack, onAdd, onWords }: Props) {
   const backups = useBackups()
   const made = madeHere()
-  // The backup whose Remove was tapped once: tapped again, it is removed.
-  const [removing, setRemoving] = useState<string | null>(null)
+  const ids = backups ? [FIRST, ...backups.map((b) => b.id)] : null
+  const shown = ids ? numbered(ids.map((id) => nameOf(made[id]))) : []
+  // The passkey whose sheet is open, by its id; and whether its Remove was tapped once.
+  const [open, setOpen] = useState<string | null>(null)
+  const [typed, setTyped] = useState('')
+  const [removing, setRemoving] = useState(false)
   const remove = useAction(async (id: string) => {
     await withSeed(passkey()!, (seed) => removeBackup(config, seed, id))
-    setRemoving(null)
+    shut()
     backupsChanged()
   })
   const [sheet, setSheet] = useState(false)
@@ -60,43 +67,78 @@ export function Passkeys({ onBack, onAdd, onWords }: Props) {
     setSheet(false)
     show.setNote(null)
   }
+  const at = open && ids ? ids.indexOf(open) : -1
+  const opening = (id: string, i: number) => {
+    setOpen(id)
+    setTyped(shown[i]!)
+    setRemoving(false)
+    remove.setNote(null)
+  }
+  function shut() {
+    setOpen(null)
+    setRemoving(false)
+  }
+  const save = () => {
+    nameMade(open!, typed)
+    shut()
+  }
   return (
     <main>
       <Top onBack={onBack} clear>
         <h1>Passkeys</h1>
       </Top>
-      {backups ? (
+      {ids && (
         <div className="rows" role="list" aria-label="Your passkeys">
-          <div className="row" role="listitem">
-            <span className="sq sm plain">
-              <Icon name="key" />
-            </span>
-            <span className="two">
-              <strong>{made[FIRST]?.name ?? 'Your first passkey'}</strong>
-              {made[FIRST]?.here && <span>This device</span>}
-            </span>
-          </div>
-          {backups.map((b) => (
-            <div key={b.id} className="row" role="listitem">
+          {ids.map((id, i) => (
+            <button key={id} className="row passkey" role="listitem" onClick={() => opening(id, i)}>
               <span className="sq sm plain">
-                <Icon name="key" />
+                <Icon name={logoOf(made[id]?.maker)} fill={made[id]?.maker === 'Apple'} bold={made[id]?.maker === 'Google'} />
               </span>
-              <span className="two">
-                <strong>{made[b.id]?.name ?? day(b.time)}</strong>
-                <span>{made[b.id]?.here ? 'This device' : 'Backup'}</span>
+              <span className="grow named-row">
+                <strong>{shown[i]}</strong>
+                {id === FIRST && <span className="mainchip">Main</span>}
               </span>
-              <button className={removing === b.id ? 'small danger solid' : 'danger text'} disabled={remove.busy} onClick={() => (removing === b.id ? remove.run(b.id) : setRemoving(b.id))}>
-                {remove.busy && removing === b.id ? <Loader /> : 'Remove'}
-              </button>
-            </div>
+              <Icon name="caret-right" className="car" />
+            </button>
           ))}
           <Opens icon="plus" words="Add a passkey" green onClick={onAdd} />
         </div>
-      ) : (
-        <Loader big />
       )}
       {backups?.length === 0 && <p className="line">{WHY_SECOND}</p>}
-      <Line note={remove.note} />
+      {open && at >= 0 && (
+        <Sheet label={shown[at]!} onClose={() => !remove.busy && shut()}>
+          <h2>{shown[at]}</h2>
+          <form
+            className="stack"
+            onSubmit={(e) => {
+              e.preventDefault()
+              save()
+            }}
+          >
+            <label className="field">
+              <span className="label">Name</span>
+              <input value={typed} maxLength={40} autoComplete="off" onChange={(e) => setTyped(e.target.value)} />
+            </label>
+            <button type="submit" className="primary" disabled={remove.busy}>
+              Save
+            </button>
+            {open !== FIRST && (
+              <>
+                <Line note={remove.note} />
+                <button type="button" className={removing ? 'danger solid' : 'danger text'} disabled={remove.busy} onClick={() => (removing ? remove.run(open) : setRemoving(true))}>
+                  {remove.busy ? (
+                    <Loader />
+                  ) : (
+                    <>
+                      {removing ? <UnlockIcon /> : <Icon name="trash" />} Remove this passkey
+                    </>
+                  )}
+                </button>
+              </>
+            )}
+          </form>
+        </Sheet>
+      )}
       <h2>If you lose every passkey</h2>
       <div className="rows">
         <Opens icon="list-numbers" words="Your 24 words" line="Write them down to get back in" onClick={() => setSheet(true)} />

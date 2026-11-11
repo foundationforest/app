@@ -3,8 +3,7 @@
 // device knows excluded, so the same manager doesn't keep a second one; then it is added to the
 // person's seed (flows/backups.ts). One made that couldn't be added is one its manager is asked to
 // drop. Saved on this device (`here`), it is the passkey in use here from then, holding the same
-// seed, so the next unlocks ask it rather than the phone that answered at Start; the device notes
-// that it made it for itself (Passkeys' This device).
+// seed, so the next unlocks ask it rather than the phone that answered at Start.
 
 import { config } from './config.ts'
 import { passkey, passkeys, usePasskey } from './device.ts'
@@ -17,7 +16,7 @@ export async function addPasskey({ here = false }: { here?: boolean } = {}): Pro
   await withSeed(passkey()!, async (seed) => {
     const made = await make({ exclude: passkeys() })
     try {
-      await addBackup(config, seed, made, { here })
+      await addBackup(config, seed, made)
     } catch (err) {
       await drop(made.id)
       throw err

@@ -5,7 +5,8 @@
 // once it is made, or put off with Later, Connect your AI, with Skip; then the three places, Home,
 // Notifications and You, and from them New profile, every profile's messages (the round button at
 // the top of Notifications), what a market outgrew, to update, a profile, its messages, its Reviews
-// and a review received, a listing, Review someone, a thread, a new message, Get verified (a check
+// and a review received, someone else's profile (a tap on another profile wherever it shows; one
+// of the person's own opens as theirs), a listing, Review someone, a thread, a new message, Get verified (a check
 // to add, the ID's sheet up for the ID), Passkeys, Add a passkey and Your 24 words, Your AI, an AI
 // app and Connect your AI, or About Forest. Back wherever there is somewhere to go back to: Get
 // verified to Start, Your 24 words to No passkey found. A step done (a passkey made, verified, a
@@ -36,6 +37,7 @@ import { PATHS as SCREEN_PATHS } from './paths.ts'
 import type { Entered } from './flows/start.ts'
 import { NotPassed, type Step, choose, stepOf } from './flows/verify.ts'
 import { useNewVersion, useProfiles } from './hooks.ts'
+import { opened } from './opened.ts'
 import { About } from './screens/About.tsx'
 import { AiApp } from './screens/AiApp.tsx'
 import { AiApps } from './screens/AiApps.tsx'
@@ -56,6 +58,7 @@ import { Profile, type Tab } from './screens/Profile.tsx'
 import { Received } from './screens/Received.tsx'
 import { Reviews } from './screens/Reviews.tsx'
 import { Review } from './screens/Review.tsx'
+import { Them } from './screens/Them.tsx'
 import { Setup } from './screens/Setup.tsx'
 import { Start } from './screens/Start.tsx'
 import { Thread } from './screens/Thread.tsx'
@@ -73,6 +76,7 @@ type Screen =
   | { at: 'profile'; address: string; tab?: Tab }
   | { at: 'reviews'; address: string }
   | { at: 'received'; address: string; entry: string }
+  | { at: 'them'; address: string }
   | { at: 'listing'; address: string; edit?: Posted }
   | { at: 'review'; address: string; subject?: string; edit?: Posted; report?: boolean }
   | { at: 'notifications' }
@@ -163,6 +167,7 @@ function here(): Screen {
   if (path === '/profile' && isText(now.address)) return { at: 'profile', address: now.address, ...(now.tab === 'written' && { tab: 'written' }) }
   if (path === '/reviews' && isText(now.address)) return { at: 'reviews', address: now.address }
   if (path === '/received' && isText(now.address) && isText(now.entry)) return { at: 'received', address: now.address, entry: now.entry }
+  if (path === '/them' && isText(now.address)) return { at: 'them', address: now.address }
   if (path === '/listing' && isText(now.address)) return { at: 'listing', address: now.address, ...(now.edit && { edit: now.edit }) }
   if (path === '/review' && isText(now.address)) return { at: 'review', address: now.address, ...(now.edit && { edit: now.edit }), ...(isText(now.subject) && { subject: now.subject }), ...(now.report && { report: true }) }
   if (path === '/thread' && isText(now.mine) && isText(now.them)) return { at: 'thread', mine: now.mine, them: now.them, ...(isText(now.only) && { only: now.only }) }
@@ -182,6 +187,8 @@ function keptOf(to: Screen): Kept {
       return { address: to.address }
     case 'received':
       return { address: to.address, entry: to.entry }
+    case 'them':
+      return { address: to.address }
     case 'listing':
       return { address: to.address, ...(to.edit && { edit: to.edit }) }
     case 'review':
@@ -266,6 +273,13 @@ function Screens() {
     inside()
   }
   const review = (address: string, more: { subject?: string; edit?: Posted; report?: boolean } = {}) => go({ at: 'review', address, ...more }, true)
+  /** Another profile, tapped wherever it shows: one of the person's own opens as theirs; anyone else's as someone else's. */
+  const who = (address: string) => go(profiles().some((p) => p.address === address) ? { at: 'profile', address } : { at: 'them', address }, true)
+  /** A message to someone: the conversation with them, when one is open in this page; else a new message to them. */
+  const messageTo = (to: string) => {
+    const t = opened()?.threads.find((x) => x.them === to)
+    go(t ? { at: 'thread', mine: t.mine, them: to } : { at: 'message', to }, true)
+  }
   /** A check to add, from You or Home: Get verified, the ID's sheet up for the ID. */
   const addCheck = (check: Check) => go(checkOf(inUse()!, check), true)
   // Where the frame's buttons go: a place in place of this screen, as its tabs do; the rest pushed, as from a card.
@@ -333,6 +347,7 @@ function Screens() {
             onEdit={(edit) => review(screen.address, { edit })}
             onReview={() => review(screen.address)}
             onMessages={() => go({ at: 'messages', only: screen.address }, true)}
+            onWho={who}
           />
         )
       case 'reviews':
@@ -343,10 +358,14 @@ function Screens() {
             mine={screen.address}
             at={screen.entry}
             onBack={back}
-            onMessage={(to) => go({ at: 'message', to }, true)}
+            onMessage={messageTo}
+            onReview={(subject) => review(screen.address, { subject })}
             onReport={(subject) => review(screen.address, { subject, report: true })}
+            onWho={who}
           />
         )
+      case 'them':
+        return <Them key={screen.address} address={screen.address} onBack={back} onMessage={messageTo} onReview={(mine, subject) => review(mine, { subject })} onWho={who} />
       case 'listing':
         return <For address={screen.address}>{(me) => <Listing me={me} {...(screen.edit && { edit: screen.edit })} onDone={back} onBack={back} />}</For>
       case 'review':
@@ -361,6 +380,7 @@ function Screens() {
             onMessages={() => go({ at: 'messages' }, true)}
             onReviews={(address) => go({ at: 'reviews', address }, true)}
             onUpdate={(address, edit) => (edit.kind === 'listing' ? go({ at: 'listing', address, edit }, true) : review(address, { edit }))}
+            onWho={who}
           />
         )
       // On a phone, one at a time; on a laptop, side by side, whose kept with the one open.
@@ -380,7 +400,7 @@ function Screens() {
             onNew={() => go({ at: 'message' }, true)}
           />
         )
-        const thread = open && <Thread key={`${open.mine} ${open.them}`} mine={open.mine} them={open.them} pane={wide} onBack={back} onReview={(mine, them) => review(mine, { subject: them })} />
+        const thread = open && <Thread key={`${open.mine} ${open.them}`} mine={open.mine} them={open.them} pane={wide} onBack={back} onReview={(mine, them) => review(mine, { subject: them })} onWho={who} />
         if (wide) return <Panes list={list} open={thread} />
         return thread || list
       }
@@ -436,6 +456,7 @@ function onOf(s: Screen): On | null {
     case 'received':
     case 'listing':
     case 'review':
+    case 'them':
       return { profile: s.address }
     case 'new':
       return profiles().length > 0 ? 'new' : null

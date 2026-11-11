@@ -1,13 +1,15 @@
-// A profile's avatar: its market's color from the directory, walked in its order, each market its
-// name's first choice or the next one free, the same on every device; its icon from a small table,
-// else its name's first letter; solid when its role offers, light when it requests. Nothing here
-// ties the table or the colors to the directory's names, which may change.
+// A profile's avatar, by the one rule the app and the index share (services' index/src/avatar.ts):
+// its market's color from the directory, walked in its order, each market its name's first choice or
+// the next one free, the same on every device; its icon from a small table, else its name's first
+// letter; solid when its role offers, light when it requests. Nothing here ties the table or the
+// colors to the directory's names, which may change.
 
 import { renderToStaticMarkup } from 'react-dom/server'
 import { expect, test } from 'vitest'
 
-import { Avatar, colorOf } from '../src/avatar.tsx'
-import { PALETTE, colorIn, colorsFor, fnv1a } from '../src/colors.ts'
+import { ICONS, PALETTE, colorIn, colorsFor, fnv1a, iconOf as shared } from '../services/index/src/avatar.ts'
+import { Avatar, colorOf, iconOf } from '../src/avatar.tsx'
+import { isIcon } from '../src/icons.tsx'
 import { markets } from '../src/markets.ts'
 
 /** The directory's markets, in its order. */
@@ -57,6 +59,17 @@ function sameFirstChoice(): [string, string] {
     seen.set(at, name)
   }
 }
+
+test("the app's colors and icons are the shared rule's: each market's color as services' colorsFor gives it, its icon as its table names it", () => {
+  const colors = colorsFor(names)
+  for (const n of [...names, 'pottery']) expect(colorOf(n), n).toBe(colorIn(colors, n))
+  for (const n of [...names, 'pottery']) expect(iconOf(n), n).toBe(shared(n))
+})
+
+test('every icon the shared table names is one the app draws; a name it does not draw is none', () => {
+  for (const [market, icon] of Object.entries(ICONS)) expect(isIcon(icon), `${market}: ${icon}`).toBe(true)
+  expect(isIcon('no-such-icon')).toBe(false)
+})
 
 test('a market the icon table lists shows its icon; one it does not shows its first letter', () => {
   const listed = renderToStaticMarkup(Avatar({ label: 'tutoring/tutor' }))

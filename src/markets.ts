@@ -31,11 +31,11 @@ export const pairs: Pair[] = markets.directory.markets.flatMap((m) =>
   m.roles.map((r) => ({ label: `${m.name}/${r.role}`, market: m.name, role: r.role, words: `${marketWords(m.name)} ${r.role}`, offers: r.listings === 'offers', listings: r.listings })),
 )
 
-/** A role with its article, as a person says it of themselves: a tutor, an owner. By its first letter, which every role the directory has today answers. */
-export const withArticle = (role: string) => `${/^[aeio]/i.test(role) ? 'an' : 'a'} ${role.replaceAll('-', ' ')}`
-
-/** What a role does, said to the person picking it: offers, or looks for. */
-export const doesWords = (offers: boolean) => (offers ? 'You offer' : 'You look for')
+/** A role as a title says it, its hyphens as spaces and a capital first: Player, Developer. */
+export const roleWords = (role: string) => {
+  const words = role.replaceAll('-', ' ')
+  return words.charAt(0).toUpperCase() + words.slice(1)
+}
 
 /** A market as New profile lists it: its name, its words, and its roles. */
 export type MarketRoles = { market: string; words: string; roles: Pair[] }

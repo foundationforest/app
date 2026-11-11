@@ -1,27 +1,31 @@
 // A review, vouch or report about one of the person's profiles, opened from its profile's Reviews, as
-// the index counted it: which profile it is on and when, the score big, its text, then the market's
-// review fields it holds, the listing it names when another app named one (by its preview's first
-// line, as the index keeps it, so even a deleted one shows) and who wrote it. Message them, or
-// Report them, in red.
+// the index counted it: which profile it is on and the day, the score big with its star, its text,
+// then the market's review fields it holds and the listing it names when another app named one (by
+// its preview's first line, as the index keeps it, so even a deleted one shows). Then From, who
+// wrote it, as a row: their avatar, who they are to the person (the name they gave them, else their
+// short key) with their badges, their market and role, their rating, a chevron; a tap opens their
+// profile (Them.tsx). At the foot, Message them and Review back, side by side, and Report under
+// them, in red.
 
-import { useProfiles, useRated } from '../hooks.ts'
-import { Loader } from '../mark.tsx'
+import { useProfiles, useIndexed, useRated } from '../hooks.ts'
+import { Icon } from '../icons.tsx'
 import { kindWords, markets, pairOf } from '../markets.ts'
-import { previewLines, valueText } from '../show.ts'
-import { Named, SaidChip, Top, ago } from '../ui.tsx'
+import { previewLines, ratingText, valueText } from '../show.ts'
+import { Named, Rating, SaidChip, Top, day } from '../ui.tsx'
 import { fieldWords } from '../words.ts'
-import { Who } from './Who.tsx'
+import { Who, WhoAvatar } from './Who.tsx'
 
-type Props = { mine: string; at: string; onBack: () => void; onMessage: (writer: string) => void; onReport: (writer: string) => void }
+type Props = { mine: string; at: string; onBack: () => void; onMessage: (writer: string) => void; onReview: (writer: string) => void; onReport: (writer: string) => void; onWho: (writer: string) => void }
 
-export function Received({ mine, at, onBack, onMessage, onReport }: Props) {
+export function Received({ mine, at, onBack, onMessage, onReview, onReport, onWho }: Props) {
   const me = useProfiles().find((p) => p.address === mine)
   const held = useRated(me ? [me] : [])[mine]
+  const rated = held && 'rated' in held ? held.rated : null
+  const r = rated?.received.find((x) => x.address === at)
+  const theirs = useIndexed(r?.writer ?? '')
   if (!me) return null
   const pair = pairOf(me.label)
   const market = markets.market(pair.market)
-  const rated = held && 'rated' in held ? held.rated : null
-  const r = rated?.received.find((x) => x.address === at)
   const body = r?.body ?? {}
   const named = typeof body.listing === 'string' ? rated?.listings[body.listing] : undefined
   const rows: Array<[string, string]> = []
@@ -32,39 +36,58 @@ export function Received({ mine, at, onBack, onMessage, onReport }: Props) {
     }
   }
   if (named && market) rows.push([kindWords('listing', me.label), previewLines(market, named)[0] ?? ''])
+  const writerRating = r && theirs && 'rated' in theirs ? theirs.rated.rating : null
   return (
     <main>
-      <Top onBack={onBack} />
-      {!held ? (
-        <Loader big />
-      ) : !r ? (
+      <Top onBack={onBack} clear />
+      {!held ? null : !r ? (
         <p className="line">{'failed' in held ? "Can't reach the index." : "This isn't counted any more."}</p>
       ) : (
         <>
-          <p>
+          <p className="s">
             On your <Named label={me.label} />
-            {r.time !== undefined && ` · ${ago(r.time)}`}
+            {r.time !== undefined && `, ${day(r.time)}`}
           </p>
-          {r.kind === 'review' ? <strong className="big">{typeof body.score === 'string' ? body.score : '–'} / 10</strong> : <SaidChip kind={r.kind} />}
-          {typeof body.text === 'string' && <p className="said-text">{body.text}</p>}
-          <dl className="facts">
-            {rows.map(([k, v]) => (
-              <div key={k}>
-                <dt>{k}</dt>
-                <dd>{v}</dd>
-              </div>
-            ))}
-            <div>
-              <dt>From</dt>
-              <dd>
-                <Who address={r.writer} />
-              </dd>
-            </div>
-          </dl>
+          {r.kind === 'review' ? (
+            <span className="score-big">
+              <Icon name="star" fill />
+              <span className="d">{typeof body.score === 'string' ? body.score : '–'}</span>
+            </span>
+          ) : (
+            <SaidChip kind={r.kind} />
+          )}
+          {typeof body.text === 'string' && body.text && <p className="said-text big">{body.text}</p>}
+          {rows.length > 0 && (
+            <dl className="facts">
+              {rows.map(([k, v]) => (
+                <div key={k}>
+                  <dt>{k}</dt>
+                  <dd>{v}</dd>
+                </div>
+              ))}
+            </dl>
+          )}
+          <h2 className="sect">From</h2>
+          <button className="whorow" onClick={() => onWho(r.writer)}>
+            <WhoAvatar address={r.writer} />
+            <Who address={r.writer} />
+            {writerRating != null && <Rating value={ratingText(writerRating)} />}
+            <Icon name="caret-right" className="car" />
+          </button>
           <div className="fill" />
-          <div className="pair">
-            <button onClick={() => onMessage(r.writer)}>Message</button>
+          <div className="foot">
+            <div className="pair">
+              <button onClick={() => onMessage(r.writer)}>
+                <Icon name="chat-circle" />
+                Message
+              </button>
+              <button className="primary" onClick={() => onReview(r.writer)}>
+                <Icon name="star" bold />
+                Review back
+              </button>
+            </div>
             <button className="danger" onClick={() => onReport(r.writer)}>
+              <Icon name="flag" />
               Report
             </button>
           </div>

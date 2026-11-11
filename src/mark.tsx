@@ -22,7 +22,7 @@ export function Mark({ size = 28 }: { size?: number }) {
   )
 }
 
-/** Something loading: the mark filling from the trunk up, about 1.8 s a loop; still, filled, when motion is reduced. Small in a button or a line, in its text's color; `big` when a screen's content loads. */
+/** Something loading: the mark filling from the trunk up, about 1.8 s a loop; still, filled, when motion is reduced. Small in a button or a line, in its text's color, a button's own busy; `big` only for a wait known to be long (a profile being made, a check), and only once it passes half a second (theme.css). */
 export function Loader({ big = false }: { big?: boolean }) {
   const size = big ? 72 : 20
   return (

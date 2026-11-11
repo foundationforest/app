@@ -150,7 +150,7 @@ export function Review({ me, subject: given, edit, report = false, onDone, onBac
         {address && publicKeyFromAddress(address) && (
           <span className="convo-head">
             <WhoAvatar address={address} size="sm" />
-            <Who address={address} avatar={false} />
+            <Who address={address} />
           </span>
         )}
       </Top>

@@ -46,7 +46,7 @@ export function ImportWords({ onEntered, onBack }: Props) {
       throw err
     }
     try {
-      await addBackup(config, seed, made, { here: true })
+      await addBackup(config, seed, made)
     } catch (err) {
       seed.fill(0)
       await drop(made.id)

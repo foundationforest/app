@@ -8,8 +8,10 @@
 // Reviews or Notifications has shown, their theme, and, while a verification is under way, its
 // check and session, the ID check's payment and how many tries it opened, and the gift's buy, then
 // an ID check's payment no stamp has used yet (flows/verify.ts); and, of each passkey it made or
-// added, the password manager's name and whether it made it for itself (flows/backups.ts), which no
-// entry can hold; and the point listings' places are centred on, one for each place a listing's form
+// added, its maker, read from the id it sent as it was made, and the name the person gave it here
+// (flows/backups.ts, Passkeys.tsx), which no entry holds; the names the person gave other
+// profiles, a copy of their Profiles folder's own (flows/names.ts), so they show with nothing
+// unlocked; and the point listings' places are centred on, one for each place a listing's form
 // read the device's location at, moved a little from it (near.ts). Never the seed, its 24 words, a
 // key, a stamp or a message.
 //
@@ -29,6 +31,7 @@
 // (`cleanOld`).
 
 import type { Pending } from '../services/host/client/client.ts'
+import { PASSKEY, makerBefore } from './managers.ts'
 import type { Check } from './services/verifier.ts'
 import { RELOADED } from './version.ts'
 
@@ -67,6 +70,7 @@ const KEYS = {
   backups: 'forest.backups',
   points: 'forest.points',
   used: 'forest.used',
+  names: 'forest.names',
 } as const
 
 /** The key this app keeps in sessionStorage, for one tab (version.ts). */
@@ -178,36 +182,52 @@ export function markNew(address: string): void {
 /** The first passkey, among the passkeys this device made or added: the one Yes, I'm new made, which no `backup/<id>` entry names. */
 export const FIRST = 'first'
 
-/** What this device knows of a passkey it made or added: its password manager's name, from the id a new passkey sends, and `here` when it made it for itself, to unlock with on this device. */
-export type Made = { name?: string; here?: true }
+/** What this device knows of a passkey it made or added: its maker, from the id a new passkey sends (Apple, Google), and the name the person gave it. */
+export type Made = { maker?: string; name?: string }
 
 /**
- * What this device knows of each passkey it made or added: by the random id of its entry in the
- * Profiles folder, `backup/<id>`, or FIRST for the first passkey. A name alone, as the device kept
- * it before it kept `here`, reads as that name.
+ * What this device knows of each passkey it made, added or renamed: by the random id of its entry in
+ * the Profiles folder, `backup/<id>`, or FIRST for the first passkey. A note kept before makers were
+ * (a manager's full name, alone or with `here`) reads as that name's maker.
  */
 export const madeHere = (): Record<string, Made> => {
   const kept = read<Record<string, unknown>>(KEYS.backups, {})
   const out: Record<string, Made> = {}
   for (const [id, v] of Object.entries(kept)) {
-    if (typeof v === 'string') out[id] = { name: v }
-    else if (typeof v === 'object' && v !== null && !Array.isArray(v)) {
-      const { name, here } = v as Record<string, unknown>
-      const made: Made = { ...(typeof name === 'string' && { name }), ...(here === true && { here: true as const }) }
-      if (made.name || made.here) out[id] = made
-    }
+    const note = typeof v === 'string' ? { name: v } : typeof v === 'object' && v !== null && !Array.isArray(v) ? (v as Record<string, unknown>) : {}
+    const name = typeof note.name === 'string' && note.name ? note.name : undefined
+    // Before makers: a name with no maker beside it may be a manager's full name.
+    const before = typeof note.maker !== 'string' && name ? makerBefore(name) : undefined
+    const maker = typeof note.maker === 'string' && note.maker ? note.maker : before
+    const made: Made = { ...(maker && { maker }), ...(name && !before && { name }) }
+    if (made.maker || made.name) out[id] = made
   }
   return out
 }
-/** A passkey this device made or added, noted: its manager's name, if its id named one, and whether it is for this device. */
+/** A passkey this device made or added, noted: its maker, if its id named one. */
 export function noteMade(id: string, made: Made): void {
-  const note: Made = { ...(made.name && { name: made.name }), ...(made.here && { here: true as const }) }
-  if (note.name || note.here) write(KEYS.backups, { ...madeHere(), [id]: note })
+  const note: Made = { ...(made.maker && { maker: made.maker }), ...(made.name && { name: made.name }) }
+  if (note.maker || note.name) write(KEYS.backups, { ...madeHere(), [id]: note })
+}
+/** A passkey given a name on this device; an empty one, or its maker's, takes its own name back. */
+export function nameMade(id: string, name: string): void {
+  const { [id]: was, ...rest } = madeHere()
+  const given = name.trim()
+  const note: Made = { ...(was?.maker && { maker: was.maker }), ...(given && given !== (was?.maker ?? PASSKEY) && { name: given }) }
+  write(KEYS.backups, note.maker || note.name ? { ...rest, [id]: note } : rest)
 }
 export function unnoteMade(id: string): void {
   const { [id]: _, ...rest } = madeHere()
   write(KEYS.backups, rest)
 }
+
+/** The names the person gave other profiles, by address, as this device last read them from the Profiles folder or saved them: shown in place of their keys. */
+export const names = (): Record<string, string> => {
+  const kept = read<Record<string, unknown>>(KEYS.names, {})
+  return Object.fromEntries(Object.entries(kept).filter((e): e is [string, string] => typeof e[1] === 'string' && e[1].length > 0))
+}
+/** The names as the Profiles folder holds them now, in place of what this device kept. */
+export const keepNames = (all: Record<string, string>) => write(KEYS.names, Object.keys(all).length ? all : undefined)
 
 /** A listing's place's centre, kept: a point near a place the device posted from, in degrees as decimal text, as a place holds them. */
 export type Point = { lat: string; lon: string }
@@ -231,9 +251,9 @@ export const under = (): Under | null => {
 export const keepUnder = (u: Under) => write(KEYS.under, u)
 export const endUnder = () => write(KEYS.under, undefined)
 
-/** Forget this device: the profiles, when each was last used, and the Profiles folder, how they are verified, the AI apps and the keys it knows of, what was new on each, what it knew of the passkeys it made, the points kept for places, the theme, the passkey in use and any verification under way. The ids of the passkeys it knows stay, so Start asks for them and never makes a second one. */
+/** Forget this device: the profiles, when each was last used, and the Profiles folder, the names given others, how they are verified, the AI apps and the keys it knows of, what was new on each, what it knew of the passkeys it made, the points kept for places, the theme, the passkey in use and any verification under way. The ids of the passkeys it knows stay, so Start asks for them and never makes a second one. */
 export function forget(): void {
-  for (const key of [KEYS.passkey, KEYS.profiles, KEYS.used, KEYS.folder, KEYS.checks, KEYS.connections, KEYS.known, KEYS.read, KEYS.seen, KEYS.backups, KEYS.points, KEYS.theme, KEYS.under]) store().removeItem(key)
+  for (const key of [KEYS.passkey, KEYS.profiles, KEYS.used, KEYS.folder, KEYS.names, KEYS.checks, KEYS.connections, KEYS.known, KEYS.read, KEYS.seen, KEYS.backups, KEYS.points, KEYS.theme, KEYS.under]) store().removeItem(key)
   globalThis.dispatchEvent?.(new Event(CHANGED))
 }
 

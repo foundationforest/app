@@ -3,8 +3,8 @@
 // opening with seedOf alone, its folder funded from the wallet; Start through a backup, one step only;
 // the backups counted and dated with nothing unlocked; one removed, its passkey opening its own seed
 // again; a passkey made by mistake added to the person's first (New to Forest?), or refused; a backup whose folder can't be written, its
-// entry taken back; a passkey that no longer opens the device's profiles, stopped; and a manager's
-// name, from its AAGUID.
+// entry taken back; and a passkey that no longer opens the device's profiles, stopped. Each noted with
+// its maker, from its AAGUID (managers.test.ts).
 
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'vitest'
 
@@ -17,7 +17,6 @@ import { NotAdded, NotVerified, SamePasskey, addBackup, backupsAt, linkTo, remov
 import { walletKey } from '../src/flows/profiles.ts'
 import { NotYours, follow, seedFor } from '../src/flows/seed.ts'
 import { enter } from '../src/flows/start.ts'
-import { aaguidOf, managerOf } from '../src/managers.ts'
 import { fund } from '../src/services/credits.ts'
 import { writeAll } from '../src/services/host.ts'
 import { type World, freshDevice, person, proveHere, verifiedWith, world } from './world.ts'
@@ -67,13 +66,13 @@ describe('a backup', () => {
     expect(await w.balance(theirs.key.address), 'its two entries paid from it').toBeLessThan(1)
 
     expect(device.passkeys(), 'the device knows it: Start asks for it, the next backup excludes it').toContain(b.id)
-    expect(device.madeHere(), "its manager's name, by its entry").toEqual({ [listed[0]!.id]: { name: '1Password' } })
+    expect(device.madeHere(), 'its maker, by its entry').toEqual({ [listed[0]!.id]: { maker: '1Password' } })
   })
 
   test("I already use Forest: a passkey made here by mistake, its seed with no stamp, added to the one the person uses; from then it opens their profiles, and what the device noted of it moves to its entry", async () => {
     const p = await verifiedWith(w, 'tutoring/tutor')
     const mistake = person()
-    device.noteMade(device.FIRST, { name: 'iCloud Keychain', here: true })
+    device.noteMade(device.FIRST, { maker: 'Apple', name: 'My phone' })
     await expect(linkTo(w, copy(mistake.seed), copy(mistake.seed)), 'the same passkey').rejects.toBeInstanceOf(SamePasskey)
     await expect(linkTo(w, copy(mistake.seed), newSeed()), 'one not verified').rejects.toBeInstanceOf(NotVerified)
 
@@ -81,7 +80,7 @@ describe('a backup', () => {
     expect(await follow(w.host, copy(mistake.seed)), "it opens the person's seed").toEqual(p.seed)
     const listed = await backupsAt(w.host, (await walletKey(p.seed)).address)
     expect(listed).toHaveLength(1)
-    expect(device.madeHere(), 'a backup now, noted by its entry, This device').toEqual({ [listed[0]!.id]: { name: 'iCloud Keychain', here: true } })
+    expect(device.madeHere(), 'a backup now, noted by its entry, its maker and its name').toEqual({ [listed[0]!.id]: { maker: 'Apple', name: 'My phone' } })
     expect(await enter(w, { id: mistake.id, seed: await follow(w.host, copy(mistake.seed)) }, proveHere)).toEqual({ to: 'profiles' })
     expect(device.passkey()).toBe(mistake.id)
     expect(device.profiles()[0]!.address).toBe(p.profiles[0]!.address)
@@ -121,7 +120,7 @@ describe('a backup', () => {
     expect(listed).toHaveLength(2)
     expect(listed[0]!.time).toBeGreaterThanOrEqual(t0)
     expect(listed[0]!.time).toBeLessThanOrEqual(listed[1]!.time)
-    expect(device.madeHere()).toEqual({ [listed[0]!.id]: { name: 'Google Password Manager' } })
+    expect(device.madeHere()).toEqual({ [listed[0]!.id]: { maker: 'Google' } })
 
     await removeBackup(w, p.seed, listed[0]!.id)
     expect(await backupsAt(w.host, wallet)).toEqual([listed[1]])
@@ -171,25 +170,5 @@ describe("a backup whose folder can't be written", () => {
     expect(taken.map(([, c]) => c.entry.body), 'written, then deleted').toEqual([null])
     expect(await follow(free.host, copy(b.seed)), 'its passkey opens nothing more').toEqual(b.seed)
     expect(device.passkeys()).not.toContain(b.id)
-  })
-})
-
-describe("a manager's name", () => {
-  /** Authenticator data as a new passkey's carries it: the relying party's hash, the flags, the counter, then the AAGUID. */
-  const data = (flags: number, aaguid: number[]) => new Uint8Array([...new Array<number>(32).fill(7), flags, 0, 0, 0, 0, ...aaguid, 0, 16])
-  /** An AAGUID no manager in the table sends. */
-  const UNKNOWN = [0xba, 0xda, 0x55, 0x66, 0xa7, 0xaa, 0x4b, 0x8c, 0xb6, 0x6a, 0x6d, 0x4f, 0x1f, 0x54, 0xd1, 0x34]
-
-  test('from the AAGUID a new passkey carries: named when the table has it, nothing for zeros, none, or one it lacks', () => {
-    // 1Password's.
-    const id = aaguidOf(data(0x45, [0xba, 0xda, 0x55, 0x66, 0xa7, 0xaa, 0x40, 0x1f, 0xbd, 0x96, 0x45, 0x61, 0x9a, 0x55, 0x12, 0x0d]))
-    expect(id).toBe('bada5566-a7aa-401f-bd96-45619a55120d')
-    expect(managerOf(id)).toBe('1Password')
-    expect(managerOf(id!.toUpperCase())).toBe('1Password')
-    expect(aaguidOf(data(0x45, new Array<number>(16).fill(0))), 'zeros name nothing').toBeUndefined()
-    expect(aaguidOf(data(0x05, UNKNOWN)), 'no attested data').toBeUndefined()
-    expect(aaguidOf(new Uint8Array(37)), 'too short').toBeUndefined()
-    expect(managerOf(aaguidOf(data(0x45, UNKNOWN))), 'an id the table lacks').toBeUndefined()
-    expect(managerOf(undefined)).toBeUndefined()
   })
 })
