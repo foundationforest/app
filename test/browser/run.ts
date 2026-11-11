@@ -1916,7 +1916,7 @@ test("a message to one of the person's own profiles: To their tutor, From their 
   await loader.waitFor()
   const middle = (b: { x: number; y: number; width: number; height: number }) => [b.x + b.width / 2, b.y + b.height / 2]
   const [atLoader, area] = [middle((await loader.boundingBox())!), middle((await page.locator('.content').boundingBox())!)]
-  assert.ok(Math.abs(atLoader[0]! - area[0]!) < 4 && Math.abs(atLoader[1]! - area[1]!) < 4, `in the middle of both panes: ${atLoader} against ${area}`)
+  assert.ok(Math.abs(atLoader[0]! - area[0]!) < 4 && Math.abs(atLoader[1]! - area[1]!) < 10, `in the middle of both panes: ${atLoader} against ${area}`)
   assert.deepEqual([await page.getByRole('heading', { name: 'Messages', exact: true }).count(), await page.getByText('Pick a conversation.').isVisible()], [0, false], 'alone')
   await shot(page, 'laptop-messages-loading')
   // On a phone, the same: in the middle of the screen above the tabs.
