@@ -1,14 +1,15 @@
 // A listing as a card, on its profile's Offers or Requests: its first photo, from the host, on the
-// left; its first line as its title and one quiet line under it (show.ts, cardLines); its price at
-// the right, the amount in the titles' face, what it is for under it. One of the person's own that
-// no longer fits its market, which the index doesn't list, says Needs an update. A tap edits it.
+// left; its first line as its title and one quiet line under it (show.ts, cardLines); its first price
+// at the right, the amount in the titles' face, what it is for under it, and how many more it gives
+// (+1 more), as the index's cards show it. One of the person's own that no longer fits its market,
+// which the index doesn't list, says Needs updating. A tap edits it.
 
 import type { Body } from '@foundationforest/folders'
 
 import { config } from '../config.ts'
 import { photoUrl, photosIn } from '../flows/photos.ts'
 import type { Market } from '../markets.ts'
-import { cardLines } from '../show.ts'
+import { cardLines, morePrices } from '../show.ts'
 
 /** A listing's first photo: the first its market's file fields hold, in the order the market lists them. */
 export function firstPhoto(market: Market, body: Body): string | undefined {
@@ -30,12 +31,13 @@ export function ListingCard({ market, body, onClick, update }: Props) {
       <span className="two">
         <strong>{title}</strong>
         {line && <span>{line}</span>}
-        {update && <span className="chip warn">Needs an update</span>}
+        {update && <span className="chip warn">Needs updating</span>}
       </span>
       {price && (
         <span className="price-col">
           <span className="d">{price.amount}</span>
           {price.per && <span className="xs">{price.per}</span>}
+          {price.more > 0 && <span className="xs more">{morePrices(price.more)}</span>}
         </span>
       )}
     </button>

@@ -1,8 +1,8 @@
 // A market's roles, on a sheet over its tile (NewProfile.tsx): the market's name, with a small Beta
-// chip after it for a beta market; one quiet line under it, the first sentence of the market's own
-// description; and for a beta market one more (BETA, said once where a profile is made); then one
-// big row per role, its avatar as a profile of it shows (solid when it offers, light when
-// it looks for) and the role's name, nothing else. A role the person has shows the check, in the
+// chip after it for a beta market; one quiet line under it, the market's own summary; and for a
+// beta market one more (BETA, said once where a profile is made); then one big row per role, its
+// avatar as a profile of it shows (solid when it offers, light when it looks for) and the role's
+// name, nothing else. A role the person has shows the check, in the
 // forest green, and a tap on its row opens that profile; any other holds Create, which makes it:
 // its plus, or, while a tap will ask the passkey, the unlock icon in its place.
 
@@ -27,7 +27,7 @@ export function RoleSheet({ market, mine, note, busy, onPick, onOpen, onClose }:
       ) : (
         <h2>{market.words}</h2>
       )}
-      {market.about && <p className="hint about">{market.about}</p>}
+      {market.summary && <p className="hint about">{market.summary}</p>}
       {market.beta && <p className="hint">{BETA}</p>}
       <Line note={note} />
       <div className="stack">

@@ -16,7 +16,8 @@
 // Something that went wrong says so in one notice at the top, in the verifier's words for it
 // (words.ts), its session done, so the next tap opens a new one. A check that can't help this person
 // any more is greyed: the selfie after a face seen before (it would match again), the ID after an
-// ID already used. After either, from Start, under the cards, the quiet I already use Forest, for
+// ID already used. While the verifier doesn't sell the ID check (GET /, `forSale`), its card isn't
+// there, nor What the checks keep, and a face seen before says the ID check opens soon. After either, from Start, under the cards, the quiet I already use Forest, for
 // someone who made a passkey here by mistake: it asks for the passkey they use, and adds this one to
 // it (flows/backups.ts, `linkTo`), and they're in. From You or Home it never shows: there the person
 // is inside a working Forest already. While the ID can be tapped, What the checks keep, a quiet link
@@ -44,7 +45,7 @@ import { type Entered, enter } from '../flows/start.ts'
 import { type CreditLines, type Step, NotFinished, NotPassed, Unpaid, advance, ask, choose, consentOf, creditsOf, finish, open, pay, stampNumberAt, stepOf } from '../flows/verify.ts'
 import { walletKey } from '../flows/profiles.ts'
 import { hold, isHeldFor } from '../held.ts'
-import { useChecks } from '../hooks.ts'
+import { useChecks, useIdCheck } from '../hooks.ts'
 import { Icon } from '../icons.tsx'
 import { Loader } from '../mark.tsx'
 import { NoAnswer, ask as askPasskey, withSeed } from '../passkey.ts'
@@ -52,6 +53,7 @@ import { RETURNS } from '../paths.ts'
 import { proveInWorker } from '../proof/prove.ts'
 import { Line, type Note, Notice, Top, UnlockIcon, YoureVerified, noteOf, useAction } from '../ui.tsx'
 import { Reloading } from '../version.ts'
+import { FACE_SEEN_NOT_FOR_SALE } from '../words.ts'
 import { CheckCard, KeepsSheet, type Standing } from './Checks.tsx'
 
 /** How often the stamp is asked for while the check is open, and for how long. */
@@ -119,6 +121,8 @@ export function Verify({ setup, id, step: first, failed: failedFirst, from, onVe
   const [noConsent, setNoConsent] = useState<Note | null>(null)
   // The checks the person has: their Profiles folder's, as this device last worked them out, and what their profiles show.
   const held = useChecks()
+  // Whether the ID check is for sale, and whether its payments are test payments: neither until GET / says so.
+  const idCheck = useIdCheck()
 
   /** The check under way for this passkey, if any. */
   const underWay = (): Check | null => {
@@ -415,6 +419,9 @@ export function Verify({ setup, id, step: first, failed: failedFirst, from, onVe
   const busy = opening.busy || paying.busy || already.busy
   const anyDone = held.has('face') || held.has('id')
   const another = setup && (failed?.code === 'face_seen' || failed?.code === 'duplicate_document')
+  // The ID shows where it is for sale, or once it is done.
+  const shown = (['face', 'id'] as const).filter((c) => c === 'face' || idCheck.forSale || held.has(c))
+  const warning = failed?.code === 'face_seen' && !idCheck.forSale ? FACE_SEEN_NOT_FOR_SALE : failed?.message
   return (
     <main className="verify">
       {setup && anyDone ? <Top /> : <Top onBack={onBack} />}
@@ -422,11 +429,11 @@ export function Verify({ setup, id, step: first, failed: failedFirst, from, onVe
         <h1>Get verified</h1>
         <p className="lead">So people know you're real.</p>
       </div>
-      {failed && <Notice>{failed.message}</Notice>}
+      {failed && <Notice>{warning}</Notice>}
       <Line note={paying.note ?? opening.note} />
       <div className="vcards">
-        {(['face', 'id'] as const).map((c) => (
-          <CheckCard key={c} check={c} standing={standing(c)} credits={credits} disabled={busy} busy={(c === 'id' && paying.busy) || (opening.busy && underWay() === c)} onPick={() => pick(c)} />
+        {shown.map((c) => (
+          <CheckCard key={c} check={c} standing={standing(c)} credits={credits} testPayments={idCheck.testPayments} disabled={busy} busy={(c === 'id' && paying.busy) || (opening.busy && underWay() === c)} onPick={() => pick(c)} />
         ))}
       </div>
       {another && (
@@ -437,7 +444,7 @@ export function Verify({ setup, id, step: first, failed: failedFirst, from, onVe
           </button>
         </>
       )}
-      {standing('id') === 'open' && (
+      {idCheck.forSale && standing('id') === 'open' && (
         <button className="green-text keeps-link" onClick={() => setKeeps(true)}>
           <Icon name="info" /> What the checks keep
         </button>

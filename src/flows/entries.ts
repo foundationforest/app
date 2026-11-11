@@ -1,8 +1,9 @@
 // A profile's entries, of every kind the markets define (the markets manual): a listing at
 // listing/<id>, a review at review/<id>, a vouch at vouch/<id> and a report at report/<id>, each at
 // a random id. Reading them needs nothing unlocked: a folder is public. Before the unlock, the app
-// checks what is to be posted: a listing holding something; the body against its market
-// (checkEntry, the markets' one checker), which demands no field but a subject; and for a review, a
+// checks what is to be posted: a listing holding something; no span ending before it starts, and no
+// range from more to less, each said in its own words; the body against its market (checkEntry, the
+// markets' one checker), which demands no field but a subject; and for a review, a
 // vouch or a report, its subject, read from the host: a profile's address, none of the person's
 // own, in the same market, on the other side (the same role where the market has one). Then the
 // main key signs it, at a new random id, or for an edit at its own path after what is there
@@ -16,9 +17,10 @@ import { mainKey } from '@foundationforest/keys'
 
 import type { Services } from '../config.ts'
 import { type Profile, markUsed } from '../device.ts'
-import { KINDS, type Kind, markets, otherSide, pairOf } from '../markets.ts'
+import { backwards } from '../form.ts'
+import { KINDS, type Kind, fieldsOf, markets, otherSide, pairOf } from '../markets.ts'
 import { readView, writeAll } from '../services/host.ts'
-import { Said, entrySays } from '../words.ts'
+import { Said, entrySays, turnedSays } from '../words.ts'
 import { paid } from './paid.ts'
 import { sendPhotos } from './photos.ts'
 import { randomId, walletKey } from './profiles.ts'
@@ -90,6 +92,8 @@ export async function check(s: Services, me: Profile, kind: Kind, body: Body, mi
   if (kind === 'listing' && Object.keys(body).every((name) => name === 'files')) throw new Said('Add something first.')
   if (kind !== 'listing' && typeof body.subject !== 'string') throw new Said('Add their address.')
   const subject = kind === 'listing' ? undefined : await subjectOf(s, me, body.subject as string, mine)
+  const turned = backwards(fieldsOf(market, kind, role, subject?.role), body)
+  if (turned) throw turnedSays(...turned)
   const why = markets.checkEntry(name, role, kind, body, subject?.role)
   if (why) throw entrySays(why, Object.keys(body))
 }

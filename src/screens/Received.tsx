@@ -1,7 +1,8 @@
 // A review, vouch or report about one of the person's profiles, opened from its profile's Reviews, as
 // the index counted it: which profile it is on and the day, the score big with its star, its text,
 // then the market's review fields it holds and the listing it names when another app named one (by
-// its preview's first line, as the index keeps it, so even a deleted one shows). Then From, who
+// its preview's first line, as the index keeps it, so even a deleted one shows, and of it only what
+// still fits its market, a listing its market outgrew never breaking the screen). Then From, who
 // wrote it, as a row: their avatar, who they are to the person (the name they gave them, else their
 // short key) with their badges, their market and role, their rating, a chevron; a tap opens their
 // profile (Them.tsx). At the foot, Message them and Review back, side by side, and Report under
@@ -10,6 +11,7 @@
 import { useProfiles, useIndexed, useRated } from '../hooks.ts'
 import { Icon } from '../icons.tsx'
 import { kindWords, markets, pairOf } from '../markets.ts'
+import { fitting } from '../form.ts'
 import { previewLines, ratingText, valueText } from '../show.ts'
 import { Named, Rating, SaidChip, Top, day } from '../ui.tsx'
 import { fieldWords } from '../words.ts'
@@ -35,7 +37,7 @@ export function Received({ mine, at, onBack, onMessage, onReview, onReport, onWh
       if (text) rows.push([fieldWords(name), text])
     }
   }
-  if (named && market) rows.push([kindWords('listing', me.label), previewLines(market, named)[0] ?? ''])
+  if (named && market) rows.push([kindWords('listing', me.label), previewLines(market, fitting(pair.market, pair.role, named))[0] ?? ''])
   const writerRating = r && theirs && 'rated' in theirs ? theirs.rated.rating : null
   return (
     <main>

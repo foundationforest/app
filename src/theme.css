@@ -1221,6 +1221,17 @@ summary {
   gap: 16px;
 }
 
+/* A field whose answer no longer fit its market: one line under its name, in the sun, until it is answered. */
+.field .changed-line {
+  justify-self: start;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--sun-bg);
+  color: var(--on-sun);
+  font-size: 13px;
+  font-weight: 600;
+}
+
 .field .label {
   display: flex;
   gap: 8px;
@@ -1942,6 +1953,16 @@ button.cream .icon {
 /* Get verified: two cards, each one tap while its check is to do: its icon square, its name and
    line, its price, a chevron, then under a hairline what it gives. Done, the mint Verified chip
    alone; one that can't help any more, greyed, its name and line alone. */
+/* The ID card's one quiet line while the verifier takes test payments: Stripe's test card. */
+.vcard .vtest {
+  padding-left: 62px;
+  font-size: 13px;
+  line-height: 1.3;
+  font-weight: 500;
+  text-align: left;
+  color: var(--ink3);
+}
+
 .vcards {
   display: grid;
   gap: 12px;
@@ -2856,6 +2877,47 @@ button.open-row {
 
 .number > .unit {
   color: var(--ink2);
+}
+
+/* A range: From and To, its unit after them, and the range in words under them: 18 years and over. */
+.range {
+  display: grid;
+  gap: 6px;
+}
+
+.range .number > input {
+  width: 96px;
+}
+
+.range-words,
+.price-count > .aside {
+  font-size: 14px;
+  color: var(--ink2);
+}
+
+/* A listing's prices: a row each, how many it buys under it once its per is picked, Add a price under them. */
+.prices,
+.price-row {
+  display: grid;
+  gap: 8px;
+}
+
+.prices {
+  gap: 12px;
+}
+
+.price-row .money > button.round {
+  align-self: center;
+}
+
+.price-count > input {
+  width: 80px;
+}
+
+button.quiet.add-price {
+  justify-self: start;
+  gap: 6px;
+  padding: 0;
 }
 
 /* Money: the amount, its currency at its start, then what it is for. */

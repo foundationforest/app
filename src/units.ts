@@ -12,6 +12,7 @@ const UNIT_WORDS: Record<string, [one: string, many: string]> = {
   minutes: ['minute', 'minutes'],
   hours: ['hour', 'hours'],
   days: ['day', 'days'],
+  years: ['year', 'years'],
   nights: ['night', 'nights'],
   centimetres: ['centimetre', 'centimetres'],
   metres: ['metre', 'metres'],

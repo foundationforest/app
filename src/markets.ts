@@ -2,7 +2,7 @@
 // browser entry, which takes them as data and runs no eval: the directory, each market file,
 // checkEntry and previewOf. As the app shows them: each market and role a pair, in the market's own words,
 // "Tutoring tutor", no symbol between (on screen, the market in bold and the role muted: Named, in
-// ui.tsx); every market with its roles and whether it is beta, as New profile lists them; each kind
+// ui.tsx); every market with its roles, its summary and whether it is beta, as New profile lists them; each kind
 // of entry's fields for a role; the other side of a market; and whether the directory lists a
 // profile's market, since a profile in a market that is gone is forgotten by the device.
 
@@ -42,9 +42,9 @@ export const roleWords = (role: string) => {
  * A market as New profile lists it: its name, its words, its roles, and whether it is beta (the
  * markets manual's Status), else live; its name as its tile shows it, `family` small over `kind`
  * where its first word is another market's too (Stays over Work), else `kind` alone; and its
- * description's first sentence, `about`, for its role sheet.
+ * summary, the one line its file gives for where someone picks a market, for its role sheet.
  */
-export type MarketRoles = { market: string; words: string; family?: string; kind: string; about: string; roles: Pair[]; beta: boolean }
+export type MarketRoles = { market: string; words: string; family?: string; kind: string; summary: string; roles: Pair[]; beta: boolean }
 
 /** A word as a name starts: Stays. */
 const capital = (words: string) => words.charAt(0).toUpperCase() + words.slice(1)
@@ -56,9 +56,6 @@ export function tileName(name: string, names: string[]): { family?: string; kind
   return { family: capital(first!), kind: capital(rest.join(' ')) }
 }
 
-/** A description's first sentence: up to its first full stop, question or exclamation mark that ends a sentence; all of it when there is none. */
-export const firstSentence = (text: string) => /^.*?[.!?](?=\s|$)/s.exec(text.trim())?.[0] ?? text.trim()
-
 /** The markets in a directory, in its order, each with every role: live and beta alike. */
 export const listOf = (directory: Markets['directory']): MarketRoles[] => {
   const names = directory.markets.map((m) => m.name)
@@ -66,7 +63,7 @@ export const listOf = (directory: Markets['directory']): MarketRoles[] => {
     market: m.name,
     words: marketWords(m.name),
     ...tileName(m.name, names),
-    about: firstSentence(m.description ?? ''),
+    summary: m.summary,
     roles: pairs.filter((p) => p.market === m.name),
     beta: m.status === 'beta',
   }))

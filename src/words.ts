@@ -83,6 +83,12 @@ const VERIFIER: Record<string, Line> = {
   another_stamp_number: VERIFIER_DOWN,
 }
 
+/** A face seen before, while the ID check isn't for sale: nothing to point to yet. */
+export const FACE_SEEN_NOT_FOR_SALE = 'A similar face is already verified. The ID check opens soon.'
+
+/** The ID card's one quiet line while the verifier's payments are test payments, which charge nobody: Stripe's own test card. */
+export const TEST_PAYMENTS = 'Test mode: pay with the card 4242 4242 4242 4242.'
+
 /** What the app says when a payment ends with no stamp from it (its third try didn't pass, its tries used, or its hold over): nothing was charged. */
 export const TRIES_USED = 'Your tries are used up. Nothing was charged. Pay again to continue.'
 
@@ -133,6 +139,13 @@ const HOST: Record<string, Line> = {
   method: HOST_DOWN,
   invalid: HOST_DOWN,
   no_credits: HOST_DOWN,
+  // The morning email's (host/src/email.ts), which the app doesn't ask for yet: its Email screens will word each.
+  not_signed: HOST_DOWN,
+  not_here: HOST_DOWN,
+  too_soon: HOST_DOWN,
+  code: HOST_DOWN,
+  unknown: HOST_DOWN,
+  not_sent: HOST_DOWN,
   // A reader's, never a host's answer: what the app's own reading throws, which says SOMETHING (ui.tsx, noteOf).
   locked: OURS,
   to: OURS,
@@ -151,6 +164,11 @@ export function hostSays(code: string): Said {
 export function fieldWords(name: string): string {
   const words = name.replace(/([a-z0-9])([A-Z])/g, '$1 $2').toLowerCase()
   return words.charAt(0).toUpperCase() + words.slice(1)
+}
+
+/** A field whose value runs backwards, as one red line: a span that ends before it starts, a range from more to less. */
+export function turnedSays(name: string, field: { type: string }): Said {
+  return new Said(field.type === 'moment' ? `${fieldWords(name)} ends before it starts.` : `${fieldWords(name)}: From is more than To.`, true)
 }
 
 /**

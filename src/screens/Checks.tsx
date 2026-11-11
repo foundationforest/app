@@ -5,8 +5,9 @@
 //   one size), a chevron, and under a hairline what it gives, each with its tick: the selfie its
 //   credits, the ID ten times them, stronger trust, and that the person is only charged if it
 //   passes. A credit line shows only where the verifier gives credits at this host
-//   (flows/verify.ts, `creditLines`). No unlock icon, though the ID's tap asks the passkey when no
-//   seed is held, as a row of ticks shows none;
+//   (flows/verify.ts, `creditLines`). While the verifier's payments are test payments, the ID's one
+//   quiet line more under them: Stripe's test card, so a tester knows what to pay with. No unlock
+//   icon, though the ID's tap asks the passkey when no seed is held, as a row of ticks shows none;
 // - done, the mint Verified chip alone, and no tap;
 // - tried, one that can't help this person any more (a face seen before, an ID already used):
 //   greyed, its name and line alone, and no tap.
@@ -18,6 +19,7 @@ import type { CreditLines } from '../flows/verify.ts'
 import { Icon } from '../icons.tsx'
 import { Loader } from '../mark.tsx'
 import { Line, type Note, Sheet } from '../ui.tsx'
+import { TEST_PAYMENTS } from '../words.ts'
 
 /** What paying for the ID check costs: nothing, unless its check passes. */
 const CHARGED = "You're only charged if it passes."
@@ -40,9 +42,9 @@ const CARD = {
 /** Where a check stands for this person: one to do, done, or one that can't help them any more. */
 export type Standing = 'open' | 'done' | 'tried'
 
-type CardProps = { check: Check; standing: Standing; credits: CreditLines | null; disabled: boolean; busy: boolean; onPick: () => void }
+type CardProps = { check: Check; standing: Standing; credits: CreditLines | null; testPayments?: boolean; disabled: boolean; busy: boolean; onPick: () => void }
 
-export function CheckCard({ check, standing, credits, disabled, busy, onPick }: CardProps) {
+export function CheckCard({ check, standing, credits, testPayments = false, disabled, busy, onPick }: CardProps) {
   const { name, what, price, icon } = CARD[check]
   const head = (
     <span className="vhead">
@@ -87,6 +89,7 @@ export function CheckCard({ check, standing, credits, disabled, busy, onPick }: 
           ))}
         </span>
       )}
+      {check === 'id' && testPayments && <span className="vtest">{TEST_PAYMENTS}</span>}
     </button>
   )
 }

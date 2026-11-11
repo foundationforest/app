@@ -4,7 +4,8 @@
 // own fields and contact (Field.tsx), in the order form.ts reads from the market's file, each shown
 // once the answers it depends on hold and dropped when they no longer do, the photos among them. An
 // edit opens with what still fits its market today, so a listing an older market shaped is posted
-// again in today's. Everything is checked before the unlock (flows/entries.ts); then one unlock
+// again in today's, in place of the old one; each field whose answer no longer fit says so under its
+// name until it is answered again. Everything is checked before the unlock (flows/entries.ts); then one unlock
 // signs it, writes it and sends its new photos. Its path is set as the form opens, so posting again
 // after a photo did not go writes the same listing, never a second. Post stays at the foot as the
 // form scrolls; an edit's Delete is under it, in red, asking once more.
@@ -20,7 +21,7 @@ import { Field } from '../fields/Field.tsx'
 import type { Picked } from '../fields/Photos.tsx'
 import { newPhotos, withFiles } from '../flows/photos.ts'
 import { type Posted, check, newPath, post, unpost } from '../flows/entries.ts'
-import { applies, fitting, formFields, settled } from '../form.ts'
+import { applies, fitted, formFields, settled } from '../form.ts'
 import { useProfiles } from '../hooks.ts'
 import { Loader } from '../mark.tsx'
 import { BETA, kindWords, markets, pairOf } from '../markets.ts'
@@ -37,7 +38,9 @@ export function Listing({ me, edit, onDone, onBack }: Props) {
   const { market: name, role } = pairOf(me.label)
   const market = markets.market(name)
   const fields = market ? formFields(market, role) : []
-  const [values, setValues] = useState<Body>(() => (edit ? fitting(name, role, edit.body) : {}))
+  // What still fits, and which answers didn't, so their fields are marked.
+  const [start] = useState(() => (edit ? fitted(name, role, edit.body) : { body: {}, dropped: [] }))
+  const [values, setValues] = useState<Body>(start.body)
   const [path] = useState(() => edit?.path ?? newPath('listing'))
   const [sure, setSure] = useState(false)
   const picked = useRef<Picked>(new Map()).current
@@ -74,7 +77,7 @@ export function Listing({ me, edit, onDone, onBack }: Props) {
         }}
       >
         {fields.filter(([, f]) => applies(f, values)).map(([n, f]) => (
-          <Field key={n} name={n} field={f} value={values[n]} onChange={(v) => set(n, v)} picked={picked} />
+          <Field key={n} name={n} field={f} value={values[n]} changed={start.dropped.includes(n) && values[n] === undefined} onChange={(v) => set(n, v)} picked={picked} />
         ))}
       </form>
       <div className="foot">

@@ -6,3 +6,9 @@ declare module 'virtual:markets' {
 
 /** This build's version: the commit it was built from, short, or "dev" where none is known (vite.config.ts). */
 declare const __COMMIT__: string
+
+declare module 'virtual:market-icons' {
+  /** The icons the directory's markets name, each by its Phosphor name (build/markets.ts). */
+  const icons: Readonly<Record<string, import('@phosphor-icons/react').Icon>>
+  export default icons
+}

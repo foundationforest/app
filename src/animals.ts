@@ -19,13 +19,17 @@
  */
 
 // Someone else's profile's animal, the app's own drawing of it (the person's own show their market's
-// icon): one of forty, picked from the profile's address alone (FNV-1a over its bytes, as the shared
-// avatar rule hashes a market's name), so the same profile is the same animal on every device and for
-// everyone using this app. Nothing is stored or published; avatar.tsx draws it. Each is in one color on a 32 grid, from Fluent Emoji's High
+// icon): one of forty, picked from the profile's address alone (32-bit FNV-1a over its bytes), so the
+// same profile is the same animal on every device and for everyone using this app. Nothing is stored or published; avatar.tsx draws it. Each is in one color on a 32 grid, from Fluent Emoji's High
 // Contrast style: its paths as given there, each number rounded to 0.1 and its color dropped, so it
 // takes the color of the text around it; a path with the even-odd rule keeps it.
 
-import { fnv1a } from '../services/index/src/avatar.ts'
+/** 32-bit FNV-1a over the UTF-8 bytes of `text`: the hash the animals have always been picked by, kept here unchanged since services' avatar rule no longer has it. */
+export function fnv1a(text: string): number {
+  let hash = 0x811c9dc5
+  for (const byte of new TextEncoder().encode(text)) hash = Math.imul(hash ^ byte, 0x01000193) >>> 0
+  return hash
+}
 
 /** One path of an animal: its d, and the even-odd fill rule where it has one. */
 export type AnimalPath = string | { d: string; evenOdd: true }

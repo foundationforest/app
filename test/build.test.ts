@@ -21,7 +21,7 @@ import { proofFiles } from '../build/proofs.ts'
 import { BG, INK } from '../build/shell.ts'
 import { config } from '../src/config.ts'
 import { rfc3339 } from '../src/fields/Moment.tsx'
-import { firstSentence, kindWords, listOf, listed, marketList, marketWords, markets, otherSide, pairOf, pairs, roleWords, tileName } from '../src/markets.ts'
+import { kindWords, listOf, listed, marketList, marketWords, markets, otherSide, pairOf, pairs, roleWords, tileName } from '../src/markets.ts'
 import { PATHS, RETURNS } from '../src/paths.ts'
 import { contactHref } from '../src/show.ts'
 import { BG as THEME_BG } from '../src/theme.ts'
@@ -137,11 +137,12 @@ test("a market's name on its tile, from the directory alone: its first word smal
   }
 })
 
-test("a market's role sheet: its description's first sentence", () => {
-  expect(firstSentence('Hosts give guests a bed. They help.')).toBe('Hosts give guests a bed.')
-  expect(firstSentence('Coaches teach, e.g. tennis; paid by the hour')).toBe('Coaches teach, e.g.')
-  expect(firstSentence('No full stop')).toBe('No full stop')
-  for (const m of marketList) expect(m.about, m.market).toBe(firstSentence(markets.directory.markets.find((d) => d.name === m.market)!.description))
+test("a market's role sheet: its summary, the line its file gives for where someone picks a market", () => {
+  for (const m of marketList) {
+    const { summary } = markets.directory.markets.find((d) => d.name === m.market)!
+    expect(summary.length, m.market).toBeGreaterThan(0)
+    expect(m.summary, m.market).toBe(summary)
+  }
 })
 
 test("the markets: each role's other side, and its listing in its own word", () => {
