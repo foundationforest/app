@@ -83,7 +83,9 @@ export function CheckCard({ check, standing, credits, testPayments = false, disa
         <span className="vlist" role="list">
           {gives.map((g) => (
             <span key={g} role="listitem">
-              <Icon name="check-circle" fill />
+              <span className="got" aria-hidden>
+                <Icon name="check" bold />
+              </span>
               {g}
             </span>
           ))}

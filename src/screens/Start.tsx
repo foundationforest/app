@@ -1,4 +1,4 @@
-// Start: the deep green, the mark, the name Forest (wordmark.tsx), and one cream button, Start. On a device that knows a
+// Start: on the strong green (the soft green in the dark look), the mark, the name Forest (wordmark.tsx), and one cream button, Start. On a device that knows a
 // Forest passkey (any id it keeps), Start asks for those alone, so nobody makes a second one by
 // mistake. On a device that knows none, Start asks First time here?, in Start's own place, where its
 // button was (nothing floats): Yes, I'm new makes the passkey (then Get verified); I use Forest on
@@ -111,7 +111,7 @@ export function Start({ onEntered, onWords, connecting = false, noPasskey = fals
     setAsked(null)
   }
 
-  // On Start's deep green: the first way on cream, as Start is, the other quiet in Start's light tones.
+  // On Start's ground: the first way on cream, as Start is, the other quiet in Start's own text colours.
   const imNew = (
     <button key="new" className={connecting ? 'ghost' : 'cream'} disabled={busy} onClick={() => making.run()}>
       {making.busy ? <Loader /> : "Yes, I'm new"}

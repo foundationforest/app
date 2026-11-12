@@ -17,7 +17,9 @@
 // there, so it says which of theirs the conversation is with; no role: in a market a person talks
 // only with the other side. Their badges are on their profile, one tap away.
 // On a laptop it is the left of two panes (`pane`, Panes.tsx), the sidebar beside it, and the
-// conversation open on the right raised as a card.
+// conversation open on the right raised as a card. Before it is opened there is no split and no new
+// message: the lock, Open your messages and Open are one block, centred across the whole content
+// (theme.css, `closed`); a phone keeps its title and its round New message.
 
 import type { CSSProperties } from 'react'
 
@@ -58,9 +60,11 @@ export function Messages({ only, pane = false, open: shown, onOnly, onThread, on
   const threads = (opened?.threads ?? []).filter((t) => list.some((p) => p.address === t.mine))
   // Something still to open: with a seed held it opens by itself, unless that failed; else Open.
   const asking = need && (!held || open.note !== null)
+  // Still to be opened, with a profile to open them for: on a laptop, one block across both panes.
+  const closed = list.length > 0 && asking
 
   const Root = pane ? 'div' : 'main'
-  if (!(list.length > 0 && asking) && held && open.busy && !opened?.all)
+  if (!closed && held && open.busy && !opened?.all)
     return (
       <Root className={pane ? 'pane-body loading' : 'loading'}>
         <div className="fill" />
@@ -69,17 +73,19 @@ export function Messages({ only, pane = false, open: shown, onOnly, onThread, on
       </Root>
     )
   return (
-    <Root className={pane ? 'pane-body' : undefined}>
+    <Root className={pane ? (closed ? 'pane-body closed' : 'pane-body') : undefined}>
       <Top
         right={
-          <button className="round" aria-label="New message" onClick={onNew}>
-            <Icon name="note-pencil" />
-          </button>
+          pane && closed ? undefined : (
+            <button className="round" aria-label="New message" onClick={onNew}>
+              <Icon name="note-pencil" />
+            </button>
+          )
         }
       >
         <h1>Messages</h1>
       </Top>
-      {list.length > 0 && asking ? (
+      {closed ? (
         <>
           <div className="fill" />
           <div className="unopened">

@@ -12,14 +12,14 @@
 // which is free. The device keeps a copy, so names show with nothing unlocked; every unlock that
 // opens the Profiles folder (flows/profiles.ts) puts what the entry holds in its place.
 
-import { type View, entry, nextTime, publicKeyFromAddress } from '@foundationforest/folders'
-import { isLocked, lock, openLocked } from '@foundationforest/folders/locked'
+import { type View, publicKeyFromAddress } from '@foundationforest/folders'
+import { isLocked, openLocked } from '@foundationforest/folders/locked'
 import { mainKey, openingHalf } from '@foundationforest/keys'
 
 import type { Services } from '../config.ts'
 import { keepNames } from '../device.ts'
-import { NoCredits } from '../services/credits.ts'
-import { NotWritten, readView, writeAll } from '../services/host.ts'
+import { readView } from '../services/host.ts'
+import { setLocked } from './locked.ts'
 
 /** The entry's path in the Profiles folder: the app's own. */
 export const NAMES_PATH = 'names'
@@ -47,19 +47,11 @@ export const nameFrom = (typed: string): string => [...typed.trim()].slice(0, NA
 export async function saveName(s: Services, seed: Uint8Array, address: string, name: string): Promise<void> {
   const key = await mainKey(seed, '')
   const view = await readView(s.host, key.address)
-  const { identity, openKey } = await openingHalf(key.secret)
+  const { identity } = await openingHalf(key.secret)
   const all = await namesIn(view, identity)
   const given = nameFrom(name)
   if (given) all[address] = given
   else delete all[address]
-  const held = !!view.current.get(NAMES_PATH)?.entry.body
-  if (Object.keys(all).length > 0 || held) {
-    const now = Date.now()
-    const first = view.current.has('profile') ? [] : [entry(key, 'profile', { hosts: [s.host] }, now)]
-    const body = Object.keys(all).length > 0 ? await lock({ names: Object.entries(all).map(([address, name]) => ({ address, name })) }, [openKey]) : null
-    await writeAll(s.host, [...first, entry(key, NAMES_PATH, body, nextTime(now, view, NAMES_PATH))]).catch((err: unknown) => {
-      throw err instanceof NotWritten && err.code === 'refused' ? new NoCredits() : err
-    })
-  }
+  await setLocked(s.host, key, view, NAMES_PATH, Object.keys(all).length > 0 ? { names: Object.entries(all).map(([address, name]) => ({ address, name })) } : null)
   keepNames(all)
 }

@@ -1,6 +1,6 @@
 // The place screen's map (Place.tsx): the one module that loads MapLibre, so its code comes with
 // the place screen alone. OpenFreeMap's tiles (config.ts), Positron in light and Dark in dark, its
-// attribution always shown in full. An area is a circle in the mint's dark green, light green's ink: a tap puts it there,
+// attribution always shown in full. An area is a circle in the strong green: a tap puts it there,
 // a drag inside it carries it, and wherever it is put the screen answers with the centre it will be
 // posted at, which the circle glides to, never a jump; a drag outside it moves the map, two fingers
 // zoom it. An exact spot is a pin, none until a tap drops one, which can be dragged. Enter puts
@@ -122,7 +122,7 @@ export default function PlaceMap(props: MapProps) {
     m.once('style.load', () => void (styled = true))
     m.on('error', () => void (styled || now.current.onFail()))
     m.on('load', () => {
-      const green = getComputedStyle(document.documentElement).getPropertyValue('--on-mint').trim()
+      const green = getComputedStyle(document.documentElement).getPropertyValue('--forest').trim()
       m.addSource('area', { type: 'geojson', data: NOTHING })
       m.addLayer({ id: 'area', type: 'fill', source: 'area', paint: { 'fill-color': green, 'fill-opacity': 0.15 } })
       m.addLayer({ id: 'area-edge', type: 'line', source: 'area', paint: { 'line-color': green, 'line-width': 2 } })

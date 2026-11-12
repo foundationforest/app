@@ -12,6 +12,9 @@
 //                  answers it (index/src/pages/profile.ts), each page what a test says the index made
 //                  of the profile; 404 for any other, and down when a test says so. Services' index
 //                  itself runs in the browser test, reading the host there.
+//   Resend         a stand-in for the API the host sends its morning email through (resend.ts): the
+//                  host has its key, and `sent` holds each email it was asked to send, so a test
+//                  reads the code from it. No email goes anywhere.
 //   the connector  a stand-in answering /open-key as services' mcp does (mcp/README.md, The
 //                  connection), its identity kept so a test opens what is locked to it as the mcp
 //                  would. Services' mcp itself runs in the browser test.
@@ -40,6 +43,7 @@ import type { Services } from '../src/config.ts'
 import type { CheckProofs } from '../src/flows/inbox.ts'
 import { type Prove, makeProfile } from '../src/flows/profile.ts'
 import { ask, finish, open, stampNumberAt } from '../src/flows/verify.ts'
+import { type Sent, standInResend } from './resend.ts'
 
 /** localStorage and sessionStorage, in memory. */
 export function memoryStorage(): Storage {
@@ -148,6 +152,8 @@ export type World = Services & {
   /** The stand-in connector's origin, and the identity its open key opens with. */
   connector: string
   connectorIdentity: string
+  /** Every email the host asked the stand-in Resend to send, oldest first. */
+  sent: Sent[]
   /** A folder's balance at the host, in credits. */
   balance(folder: string): Promise<number>
   close(): Promise<void>
@@ -183,7 +189,8 @@ export async function world({ entryPerKb, filePerKb, forSale = true }: { entryPe
     }),
     { faceCheck, idCheck, embedder: namedFaces(), ...(payments && { payments }), log: () => undefined },
   )
-  const running = await startHost(readConfig({ DATA_DIR: join(dir, 'host'), PUBLIC_ORIGIN: host, PORT: String(hostPort), SPONSORS: verifier.sponsor!, ...(entryPerKb && { ENTRY_PER_KB: entryPerKb }), ...(filePerKb && { FILE_PER_KB: filePerKb }) }))
+  const resend = await standInResend()
+  const running = await startHost(readConfig({ DATA_DIR: join(dir, 'host'), PUBLIC_ORIGIN: host, PORT: String(hostPort), SPONSORS: verifier.sponsor!, RESEND_API_KEY: 're_stand_in', ...(entryPerKb && { ENTRY_PER_KB: entryPerKb }), ...(filePerKb && { FILE_PER_KB: filePerKb }) }), { resendUrl: resend.url })
 
   const answer = (status: number, body: unknown, res: import('node:http').ServerResponse) => {
     res.writeHead(status, { 'content-type': 'application/json', 'access-control-allow-origin': '*' }).end(JSON.stringify(body))
@@ -223,12 +230,14 @@ export async function world({ entryPerKb, filePerKb, forSale = true }: { entryPe
     indexDown: (d) => void (down = d),
     connector: `http://127.0.0.1:${(connector.address() as AddressInfo).port}`,
     connectorIdentity: opening.identity,
+    sent: resend.sent,
     balance: async (folder) => ((await (await fetch(`${host}/credits/balance/${folder}`)).json()) as { credits: number }).credits,
     close: async () => {
       await verifier.close()
       await new Promise<void>((resolve) => index.close(() => resolve()))
       await new Promise<void>((resolve) => connector.close(() => resolve()))
       await running.close()
+      await resend.close()
       rmSync(dir, { recursive: true, force: true })
     },
   }

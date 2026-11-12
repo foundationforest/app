@@ -12,7 +12,7 @@
 // reviews. Every card is one height, rated or not, so a list never jumps as ratings come; on a
 // laptop, as many columns of about 300px as fit. New profile, while a market's role has no profile of
 // theirs, is always in reach: on a phone, a round mint + right after Your profiles; on a laptop, a
-// soft button at the right of it: light green, since it starts something.
+// soft button at the right of it: soft green, since it starts something.
 // Nothing on a card asks the passkey: the device keeps which profiles are the person's, and all a
 // card shows is public. Above them, when the Profiles folder holds a profile made on another
 // device, one row, New profiles from another device: one unlock reads them, and their cards show

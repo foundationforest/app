@@ -1,68 +1,63 @@
-// One AI app, from Your AI: its mint square, its name and the day it connected; under Acts for, the
-// person's profiles as checkboxes, ticked for those it acts for; and Disconnect at the foot, red,
-// asking again in its own place: Disconnect Claude?, with Cancel and Disconnect. Ticking adds a profile and unticking removes one, each with one unlock,
-// with no new login (flows/connections.ts, as the reference app adds and ends a key). The last one
-// stays ticked: its note is what finds the connection from the seed, and ending its key deletes it,
-// so a connection left with none could never be found again, to tick or to end. Disconnect ends the
-// connection: it stops at once, and what the AI wrote stays; then back to Your AI.
+// One AI app, opened in place under its row in Your AI (AiApps.tsx), as a passkey opens in Passkeys,
+// and closed by a second tap of the row: the person's profiles as ticks, ticked for those it acts for
+// (only those the device lists; a profile it has forgotten is not shown, nor counted); then one row
+// of buttons, Disconnect at the left, red, asking again in its own place (Disconnect Claude?, with
+// Cancel and Disconnect) and Save at the right, which makes the connection act for the ticked ones:
+// one unlock, no new login (flows/connections.ts, `actFor`, as the reference app adds and ends a
+// key). Ticking changes nothing until Save. The last one stays ticked: its note is what finds the
+// connection from the seed, and ending its key deletes it, so a connection left with none could
+// never be found again, to tick or to end. Disconnect ends the connection: it stops at once, and
+// what the AI wrote stays.
 
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 
 import { config } from '../config.ts'
 import { type Connection, passkey } from '../device.ts'
-import { addTo, end, removeFrom } from '../flows/connections.ts'
-import { useConnections, useProfiles } from '../hooks.ts'
-import { Icon } from '../icons.tsx'
+import { actFor, end } from '../flows/connections.ts'
 import { withSeed } from '../passkey.ts'
-import { AskAgain, Line, Top, day, useAction } from '../ui.tsx'
+import { Loader } from '../mark.tsx'
+import { AskAgain, Line, UnlockIcon, useAction } from '../ui.tsx'
 import { Ticks } from './Ticks.tsx'
 
-type Props = { address: string; onBack: () => void }
+type Props = { conn: Connection; labels: string[]; onDone: () => void }
 
-export function AiApp({ address, onBack }: Props) {
-  const labels = useProfiles().map((p) => p.label)
-  const now = useConnections().find((c) => c.address === address)
-  // What it showed last, while Disconnect ends its keys after the device has let it go.
-  const shown = useRef<Connection | undefined>(now)
-  if (now) shown.current = now
-  const conn = shown.current
-  const [busy, setBusy] = useState<string | null>(null)
-  const tick = useAction(async (label: string) => {
-    setBusy(label)
-    try {
-      const change = conn!.labels.includes(label) ? removeFrom : addTo
-      await withSeed(passkey()!, (seed) => change(config, seed, address, label))
-    } finally {
-      setBusy(null)
-    }
+export function AiApp({ conn, labels, onDone }: Props) {
+  // The profiles it acts for among those the device lists.
+  const acts = conn.labels.filter((l) => labels.includes(l))
+  const [ticked, setTicked] = useState(() => new Set(acts))
+  const [asking, setAsking] = useState(false)
+  const add = [...ticked].filter((l) => !acts.includes(l))
+  const remove = acts.filter((l) => !ticked.has(l))
+  const save = useAction(async () => {
+    await withSeed(passkey()!, (seed) => actFor(config, seed, conn.address, add, remove))
+    onDone()
   })
   const off = useAction(async () => {
-    await withSeed(passkey()!, (seed) => end(config, seed, address))
-    onBack()
+    await withSeed(passkey()!, (seed) => end(config, seed, conn.address))
+    onDone()
   })
-  if (!conn) return null
-  const working = tick.busy || off.busy
+  const working = save.busy || off.busy
+  const tick = (label: string) =>
+    setTicked((was) => {
+      const now = new Set(was)
+      if (!now.delete(label)) now.add(label)
+      return now
+    })
   return (
-    <main>
-      <Top onBack={onBack} clear />
-      <div className="app-head">
-        <span className="sq mint">
-          <Icon name="sparkle" fill />
-        </span>
-        <div className="two">
-          <h1>{conn.name}</h1>
-          <span>Connected {day(conn.time)}</span>
-        </div>
+    <div className="exp" role="group" aria-label={conn.name}>
+      <Ticks labels={labels} ticked={ticked} onTick={tick} disabled={working} fixed={ticked.size === 1 ? [...ticked][0]! : null} />
+      <Line note={save.note} />
+      <div className="exp-buttons">
+        <AskAgain words="Disconnect" ask={`Disconnect ${conn.name}?`} unlock busy={off.busy} disabled={save.busy} note={off.note} onAsking={setAsking} onYes={() => off.run()} />
+        {!asking && (
+          <>
+            <span className="grow" />
+            <button type="button" className="primary small" disabled={working || add.length + remove.length === 0} onClick={() => save.run()}>
+              {save.busy ? <Loader /> : <><UnlockIcon /> Save</>}
+            </button>
+          </>
+        )}
       </div>
-      <div className="stack">
-        <h2>Acts for</h2>
-        <Ticks labels={labels} ticked={new Set(conn.labels)} onTick={(label) => void tick.run(label)} disabled={working} fixed={conn.labels.length === 1 ? conn.labels[0] : null} busy={busy} />
-      </div>
-      <Line note={tick.note} />
-      <div className="fill" />
-      <div className="foot">
-        <AskAgain words="Disconnect" ask={`Disconnect ${conn.name}?`} look="danger" unlock busy={off.busy} disabled={working} note={off.note} onYes={() => off.run()} />
-      </div>
-    </main>
+    </div>
   )
 }

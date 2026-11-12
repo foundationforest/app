@@ -7,14 +7,13 @@
 // the top of Notifications), what a market outgrew, to update, a profile, its messages, its Reviews
 // and a review received, someone else's profile (a tap on another profile wherever it shows; one
 // of the person's own opens as theirs), a listing, Review someone, a thread, a new message, Get verified (a check
-// to add), Passkeys, Add a passkey and Your 24 words, Your AI, an AI
-// app and Connect your AI, or About Forest. Back wherever there is somewhere to go back to: Get
+// to add), Passkeys, Add a passkey and Your 24 words, Your AI (an AI app opens in place) and Connect your AI, Email, or About Forest. Back wherever there is somewhere to go back to: Get
 // verified to Start, Your 24 words to No passkey found. A check runs at Stripe and Didit in this tab:
 // back from Stripe's page (/paid) or Didit's (/back), the page opens on Get verified, in setup too,
 // which goes on by itself, and comes back to the checks once it's done; from Start, Continue goes on
 // to the first profile. A step done (a passkey made, verified, a profile made) can't be undone by
 // back: Get verified has Continue, Your first profile Later, Connect your AI Skip. On a
-// laptop, every setup screen sits beside the deep green panel (screens/Setup.tsx); every screen past
+// laptop, every setup screen sits beside the Start panel (screens/Setup.tsx); every screen past
 // setup sits in the frame (frame.tsx): on a phone, the places' tabs at the bottom of each place; on a
 // laptop, the sidebar beside every one, and Messages and a thread side by side, in two panes
 // (screens/Panes.tsx).
@@ -44,10 +43,10 @@ import { NotPassed, type Step, stepOf } from './flows/verify.ts'
 import { useNewVersion, useProfiles } from './hooks.ts'
 import { opened } from './opened.ts'
 import { About } from './screens/About.tsx'
-import { AiApp } from './screens/AiApp.tsx'
 import { AiApps } from './screens/AiApps.tsx'
 import { AddPasskey } from './screens/AddPasskey.tsx'
 import { Connect, blocked } from './screens/Connect.tsx'
+import { Email } from './screens/Email.tsx'
 import { ConnectAi } from './screens/ConnectAi.tsx'
 import { Home } from './screens/Home.tsx'
 import { Message } from './screens/Message.tsx'
@@ -91,7 +90,7 @@ type Screen =
   | { at: 'connect'; connector: string; request: string }
   | { at: 'connect-ai'; setup?: boolean }
   | { at: 'ai-apps' }
-  | { at: 'ai'; address: string }
+  | { at: 'email' }
   | { at: 'passkeys' }
   | { at: 'add-passkey' }
   | { at: 'words' }
@@ -177,6 +176,8 @@ function here(): Screen {
       return { at: 'words' }
     case '/ai-apps':
       return { at: 'ai-apps' }
+    case '/email':
+      return { at: 'email' }
     case '/about':
       return { at: 'about' }
   }
@@ -187,7 +188,6 @@ function here(): Screen {
   if (path === '/listing' && isText(now.address)) return { at: 'listing', address: now.address, ...(now.edit && { edit: now.edit }) }
   if (path === '/review' && isText(now.address)) return { at: 'review', address: now.address, ...(now.edit && { edit: now.edit }), ...(isText(now.subject) && { subject: now.subject }), ...(now.report && { report: true }) }
   if (path === '/thread' && isText(now.mine) && isText(now.them)) return { at: 'thread', mine: now.mine, them: now.them, ...(isText(now.only) && { only: now.only }) }
-  if (path === '/ai' && isText(now.address)) return { at: 'ai', address: now.address }
   if (path === '/connect-ai') return { at: 'connect-ai', ...(now.setup && { setup: true }) }
   return { at: 'home' }
 }
@@ -217,8 +217,6 @@ function keptOf(to: Screen): Kept {
       return to.to ? { to: to.to } : {}
     case 'connect':
       return { connector: to.connector, request: to.request }
-    case 'ai':
-      return { address: to.address }
     case 'connect-ai':
     case 'verify':
       return to.setup ? { setup: true } : {}
@@ -310,7 +308,7 @@ function Screens() {
     profile: (address) => go({ at: 'profile', address }, true),
     newProfile: () => go({ at: 'new' }, true),
   }
-  // The screen; in setup, on a laptop, the deep green panel beside it; past setup, the frame around it.
+  // The screen; in setup, on a laptop, the Start panel beside it; past setup, the frame around it.
   const on = onOf(screen)
   const shown = view()
   if (!on) return screen.at === 'start' || screen.at === 'connect' ? shown : <Setup>{shown}</Setup>
@@ -427,21 +425,21 @@ function Screens() {
       case 'message':
         return <Message {...(screen.to && { to: screen.to })} onSent={(mine, them) => go({ at: 'thread', mine, them })} onBack={back} />
       case 'you':
-        return <You onForgot={() => go({ at: 'start' })} onCheck={addCheck} onPasskeys={() => go({ at: 'passkeys' }, true)} onAiApps={() => go({ at: 'ai-apps' }, true)} onAbout={() => go({ at: 'about' }, true)} />
+        return <You onForgot={() => go({ at: 'start' })} onCheck={addCheck} onPasskeys={() => go({ at: 'passkeys' }, true)} onAiApps={() => go({ at: 'ai-apps' }, true)} onEmail={() => go({ at: 'email' }, true)} onAbout={() => go({ at: 'about' }, true)} />
       case 'passkeys':
         return (
 <Passkeys onBack={back} onAdd={() => go({ at: 'add-passkey' }, true)} onWords={() => go({ at: 'words' }, true)} />
         )
       case 'ai-apps':
-        return <AiApps onBack={back} onAiApp={(address) => go({ at: 'ai', address }, true)} onConnect={() => go({ at: 'connect-ai' }, true)} />
+        return <AiApps onBack={back} onConnect={() => go({ at: 'connect-ai' }, true)} />
+      case 'email':
+        return <Email onBack={back} />
       case 'about':
         return <About onBack={back} />
       case 'connect':
         return <Connect connector={screen.connector} request={screen.request} />
       case 'connect-ai':
         return <ConnectAi setup={screen.setup === true} onBack={back} onDone={() => go({ at: 'home' })} />
-      case 'ai':
-        return <AiApp address={screen.address} onBack={back} />
       case 'add-passkey':
         return <AddPasskey onDone={back} onBack={back} />
       case 'words':
@@ -481,7 +479,7 @@ function onOf(s: Screen): On | null {
     case 'add-passkey':
     case 'words':
     case 'ai-apps':
-    case 'ai':
+    case 'email':
     case 'about':
       return 'you'
     default:
