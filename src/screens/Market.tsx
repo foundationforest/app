@@ -47,8 +47,8 @@ export function Market({ market, mine, note, busy, onPick, onOpen, onBack }: Pro
             <button key={p.label} className="big-choice" disabled={busy} onClick={() => onOpen(had.address)}>
               <Avatar label={p.label} />
               <strong className="grow">{roleWords(p.role)}</strong>
-              <span className="have" role="img" aria-label="Yours">
-                <Icon name="check-circle" fill />
+              <span className="got lg" role="img" aria-label="Yours">
+                <Icon name="check" bold />
               </span>
             </button>
           ) : (

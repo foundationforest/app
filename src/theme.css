@@ -1,15 +1,17 @@
 /* The app's look. Tokens by role: the page's ground (bg), cards on it (card), what sits sunk in it
    (sunk); three inks, strongest first; two hairlines; the edge that alone marks a field or a tick
-   box; two greens, one rule: dark green (forest) finishes something (Create, Post, Save, Send,
-   Continue, and unread counts, your own messages, ticked boxes), light green (mint, and its own
-   dark ink) starts or marks something (New, Review, Add, badges, chips, links); deep green for
-   Start's ground; sun for stars and warnings, red for errors, reports and removing. Dark is its own
-   set; the device's setting picks one unless data-theme on <html> says otherwise. Every text 4.5:1
-   against what is behind it, every icon and needed edge 3:1, light and dark (test/contrast.test.ts);
-   the star beside a rating, decorative, is the one left out. Figtree sets every word: titles,
-   prices and scores at 800, a little tight. The name Forest, where the app writes it as a name, is
-   drawn from Fraunces once (wordmark.tsx), so no other font is downloaded. Phone first; from 900px
-   the sidebar (frame.tsx). */
+   box; two greens in each look, and nothing else green: the strong one (forest) finishes something
+   (Create, Post, Save, Send, Continue, and unread counts, your own messages, ticked boxes) and is
+   the ink on the soft one; the soft one (mint) starts or marks something (New, Review, Add, badges,
+   chips, a check that says you have it). Start's ground is the strong green in the light look and
+   the soft green in the dark one; sun for stars and warnings, red for errors, reports and removing.
+   Dark is its own set; the device's setting picks one unless data-theme on <html> says otherwise.
+   Every text 4.5:1 against what is behind it, every icon and needed edge 3:1, light and dark
+   (test/contrast.test.ts), and the build test fails on any other green (test/build.test.ts); the
+   star beside a rating, decorative, is the one left out. Figtree sets every word: titles, prices
+   and scores at 800, a little tight. The name Forest, where the app writes it as a name, is drawn
+   from Fraunces once (wordmark.tsx), so no other font is downloaded. Phone first; from 900px the
+   sidebar (frame.tsx). */
 :root {
   --bg: #f2f0e8;
   --card: #fdfcf8;
@@ -22,11 +24,7 @@
   --edge: #8a8a7f;
   --forest: #1e5e43;
   --on-forest: #f7f5ee;
-  --deep: #123a2a;
-  --on-deep: #f2f0e8;
-  --on-deep2: #a9c4b5;
   --mint: #dcedde;
-  --on-mint: #174a35;
   --sun: #e8a317;
   --sun-bg: #fbefcc;
   --on-sun: #6b4a00;
@@ -35,10 +33,14 @@
   --on-danger: #ffffff;
   --seg-on: var(--card);
   --shadow: 0 1px 2px rgb(17 26 21 / 0.05), 0 10px 28px -14px rgb(17 26 21 / 0.18);
-  /* Start's one button, cream on the deep green in both looks; a red that reads on the deep green. */
+  /* Start's ground and what is written on it: the strong green in this look (the soft one in the dark
+     look); its quiet text and a red that reads on it. Its one button, cream, in both looks. */
+  --start: var(--forest);
+  --on-start: var(--on-forest);
+  --on-start2: #d3dbd6;
+  --on-start-danger: #ffc4b8;
   --cream: #f2f0e8;
-  --on-cream: #123a2a;
-  --on-deep-danger: #f08a78;
+  --on-cream: var(--forest);
   /* A market's tile: its color on this much of it over the card; its first word, over the rest of
      its name, this much of it toward the ink (the light avatar's). */
   --tile-tint: 13%;
@@ -65,17 +67,18 @@
     --edge: #626d65;
     --forest: #7fd1a3;
     --on-forest: #0e1511;
-    --deep: #1c3d2d;
-    --on-deep: #eef0ea;
-    --on-deep2: #9dbcab;
     --mint: #1f3529;
-    --on-mint: #a8dfc0;
     --sun: #f0b93b;
     --sun-bg: #3a2e12;
     --on-sun: #f4d58a;
     --danger: #f08a78;
     --danger-bg: #3a1c16;
     --on-danger: #1a0c09;
+    --start: var(--mint);
+    --on-start: var(--ink);
+    --on-start2: var(--ink2);
+    --on-start-danger: var(--danger);
+    --on-cream: var(--bg);
     --seg-on: var(--line2);
     --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 10px 28px -14px rgb(0 0 0 / 0.6);
     --tile-tint: 18%;
@@ -98,17 +101,18 @@
   --edge: #626d65;
   --forest: #7fd1a3;
   --on-forest: #0e1511;
-  --deep: #1c3d2d;
-  --on-deep: #eef0ea;
-  --on-deep2: #9dbcab;
   --mint: #1f3529;
-  --on-mint: #a8dfc0;
   --sun: #f0b93b;
   --sun-bg: #3a2e12;
   --on-sun: #f4d58a;
   --danger: #f08a78;
   --danger-bg: #3a1c16;
   --on-danger: #1a0c09;
+  --start: var(--mint);
+  --on-start: var(--ink);
+  --on-start2: var(--ink2);
+  --on-start-danger: var(--danger);
+  --on-cream: var(--bg);
   --seg-on: var(--line2);
   --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 10px 28px -14px rgb(0 0 0 / 0.6);
   --tile-tint: 18%;
@@ -251,7 +255,7 @@ main {
   height: 22px;
 }
 
-/* Buttons: one filled dark green per screen, for the main action, what finishes something; plain (the card, with an edge),
+/* Buttons: one filled strong green per screen, for the main action, what finishes something; plain (the card, with an edge),
    soft (mint) and text (quiet) for the rest; red text only to remove or report, filled red to
    confirm it. */
 button {
@@ -280,7 +284,7 @@ button:disabled {
 
 button:focus-visible,
 a:focus-visible {
-  outline: 2px solid var(--on-mint);
+  outline: 2px solid var(--forest);
   outline-offset: 2px;
 }
 
@@ -297,7 +301,7 @@ button.primary {
 
 button.soft {
   background: var(--mint);
-  color: var(--on-mint);
+  color: var(--forest);
   box-shadow: none;
 }
 
@@ -444,7 +448,7 @@ button.solid .icon {
 .loader.big {
   display: block;
   margin: 24px auto;
-  color: var(--on-mint);
+  color: var(--forest);
   /* Only once the wait passes half a second: a shorter one shows nothing. */
   animation: late 0s linear 0.5s both;
 }
@@ -717,7 +721,7 @@ span.chip .icon {
 
 .chip.new {
   background: var(--mint);
-  color: var(--on-mint);
+  color: var(--forest);
 }
 
 .chip.warn {
@@ -832,7 +836,7 @@ span.chip.beta {
   font-size: 32px;
 }
 
-/* The two badges: one mint square each, an icon in the mint's dark green inside telling them apart
+/* The two badges: one mint square each, an icon in the strong green inside telling them apart
    (a face being scanned, an ID card); tapped where one stands alone, its words, right after it. */
 .vb {
   position: relative;
@@ -843,7 +847,7 @@ span.chip.beta {
   height: 22px;
   border-radius: 7px;
   background: var(--mint);
-  color: var(--on-mint);
+  color: var(--forest);
 }
 
 .vb.alone {
@@ -978,7 +982,7 @@ span.chip.beta {
 }
 
 .tabbar button.on {
-  color: var(--on-mint);
+  color: var(--forest);
   font-weight: 800;
 }
 
@@ -1001,7 +1005,7 @@ span.chip.beta {
 }
 
 .tabbar .on .icon {
-  color: var(--on-mint);
+  color: var(--forest);
 }
 
 .tabbar .count {
@@ -1306,13 +1310,13 @@ input[type='range'] {
   box-shadow: none;
   background: none;
   padding: 0;
-  accent-color: var(--on-mint);
+  accent-color: var(--forest);
 }
 
 input:focus,
 textarea:focus,
 select:focus {
-  outline: 2px solid var(--on-mint);
+  outline: 2px solid var(--forest);
   outline-offset: 1px;
 }
 
@@ -1367,7 +1371,7 @@ button.chip.here {
   overflow-wrap: anywhere;
 }
 
-/* Drawn here, not the browser's, so Safari hides its thumb too: a plain track, the thumb in the mint's dark green. */
+/* Drawn here, not the browser's, so Safari hides its thumb too: a plain track, the thumb in the strong green. */
 .score input[type='range'] {
   -webkit-appearance: none;
   appearance: none;
@@ -1395,7 +1399,7 @@ button.chip.here {
   margin-top: -10px;
   border: none;
   border-radius: 50%;
-  background: var(--on-mint);
+  background: var(--forest);
 }
 
 .score input[type='range']::-moz-range-thumb {
@@ -1403,7 +1407,7 @@ button.chip.here {
   height: 26px;
   border: none;
   border-radius: 50%;
-  background: var(--on-mint);
+  background: var(--forest);
 }
 
 .score input.untouched::-webkit-slider-thumb {
@@ -1731,7 +1735,7 @@ button.chip.here {
 }
 
 .map-pin {
-  color: var(--on-mint);
+  color: var(--forest);
   cursor: grab;
 }
 
@@ -1771,12 +1775,13 @@ button.chip.here {
   display: none;
 }
 
-/* Getting in. Start: the deep green, the mark and Forest, one cream button, and what it says in
-   light tones on that ground; Didit's way back looks the same. */
+/* Getting in. Start: the strong green (the soft green in the dark look), the mark and Forest, one
+   cream button, and what it says in the look's own text colours on that ground; Didit's way back
+   looks the same. */
 main.start {
   max-width: none;
-  background: var(--deep);
-  color: var(--on-deep);
+  background: var(--start);
+  color: var(--on-start);
 }
 
 main.start > * {
@@ -1796,11 +1801,11 @@ main.start > * {
 }
 
 main.start > .line {
-  color: var(--on-deep2);
+  color: var(--on-start2);
 }
 
 main.start > .line.red {
-  color: var(--on-deep-danger);
+  color: var(--on-start-danger);
 }
 
 button.cream {
@@ -1827,11 +1832,11 @@ button.cream .icon {
   font-weight: 800;
   line-height: 1.15;
   letter-spacing: -0.025em;
-  color: var(--on-deep);
+  color: var(--on-start);
 }
 
 .asked p {
-  color: var(--on-deep2);
+  color: var(--on-start2);
 }
 
 .asked .stack {
@@ -1840,23 +1845,23 @@ button.cream .icon {
 }
 
 .asked .line {
-  color: var(--on-deep2);
+  color: var(--on-start2);
 }
 
 .asked .line.red {
-  color: var(--on-deep-danger);
+  color: var(--on-start-danger);
 }
 
 .asked button.quiet {
   min-height: 44px;
-  color: var(--on-deep2);
+  color: var(--on-start2);
   font-size: 16px;
 }
 
 button.ghost {
   background: none;
-  color: var(--on-deep);
-  box-shadow: inset 0 0 0 1px var(--on-deep2);
+  color: var(--on-start);
+  box-shadow: inset 0 0 0 1px var(--on-start2);
 }
 
 button.ghost .icon {
@@ -1870,7 +1875,7 @@ button.ghost .icon {
   color: var(--ink2);
 }
 
-/* A setup screen on a laptop: the deep green panel on the left, the screen centred on the right; on
+/* A setup screen on a laptop: the Start panel on the left, the screen centred on the right; on
    a phone, the screen alone. */
 .setup {
   flex: 1 0 auto;
@@ -1900,8 +1905,8 @@ button.ghost .icon {
     align-items: center;
     justify-content: center;
     gap: 20px;
-    background: var(--deep);
-    color: var(--on-deep);
+    background: var(--start);
+    color: var(--on-start);
   }
 
   .setup-panel .wordmark {
@@ -2025,7 +2030,7 @@ button.vcard:disabled,
   padding: 0 11px;
   border-radius: 999px;
   background: var(--mint);
-  color: var(--on-mint);
+  color: var(--forest);
   font-weight: 700;
   font-size: 14px;
   display: inline-flex;
@@ -2053,7 +2058,7 @@ button.vcard:disabled,
   height: 48px;
   border-radius: 14px;
   background: var(--mint);
-  color: var(--on-mint);
+  color: var(--forest);
 }
 
 .vico .icon {
@@ -2081,10 +2086,8 @@ button.vcard:disabled,
   color: var(--ink2);
 }
 
-.vlist .icon {
-  width: 18px;
-  height: 18px;
-  color: var(--on-mint);
+.vlist .got {
+  flex: none;
 }
 
 /* A quiet green word under Get verified's cards: I already use Forest, in the middle; What the
@@ -2096,7 +2099,7 @@ button.green-text {
   background: none;
   box-shadow: none;
   font-size: 15px;
-  color: var(--on-mint);
+  color: var(--forest);
   gap: 6px;
 }
 
@@ -2319,7 +2322,7 @@ button.big-choice {
   height: 52px;
   border-radius: 16px;
   background: var(--mint);
-  color: var(--on-mint);
+  color: var(--forest);
 }
 
 .ai-mark .icon {
@@ -2523,7 +2526,7 @@ button.card.said-card {
 
 .sq.mint {
   background: var(--mint);
-  color: var(--on-mint);
+  color: var(--forest);
 }
 
 .sq.red {
@@ -2871,11 +2874,11 @@ button.round.soft {
 }
 
 .score input[type='range']::-webkit-slider-runnable-track {
-  background: linear-gradient(to right, var(--on-mint) var(--at, 0%), var(--edge) var(--at, 0%));
+  background: linear-gradient(to right, var(--forest) var(--at, 0%), var(--edge) var(--at, 0%));
 }
 
 .score input[type='range']::-moz-range-track {
-  background: linear-gradient(to right, var(--on-mint) var(--at, 0%), var(--edge) var(--at, 0%));
+  background: linear-gradient(to right, var(--forest) var(--at, 0%), var(--edge) var(--at, 0%));
 }
 
 .score input[type='range']::-webkit-slider-thumb {
@@ -2883,14 +2886,14 @@ button.round.soft {
   height: 32px;
   margin-top: -13px;
   background: var(--card);
-  box-shadow: 0 0 0 2px var(--on-mint), 0 4px 10px -2px rgb(17 26 21 / 0.3);
+  box-shadow: 0 0 0 2px var(--forest), 0 4px 10px -2px rgb(17 26 21 / 0.3);
 }
 
 .score input[type='range']::-moz-range-thumb {
   width: 32px;
   height: 32px;
   background: var(--card);
-  box-shadow: 0 0 0 2px var(--on-mint), 0 4px 10px -2px rgb(17 26 21 / 0.3);
+  box-shadow: 0 0 0 2px var(--forest), 0 4px 10px -2px rgb(17 26 21 / 0.3);
 }
 
 .score .ends {
@@ -3376,7 +3379,7 @@ button.addround {
   padding: 0;
   border-radius: 50%;
   background: var(--mint);
-  color: var(--on-mint);
+  color: var(--forest);
   box-shadow: none;
 }
 
@@ -3503,6 +3506,23 @@ main.home .titled > button.new-profile {
   display: none;
 }
 
+/* Messages before it is opened, on a laptop: the lock, Open your messages and Open are one block, in
+   the middle of the whole content, not in a pane; there is nothing to pick yet. */
+.panes:has(> .pane-list > .closed) > .pane-list {
+  flex: 1;
+  border-right: 0;
+}
+
+.panes:has(> .pane-list > .closed) > .pane-open {
+  display: none;
+}
+
+.pane-body.closed {
+  width: 100%;
+  max-width: 32rem;
+  margin-inline: auto;
+}
+
 .pane-list .filters {
   margin: 0 -16px;
   padding: 0 16px 2px;
@@ -3548,7 +3568,7 @@ button.minipill {
   padding: 0 10px;
   border-radius: 999px;
   background: var(--mint);
-  color: var(--on-mint);
+  color: var(--forest);
   box-shadow: none;
   font-size: 13px;
   gap: 4px;
@@ -3556,7 +3576,7 @@ button.minipill {
 }
 
 button.minipill.on {
-  box-shadow: inset 0 0 0 1px var(--on-mint);
+  box-shadow: inset 0 0 0 1px var(--forest);
 }
 
 button.minipill .icon {
@@ -3581,14 +3601,33 @@ button.minipill .icon {
   line-height: 1.25;
 }
 
-.big-choice .have {
+/* A check that says you have this (a role you hold, what a check on Get verified gives): the soft
+   green's circle, the check in the strong green. */
+.got {
   display: inline-flex;
-  color: var(--on-mint);
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--mint);
+  color: var(--forest);
 }
 
-.big-choice .have .icon {
-  width: 26px;
-  height: 26px;
+.got .icon {
+  width: 12px;
+  height: 12px;
+  color: inherit;
+}
+
+.got.lg {
+  width: 28px;
+  height: 28px;
+}
+
+.got.lg .icon {
+  width: 17px;
+  height: 17px;
 }
 
 button.create {
@@ -3618,16 +3657,42 @@ button.create .icon {
   font-size: 16.5px;
 }
 
-.mainchip {
+.mainchip,
+.backupchip {
   display: inline-flex;
   align-items: center;
   height: 24px;
   padding: 0 9px;
   border-radius: 999px;
   background: var(--mint);
-  color: var(--on-mint);
+  color: var(--forest);
   font-size: 12.5px;
   font-weight: 700;
+}
+
+/* Every passkey but the first: Backup, in neutral grey, so it reads differently from Main's mint. */
+.backupchip {
+  background: var(--sunk);
+  color: var(--ink2);
+}
+
+/* A passkey's Name field with Save at its right, on the same line. */
+.name-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.name-row > .field {
+  flex: 1;
+  min-width: 0;
+}
+
+.name-row > button.small {
+  flex: none;
+  min-height: 46px;
+  padding: 0 18px;
+  font-size: 16px;
 }
 
 /* A profile's header, the person's or someone else's: its market small in its color, its role big
@@ -3872,7 +3937,7 @@ a.out {
   min-height: 40px;
   padding: 0 4px;
   align-self: flex-start;
-  color: var(--on-mint);
+  color: var(--forest);
   font-weight: 600;
   text-decoration: none;
 }

@@ -139,13 +139,14 @@ const HOST: Record<string, Line> = {
   method: HOST_DOWN,
   invalid: HOST_DOWN,
   no_credits: HOST_DOWN,
-  // The morning email's (host/src/email.ts), which the app doesn't ask for yet: its Email screens will word each.
+  // The morning email's (host/src/email.ts, the Email screen). `unknown` is the email turned off
+  // elsewhere: the flow shows it as Off and says nothing (flows/email.ts), so its line is never read.
   not_signed: HOST_DOWN,
-  not_here: HOST_DOWN,
-  too_soon: HOST_DOWN,
-  code: HOST_DOWN,
+  not_here: ["One of these profiles isn't on this host yet.", false],
+  too_soon: ['Wait a minute, then send a new code.', false],
+  code: ["That code isn't right, or it has expired. Send a new one.", false],
   unknown: HOST_DOWN,
-  not_sent: HOST_DOWN,
+  not_sent: ["The email didn't go out. Try again.", false],
   // A reader's, never a host's answer: what the app's own reading throws, which says SOMETHING (ui.tsx, noteOf).
   locked: OURS,
   to: OURS,

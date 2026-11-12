@@ -3,19 +3,21 @@
 // hosts, a `label/<id>` entry for each profile and a `stamp/<id>` entry for each stamp, each at a
 // random id and locked to the folder's own open key alone; and, as the standard's example keeps them,
 // a `backup/<id>` entry for each backup passkey (flows/backups.ts); and the app's own `names` entry,
-// the names the person gave others (flows/names.ts). Its balance at the host is the wallet, where
+// the names the person gave others (flows/names.ts), and `email` entry, the morning email if it is
+// on (flows/email.ts). Its balance at the host is the wallet, where
 // the gift lands and which funds every new folder; its own writes are paid from it.
 // Each time it is opened, and each label written, the device keeps the folder's address and the
 // label entries read, so Profiles can tell, with nothing unlocked, one made on another device; and,
-// each time it is opened, the names it holds.
+// each time it is opened, the names it holds and whether the morning email is on.
 
 import { type Body, type View, entry, hex, liveContent } from '@foundationforest/folders'
 import { isLocked, lock, openLocked } from '@foundationforest/folders/locked'
 import { type MainKey, mainKey, openingHalf } from '@foundationforest/keys'
 
-import { keepNames, readLabels } from '../device.ts'
+import { keepEmail, keepNames, readLabels } from '../device.ts'
 import { NoCredits } from '../services/credits.ts'
 import { NotWritten, readView, writeAll } from '../services/host.ts'
+import { emailIn } from './email.ts'
 import { namesIn } from './names.ts'
 
 /** The Profiles folder as the host serves it, opened: its main key, its view, and the labels and stamps it lists. */
@@ -55,6 +57,7 @@ export async function openProfiles(seed: Uint8Array, host: string): Promise<Open
   const stamps = (await opened(view, 'stamp', identity)).map((o) => o.body.stamp).filter((s): s is string => typeof s === 'string')
   readLabels(key.address, read)
   keepNames(await namesIn(view, identity))
+  keepEmail(await emailIn(view, identity))
   return { key, view, labels: [...new Set(Object.values(read).filter(Boolean))].sort(), stamps }
 }
 

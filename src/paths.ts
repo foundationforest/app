@@ -20,11 +20,11 @@ export const PATHS = {
   you: '/you',
   connect: '/connect',
   'connect-ai': '/connect-ai',
-  ai: '/ai',
   passkeys: '/passkeys',
   'add-passkey': '/passkey',
   words: '/words',
   'ai-apps': '/ai-apps',
+  email: '/email',
   about: '/about',
 } as const
 

@@ -27,6 +27,7 @@ import { contactHref } from '../src/show.ts'
 import { BG as THEME_BG } from '../src/theme.ts'
 import { HOST_CODES, SOMETHING, VERIFIER_CODES, entrySays, fieldWords, hostSays, verifierSays } from '../src/words.ts'
 import { oneRole, twoSides } from './directory.ts'
+import { GREEN, GREEN_NAMES, colorsIn, isGreen } from './green.ts'
 
 const vercel = JSON.parse(readFileSync(new URL('../vercel.json', import.meta.url), 'utf8'))
 const csp: string = vercel.headers.find((h: any) => h.source === '/(.*)').headers.find((h: any) => h.key === 'Content-Security-Policy').value
@@ -168,6 +169,14 @@ test("every code the verifier, the host and the standard list has its own plain 
   expect(verifierSays('face_seen').message).toBe('A similar face is already verified. Verify with your ID instead.')
   for (const code of ['not_paid', 'payment_used']) expect(verifierSays(code, 'id').message, code).toBe('Your tries are used up. Nothing was charged. Pay again to continue.')
   expect(verifierSays('not_for_sale').message).toBe("The ID check isn't available yet.")
+  // The morning email's: each in its own line; `unknown` is shown as Off, never said, and the rest are the general line.
+  expect(['too_soon', 'not_sent', 'code', 'not_here'].map((code) => hostSays(code).message)).toEqual([
+    'Wait a minute, then send a new code.',
+    "The email didn't go out. Try again.",
+    "That code isn't right, or it has expired. Send a new one.",
+    "One of these profiles isn't on this host yet.",
+  ])
+  for (const code of ['not_signed', 'bad_request']) expect(hostSays(code).message, code).toBe(hostSays('invalid').message)
   expect(verifierSays('a_code_from_tomorrow').message).toBe(SOMETHING)
 })
 
@@ -192,6 +201,33 @@ test("every colour the app writes outside theme.css: theme.css's ground and ink,
   const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8')
   const meta = (scheme: string) => new RegExp(`<meta name="theme-color" content="(#[0-9a-f]{6})" media="\\(prefers-color-scheme: ${scheme}\\)"`, 'i').exec(html)?.[1]?.toLowerCase()
   expect([meta('light'), meta('dark')], "index.html's theme colours").toEqual([light.bg, dark.bg])
+})
+
+test('two greens, exactly: in each look the strong one (--forest) and the soft one (--mint), and no other color the app writes is green', () => {
+  const css = readFileSync(new URL('../src/theme.css', import.meta.url), 'utf8')
+  const block = (selector: string) => css.slice(css.indexOf(selector)).split('}')[0]!
+  const token = (selector: string, name: string) => new RegExp(`--${name}:\\s*(#[0-9a-f]{6});`, 'i').exec(block(selector))![1]!.toLowerCase()
+  const looks = [':root {', ":root[data-theme='dark'] {"]
+  const allowed = new Set(looks.flatMap((look) => ['forest', 'mint'].map((name) => token(look, name))))
+  expect(allowed.size, 'two greens in each look, four in all').toBe(4)
+  for (const hex of allowed) {
+    const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)) as [number, number, number]
+    expect(isGreen(r, g, b) || hex === token(':root {', 'mint'), `${hex} reads as green`).toBe(true)
+  }
+  const dirs = (dir: URL): URL[] => readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? dirs(new URL(`${e.name}/`, dir)) : [new URL(e.name, dir)]))
+  const files = [...dirs(new URL('../src/', import.meta.url)), ...dirs(new URL('../build/', import.meta.url)), new URL('../index.html', import.meta.url), new URL('../vite.config.ts', import.meta.url)].filter((f) => /\.(tsx?|css|html)$/.test(f.pathname))
+  expect(files.length, 'it reads the app').toBeGreaterThan(50)
+  const offenders: string[] = []
+  for (const file of files) {
+    const text = readFileSync(file, 'utf8')
+    for (const { written, rgb } of colorsIn(text)) if (isGreen(...rgb) && !allowed.has(written.toLowerCase())) offenders.push(`${file.pathname.split('/').slice(-2).join('/')}: ${written}`)
+    // A green written in a form this test cannot read would hide from it: only hex and rgb().
+    for (const form of text.match(/\b(?:hsla?|hwb|lab|lch|oklab|oklch|color)\(/g) ?? []) offenders.push(`${file.pathname.split('/').pop()}: ${form}`)
+  }
+  expect(offenders, `nothing green but --forest and --mint (hue ${GREEN.from} to ${GREEN.to}, chroma ${GREEN.chroma} or more)`).toEqual([])
+  // And no green by name in the stylesheet's declarations.
+  const declared = [...css.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/\{([^{}]*)\}/g)].flatMap(([, body]) => body!.split(';').map((d) => d.slice(d.indexOf(':') + 1)))
+  for (const name of GREEN_NAMES) expect(declared.filter((v) => new RegExp(`(?<![-\\w])${name}(?![-\\w])`, 'i').test(v)), name).toEqual([])
 })
 
 test('nothing floats: no sheet, no dialog, no scrim, anywhere in the app; only the device\'s own passkey prompt floats', () => {

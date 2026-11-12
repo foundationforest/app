@@ -201,6 +201,16 @@ export async function removeFrom(s: Where, seed: Uint8Array, address: string, la
   keep(c, (await labelsOf(c, listed)).filter((l) => l !== label))
 }
 
+/**
+ * The connection at `address` changed to act for the profiles it lacked (`add`) and no longer for
+ * `remove`, under the one seed, with no new login: the ones added first, so it never acts for none
+ * on the way (an AI app's folder is found from a profile it acts for).
+ */
+export async function actFor(s: Where, seed: Uint8Array, address: string, add: string[], remove: string[]): Promise<void> {
+  for (const label of add) await addTo(s, seed, address, label)
+  for (const label of remove) await removeFrom(s, seed, address, label)
+}
+
 /** The connection at `address` ended: its connection entry deleted first, so it stops at once, then each access key it holds ended. */
 export async function end(s: Where, seed: Uint8Array, address: string): Promise<void> {
   const { c } = await connectionAt(s, seed, address)

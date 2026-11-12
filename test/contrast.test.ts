@@ -1,8 +1,10 @@
 // Readable, light and dark: every text 4.5:1 against what is behind it, every icon and every edge
 // that alone marks a control 3:1, computed from theme.css's own tokens, and every avatar, solid and
 // light, and every market's badge on a picture, in each of the palette's ten colors. The star beside
-// a rating is decorative, the number beside it says the score, so it is left out. And green's one
-// rule: dark green only on what finishes something.
+// a rating is decorative, the number beside it says the score, so it is left out. And the greens:
+// two in each look, the strong one (forest) the ink on the soft one (mint), 4.5:1; Start's ground
+// is one of them, with its text on it. The strong green as a ground finishes something, nowhere
+// else. That nothing else is green is the build test's (build.test.ts).
 
 import { readFileSync } from 'node:fs'
 
@@ -54,17 +56,15 @@ const TEXT: Array<[string, string]> = [
   ['on-forest', 'forest'],
   ['forest', 'bg'],
   ['forest', 'card'],
-  ['on-mint', 'mint'],
-  ['on-mint', 'bg'],
-  ['on-mint', 'card'],
+  ['forest', 'mint'],
   ['on-sun', 'sun-bg'],
   ['danger', 'bg'],
   ['danger', 'card'],
   ['danger', 'danger-bg'],
   ['on-danger', 'danger'],
-  ['on-deep', 'deep'],
-  ['on-deep2', 'deep'],
-  ['on-deep-danger', 'deep'],
+  ['on-start', 'start'],
+  ['on-start2', 'start'],
+  ['on-start-danger', 'start'],
   ['on-cream', 'cream'],
   ['bg', 'ink'],
 ]
@@ -73,12 +73,11 @@ const TEXT: Array<[string, string]> = [
 const ICONS: Array<[string, string]> = [
   ['ink3', 'card'],
   ['ink2', 'card'],
-  ['on-mint', 'mint'],
+  ['forest', 'mint'],
   ['on-forest', 'forest'],
   ['forest', 'card'],
   ['forest', 'bg'],
-  ['on-mint', 'card'],
-  ['on-mint', 'bg'],
+  ['on-start', 'start'],
   ['edge', 'card'],
   ['edge', 'bg'],
 ]
@@ -127,11 +126,19 @@ test("the device's dark is the chosen dark", () => {
   expect(tokens(":root:not([data-theme='light']) {", LIGHT)).toEqual(DARK)
 })
 
-/** What finishes something, the one place dark green goes: the main button and Create, unread counts and the dot, your own messages, ticked boxes and picked radios. */
-const FINISHES = ['button.primary', 'a.button.primary', 'button.create', '.count', '.newpip', '.dot', '.said.mine', '.tick.on', '.radio.on']
+/** The score a review is given, set on its slider: the fill and the thumb, on the page's ground, where the soft green would not be seen (3:1) and the strong one is. */
+const SLIDER = ["input[type='range']::-webkit-slider-runnable-track", "input[type='range']::-webkit-slider-thumb", "input[type='range']::-moz-range-thumb", "input[type='range']::-moz-range-track"].map((s) => `.score ${s}`)
 
-test('green, one rule: dark green finishes something; everything else green is light green', () => {
-  const dark = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].filter(([, , body]) => body!.includes('var(--forest)')).map(([, selector]) => selector!.split('*/').at(-1)!.trim())
-  expect(dark.sort()).toEqual([...FINISHES].sort())
-  expect(css).not.toMatch(/--leaf/)
+/** What finishes something, the one place the strong green is a ground: the main button and Create, unread counts and the dot, your own messages, ticked boxes and picked radios, and the score a review is given. */
+const FINISHES = ['button.primary', 'a.button.primary', 'button.create', '.count', '.newpip', '.dot', '.said.mine', '.tick.on', '.radio.on', ...SLIDER]
+
+test('the greens: the strong green is a ground only where it finishes something; the soft one is the strong one\'s ground, and nothing else is', () => {
+  const rules = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(([, selector, body]) => ({ selector: selector!.split('*/').at(-1)!.trim(), body: body! }))
+  const strong = rules.filter(({ body }) => /background:[^;]*var\(--forest\)/.test(body)).map((r) => r.selector)
+  expect(strong.sort()).toEqual([...FINISHES].sort())
+  // The soft green's text is the strong green, the one pair the contrast tests above measure.
+  for (const { selector, body } of rules.filter(({ body }) => /background:\s*var\(--mint\)\s*;/.test(body))) {
+    if (/\bcolor:/.test(body)) expect(body, `${selector}: on the soft green, the strong green`).toMatch(/[^-]color:\s*var\(--forest\)/)
+  }
+  for (const gone of ['--on-mint', '--leaf', '--deep', '--on-deep']) expect(css, gone).not.toContain(gone)
 })

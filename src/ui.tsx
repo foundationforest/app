@@ -78,7 +78,7 @@ export const CHECK_ICON: Record<Check, IconName> = { face: 'scan-smiley', id: 'i
 
 /**
  * One check's badge, the one way the app says a profile is verified that way: a mint square, its
- * check's icon in the mint's dark green; the selfie's and the ID's differ only by the picture inside.
+ * check's icon in the strong green; the selfie's and the ID's differ only by the picture inside.
  * Its words are its label for screen readers and its title on hover. Inside a row or a card it
  * takes no tap of its own: tapped, it does what the row or card does (tick, open). Only where it
  * stands alone (`alone`: a profile's header, Home's title) does a tap say its words for a moment,
@@ -160,8 +160,8 @@ export const TickBox = ({ ticked }: { ticked: boolean }) => (
   </span>
 )
 
-/** A row that opens a screen of its own: its icon on a square (mint, `green`, for one that adds), its words, a quiet line, and a chevron unless it adds. */
-export function Opens({ icon, words, line, green = false, caret = !green, onClick }: { icon: IconName; words: string; line?: string; green?: boolean; caret?: boolean; onClick: () => void }) {
+/** A row that opens a screen of its own: its icon on a square (mint, `green`, for one that adds), its words, a quiet line, `value` at its right (Every morning), and a chevron unless it adds. */
+export function Opens({ icon, words, line, value, green = false, caret = !green, onClick }: { icon: IconName; words: string; line?: string; value?: string; green?: boolean; caret?: boolean; onClick: () => void }) {
   return (
     <button className="row" onClick={onClick}>
       <span className={green ? 'sq sm mint' : 'sq sm plain'}>
@@ -171,6 +171,7 @@ export function Opens({ icon, words, line, green = false, caret = !green, onClic
         <strong>{words}</strong>
         {line && <span>{line}</span>}
       </span>
+      {value && <span className="aside">{value}</span>}
       {caret && <Icon name="caret-right" className="car" />}
     </button>
   )

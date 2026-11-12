@@ -6,14 +6,14 @@
 // of what each posted, the same way; what is new on each;
 // whether a profile was made on another device; the messages opened in this page; the passkeys added
 // to the Profiles folder (backups, as the standard names them); whether a seed is held in it;
-// the names the person gave others; what the index says of anyone's profile; and whether a newer
+// the names the person gave others and the morning email; what the index says of anyone's profile; and whether a newer
 // version of the app is live.
 
 import { useEffect, useState } from 'react'
 
 import { config } from './config.ts'
 import { sawKeys } from './elsewhere-ai.ts'
-import { CHANGED, type Check, type Connection, type Profile, checks, connections, folder, names, profiles, seen, used } from './device.ts'
+import { CHANGED, type Check, type Connection, type Email, type Profile, checks, connections, email, folder, names, profiles, seen, used } from './device.ts'
 import { type Card, readCard } from './flows/cards.ts'
 import { type Backup, backupsAt } from './flows/backups.ts'
 import { type IdCheck, idCheckOf } from './flows/verify.ts'
@@ -59,6 +59,17 @@ export function useNames(): Record<string, string> {
     return () => removeEventListener(CHANGED, changed)
   }, [])
   return all
+}
+
+/** The morning email, as this device keeps it from the Profiles folder (none: Off), read again whenever that changes. */
+export function useEmail(): Email | null {
+  const [kept, setKept] = useState(email)
+  useEffect(() => {
+    const changed = () => setKept(email())
+    addEventListener(CHANGED, changed)
+    return () => removeEventListener(CHANGED, changed)
+  }, [])
+  return kept
 }
 
 /** What the index said of profiles, read once a page by address: public, so held while the page is open, never stored; a read that failed is read again next time. */

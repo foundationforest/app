@@ -4,7 +4,8 @@
 // what it gives, from the verifier's gifts as Get verified says it, and a plain Add, which opens Get
 // verified too. The ID shows only where the verifier sells it (GET /, `forSale`), or once it is done.
 // Then one card of rows: Your AI, with the apps' names (AiApps.tsx), and Passkeys, with how many
-// (Passkeys.tsx), and About Forest (About.tsx), each opening its own screen; last, Appearance, with
+// (Passkeys.tsx), and Email, with Every morning or Off at its right (Email.tsx), and About Forest
+// (About.tsx), each opening its own screen; last, Appearance, with
 // three icon buttons at its right, Auto, Light and Dark, each named for screen readers, a tap
 // applying it at once. At the foot, Forget this device, red text, asking again in its own place, Forget
 // this device?, with Cancel and Forget (forget.ts). Nothing here asks the passkey.
@@ -15,13 +16,13 @@ import { config } from '../config.ts'
 import { type Check, type Theme, saveTheme, theme as savedTheme } from '../device.ts'
 import { type CreditLines, creditsOf } from '../flows/verify.ts'
 import { forgetDevice } from '../forget.ts'
-import { useBackups, useChecks, useConnections, useIdCheck } from '../hooks.ts'
+import { useBackups, useChecks, useConnections, useEmail, useIdCheck } from '../hooks.ts'
 import { type IconName, Icon } from '../icons.tsx'
 import { applyTheme } from '../theme.ts'
 import { FORGET_LINE } from '../forget.ts'
 import { AskAgain, CHECK_ICON, Opens, Seg, Top } from '../ui.tsx'
 
-type Props = { onForgot: () => void; onCheck: (check: Check) => void; onPasskeys: () => void; onAiApps: () => void; onAbout: () => void }
+type Props = { onForgot: () => void; onCheck: (check: Check) => void; onPasskeys: () => void; onAiApps: () => void; onEmail: () => void; onAbout: () => void }
 
 /** The looks, each by its words and icon: the device's own is Auto. */
 export const THEMES: Array<[Theme, string, IconName]> = [
@@ -41,11 +42,12 @@ const givesOf = (check: Check, credits: CreditLines) => (check === 'id' ? ['Stro
 /** How many passkeys: 1 passkey, 2 passkeys. */
 const passkeyCount = (n: number) => `${n} passkey${n === 1 ? '' : 's'}`
 
-export function You({ onForgot, onCheck, onPasskeys, onAiApps, onAbout }: Props) {
+export function You({ onForgot, onCheck, onPasskeys, onAiApps, onEmail, onAbout }: Props) {
   const has = useChecks()
   const { forSale } = useIdCheck()
   const backups = useBackups()
   const aiApps = useConnections()
+  const emailOn = useEmail() !== null
   const [credits, setCredits] = useState<CreditLines>({})
   useEffect(() => {
     let live = true
@@ -98,6 +100,7 @@ export function You({ onForgot, onCheck, onPasskeys, onAiApps, onAbout }: Props)
       <div className="rows">
         <Opens icon="sparkle" words="Your AI" line={aiApps.map((c) => c.name).join(', ')} onClick={onAiApps} />
         <Opens icon="key" words="Passkeys" line={backups ? passkeyCount(backups.length + 1) : ''} onClick={onPasskeys} />
+        <Opens icon="envelope-simple" words="Email" value={emailOn ? 'Every morning' : 'Off'} onClick={onEmail} />
         <Opens icon="info" words="About Forest" onClick={onAbout} />
         <div className="row looks">
           <span className="sq sm plain">

@@ -7,7 +7,9 @@
 // One more setting than the end-to-end test's: APP_ORIGINS, the app's address in this test, where
 // the verifier lets Didit and Stripe send a person back; and Stripe, the verifier's own stand-in
 // (verifier/test/fakes.ts, FakePayments), so the ID check is for sale: the test pays a payment on its
-// page. `./standard.sh services` readies them.
+// page. And Resend's key at the host, with a stand-in Resend (../resend.ts) that keeps each email the
+// host is asked to send, so the Email page's code is read from it: no email goes anywhere.
+// `./standard.sh services` readies them.
 
 import { type ChildProcess, spawn } from 'node:child_process'
 import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
@@ -20,6 +22,7 @@ import { readConfig as hostConfig, startHost } from '../../services/host/src/hos
 import { startIndex } from '../../services/index/src/index.ts'
 import { readConfig as verifierConfig, startVerifier } from '../../services/verifier/src/service.ts'
 import { FakePayments } from '../../services/verifier/test/fakes.ts'
+import { type Sent, standInResend } from '../resend.ts'
 
 const services = fileURLToPath(new URL('../../services/', import.meta.url))
 
@@ -49,7 +52,7 @@ async function answers(url: string, child: ChildProcess): Promise<void> {
   }
 }
 
-export type Running = { verifier: string; host: string; index: string; faceKey: string; idKey: string; payments: FakePayments; stop(): Promise<void> }
+export type Running = { verifier: string; host: string; index: string; faceKey: string; idKey: string; payments: FakePayments; sent: Sent[]; stop(): Promise<void> }
 
 export async function startServices({ appOrigin, say }: { appOrigin: string; say: (line: string) => void }): Promise<Running> {
   const dir = mkdtempSync(join(tmpdir(), 'forest-app-browser-'))
@@ -95,7 +98,9 @@ export async function startServices({ appOrigin, say }: { appOrigin: string; say
     )
     closers.push(() => verifier.close())
     if (!verifier.sponsor) throw new Error('the verifier gives no gift')
-    const h = await startHost(hostConfig({ DATA_DIR: join(dir, 'host'), PUBLIC_ORIGIN: host, PORT: String(hostPort), SPONSORS: verifier.sponsor }))
+    const resend = await standInResend()
+    closers.push(() => resend.close())
+    const h = await startHost(hostConfig({ DATA_DIR: join(dir, 'host'), PUBLIC_ORIGIN: host, PORT: String(hostPort), SPONSORS: verifier.sponsor, RESEND_API_KEY: 're_stand_in' }), { resendUrl: resend.url })
     closers.push(() => h.close())
 
     // The index: its own lists, beside index/config, as services' end-to-end test writes them.
@@ -116,7 +121,7 @@ export async function startServices({ appOrigin, say }: { appOrigin: string; say
     const index = `http://127.0.0.1:${indexPort}`
     const ix = await startIndex({ dataDir: join(dir, 'index'), publicUrl: index, readSeconds: INDEX_SECONDS, listsRoot: lists, port: indexPort, hostname: '127.0.0.1', log: log('index') })
     closers.push(() => ix.close())
-    return { verifier: verifier.url, host, index, faceKey: verifier.keys.face, idKey: verifier.keys.id, payments, stop }
+    return { verifier: verifier.url, host, index, faceKey: verifier.keys.face, idKey: verifier.keys.id, payments, sent: resend.sent, stop }
   } catch (err) {
     await stop()
     throw err
