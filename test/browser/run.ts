@@ -4543,7 +4543,9 @@ test("Email: Off to start; one page, each step in turn and in place: two profile
   await page.getByRole('checkbox', { name: SELLER_WORDS }).click()
   assert.equal(await asks(button(page, 'Save')), false)
   await button(page, 'Save').click()
-  await button(page, 'Save').waitFor({ state: 'detached', timeout: 60_000 })
+  // Done when the device's copy says it: while it works, Save shows the loader in place of its word.
+  await page.waitForFunction(() => (JSON.parse(localStorage.getItem('forest.email') ?? 'null')?.profiles ?? []).length === 1, undefined, { timeout: 60_000 })
+  await button(page, 'Save').waitFor({ state: 'detached' })
   assert.deepEqual(((await entryNow()).opened as { profiles: string[] }).profiles, [tutorAt], 'the tutor alone')
   // The row in You says it.
   await button(page, 'Back').click()
