@@ -20,7 +20,7 @@ import { files } from '../build/markets.ts'
 import { proofFiles } from '../build/proofs.ts'
 import { BG, INK } from '../build/shell.ts'
 import { config } from '../src/config.ts'
-import { kindWords, listOf, listed, marketList, marketWords, markets, otherSide, pairOf, pairs, roleWords, tileName } from '../src/markets.ts'
+import { kindWords, listOf, listed, marketList, marketWords, markets, otherSide, pairOf, pairs, roleWords } from '../src/markets.ts'
 import { PATHS, RETURNS } from '../src/paths.ts'
 import { contactHref } from '../src/show.ts'
 import { BG as THEME_BG } from '../src/theme.ts'
@@ -44,6 +44,8 @@ test("the CSP: the page reaches its own origin, its verifier, host, connector an
     verifier: 'https://verifier.forest.foundation',
     host: 'https://host.forest.foundation',
     connector: 'https://mcp.forest.foundation',
+    // No plugin directory lists Forest yet: Connect your AI adds it by its address everywhere.
+    listedIn: [],
     index: 'https://index.forest.foundation',
     places: 'https://places.forest.foundation',
     tiles: 'https://tiles.openfreemap.org',
@@ -120,22 +122,9 @@ test("a profile whose market is gone is not listed, so the device forgets it; ev
   expect(pairOf('pottery/potter')).toMatchObject({ words: 'Pottery potter', offers: false })
 })
 
-test("a market's name on its tile, from the directory alone: its first word small over the rest where another market shares it", () => {
-  const names = ['stays-work', 'stays-free', 'home-cleaning', 'language-exchange', 'goods']
-  expect(names.map((n) => tileName(n, names))).toEqual([
-    { family: 'Stays', kind: 'Work' },
-    { family: 'Stays', kind: 'Free' },
-    { kind: 'Home cleaning' },
-    { kind: 'Language exchange' },
-    { kind: 'Goods' },
-  ])
-  expect(tileName('stays', ['stays', 'stays-free']), 'one word alone: nothing to split').toEqual({ kind: 'Stays' })
-  // Each tile in the directory at MARKETS: its words whole, for the search and its name, and split only where shared.
-  for (const m of marketList) {
-    expect([m.family, m.kind].filter(Boolean).join(' ').toLowerCase(), m.market).toBe(m.words.toLowerCase())
-    const first = m.market.split('-')[0]
-    expect(!!m.family, m.market).toBe(m.market.includes('-') && marketList.some((o) => o.market !== m.market && o.market.split('-')[0] === first))
-  }
+test("a market's name on its tile: its whole name, as the search finds it", () => {
+  for (const m of marketList) expect(m.words, m.market).toBe(marketWords(m.market))
+  expect(marketWords('stays-work')).toBe('Stays work')
 })
 
 test("a market's page: its summary, the line its file gives for where someone picks a market", () => {

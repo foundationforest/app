@@ -8,9 +8,10 @@
 //                  ID check's session comes to what a test sets;
 //   the host       services' own host (services/host/src), as `npm start` runs it, the plug and the
 //                  credits, taking the verifier's sponsor's tickets;
-//   the index      a stand-in answering /profiles/<address>.json in the shape services' index
-//                  answers it (index/src/pages/profile.ts), each page what a test says the index made
-//                  of the profile; 404 for any other, and down when a test says so. Services' index
+//   the index      a stand-in answering /profiles/<address>.json and a listing's own page,
+//                  /profiles/<address>/listing/<id>.json, in the shapes services' index answers them
+//                  (index/src/pages/profile.ts and listing.ts), each page what a test says the index
+//                  made of it; 404 for any other, and down when a test says so. Services' index
 //                  itself runs in the browser test, reading the host there.
 //   Resend         a stand-in for the API the host sends its morning email through (resend.ts): the
 //                  host has its key, and `sent` holds each email it was asked to send, so a test
@@ -201,7 +202,7 @@ export async function world({ entryPerKb, filePerKb, forSale = true }: { entryPe
   const index: Server = createServer((req, res) => {
     req.resume()
     if (down) return void res.writeHead(503).end()
-    const address = /^\/profiles\/([^/]+)\.json$/.exec(req.url ?? '')?.[1]
+    const address = /^\/profiles\/([^/]+(?:\/listing\/[^/]+)?)\.json$/.exec(req.url ?? '')?.[1]
     const page = address ? pages.get(address) : undefined
     if (!page) return answer(404, { error: 'not_found' }, res)
     answer(200, page, res)

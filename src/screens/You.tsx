@@ -1,7 +1,7 @@
 // You, one column on a phone and a laptop alike. At the top, one card: how the person is verified,
-// Selfie and ID, each with its badge's square: a check done its badge, the mint square, and
-// Verified on a mint chip; one not done its badge's outline, dashed, which starts it, one line on
-// what it gives, from the verifier's gifts as Get verified says it, and a plain Add, which opens Get
+// Selfie and ID, each with its badge's square: a check done its badge, the black square, and
+// Verified on the soft green; one not done its badge's outline, dashed, which starts it, one line on
+// what it gives, from the verifier's gifts as Get verified says it, and Add, outlined, which opens Get
 // verified too. The ID shows only where the verifier sells it (GET /, `forSale`), or once it is done.
 // Then one card of rows: Your AI, with the apps' names (AiApps.tsx), and Passkeys, with how many
 // (Passkeys.tsx), and Email, with Every morning or Off at its right (Email.tsx), and About Forest
@@ -72,7 +72,7 @@ export function You({ onForgot, onCheck, onPasskeys, onAiApps, onEmail, onAbout 
         {CHECKS.filter(({ check }) => check === 'face' || forSale || has.has(check)).map(({ check, name, add }) => (
           <div key={check} className="row">
             {has.has(check) ? (
-              <span className="sq sm mint">
+              <span className="sq sm ink">
                 <Icon name={CHECK_ICON[check]} fill />
               </span>
             ) : (
@@ -90,7 +90,7 @@ export function You({ onForgot, onCheck, onPasskeys, onAiApps, onEmail, onAbout 
                 Verified
               </span>
             ) : (
-              <button className="soft small" onClick={() => onCheck(check)}>
+              <button className="small" onClick={() => onCheck(check)}>
                 {add}
               </button>
             )}

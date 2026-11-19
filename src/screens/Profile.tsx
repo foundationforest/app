@@ -143,7 +143,7 @@ export function Profile({ address, tab, onTab, onBack, onListing, onReviews, onE
             </div>
           )}
           <div className="foot">
-            <button className="soft" onClick={() => onListing()}>
+            <button className="primary" onClick={() => onListing()}>
               <Icon name="plus" bold />
               New {word.toLowerCase()}
             </button>

@@ -21,15 +21,15 @@ export function Written({ entries, onEdit, onReview, onWho }: Props) {
           {written.map((g) => {
             const subject = typeof g.body.subject === 'string' ? g.body.subject : null
             return subject ? (
-              <SaidCard key={g.path} kind={g.kind as 'review' | 'vouch' | 'report'} score={g.body.score} text={g.body.text} who={subject} time={g.time} onClick={() => onEdit(g)} does={`Edit your ${g.kind}`} onWho={() => onWho(subject)} />
+              <SaidCard key={g.path} kind={g.kind as 'review' | 'vouch' | 'report'} score={g.body.score} text={g.body.text} listing={g.body.listing} who={subject} time={g.time} onClick={() => onEdit(g)} does={`Edit your ${g.kind}`} onWho={() => onWho(subject)} />
             ) : null
           })}
         </div>
       )}
       {onReview && (
         <div className="foot">
-          <button className="soft" onClick={onReview}>
-            <Icon name="star" bold />
+          <button onClick={onReview}>
+            <Icon name="star" fill className="sun" />
             Review someone
           </button>
         </div>

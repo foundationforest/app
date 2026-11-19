@@ -3,7 +3,7 @@
 // their avatar, market and role and badge. A switch of three, Score, Vouch and Report, and one quiet
 // line under it saying what the one picked is. Score: the score big with its star, over a slider, 1
 // to 10 in tenths, its thumb hidden until touched, so no score looks chosen. Vouch: says they're
-// real and honest, without a score, its mint square. Report: warns others it's fake or a scam, its
+// real and honest, without a score, its neutral square. Report: warns others it's fake or a scam, its
 // red one. Then, for a score, the market's own fields for their role, each by the market's own
 // words for it (`ask`): a choice of two in one row, its question and its chips, any other field its
 // piece's own input (Field.tsx); then one comment, its placeholder by what is picked; and the button at
@@ -190,7 +190,7 @@ export function Review({ me, subject: given, edit, report = false, onDone, onBac
           </div>
         ) : (
           <div className="kind-mark">
-            <span className={kind === 'vouch' ? 'sq big mint' : 'sq big red'}>
+            <span className={kind === 'vouch' ? 'sq big plain' : 'sq big red'}>
               <Icon name={k.icon} fill />
             </span>
           </div>

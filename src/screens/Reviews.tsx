@@ -52,7 +52,7 @@ export function Reviews({ address, onBack, onOpen }: Props) {
           </div>
           <div className="cards">
             {rated.received.map((r) => (
-              <SaidCard key={r.address} kind={r.kind} score={r.body.score} text={r.body.text} who={r.writer} {...(r.time !== undefined && { time: r.time })} fresh={(r.time ?? 0) > since} onClick={() => onOpen(r.address)} />
+              <SaidCard key={r.address} kind={r.kind} score={r.body.score} text={r.body.text} listing={r.body.listing} who={r.writer} {...(r.time !== undefined && { time: r.time })} fresh={(r.time ?? 0) > since} onClick={() => onOpen(r.address)} />
             ))}
           </div>
         </>

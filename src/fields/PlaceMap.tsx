@@ -1,6 +1,6 @@
 // The place screen's map (Place.tsx): the one module that loads MapLibre, so its code comes with
 // the place screen alone. OpenFreeMap's tiles (config.ts), Positron in light and Dark in dark, its
-// attribution always shown in full. The circle stays in the middle, in the strong green, and the
+// attribution always shown in full. The circle stays in the middle, in the ink, and the
 // person moves the map under it: a drag, two fingers to zoom, the arrows and + and -. An exact spot
 // is a pin in the middle the same way. Wherever the person or the screen moves it, the screen hears
 // its middle where it stops; a fit to a new size says nothing, the place staying where it is. The map
@@ -110,10 +110,10 @@ export default function PlaceMap(props: MapProps) {
     m.once('style.load', () => void (styled = true))
     m.on('error', () => void (styled || now.current.onFail()))
     m.on('load', () => {
-      const green = getComputedStyle(document.documentElement).getPropertyValue('--forest').trim()
+      const ink = getComputedStyle(document.documentElement).getPropertyValue('--ink').trim()
       m.addSource('area', { type: 'geojson', data: NOTHING })
-      m.addLayer({ id: 'area', type: 'fill', source: 'area', paint: { 'fill-color': green, 'fill-opacity': 0.15 } })
-      m.addLayer({ id: 'area-edge', type: 'line', source: 'area', paint: { 'line-color': green, 'line-width': 2 } })
+      m.addLayer({ id: 'area', type: 'fill', source: 'area', paint: { 'fill-color': ink, 'fill-opacity': 0.12 } })
+      m.addLayer({ id: 'area-edge', type: 'line', source: 'area', paint: { 'line-color': ink, 'line-width': 2 } })
       ready.current = true
       draw()
     })

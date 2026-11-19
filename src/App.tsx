@@ -2,17 +2,17 @@
 // opens a seed with no stamp goes to Get verified, with a check that didn't pass said there; Start's
 // No passkey found opens Your 24 words, which opens a seed from its words, and the person is in as
 // from Start (back to No passkey found). Then a person with no profile yet makes their first, and
-// once it is made, or put off with Later, Connect your AI, with Skip; then the three places, Home,
+// once it is made, or put off with Later, Connect your AI, whose back goes on to Home; then the three places, Home,
 // Notifications and You, and from them New profile, every profile's messages (the round button at
 // the top of Notifications), what a market outgrew, to update, a profile, its messages, its Reviews
 // and a review received, someone else's profile (a tap on another profile wherever it shows; one
-// of the person's own opens as theirs), a listing, Review someone, a thread, a new message, Get verified (a check
+// of the person's own opens as theirs), a listing, Review someone, a thread, a message to someone, Get verified (a check
 // to add), Passkeys, Add a passkey and Your 24 words, Your AI (an AI app opens in place) and Connect your AI, Email, or About Forest. Back wherever there is somewhere to go back to: Get
 // verified to Start, Your 24 words to No passkey found. A check runs at Stripe and Didit in this tab:
 // back from Stripe's page (/paid) or Didit's (/back), the page opens on Get verified, in setup too,
 // which goes on by itself, and comes back to the checks once it's done; from Start, Continue goes on
 // to the first profile. A step done (a passkey made, verified, a profile made) can't be undone by
-// back: Get verified has Continue, Your first profile Later, Connect your AI Skip. On a
+// back: Get verified has Continue, Your first profile Later, and Connect your AI's back goes on to Home. On a
 // laptop, every setup screen sits beside the Start panel (screens/Setup.tsx); every screen past
 // setup sits in the frame (frame.tsx): on a phone, the places' tabs at the bottom of each place; on a
 // laptop, the sidebar beside every one, and Messages and a thread side by side, in two panes
@@ -22,9 +22,11 @@
 // edited, whose messages, the market picked on New profile, Connect your AI in setup) is kept in the
 // page's history, never in its path, which a host's logs would keep. Your 24 words, once their page
 // had the passkey give them, are kept in that page's memory alone, never its history, while it is
-// open; reloaded there, it asks again. A Share link's address arrives
-// in its query: it is moved into the history at once, and waits there through
-// Start and the verification when no one is verified here yet. So does an AI app's login, the
+// open; reloaded there, it asks again. A message link's address arrives in its query
+// (/message?to=<address>, an index's Message link or a Share link), with the listing it is written
+// from when it names one (&listing=<listing address>): both are moved into the history at once, and
+// wait there through Start and the verification when no one is verified here yet. /message with no
+// address opens Messages: there is no screen to type one. So does an AI app's login, the
 // connect page's connector and request: through Start, the verification and the first profile,
 // then back to the connect page, Save a passkey on this device? and Connect your AI left out; while
 // the page goes to Stripe or Didit and back, what waits is kept for this tab (device.ts,
@@ -85,7 +87,7 @@ type Screen =
   | { at: 'notifications' }
   | { at: 'messages'; only?: string }
   | { at: 'thread'; mine: string; them: string; only?: string }
-  | { at: 'message'; to?: string }
+  | { at: 'message'; to: string; listing?: string }
   | { at: 'you' }
   | { at: 'connect'; connector: string; request: string }
   | { at: 'connect-ai'; setup?: boolean }
@@ -99,7 +101,7 @@ type Screen =
 const PATHS: Partial<Record<Screen['at'], string>> = SCREEN_PATHS
 
 /** What the page's history keeps of a screen: what it is about, never in the path. */
-type Kept = { address?: string; tab?: Tab; entry?: string; edit?: Posted; subject?: string; report?: boolean; only?: string; mine?: string; them?: string; to?: string; market?: string; connector?: string; request?: string; setup?: boolean; pushed?: boolean }
+type Kept = { address?: string; tab?: Tab; entry?: string; edit?: Posted; subject?: string; report?: boolean; only?: string; mine?: string; them?: string; to?: string; listing?: string; market?: string; connector?: string; request?: string; setup?: boolean; pushed?: boolean }
 
 /** An AI app's login, from the connector: what the connect page is about. */
 type Login = { connector: string; request: string }
@@ -110,8 +112,8 @@ const loginKept = (): Login | null => {
   return isText(k.connector) && isText(k.request) ? { connector: k.connector, request: k.request } : null
 }
 
-/** What waits while Start, the verification and a first profile come first: a Share link's address, or an AI app's login. */
-type Waiting = { to: string } | { login: Login }
+/** What waits while Start, the verification and a first profile come first: a message link's address and the listing it names, or an AI app's login. */
+type Waiting = { to: string; listing?: string } | { login: Login }
 
 /** Where the page was opened back from: Stripe's page, paid or not, or Didit's, the check done. */
 type Back = 'paid' | 'checked'
@@ -122,8 +124,8 @@ const isText = (v: unknown): v is string => typeof v === 'string' && v.length > 
 
 /** What waited as this tab's last page closed, the check taken to Stripe or Didit: taken back once, as the page opens. */
 const waitedThrough: Waiting | null = (() => {
-  const w = takeWaiting() as { to?: unknown; login?: { connector?: unknown; request?: unknown } } | null
-  if (isText(w?.to)) return { to: w.to }
+  const w = takeWaiting() as { to?: unknown; listing?: unknown; login?: { connector?: unknown; request?: unknown } } | null
+  if (isText(w?.to)) return { to: w.to, ...(isText(w.listing) && { listing: w.listing }) }
   if (isText(w?.login?.connector) && isText(w.login.request)) return { login: { connector: w.login.connector, request: w.login.request } }
   return null
 })()
@@ -135,10 +137,10 @@ const checkOf = (id: string): Screen => ({ at: 'verify', setup: false, id, step:
 function here(): Screen {
   const path = location.pathname
   const k = kept()
-  // A Share link: its address out of the path, into the history.
+  // A message link: its address, and the listing it names, out of the path, into the history.
   const query = new URLSearchParams(location.search)
-  const to = query.get('to')
-  if (path === '/message' && isText(to)) history.replaceState({ ...k, to }, '', '/message')
+  const [to, listing] = [query.get('to'), query.get('listing')]
+  if (path === '/message' && isText(to)) history.replaceState({ ...k, to, ...(isText(listing) && { listing }) }, '', '/message')
   // An AI app's login: its connector and request out of the path, into the history.
   const [connector, request] = [query.get('connector'), query.get('request')]
   if (path === '/connect' && isText(connector) && isText(request)) history.replaceState({ ...k, connector, request }, '', '/connect')
@@ -166,7 +168,7 @@ function here(): Screen {
     case '/messages':
       return { at: 'messages', ...(isText(now.only) && { only: now.only }) }
     case '/message':
-      return { at: 'message', ...(isText(now.to) && { to: now.to }) }
+      return isText(now.to) ? { at: 'message', to: now.to, ...(isText(now.listing) && { listing: now.listing }) } : { at: 'messages' }
     case '/passkeys':
       return { at: 'passkeys' }
     case '/passkey':
@@ -214,7 +216,7 @@ function keptOf(to: Screen): Kept {
     case 'thread':
       return { mine: to.mine, them: to.them, ...(to.only && { only: to.only }) }
     case 'message':
-      return to.to ? { to: to.to } : {}
+      return { to: to.to, ...(to.listing && { listing: to.listing }) }
     case 'connect':
       return { connector: to.connector, request: to.request }
     case 'connect-ai':
@@ -270,13 +272,13 @@ function Screens() {
   }
   const back = () => (kept().pushed ? history.back() : go({ at: 'home' }))
   const place = (to: Place) => go({ at: to })
-  /** In, past Start and the verification: the AI app's login if one waits, once there is a profile to tick; the Share link's message if one waits; a first profile to make; else Home. */
+  /** In, past Start and the verification: the AI app's login if one waits, once there is a profile to tick; the message link's message if one waits; a first profile to make; else Home. */
   const inside = () => {
     const w = waiting.current
     if (w && 'login' in w && profiles().length === 0) return go({ at: 'new' })
     waiting.current = null
     if (w && 'login' in w) return go({ at: 'connect', ...w.login })
-    go(w ? { at: 'message', to: w.to } : profiles().length === 0 ? { at: 'new' } : { at: 'home' })
+    go(w ? { at: 'message', to: w.to, ...(w.listing && { listing: w.listing }) } : profiles().length === 0 ? { at: 'new' } : { at: 'home' })
   }
   /** A profile made on New profile: back to the AI app's login if one waits; after the first, Connect your AI; else the profile. */
   const made = (address: string, first: boolean) => {
@@ -294,7 +296,7 @@ function Screens() {
   const review = (address: string, more: { subject?: string; edit?: Posted; report?: boolean } = {}) => go({ at: 'review', address, ...more }, true)
   /** Another profile, tapped wherever it shows: one of the person's own opens as theirs; anyone else's as someone else's. */
   const who = (address: string) => go(profiles().some((p) => p.address === address) ? { at: 'profile', address } : { at: 'them', address }, true)
-  /** A message to someone: the conversation with them, when one is open in this page; else a new message to them. */
+  /** A message to someone: the conversation with them, when one is open in this page; else the writing screen, to them. */
   const messageTo = (to: string) => {
     const t = opened()?.threads.find((x) => x.them === to)
     go(t ? { at: 'thread', mine: t.mine, them: to } : { at: 'message', to }, true)
@@ -415,7 +417,6 @@ function Screens() {
             // Whose, in place of the screen as it was, so back leaves Messages.
             onOnly={(only) => go({ at: 'messages', ...(only && { only }) })}
             onThread={(mine, them) => go({ at: 'thread', mine, them, ...(at.only && { only: at.only }) }, true)}
-            onNew={() => go({ at: 'message' }, true)}
           />
         )
         const thread = open && <Thread key={`${open.mine} ${open.them}`} mine={open.mine} them={open.them} pane={wide} onBack={back} onReview={(mine, them) => review(mine, { subject: them })} onWho={who} />
@@ -423,7 +424,7 @@ function Screens() {
         return thread || list
       }
       case 'message':
-        return <Message {...(screen.to && { to: screen.to })} onSent={(mine, them) => go({ at: 'thread', mine, them })} onBack={back} />
+        return <Message to={screen.to} {...(screen.listing && { listing: screen.listing })} onSent={(mine, them) => go({ at: 'thread', mine, them })} onBack={back} />
       case 'you':
         return <You onForgot={() => go({ at: 'start' })} onCheck={addCheck} onPasskeys={() => go({ at: 'passkeys' }, true)} onAiApps={() => go({ at: 'ai-apps' }, true)} onEmail={() => go({ at: 'email' }, true)} onAbout={() => go({ at: 'about' }, true)} />
       case 'passkeys':
@@ -439,7 +440,8 @@ function Screens() {
       case 'connect':
         return <Connect connector={screen.connector} request={screen.request} />
       case 'connect-ai':
-        return <ConnectAi setup={screen.setup === true} onBack={back} onDone={() => go({ at: 'home' })} />
+        // In setup, back goes on to Home: a profile made can't be undone.
+        return <ConnectAi onBack={screen.setup ? () => go({ at: 'home' }) : back} />
       case 'add-passkey':
         return <AddPasskey onDone={back} onBack={back} />
       case 'words':
@@ -489,8 +491,8 @@ function onOf(s: Screen): On | null {
 
 /** What waits on `screen`, as the page opens: on Start, a Share link's address or an AI app's login; on a first profile, the login. */
 function waitingAt(screen: Screen): Waiting | null {
-  const to = kept().to
-  if (screen.at === 'start' && isText(to)) return { to }
+  const { to, listing } = kept()
+  if (screen.at === 'start' && isText(to)) return { to, ...(isText(listing) && { listing }) }
   const login = loginKept()
   return login && (screen.at === 'start' || screen.at === 'new') ? { login } : null
 }

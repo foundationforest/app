@@ -57,35 +57,21 @@ export const roleWords = (role: string) => {
 }
 
 /**
- * A market as New profile lists it: its name, its words, its roles, and whether it is beta (the
- * pieces page's Status), else live; its name as its tile shows it, `family` small over `kind`
- * where its first word is another market's too (Stays over Work), else `kind` alone; and its
- * summary, the one line its file gives for where someone picks a market, for its role sheet.
+ * A market as New profile lists it: its name, its words (its whole name, as its tile shows it), its
+ * roles, and whether it is beta (the pieces page's Status), else live; and its summary, the one line
+ * its file gives for where someone picks a market, for its page.
  */
-export type MarketRoles = { market: string; words: string; family?: string; kind: string; summary: string; roles: Pair[]; beta: boolean }
-
-/** A word as a name starts: Stays. */
-const capital = (words: string) => words.charAt(0).toUpperCase() + words.slice(1)
-
-/** A market's name on its tile, from the directory alone: its first word apart, over the rest, when another market's name starts with it. */
-export function tileName(name: string, names: string[]): { family?: string; kind: string } {
-  const [first, ...rest] = name.split('-')
-  if (!rest.length || !names.some((n) => n !== name && n.split('-')[0] === first)) return { kind: marketWords(name) }
-  return { family: capital(first!), kind: capital(rest.join(' ')) }
-}
+export type MarketRoles = { market: string; words: string; summary: string; roles: Pair[]; beta: boolean }
 
 /** The markets in a directory, in its order, each with every role: live and beta alike. */
-export const listOf = (directory: Markets['directory']): MarketRoles[] => {
-  const names = directory.markets.map((m) => m.name)
-  return directory.markets.map((m) => ({
+export const listOf = (directory: Markets['directory']): MarketRoles[] =>
+  directory.markets.map((m) => ({
     market: m.name,
     words: marketWords(m.name),
-    ...tileName(m.name, names),
     summary: m.summary,
     roles: pairs.filter((p) => p.market === m.name),
     beta: m.status === 'beta',
   }))
-}
 
 /** Every market in the directory, in its order, each with every role. */
 export const marketList: MarketRoles[] = listOf(markets.directory)

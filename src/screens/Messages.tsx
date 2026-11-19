@@ -1,8 +1,9 @@
 // Messages: the conversations of the person's profiles, from the round button at the top of
 // Notifications (or the sidebar, on a laptop), or picked to one profile (`only`), from its own;
 // only messages (reviews, vouches and reports show in Notifications and a profile's Reviews). At the
-// top, the title and a round New message, always there; on a phone, the tabs at the bottom, with
-// Notifications picked, since Messages is reached from there.
+// top, the title alone: a message to someone new starts from their listing or their profile, never
+// from an address typed here. On a phone, the tabs at the bottom, with Notifications picked, since
+// Messages is reached from there.
 // Before the unlock, only what is true: an inbox entry shows no one who wrote it (the standard's
 // The inbox), so the avatars are those of the person's own profiles the new ones came to,
 // overlapped, with how many ("3 new messages"); with none new, a lock and Open your messages. Open,
@@ -10,16 +11,18 @@
 // page is; with a seed held they open by themselves (opening.ts), the loader showing once that takes
 // half a second, alone in the middle of the screen: on a laptop across both panes (theme.css).
 // Opened: chips that pick whose, All, then each of the person's profiles, a dot in its market's color
-// and its market and role (Clothing seller); then the conversations, newest first, each a row of two
-// lines, as any messaging app has them: who it is with (the person's name for them, else their
-// short key in the key's face) and when; then the last message on one line, bold with a dot while it
-// holds a new one. Their picture carries their market's badge, the icon of the person's own profile
-// there, so it says which of theirs the conversation is with; no role: in a market a person talks
-// only with the other side. Their badges are on their profile, one tap away.
+// and its market (Home cleaning), its role added only where two of theirs share a market (Goods
+// seller, Goods buyer), the one picked on the soft green; then the conversations, newest first, each
+// a row of two lines, as any messaging app has them: who it is with (the person's name for them,
+// else their short key in the key's face), bold, their market small and quiet after it, and when, at
+// the right; then the last message on one line. While it holds a new one, that line bold, a black
+// dot at its right, and the time bold. Their picture carries their market's badge, the icon of the
+// person's own profile there, so it says which of theirs the conversation is with; no role: in a
+// market a person talks only with the other side. Their badges are on their profile, one tap away.
 // On a laptop it is the left of two panes (`pane`, Panes.tsx), the sidebar beside it, and the
-// conversation open on the right raised as a card. Before it is opened there is no split and no new
-// message: the lock, Open your messages and Open are one block, centred across the whole content
-// (theme.css, `closed`); a phone keeps its title and its round New message.
+// conversation open on the right, its row on the soft green. Before it is opened there is no split:
+// the lock, Open your messages and Open are one block, centred across the whole content (theme.css,
+// `closed`); a phone keeps its title.
 
 import type { CSSProperties } from 'react'
 
@@ -28,7 +31,7 @@ import { type Thread } from '../flows/inbox.ts'
 import { useNewMessages, useOpened, useProfiles } from '../hooks.ts'
 import { Icon } from '../icons.tsx'
 import { Loader } from '../mark.tsx'
-import { offersFirst, pairOf } from '../markets.ts'
+import { marketWords, offersFirst, pairOf } from '../markets.ts'
 import { isFresh } from '../opened.ts'
 import { useOpening } from '../opening.ts'
 import { Dot, Line, Top, UnlockIcon, when } from '../ui.tsx'
@@ -42,13 +45,12 @@ type Props = {
   open?: { mine: string; them: string }
   onOnly: (only?: string) => void
   onThread: (mine: string, them: string) => void
-  onNew: () => void
 }
 
 /** How many new messages: 1 new message, 3 new messages. */
 const newWords = (n: number) => `${n} new message${n === 1 ? '' : 's'}`
 
-export function Messages({ only, pane = false, open: shown, onOnly, onThread, onNew }: Props) {
+export function Messages({ only, pane = false, open: shown, onOnly, onThread }: Props) {
   const all = useProfiles()
   const list = only ? all.filter((p) => p.address === only) : all
   const fresh = useNewMessages()
@@ -74,15 +76,7 @@ export function Messages({ only, pane = false, open: shown, onOnly, onThread, on
     )
   return (
     <Root className={pane ? (closed ? 'pane-body closed' : 'pane-body') : undefined}>
-      <Top
-        right={
-          pane && closed ? undefined : (
-            <button className="round" aria-label="New message" onClick={onNew}>
-              <Icon name="note-pencil" />
-            </button>
-          )
-        }
-      >
+      <Top>
         <h1>Messages</h1>
       </Top>
       {closed ? (
@@ -96,7 +90,7 @@ export function Messages({ only, pane = false, open: shown, onOnly, onThread, on
                 ))}
               </span>
             ) : (
-              <span className="sq big mint">
+              <span className="sq big plain">
                 <Icon name="lock-simple" fill />
               </span>
             )}
@@ -117,7 +111,7 @@ export function Messages({ only, pane = false, open: shown, onOnly, onThread, on
             {offersFirst(all).map((p) => (
               <button key={p.address} className={only === p.address ? 'chip here' : 'chip'} aria-pressed={only === p.address} style={{ '--h': colorOf(p.pair.market) } as CSSProperties} onClick={() => onOnly(p.address)}>
                 <span className="fdot" aria-hidden />
-                {p.pair.words}
+                {all.some((q) => q.address !== p.address && pairOf(q.label).market === p.pair.market) ? p.pair.words : marketWords(p.pair.market)}
               </button>
             ))}
           </div>
@@ -134,17 +128,18 @@ export function Messages({ only, pane = false, open: shown, onOnly, onThread, on
   )
 }
 
-/** One conversation, in two lines: who it is with and when, then the last message; their picture with the market's badge; `here` while it is open beside the list. */
+/** One conversation, in two lines: who it is with, their market, and when, then the last message; their picture with the market's badge; `here` while it is open beside the list. */
 function ThreadRow({ t, market, here, onOpen }: { t: Thread; market: string; here: boolean; onOpen: () => void }) {
   const last = t.messages.at(-1)
   const fresh = isFresh(t)
   return (
-    <button className={here ? 'thread-row here' : 'thread-row'} aria-current={here ? 'true' : undefined} onClick={onOpen}>
+    <button className={`thread-row${here ? ' here' : ''}${fresh ? ' fresh' : ''}`} aria-current={here ? 'true' : undefined} onClick={onOpen}>
       <WhoAvatar address={t.them} who={t.who} badge={market} />
       <span className="two">
         <span className="thread-top">
           <NameOf address={t.them} />
-          {last && <span className="xs">{when(last.time)}</span>}
+          <span className="mk">{marketWords(market)}</span>
+          {last && <span className="xs when">{when(last.time)}</span>}
         </span>
         <span className="thread-last">
           <span className={fresh ? 'text fresh' : 'text'}>{last?.text}</span>

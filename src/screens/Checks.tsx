@@ -1,16 +1,19 @@
 // What Get verified draws (Verify.tsx runs it): the two checks, each a card, and what the checks keep.
-// A card: its icon square as its badge draws it (the mint, a face being scanned for the
-// selfie, an ID card for the ID), its name and one line, and then, by where the check stands:
-// - not done, a button: its price (Free; $5 with "one time" small under it, the two in one column of
-//   one size), a chevron, and under a hairline what it gives, each with its tick: the selfie its
-//   credits, the ID ten times them, stronger trust, and that the person is only charged if it
-//   passes. A credit line shows only where the verifier gives credits at this host
-//   (flows/verify.ts, `creditLines`). While the verifier's payments are test payments, the ID's one
-//   quiet line more under them: Stripe's test card, so a tester knows what to pay with. No unlock
-//   icon, though the ID's tap asks the passkey when no seed is held, as a row of ticks shows none;
-// - done, the mint Verified chip alone, and no tap;
+// A card: its badge (the black square: a face being scanned for the selfie, an ID card for the ID),
+// its name and one line, and then, by where the check stands:
+// - not done: its price at the right, in ink (Free; $5 with "one time" small under it, the two in
+//   one column of one size); under a hairline what it gives, each with its tick: the selfie its
+//   credits, the ID ten times them, stronger trust, and that it supports Forest. A credit line
+//   shows only where the verifier gives credits at this host (flows/verify.ts, `creditLines`).
+//   While the verifier's payments are test payments, the ID's one quiet line more under them:
+//   Stripe's test card, so a tester knows what to pay with. The ID's quiet grey note, its icon and
+//   "Have an official ID in hand", then its button, strong green, the card's whole width: Take a
+//   selfie, Verify with your ID. No unlock icon, though the ID's tap asks the passkey when no seed
+//   is held: the card is the choice itself;
+// - done: shrunk to its badge, name and line, with the soft green Verified at the right, and no
+//   button;
 // - tried, one that can't help this person any more (a face seen before, an ID already used):
-//   greyed, its name and line alone, and no tap.
+//   greyed, its name and line alone, and no button.
 // What the checks keep: under its link, in place, the consent screen the verifier serves (GET /),
 // word for word, the one text it gives for its checks.
 
@@ -21,14 +24,11 @@ import { Loader } from '../mark.tsx'
 import { Line, type Note } from '../ui.tsx'
 import { TEST_PAYMENTS } from '../words.ts'
 
-/** What paying for the ID check costs: nothing, unless its check passes. */
-const CHARGED = "You're only charged if it passes."
-
 const CARD = {
-  face: { name: 'Selfie', what: 'A quick selfie', price: <span className="d">Free</span>, icon: 'scan-smiley' },
+  face: { name: 'Selfie', what: 'A quick selfie', price: <span className="d">Free</span>, icon: 'scan-smiley', act: 'Take a selfie' },
   id: {
     name: 'ID',
-    what: 'Your ID and a selfie',
+    what: 'Your ID, then a selfie',
     price: (
       <>
         <span className="d">$5</span>
@@ -36,6 +36,7 @@ const CARD = {
       </>
     ),
     icon: 'identification-card',
+    act: 'Verify with your ID',
   },
 } as const
 
@@ -45,7 +46,7 @@ export type Standing = 'open' | 'done' | 'tried'
 type CardProps = { check: Check; standing: Standing; credits: CreditLines | null; testPayments?: boolean; disabled: boolean; busy: boolean; onPick: () => void }
 
 export function CheckCard({ check, standing, credits, testPayments = false, disabled, busy, onPick }: CardProps) {
-  const { name, what, price, icon } = CARD[check]
+  const { name, what, price, icon, act } = CARD[check]
   const head = (
     <span className="vhead">
       <span className="vico">
@@ -61,38 +62,40 @@ export function CheckCard({ check, standing, credits, testPayments = false, disa
           Verified
         </span>
       )}
-      {standing === 'open' && (
-        <>
-          <span className="price3">{price}</span>
-          {busy ? <Loader /> : <Icon name="caret-right" />}
-        </>
-      )}
+      {standing === 'open' && <span className="price3">{price}</span>}
     </span>
   )
   if (standing !== 'open')
     return (
-      <div className={standing === 'tried' ? 'vcard tried' : 'vcard'} data-check={check} {...(standing === 'tried' && { 'aria-disabled': true })}>
+      <div className={standing === 'tried' ? 'vcard tried' : 'vcard done'} data-check={check} {...(standing === 'tried' && { 'aria-disabled': true })}>
         {head}
       </div>
     )
-  const gives = (check === 'id' ? [credits?.id, 'Stronger trust', CHARGED] : [credits?.face]).filter((g): g is string => !!g)
+  const gives = (check === 'id' ? [credits?.id, 'Stronger trust', 'Supports Forest'] : [credits?.face]).filter((g): g is string => !!g)
   return (
-    <button className="vcard" data-check={check} disabled={disabled} onClick={onPick}>
+    <div className="vcard" data-check={check}>
       {head}
       {gives.length > 0 && (
         <span className="vlist" role="list">
           {gives.map((g) => (
             <span key={g} role="listitem">
-              <span className="got" aria-hidden>
-                <Icon name="check" bold />
-              </span>
+              <Icon name="check" bold />
               {g}
             </span>
           ))}
         </span>
       )}
       {check === 'id' && testPayments && <span className="vtest">{TEST_PAYMENTS}</span>}
-    </button>
+      {check === 'id' && (
+        <span className="vnote">
+          <Icon name="identification-card" />
+          Have an official ID in hand
+        </span>
+      )}
+      <button className="primary" disabled={disabled} onClick={onPick}>
+        {busy ? <Loader /> : act}
+      </button>
+    </div>
   )
 }
 

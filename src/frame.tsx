@@ -1,11 +1,12 @@
 // The places, and the frame every screen past setup sits in. Three places: Home (the person's
 // profiles), Notifications and You. On a phone, each place has three tabs at its bottom, Home,
-// Notifications and You, the one selected filled on a mint pill, and so does Messages, reached from
+// Notifications and You, the one selected filled on a soft green pill, and so does Messages, reached from
 // Notifications, with Notifications selected; the Notifications tab counts everything new, messages
-// included. From 900px wide, no tabs: a sidebar on the left, on every screen past setup, with the
-// mark and Forest, the search, Home, Notifications (what came about the profiles, and what a market
-// outgrew), Messages and You with their counts, then Profiles, with a small mint New at its right
-// while a market's role has no profile of theirs, which opens New profile; under it every profile,
+// included. From 900px wide, no tabs: a sidebar on the left, on every screen past setup. Its first
+// line: the mark alone, a link to Home, and Search Forest beside it, filling the rest. Then Home,
+// Notifications (what came about the profiles, and what a market outgrew), Messages and You with
+// their counts, the one where the person is on the soft green; then Profiles, with a small outlined
+// + New at its right while a market's role has no profile of theirs, which opens New profile; under it every profile,
 // in the app's order (order.ts), those with something new first, then the most recently used here,
 // each with how many things are new on it, the sidebar scrolling on its own when they run long. The
 // screen sits to its right. A place opening reads what the index says of every profile, and what a
@@ -19,7 +20,6 @@ import { Icon, type IconName } from './icons.tsx'
 import { Mark } from './mark.tsx'
 import { pairs } from './markets.ts'
 import { Named, Search } from './ui.tsx'
-import { Wordmark } from './wordmark.tsx'
 
 export type Place = 'home' | 'notifications' | 'you'
 
@@ -135,10 +135,11 @@ function Side({ on, go }: { on: On; go: FrameGo }) {
   return (
     <aside className="side">
       <div className="brand">
-        <Mark size={26} />
-        <Wordmark />
+        <button type="button" className="mark-home" aria-label="Forest home" onClick={() => go.place('home')}>
+          <Mark size={26} />
+        </button>
+        <Search />
       </div>
-      <Search />
       <nav className="navs" aria-label="Places">
         <Nav on={at === 'home'} icon="house" words="Home" onClick={() => go.place('home')} />
         <Nav on={at === 'notifications'} icon="bell" words="Notifications" count={notices} onClick={() => go.place('notifications')} />

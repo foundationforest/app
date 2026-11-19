@@ -1,7 +1,7 @@
 // The pieces every screen shares: the one-line note that says why something can't be done (red when
 // what was given is wrong, quiet when something is still missing), an action's busy and its note;
 // the two badges, drawn once here, how a profile shows it is verified, one for each check it holds
-// (the same mint square, the picture inside telling them apart; their words a label, shown on a
+// (the same black square, the picture inside telling them apart; their words a label, shown on a
 // tap only where a badge stands alone), and a check not done as its badge's outline, which starts it; the unlock icon, the
 // fingerprint before the word on a labeled button that asks the passkey, only while a tap will ask,
 // never on a list row; the round way into messages, always there, with how many are new once any
@@ -77,8 +77,8 @@ const VERIFIED: Record<Check, string> = { face: 'Verified with a selfie', id: 'V
 export const CHECK_ICON: Record<Check, IconName> = { face: 'scan-smiley', id: 'identification-card' }
 
 /**
- * One check's badge, the one way the app says a profile is verified that way: a mint square, its
- * check's icon in the strong green; the selfie's and the ID's differ only by the picture inside.
+ * One check's badge, the one way the app says a profile is verified that way: the black square, its
+ * check's icon in the page's ground; the selfie's and the ID's differ only by the picture inside.
  * Its words are its label for screen readers and its title on hover. Inside a row or a card it
  * takes no tap of its own: tapped, it does what the row or card does (tick, open). Only where it
  * stands alone (`alone`: a profile's header, Home's title) does a tap say its words for a moment,
@@ -131,7 +131,7 @@ export function Unverified({ check, onClick }: { check: Check; onClick: () => vo
   )
 }
 
-/** You're verified: the mint chip, with the icon of the check that verified the person. */
+/** You're verified: the soft green chip, done, with the icon of the check that verified the person. */
 export const YoureVerified = ({ check }: { check: Check }) => (
   <span className="chip new">
     <Icon name={CHECK_ICON[check]} fill />
@@ -160,11 +160,11 @@ export const TickBox = ({ ticked }: { ticked: boolean }) => (
   </span>
 )
 
-/** A row that opens a screen of its own: its icon on a square (mint, `green`, for one that adds), its words, a quiet line, `value` at its right (Every morning), and a chevron unless it adds. */
-export function Opens({ icon, words, line, value, green = false, caret = !green, onClick }: { icon: IconName; words: string; line?: string; value?: string; green?: boolean; caret?: boolean; onClick: () => void }) {
+/** A row that opens a screen of its own: its icon on a square, its words, a quiet line, `value` at its right (Every morning), and a chevron unless it adds (`adds`). */
+export function Opens({ icon, words, line, value, adds = false, caret = !adds, onClick }: { icon: IconName; words: string; line?: string; value?: string; adds?: boolean; caret?: boolean; onClick: () => void }) {
   return (
     <button className="row" onClick={onClick}>
-      <span className={green ? 'sq sm mint' : 'sq sm plain'}>
+      <span className="sq sm plain">
         <Icon name={icon} />
       </span>
       <span className="two">
@@ -202,7 +202,7 @@ export function SaidChip({ kind, score }: { kind: 'review' | 'vouch' | 'report';
     )
   if (kind === 'vouch')
     return (
-      <span className="said-chip chip new">
+      <span className="said-chip chip">
         <Icon name="handshake" bold />
         Vouch
       </span>
@@ -268,7 +268,7 @@ export function Top({ onBack, onClose, clear = false, children, right }: { onBac
   )
 }
 
-/** One choice of a few, side by side on the sunk ground, the one picked raised on a card: each option its words, and its icon, filled when picked. `clears`: the one picked, tapped again, leaves none. `icons`: each its icon alone, its words its label (Appearance's Auto, Light and Dark). */
+/** One choice of a few, side by side on the sunk ground, the one picked on the soft green: each option its words, and its icon, filled when picked. `clears`: the one picked, tapped again, leaves none. `icons`: each its icon alone, its words its label (Appearance's Auto, Light and Dark). */
 export function Seg<V extends string>({ label, options, value, onPick, clears = false, icons = false }: { label: string; options: Array<{ value: V; words: string; icon?: IconName }>; value: V | undefined; onPick: (v: V | undefined) => void; clears?: boolean; icons?: boolean }) {
   return (
     <div className={icons ? 'seg icons' : 'seg'} role="group" aria-label={label}>

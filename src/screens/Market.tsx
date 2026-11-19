@@ -1,18 +1,16 @@
 // A market's page, from its tile on New profile (NewProfile.tsx), a page of its own in the tiles'
-// place: Back, to the tiles; the market's icon, on a tint of its color as its tile has it; its name,
-// with a small Beta chip after it for a beta market; one quiet line under it, the market's own
-// summary; and for a beta market one more (BETA, said once where a profile is made); then one big
-// row per role, its avatar as a profile of it shows (solid when it offers, light when it looks for)
-// and the role's name, nothing else. A role the person has shows the check, and a tap on its row
-// opens that profile; any other holds Create, which makes it: its plus, or, while a tap will ask the
+// place: Back, to the tiles; the market's icon, white on its color; its name; under it, for a beta
+// market, one quiet line, Beta; then the market's own summary. Then each role as a card: its name,
+// and at its right, where the person has it, the soft green Yours, a tap on the card opening that
+// profile; else Create, strong green, which makes it: its plus, or, while a tap will ask the
 // passkey, the unlock icon in its place.
 
 import type { CSSProperties } from 'react'
 
-import { Avatar, MarketIcon, colorOf, iconOf } from '../avatar.tsx'
+import { MarketIcon, colorOf, iconOf } from '../avatar.tsx'
 import type { Profile } from '../device.ts'
 import { Icon } from '../icons.tsx'
-import { BETA, type MarketRoles, roleWords } from '../markets.ts'
+import { type MarketRoles, roleWords } from '../markets.ts'
 import { useHeld } from '../hooks.ts'
 import { Line, type Note, Top, UnlockIcon } from '../ui.tsx'
 
@@ -28,32 +26,24 @@ export function Market({ market, mine, note, busy, onPick, onOpen, onBack }: Pro
         {icon ? <MarketIcon name={icon} /> : <span className="letter">{market.words.charAt(0)}</span>}
       </span>
       <div className="stack">
-        {market.beta ? (
-          <h1 className="with-chip">
-            {market.words}
-            <span className="chip beta">Beta</span>
-          </h1>
-        ) : (
-          <h1>{market.words}</h1>
-        )}
+        <h1>{market.words}</h1>
+        {market.beta && <p className="beta-line">Beta</p>}
         {market.summary && <p className="lead">{market.summary}</p>}
-        {market.beta && <p className="hint">{BETA}</p>}
       </div>
       <Line note={note} />
       <div className="stack">
         {market.roles.map((p) => {
           const had = mine.find((q) => q.label === p.label)
           return had ? (
-            <button key={p.label} className="big-choice" disabled={busy} onClick={() => onOpen(had.address)}>
-              <Avatar label={p.label} />
+            <button key={p.label} className="big-choice" disabled={busy} aria-label={`${roleWords(p.role)} Yours`} onClick={() => onOpen(had.address)}>
               <strong className="grow">{roleWords(p.role)}</strong>
-              <span className="got lg" role="img" aria-label="Yours">
+              <span className="yours">
                 <Icon name="check" bold />
+                Yours
               </span>
             </button>
           ) : (
             <div key={p.label} className="big-choice">
-              <Avatar label={p.label} />
               <strong className="grow">{roleWords(p.role)}</strong>
               <button className="create" disabled={busy} aria-label={`Create ${p.role}`} onClick={() => onPick(p.label)}>
                 {held ? <Icon name="plus" bold /> : <UnlockIcon />}

@@ -1,34 +1,59 @@
-// Connect your AI: its mint square, what an AI app then does for the person, a switch between
-// Claude and ChatGPT, and one card with three steps in that app's name: copy the address (this
-// app's connector, in full, as an AI app's connector field takes it), add it there as a connector,
-// sign in when it asks (an AI app that never signs in, Claude's No sign-in, can read but never act).
-// No links to other sites. Copy address copies it and says so a moment, staying, so steps 2 and 3
-// stay in view while the person does them. Right after the first profile (or its Later) it is a
-// setup step, with Skip, which reads Done once the address is copied, on to Home; from Your AI, a back.
+// Connect your AI: its sparkle on a neutral square, what an AI app then does for the person, three
+// choices, Claude, ChatGPT and Other, the one picked on the soft green, Claude when the screen
+// opens, and one card with three steps for it:
+// - an AI app whose plugin directory lists Forest (config.ts, `listedIn`): open Plugins in it,
+//   search Forest and add it, connect it and accept in Forest; under the card, "Forest not there?
+//   Add it by its address", which picks Other;
+// - any other, Other too: copy Forest's address (this app's connector, in full, as an AI app's
+//   connector field takes it), add it in that app, or in your AI, and the same accept step; at the
+//   foot, Copy address, strong green, which copies it and says so a moment, the steps staying in view
+//   while the person does them.
+// Accepting is the connect page (Connect.tsx): Forest opens there, the person unlocks and picks the
+// profiles it can use. No links to other sites. A back at the top, always: from Your AI, back to it;
+// right after the first profile (or its Later), on to Home, since a profile made can't be undone.
 
-import { useState } from 'react'
+import { type ReactNode, useState } from 'react'
 
-import { config } from '../config.ts'
+import { AI_APPS, type AiApp, config } from '../config.ts'
 import { Icon } from '../icons.tsx'
 import { Line, Top, useAction } from '../ui.tsx'
 
-const APPS = ['Claude', 'ChatGPT'] as const
+type Choice = AiApp | 'Other'
 
-type Props = { setup: boolean; onBack: () => void; onDone: () => void }
+const CHOICES: Choice[] = [...AI_APPS, 'Other']
 
-export function ConnectAi({ setup, onBack, onDone }: Props) {
-  const [app, setApp] = useState<(typeof APPS)[number]>('Claude')
-  const [copied, setCopied] = useState(false)
+type Props = { onBack: () => void }
+
+/** One step of the card: its number, its words, and a small line or more under them. */
+function Step({ n, words, small, children }: { n: number; words: string; small?: string; children?: ReactNode }) {
+  return (
+    <li>
+      <span className="bul" aria-hidden>
+        {n}
+      </span>
+      <div className="grow">
+        <span className="t">{words}</span>
+        {small && <span className="s">{small}</span>}
+        {children}
+      </div>
+    </li>
+  )
+}
+
+const ACCEPT = { words: 'Connect it, then accept in Forest', small: 'Forest opens here: unlock, and pick the profiles it can use.' }
+
+export function ConnectAi({ onBack }: Props) {
+  const [app, setApp] = useState<Choice>('Claude')
   const [flash, setFlash] = useState(false)
   const copy = useAction(async () => {
     await navigator.clipboard.writeText(config.connector)
-    setCopied(true)
     setFlash(true)
     setTimeout(() => setFlash(false), 2000)
   })
+  const listed = app !== 'Other' && config.listedIn.includes(app)
   return (
-    <main>
-      {!setup && <Top onBack={onBack} />}
+    <main className="connect-ai">
+      <Top onBack={onBack} />
       <span className="ai-mark">
         <Icon name="sparkle" fill />
       </span>
@@ -37,52 +62,48 @@ export function ConnectAi({ setup, onBack, onDone }: Props) {
         <p className="lead">Claude or ChatGPT can then search, post and reply for you.</p>
       </div>
       <div className="choice" role="group" aria-label="AI app">
-        {APPS.map((a) => (
+        {CHOICES.map((a) => (
           <button key={a} className={a === app ? 'here' : undefined} aria-pressed={a === app} onClick={() => setApp(a)}>
             {a}
           </button>
         ))}
       </div>
-      <ol className="step-card">
-        <li>
-          <span className="bul" aria-hidden>
-            1
-          </span>
-          <div className="grow">
-            <span className="t">Copy this address</span>
+      {listed ? (
+        <>
+          <ol className="step-card">
+            <Step n={1} words={`In ${app}, open Plugins`} small="Customize, then Plugins." />
+            <Step n={2} words="Search Forest, and add it" />
+            <Step n={3} {...ACCEPT} />
+          </ol>
+          <button className="text-link" onClick={() => setApp('Other')}>
+            Forest not there? Add it by its address
+          </button>
+        </>
+      ) : (
+        <ol className="step-card">
+          <Step n={1} words="Copy Forest's address">
             <div className="copy-field">
               <span className="address">{config.connector}</span>
               <button className="round clear" aria-label={flash ? 'Copied' : 'Copy'} onClick={() => copy.run()}>
                 <Icon name={flash ? 'check' : 'copy'} />
               </button>
             </div>
-          </div>
-        </li>
-        <li>
-          <span className="bul" aria-hidden>
-            2
-          </span>
-          <span className="t">Add it in {app} as a connector</span>
-        </li>
-        <li>
-          <span className="bul" aria-hidden>
-            3
-          </span>
-          <span className="t">Sign in when {app} asks</span>
-        </li>
-      </ol>
+          </Step>
+          <Step n={2} words={`Add it in ${app === 'Other' ? 'your AI' : app}`} small="Where it adds connectors or plugins. Some call them MCP servers." />
+          <Step n={3} {...ACCEPT} />
+        </ol>
+      )}
       <div className="fill" />
-      <Line note={copy.note} />
-      <div className="foot">
-        <button className="primary" onClick={() => copy.run()}>
-          <Icon name={flash ? 'check' : 'copy'} bold /> {flash ? 'Copied' : 'Copy address'}
-        </button>
-        {setup && (
-          <button className="quiet" onClick={onDone}>
-            {copied ? 'Done' : 'Skip'}
-          </button>
-        )}
-      </div>
+      {!listed && (
+        <>
+          <Line note={copy.note} />
+          <div className="foot">
+            <button className="primary" onClick={() => copy.run()}>
+              <Icon name={flash ? 'check' : 'copy'} bold /> {flash ? 'Copied' : 'Copy address'}
+            </button>
+          </div>
+        </>
+      )}
     </main>
   )
 }

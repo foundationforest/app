@@ -22,6 +22,7 @@ import { useHeldOutgrown, useHeldRated, useNews, useProfiles } from '../hooks.ts
 import { Icon } from '../icons.tsx'
 import { kindWords, marketWords, pairOf } from '../markets.ts'
 import { Dot, MessagesButton, Named, SaidChip, Top, ago, newDay } from '../ui.tsx'
+import { AboutBox, isListing } from './AboutListing.tsx'
 import { NameOf, WhoAvatar } from './Who.tsx'
 
 type Props = { onMessages: () => void; onReviews: (address: string) => void; onUpdate: (address: string, posted: Posted) => void; onWho: (address: string) => void }
@@ -126,6 +127,7 @@ function Came({ n, label, onOpen, onWho }: { n: Notice; label: string; onOpen: (
           </button>
         </span>
         {typeof r.body.text === 'string' && r.body.text && <span className="said-text">{r.body.text}</span>}
+        {isListing(r.body.listing) && <AboutBox address={r.body.listing} />}
       </span>
       {n.fresh && <Dot />}
     </div>

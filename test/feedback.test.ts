@@ -9,7 +9,7 @@ import * as device from '../src/device.ts'
 import { post, readEntries } from '../src/flows/entries.ts'
 import { givenOf, newOf, newest, notices, rate } from '../src/flows/feedback.ts'
 import { ratedOf } from '../src/rated.ts'
-import { readRated } from '../src/services/index.ts'
+import { readListing, readRated } from '../src/services/index.ts'
 import { Unreachable } from '../src/services/http.ts'
 import { OFFERS, OTHER_OFFERS, OTHER_REQUESTS, REQUESTS } from './labels.ts'
 import { type IndexPage, type World, freshDevice, verifiedWith, world } from './world.ts'
@@ -47,7 +47,7 @@ function page(address: string, o: { rating?: number; reviews?: Said[]; vouches?:
 }
 
 describe('what the index says of a profile', () => {
-  test('what it counted, newest first, by kind; its rating and how many reviews; its listings by address, and how many it lists; how many it wrote; a 404 is nothing yet; down, one quiet line', async () => {
+  test('what it counted, newest first, by kind; its rating and how many reviews; how many listings it lists; how many it wrote; a 404 is nothing yet; down, one quiet line', async () => {
     const seller = (await verifiedWith(w, OTHER_OFFERS)).profiles[0]!
     const buyer = (await verifiedWith(w, OTHER_REQUESTS)).profiles[0]!
     w.indexSays(
@@ -75,18 +75,36 @@ describe('what the index says of a profile', () => {
       ['report', buyer.address, 'Late.', 200],
       ['review', buyer.address, 'As described.', 100],
     ])
-    expect(rated.listings[`${seller.address}/listing/coat`]?.description).toBe('A wool coat.')
     expect(rated.listed, 'the listings it lists, not one it no longer does').toBe(1)
     expect(rated.written, 'what the profile wrote: a review and a vouch').toBe(2)
     expect(newest(rated)).toBe(300)
 
-    expect(await readRated(w.index, buyer.address), 'nothing yet: the index holds no profile entry for it').toEqual({ rating: null, reviews: 0, received: [], listings: {}, listed: 0, written: 0 })
+    expect(await readRated(w.index, buyer.address), 'nothing yet: the index holds no profile entry for it').toEqual({ rating: null, reviews: 0, received: [], listed: 0, written: 0 })
     w.indexDown(true)
     const err = await readRated(w.index, seller.address).catch((e: unknown) => e)
     expect(err).toBeInstanceOf(Unreachable)
     expect([(err as Unreachable).message, (err as Unreachable).red]).toEqual(["Can't reach the index. Try again.", false])
     await rate(w.index, [seller])
     expect(ratedOf(seller.address), 'held as failed, so a screen says so and shows no rating').toEqual({ failed: true })
+  })
+})
+
+describe('a listing, from its own page at the index', () => {
+  test('its body, whether it is listed, its market and role and its profile\'s rating; one the index holds but no longer lists; one it holds none of; any other shape, nothing asked; down, one quiet line', async () => {
+    const seller = (await verifiedWith(w, OTHER_OFFERS)).profiles[0]!
+    const [market, role] = seller.label.split('/') as [string, string]
+    const at = `${seller.address}/listing/coat`
+    const one = (listed: boolean) => ({ index: 'StandInIndexAddress', profile: seller.address, market, role, listing: { address: at, body: { description: 'A wool coat.' }, url: 'x', photos: [], time: 1, listed, ...(!listed && { why: 'deleted' }) }, checks: [], ratings: { value: 8.5, count: 2 } })
+    w.indexSays(at, one(true))
+    expect(await readListing(w.index, at)).toEqual({ profile: seller.address, market, role, body: { description: 'A wool coat.' }, listed: true, rating: 8.5 })
+    w.indexSays(at, one(false))
+    expect((await readListing(w.index, at))?.listed, 'kept, deleted: not listed').toBe(false)
+    w.indexSays(at, null)
+    expect(await readListing(w.index, at), 'none there').toBeNull()
+    expect(await readListing(w.index, seller.address), 'a profile, not a listing: nothing asked').toBeNull()
+    w.indexDown(true)
+    expect(await readListing(w.index, at).catch((e: unknown) => e)).toBeInstanceOf(Unreachable)
+    w.indexDown(false)
   })
 })
 

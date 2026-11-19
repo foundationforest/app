@@ -1,19 +1,19 @@
 // A review, vouch or report about one of the person's profiles, opened from its profile's Reviews, as
 // the index counted it: which profile it is on and the day, the score big with its star, its text,
-// then the market's review fields it holds and the listing it names when another app named one (by
-// its preview's first line, as the index keeps it, so even a deleted one shows, and of it only what
-// still fits its market, a listing its market outgrew never breaking the screen). Then From, who
+// then the market's review fields it holds, and the listing it names when it names one, in its About
+// box (AboutListing.tsx): its photo, title and price, a tap opening it on the index, or No longer
+// listed. Then From, who
 // wrote it, as a row: their avatar, who they are to the person (the name they gave them, else their
 // short key) with their badges, their market and role, their rating, a chevron; a tap opens their
-// profile (Them.tsx). At the foot, Message them and Review back, side by side, and Report under
-// them, in red.
+// profile (Them.tsx). At the foot, Message them and Review back, side by side, both outlined, Review
+// back's star in the sun, and Report under them, in red.
 
 import { useProfiles, useIndexed, useRated } from '../hooks.ts'
 import { Icon } from '../icons.tsx'
-import { askOf, kindWords, markets, pairOf } from '../markets.ts'
-import { fitting } from '../form.ts'
-import { answerText, previewLines, ratingText } from '../show.ts'
+import { askOf, markets, pairOf } from '../markets.ts'
+import { answerText, ratingText } from '../show.ts'
 import { Named, Rating, SaidChip, Top, day } from '../ui.tsx'
+import { AboutBox, isListing } from './AboutListing.tsx'
 import { Who, WhoAvatar } from './Who.tsx'
 
 type Props = { mine: string; at: string; onBack: () => void; onMessage: (writer: string) => void; onReview: (writer: string) => void; onReport: (writer: string) => void; onWho: (writer: string) => void }
@@ -28,7 +28,6 @@ export function Received({ mine, at, onBack, onMessage, onReview, onReport, onWh
   const pair = pairOf(me.label)
   const market = markets.market(pair.market)
   const body = r?.body ?? {}
-  const named = typeof body.listing === 'string' ? rated?.listings[body.listing] : undefined
   const rows: Array<[string, string]> = []
   if (r?.kind === 'review' && market?.review) {
     // The market's own fields of a review about this profile's role, by the words it asks them with:
@@ -39,7 +38,6 @@ export function Received({ mine, at, onBack, onMessage, onReview, onReport, onWh
       if (text) rows.push([field.label, text])
     }
   }
-  if (named && market) rows.push([kindWords('listing', me.label), previewLines(market, fitting(pair.market, pair.role, named), { request: !pair.offers })[0] ?? ''])
   const writerRating = r && theirs && 'rated' in theirs ? theirs.rated.rating : null
   return (
     <main>
@@ -71,6 +69,7 @@ export function Received({ mine, at, onBack, onMessage, onReview, onReport, onWh
               ))}
             </dl>
           )}
+          {isListing(body.listing) && <AboutBox address={body.listing} />}
           <h2 className="sect">From</h2>
           <button className="whorow" onClick={() => onWho(r.writer)}>
             <WhoAvatar address={r.writer} />
@@ -85,8 +84,8 @@ export function Received({ mine, at, onBack, onMessage, onReview, onReport, onWh
                 <Icon name="chat-circle" />
                 Message
               </button>
-              <button className="soft" onClick={() => onReview(r.writer)}>
-                <Icon name="star" bold />
+              <button onClick={() => onReview(r.writer)}>
+                <Icon name="star" fill className="sun" />
                 Review back
               </button>
             </div>
