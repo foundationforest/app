@@ -70,15 +70,15 @@ test('an answer in a shape its field no longer takes reads as nothing, or as muc
   }
 })
 
-test('a place by the caption places gives it, never stored: Around it, an exact spot Near it; with none, by its size', () => {
+test('a place by its size and the caption places gives it, never stored: Within 10 km of it, Exact spot near it; with none, by its size', () => {
   const area = { lat: '40.4342', lon: '-3.7031', radiusKm: 10 }
   const spot = { lat: '40.41672', lon: '-3.70358', radiusKm: 0 }
-  expect(placeText(area, 'Chamberí, Madrid')).toBe('Around Chamberí, Madrid')
-  expect(placeText(spot, 'Sol, Madrid')).toBe('Near Sol, Madrid')
+  expect(placeText(area, 'Chamberí, Madrid')).toBe('Within 10 km of Chamberí, Madrid')
+  expect(placeText(spot, 'Sol, Madrid')).toBe('Exact spot near Sol, Madrid')
   expect([placeText(area), placeText(spot)]).toEqual(['Within 10 km', 'An exact spot'])
   const { field } = fieldWith(markets, 'places', (f) => f.piece === 'place' && f.several === true)
   const caption = (p: { lat: string }) => (p.lat === area.lat ? 'Chamberí, Madrid' : undefined)
-  expect(answerLines(field, [area, spot, { area: 'Lyon' }], { caption })).toEqual(['Around Chamberí, Madrid', 'An exact spot'])
+  expect(answerLines(field, [area, spot, { area: 'Lyon' }], { caption })).toEqual(['Within 10 km of Chamberí, Madrid', 'An exact spot'])
 })
 
 test("a date in the markets' words, its zone named where it is not the device's own", () => {

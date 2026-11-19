@@ -2,7 +2,8 @@
 // the place screen alone. OpenFreeMap's tiles (config.ts), Positron in light and Dark in dark, its
 // attribution always shown in full. The circle stays in the middle, in the strong green, and the
 // person moves the map under it: a drag, two fingers to zoom, the arrows and + and -. An exact spot
-// is a pin in the middle the same way. Wherever the map stops, the screen hears its middle. The map
+// is a pin in the middle the same way. Wherever the person or the screen moves it, the screen hears
+// its middle where it stops; a fit to a new size says nothing, the place staying where it is. The map
 // fits the circle as it opens and as its radius changes, and goes where the screen sends it: a
 // place searched for, or the device's spot. What can't load (WebGL, the style) says so, once.
 
@@ -23,10 +24,10 @@ export type MapProps = {
   opensAt: Spot | null
   /** The circle's radius, in kilometres; 0, an exact spot, a pin. */
   radiusKm: number
-  /** Where the screen sends the map, each time it changes: a place searched for, or the device's spot. */
-  goTo: { spot: Spot; radiusKm: number } | null
-  /** The map's middle, wherever it stops: where the place is. */
-  onMiddle: (spot: Spot) => void
+  /** Where the screen sends the map, each time it changes: a place searched for, or the device's spot; `sets: false`, only to look there, its middle not yet the place. */
+  goTo: { spot: Spot; radiusKm: number; sets?: false } | null
+  /** The map's middle, wherever it stops: where the place is; whether the person moved it there, or the screen sent it. */
+  onMiddle: (spot: Spot, byPerson: boolean) => void
   /** The map can't be drawn here, or its style can't be had. */
   onFail: () => void
 }
@@ -63,6 +64,10 @@ export default function PlaceMap(props: MapProps) {
   const ready = useRef(false)
   // Whether the person moved the map, or the screen sent it somewhere: only then is its middle a place.
   const moved = useRef(false)
+  // Whether the person moved it since the screen last sent it somewhere.
+  const byPerson = useRef(false)
+  // A fit to a new radius under way: its stop is no new place.
+  const fitting = useRef(false)
 
   /** The circle round the map's middle, drawn again as the map moves; none for an exact spot. */
   const draw = () => {
@@ -116,10 +121,11 @@ export default function PlaceMap(props: MapProps) {
     // Where the map stops is where the place is, once the person moved it or the screen sent it
     // somewhere: a map that only opened, or fitted a new radius, says nothing.
     m.on('moveend', () => {
-      if (moved.current) now.current.onMiddle(spotAt(m.getCenter()))
+      if (fitting.current) return void (fitting.current = false)
+      if (moved.current) now.current.onMiddle(spotAt(m.getCenter()), byPerson.current)
     })
     m.on('movestart', (e) => {
-      if ((e as { originalEvent?: unknown }).originalEvent) moved.current = true
+      if ((e as { originalEvent?: unknown }).originalEvent) moved.current = byPerson.current = !(fitting.current = false)
     })
     return () => {
       m.remove()
@@ -135,13 +141,15 @@ export default function PlaceMap(props: MapProps) {
     const m = map.current
     if (!m || radius.current === props.radiusKm) return
     radius.current = props.radiusKm
+    fitting.current = true
     fit(spotAt(m.getCenter()), props.radiusKm, 300)
   }, [props.radiusKm])
 
   // Where the screen sends it: there, fitted to the circle.
   useEffect(() => {
     if (!props.goTo) return
-    moved.current = true
+    moved.current = props.goTo.sets !== false
+    byPerson.current = fitting.current = false
     fit(props.goTo.spot, props.goTo.radiusKm, 600)
   }, [props.goTo])
 

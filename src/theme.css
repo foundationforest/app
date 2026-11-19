@@ -4062,11 +4062,31 @@ button.quiet.add {
   text-align: left;
 }
 
-.chips-label {
-  align-self: center;
+.size {
+  display: grid;
+  gap: 6px;
+}
+
+.size-ends {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
   font-size: 13px;
-  font-weight: 700;
-  color: var(--ink2);
+  color: var(--ink3);
+}
+
+.size-ends > strong {
+  font-size: 16.5px;
+  color: var(--ink);
+}
+
+.size > input[type='range'] {
+  width: 100%;
+  min-height: 32px;
+  padding: 0;
+  box-shadow: none;
+  background: none;
+  accent-color: var(--ink);
 }
 
 .place-caption {

@@ -2,8 +2,8 @@
 // own words for it (`xl` is XL, `es` Spanish); a number with its unit, a range as the markets read
 // it (9 to 11 years, 18 years or more); a price as people say it, in the device's own number format:
 // €15 an hour, €60 for 3 hours, €25 for 45 minutes, €40 for the whole job, a request's as the most it
-// would pay (Up to €60 for 3 hours), its note read with it; a place by the caption the places service
-// gives its centre (Around Chamberí, Madrid), never stored, else by its size alone (Within 10 km); a
+// would pay (Up to €60 for 3 hours), its note read with it; a place by its size and the caption the
+// places service gives its centre (Within 10 km of Chamberí, Madrid), never stored, else its size; a
 // date in the markets' words (Monday to Friday, 9:00 to 13:00), with its time zone named where it is
 // not the device's own (Madrid time); a link as it is. And a listing's preview, the fields its market
 // shows first, and its card. Each answer is read by its shape: one a market no longer gives that
@@ -126,9 +126,9 @@ export function priceText(p: PriceValue, request = false, locale?: string): stri
   return request ? `Up to ${said}` : said
 }
 
-/** A place in words: its caption, when places gave one (Around Chamberí, Madrid; an exact spot, Near Chamberí, Madrid), else its size (Within 10 km, An exact spot). */
+/** A place in words: its size, then the caption places gave its middle where it gave one: Within 10 km of Chamberí, Madrid; Exact spot near Sol, Madrid; Within 10 km; An exact spot. */
 export function placeText(p: PlaceValue, caption?: string): string {
-  if (caption) return p.radiusKm === 0 ? `Near ${caption}` : `Around ${caption}`
+  if (caption) return p.radiusKm === 0 ? `Exact spot near ${caption}` : `Within ${p.radiusKm} km of ${caption}`
   return p.radiusKm === 0 ? 'An exact spot' : `Within ${p.radiusKm} km`
 }
 

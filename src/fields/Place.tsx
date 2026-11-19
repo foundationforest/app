@@ -1,12 +1,16 @@
 // A place (the pieces page's place): a circle, its centre and its radius, and no name. Opened in the
 // form, a search for a place by its name (places, services/places.ts), the map with the circle fixed
 // in its middle, which the person moves under it (PlaceMap.tsx, loaded with it alone), the device's
-// own spot a tap away, and How far: an exact spot, then 1 to 50 km. Under them, the caption places
-// gives the circle's middle, Around Chamberí, Madrid, shown and never stored, else nothing; an exact
-// spot says anyone can see it. The circle set here is posted with its centre moved by up to a tenth
-// of its radius (near.ts); one an edit keeps stays where it was posted. The map opens on the place,
-// else on the device's spot where the browser allows it already, else on the whole world. A field
-// that takes several: its places in a list, each picked to move it or removed, then Add another area.
+// own spot a tap away, and a slider for the circle's size: all the way left an exact spot, then 1 km
+// up to 50 km, starting where the market starts the field for the role. Under them, the place in
+// words, by the name places gives its middle, Within 10 km of Chamberí, Madrid, shown and never
+// stored; an exact spot says anyone can see it. The device's location is asked for as the input
+// opens, where the browser hasn't been told no: a circle drops round it, so nothing needs typing; an
+// exact spot is never set from the location alone, since it would be the door the person posts from,
+// so the map goes there and waits to be moved to the spot. The circle set here is posted with its
+// centre moved by up to a tenth of its radius (near.ts); one an edit keeps stays where it was posted.
+// A field that takes several: its places in a list, each picked to move it or removed, then Add
+// another area.
 
 import { Suspense, lazy, useEffect, useRef, useState } from 'react'
 
@@ -15,7 +19,7 @@ import { useCaptions } from '../hooks.ts'
 import { Icon } from '../icons.tsx'
 import { Loader } from '../mark.tsx'
 import type { Asked, PlaceValue } from '../markets.ts'
-import { RADII, type Spot, placeAt, spotOf } from '../near.ts'
+import { type Spot, placeAt, spotOf } from '../near.ts'
 import { type Found, captionFor, find, nearest } from '../services/places.ts'
 import { isPlace, placeText } from '../show.ts'
 
@@ -24,10 +28,12 @@ const PlaceMap = lazy(() => import('./PlaceMap.tsx'))
 /** What the place input says. */
 export const PLACE_SAYS = {
   search: 'Search a place',
-  far: 'How far',
-  exact: 'Anyone can see this exact spot.',
+  size: 'Size',
+  exact: 'Exact spot',
+  seen: 'Anyone can see this exact spot.',
+  toSpot: 'Move the map to the spot.',
   another: 'Add another area',
-  move: 'Move the map to where you mean.',
+  move: 'Move the map, or search a place.',
   noMap: "The map isn't available right now.",
 }
 
@@ -37,8 +43,14 @@ export const NO_LOCATION = { refused: "Your location isn't allowed.", unavailabl
 /** How long the search waits after the last key, in milliseconds. */
 const TYPED_MS = 250
 
-/** The radius chips: an exact spot, then each radius, with the field's own and the place's own where they are not among them. */
-export const radiiFor = (...more: number[]) => [...new Set([0, ...RADII, ...more])].sort((a, b) => a - b)
+/** The sizes the slider stops at, in kilometres: 0, an exact spot, then 1 to 50, closer together where a few kilometres matter. */
+export const SIZES = [0, 1, 2, 3, 5, 7, 10, 15, 20, 30, 50]
+
+/** The slider's stops: its sizes, with the field's own and the places' own where they are not among them. */
+export const sizesFor = (...more: number[]) => [...new Set([...SIZES, ...more])].sort((a, b) => a - b)
+
+/** A size as the slider says it: Exact spot, 10 km. */
+export const sizeWords = (km: number) => (km === 0 ? PLACE_SAYS.exact : `${km} km`)
 
 export function PlaceField({ field, value, onChange }: { field: Asked; value: unknown; onChange: (v: unknown) => void }) {
   const several = field.several === true
@@ -47,7 +59,9 @@ export function PlaceField({ field, value, onChange }: { field: Asked; value: un
   const [at, setAt] = useState(0)
   const start = field.start?.radiusKm ?? 5
   const [radius, setRadius] = useState(list[at]?.radiusKm ?? start)
-  const [goTo, setGoTo] = useState<{ spot: Spot; radiusKm: number } | null>(null)
+  const [goTo, setGoTo] = useState<{ spot: Spot; radiusKm: number; sets?: false } | null>(null)
+  // Where the device said it is, when it is not yet the place: an exact spot waits to be moved.
+  const [located, setLocated] = useState<Spot | null>(null)
   const [noMap, setNoMap] = useState(false)
   const captions = useCaptions(list)
   const current = list[at]
@@ -62,13 +76,36 @@ export function PlaceField({ field, value, onChange }: { field: Asked; value: un
     set(at < list.length ? list.map((p, i) => (i === at ? place : p)) : [...list, place])
   }
 
-  // Where the browser allows the location already and there is no place yet, the map goes there at once.
-  const locator = useLocate((spot) => setGoTo({ spot, radiusKm: radius }))
+  // The location, asked for as the input opens where there is no place yet: a circle round it; for an
+  // exact spot, the map there, waiting to be moved to the spot.
+  const radiusNow = useRef(radius)
+  radiusNow.current = radius
+  // Whether the place the map moves came from the device's location alone, never moved or searched for.
+  const fromDevice = useRef(false)
+  const sentBy = useRef<'location' | 'search' | null>(null)
+  const locator = useLocate((spot) => {
+    const exact = radiusNow.current === 0
+    sentBy.current = 'location'
+    setLocated(exact ? spot : null)
+    setGoTo({ spot, radiusKm: radiusNow.current, ...(exact && { sets: false as const }) })
+  })
   useEffect(() => {
-    if (!list.length) locator.ifAllowed()
+    if (!list.length) locator.unlessRefused()
   }, [])
 
-  const radii = radiiFor(start, ...list.map((p) => p.radiusKm))
+  /**
+   * The circle's size, from the slider: the place there now, or where the device said it is, at that
+   * size. An exact spot never from the location alone: the place goes, and the map waits there.
+   */
+  const size = (r: number) => {
+    setRadius(r)
+    if (current && r === 0 && fromDevice.current) {
+      set(list.filter((_, i) => i !== at))
+      setLocated(spotOf(current))
+    } else if (current) put(spotOf(current), r)
+    else if (located && r > 0) (put(located, r), setLocated(null))
+  }
+  const sizes = sizesFor(start, ...list.map((p) => p.radiusKm))
   const [opensAt] = useState<Spot | null>(() => (current ? spotOf(current) : null))
   return (
     <div className="place-input" role="group" aria-label={field.label}>
@@ -76,10 +113,9 @@ export function PlaceField({ field, value, onChange }: { field: Asked; value: un
         <div className="rows place-list">
           {list.map((p, i) => (
             <div key={i} className={i === at ? 'place-row here' : 'place-row'}>
-              <button type="button" className="row-button" aria-pressed={i === at} onClick={() => (setAt(i), setRadius(p.radiusKm), setGoTo({ spot: spotOf(p), radiusKm: p.radiusKm }))}>
+              <button type="button" className="row-button" aria-pressed={i === at} onClick={() => ((sentBy.current = null), setAt(i), setRadius(p.radiusKm), setGoTo({ spot: spotOf(p), radiusKm: p.radiusKm }))}>
                 <Icon name="map-pin" />
                 <span>{placeText(p, captions(p))}</span>
-                {p.radiusKm > 0 && captions(p) && <span className="aside">{p.radiusKm} km</span>}
               </button>
               <button
                 type="button"
@@ -97,13 +133,25 @@ export function PlaceField({ field, value, onChange }: { field: Asked; value: un
           ))}
         </div>
       )}
-      <Search near={current ? spotOf(current) : null} onPick={(f) => setGoTo({ spot: { lat: f.lat, lon: f.lon }, radiusKm: radius })} />
+      <Search near={current ? spotOf(current) : null} onPick={(f) => ((sentBy.current = 'search'), setGoTo({ spot: { lat: f.lat, lon: f.lon }, radiusKm: radius }))} />
       <div className="map-box">
         {noMap ? (
           <p className="line">{PLACE_SAYS.noMap}</p>
         ) : (
           <Suspense fallback={null}>
-            <PlaceMap opensAt={opensAt} radiusKm={radius} goTo={goTo} onMiddle={(spot) => put(spot, radius)} onFail={() => setNoMap(true)} />
+            <PlaceMap
+              opensAt={opensAt}
+              radiusKm={radius}
+              goTo={goTo}
+              onMiddle={(spot, byPerson) => {
+                // Waiting for an exact spot: only the person's move, or a place searched for, sets it.
+                if (located && !byPerson && sentBy.current !== 'search') return
+                fromDevice.current = !byPerson && sentBy.current === 'location'
+                setLocated(null)
+                put(spot, radius)
+              }}
+              onFail={() => setNoMap(true)}
+            />
           </Suspense>
         )}
         {!noMap && locator.can && (
@@ -113,27 +161,26 @@ export function PlaceField({ field, value, onChange }: { field: Asked; value: un
         )}
       </div>
       {locator.failed && <p className="line">{NO_LOCATION[locator.failed]}</p>}
-      <div className="chips" role="radiogroup" aria-label={PLACE_SAYS.far}>
-        <span className="chips-label">{PLACE_SAYS.far}</span>
-        {radii.map((r) => (
-          <button
-            key={r}
-            type="button"
-            role="radio"
-            aria-checked={r === radius}
-            className={r === radius ? 'chip here' : 'chip'}
-            onClick={() => {
-              setRadius(r)
-              if (current) put(spotOf(current), r)
-            }}
-          >
-            {r === 0 ? 'Exact spot' : `${r} km`}
-          </button>
-        ))}
+      <div className="size">
+        <div className="size-ends" aria-hidden>
+          <span>{PLACE_SAYS.exact}</span>
+          <strong>{sizeWords(radius)}</strong>
+          <span>{sizeWords(sizes.at(-1)!)}</span>
+        </div>
+        <input
+          type="range"
+          aria-label={PLACE_SAYS.size}
+          aria-valuetext={sizeWords(radius)}
+          min={0}
+          max={sizes.length - 1}
+          step={1}
+          value={Math.max(0, sizes.indexOf(radius))}
+          onChange={(e) => size(sizes[Number(e.target.value)]!)}
+        />
       </div>
-      <Caption place={current} radiusKm={radius} />
+      <Caption place={current} radiusKm={radius} waiting={located !== null} />
       {several && current && (
-        <button type="button" className="quiet add" onClick={() => setAt(list.length)}>
+        <button type="button" className="quiet add" onClick={() => ((fromDevice.current = false), setAt(list.length))}>
           <Icon name="plus" /> {PLACE_SAYS.another}
         </button>
       )}
@@ -142,7 +189,7 @@ export function PlaceField({ field, value, onChange }: { field: Asked; value: un
 }
 
 /** Under the map: the place in words, by places' caption for its middle, or what to do while there is none. */
-function Caption({ place, radiusKm }: { place: PlaceValue | undefined; radiusKm: number }) {
+function Caption({ place, radiusKm, waiting }: { place: PlaceValue | undefined; radiusKm: number; waiting: boolean }) {
   const [caption, setCaption] = useState<string | undefined>()
   useEffect(() => {
     setCaption(undefined)
@@ -151,11 +198,11 @@ function Caption({ place, radiusKm }: { place: PlaceValue | undefined; radiusKm:
     void nearest(config.places, Number(place.lat), Number(place.lon)).then((found) => live && setCaption(captionFor(found, place.radiusKm)))
     return () => void (live = false)
   }, [place?.lat, place?.lon, place?.radiusKm])
-  if (!place) return <p className="hint">{PLACE_SAYS.move}</p>
+  if (!place) return <p className="hint">{waiting || radiusKm === 0 ? PLACE_SAYS.toSpot : PLACE_SAYS.move}</p>
   return (
     <>
       <p className="place-caption">{placeText(place, caption)}</p>
-      {radiusKm === 0 && <p className="hint">{PLACE_SAYS.exact}</p>}
+      {radiusKm === 0 && <p className="hint">{PLACE_SAYS.seen}</p>}
     </>
   )
 }
@@ -203,7 +250,7 @@ function Search({ near, onPick }: { near: Spot | null; onPick: (f: Found) => voi
   )
 }
 
-/** The device's spot, asked only when wanted: whether it can be, whether it is being, what went wrong, and a read at once where the browser allows it already. */
+/** The device's spot: whether it can be had, whether it is being, what went wrong; asked for as the input opens, or by the map's button. */
 function useLocate(onSpot: (spot: Spot) => void) {
   const [allowed, setAllowed] = useState<PermissionState | null>(null)
   const [asking, setAsking] = useState(false)
@@ -233,16 +280,17 @@ function useLocate(onSpot: (spot: Spot) => void) {
       { maximumAge: 600_000, timeout: 20_000 },
     )
   }
-  const ifAllowed = () => {
-    if (!navigator.permissions) return setAllowed('prompt')
+  /** The location asked for at once, the browser's own prompt where it asks, unless the browser was told no before. */
+  const unlessRefused = () => {
+    if (!navigator.permissions) return locate()
     navigator.permissions.query({ name: 'geolocation' }).then(
       (s) => {
         if (!live.current) return
         setAllowed(s.state)
-        if (s.state === 'granted') locate()
+        if (s.state !== 'denied') locate()
       },
-      () => setAllowed('prompt'),
+      () => locate(),
     )
   }
-  return { can: !!navigator.geolocation && allowed !== 'denied', asking, failed, locate, ifAllowed }
+  return { can: !!navigator.geolocation && allowed !== 'denied', asking, failed, locate, unlessRefused }
 }

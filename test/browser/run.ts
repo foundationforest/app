@@ -95,9 +95,10 @@
 //     its subjects from a long list, a search and ticks; its card its first line, its subjects, then
 //     $30 and an hour under it; no place until sessions are In person (a chip with its tick), then
 //     the place right after, and nothing of the map asked for yet; opened, the map from
-//     OpenFreeMap's stand-in with its attribution, the circle in its middle at the market's radius,
-//     round the phone, its caption from places under it; Chamberí searched for by name, picked, and
-//     10 km; the row says Around Chamberí; nothing of where kept on the device; the place gone again
+//     OpenFreeMap's stand-in with its attribution, the location asked for as it opens, the circle in
+//     its middle at the market's size, round the phone, its caption from places under it; Chamberí
+//     searched for by name, picked, and the slider to 10 km; the row says Within 10 km of Chamberí;
+//     nothing of where kept on the device; the place gone again
 //     with In person; a contact, which no market
 //     lists; asking nothing, the seed still held, so Post shows no unlock icon; the second
 //     opens its link with nothing set up, goes through Start, Yes, I'm new and the selfie (the link
@@ -172,14 +173,15 @@
 //     than 1600 pixels, their notes gone, the whole deal its only price; clothes from the kind's long
 //     list, one choice, radio rows with no tick box; and only then the questions it opens, after it:
 //     for women, one of several, its chip with its tick; the size by its label (XXS), searched; two
-//     conditions, each its tick; in person and shipped; its circle round the phone, one step out,
-//     an exact spot saying anyone can see it, then the circle again; posted with its centre moved
+//     conditions, each its tick; in person and shipped; its circle round the phone as the place
+//     opens, a size out, an exact spot waiting to be moved since the location alone is never one,
+//     then the circle again; posted with its centre moved
 //     by up to a tenth of its radius, no name, nothing kept on the device; its card's price reading
 //     $40; the index lists it. A buyer, whose phone hasn't allowed its location: told no before,
-//     the map opens on the whole world, with no circle and no button for the location, and says to
-//     move it; Madrid searched for by name, then an exact spot, Near its caption, posted exactly
-//     where the map went, never moved; never asked, the map's button asks, and the prompt refused,
-//     one quiet line, the button gone; the
+//     nothing is asked and the map opens on the whole world, with no circle and no button for the
+//     location, and says to move it or search; Madrid searched for by name, then an exact spot near
+//     it, posted exactly where the map went, never moved; never asked, the place asks as it opens,
+//     and the prompt refused, one quiet line, the button gone; the
 //     map's code never in the service worker's install; their page closed and opened again, their
 //     profile's messages, none new, show a lock, Open your messages and Open, never "No new
 //     messages"; they write with the round pencil (their own address taken, From the other side;
@@ -486,6 +488,19 @@ async function placeScreen(page: Page, label: string) {
 async function middleOf(screen: Locator) {
   const box = (await screen.locator('.map').boundingBox())!
   return { x: box.x + box.width / 2, y: box.y + box.height / 2 }
+}
+
+/** The place slider's size, as it says it: Exact spot, 10 km. */
+const sizeOf = (screen: Locator) => screen.getByRole('slider', { name: 'Size' }).getAttribute('aria-valuetext')
+
+/** A size in kilometres, from the slider's words: an exact spot is 0. */
+const km = (words: string | null) => (!words || words === 'Exact spot' ? 0 : Number(words.replace(' km', '')))
+
+/** The place slider moved, a step at a time with the arrow keys, until it says `words`. */
+async function setSize(screen: Locator, words: string) {
+  const slider = screen.getByRole('slider', { name: 'Size' })
+  for (let i = 0; i < 30 && (await sizeOf(screen)) !== words; i++) await slider.press(km(await sizeOf(screen)) < km(words) ? 'ArrowRight' : 'ArrowLeft')
+  assert.equal(await sizeOf(screen), words)
 }
 
 /** The caption places gives a circle's centre, as the app picks it: the nearest place not much smaller than the circle, else the nearest. */
@@ -1733,19 +1748,20 @@ test('two people: one posts an offer, its price per hour, the place only for ses
   page.off('request', watch)
   await placing.getByRole('button', { name: 'Your location' }).waitFor()
   const radius = PLACE.start!.radiusKm!
-  assert.equal(await placing.getByRole('radio', { name: `${radius} km`, exact: true }).getAttribute('aria-checked'), 'true', "the market's own radius")
+  assert.equal(await sizeOf(placing), `${radius} km`, "the market's own size for the role")
   const here = await captionAt({ lat: String(SPOT.latitude), lon: String(SPOT.longitude), radiusKm: radius })
-  await placing.locator('.place-caption', { hasText: `Around ${here}` }).waitFor({ timeout: 20_000 })
+  await placing.locator('.place-caption', { hasText: `Within ${radius} km of ${here}` }).waitFor({ timeout: 20_000 })
   // A place searched for by its name: places' answers, each with where it is; one picked, the map goes there.
   await placing.getByRole('searchbox', { name: 'Search a place' }).fill('chamberi')
   const found = placing.getByRole('option', { name: /^Chamberí/ })
   await found.waitFor()
   await found.click()
-  await placing.locator('.place-caption', { hasText: 'Around Chamberí' }).waitFor({ timeout: 20_000 })
-  await placing.getByRole('radio', { name: '10 km', exact: true }).click()
+  await placing.locator('.place-caption', { hasText: 'of Chamberí' }).waitFor({ timeout: 20_000 })
+  await setSize(placing, '10 km')
+  await placing.locator('.place-caption', { hasText: 'Within 10 km of Chamberí' }).waitFor({ timeout: 20_000 })
   await shot(page, 'place-area')
   await closeRow(page, PLACE.label)
-  assert.match((await rowSays(page, PLACE.label))[0]!, /^Around Chamberí/, 'closed: its caption')
+  assert.match((await rowSays(page, PLACE.label))[0]!, /^Within 10 km of Chamberí/, 'closed: its size and its caption')
   assert.equal((await kept(page))['forest.points'], undefined, 'nothing of where it is kept on the device')
   assert.equal(await page.getByLabel(ABOUT.label, { exact: true }).inputValue(), OFFER, 'the form keeps all it holds')
   const contact = await openRow(page, 'Contact')
@@ -2603,20 +2619,21 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   await handover.getByRole('button', { name: wordOf(S.handover, S.inPerson, S.market) }).click()
   await handover.getByRole('button', { name: wordOf(S.handover, S.away, S.market) }).click()
   await closeRow(page, HANDOVER)
-  // Where the coat is: the phone allowed its location, so the map goes there, the circle in its middle
-  // at the field's own radius, its caption under it; one step out; an exact spot says anyone can see
-  // it; back to the circle.
+  // Where the coat is: the phone allowed its location, so the map goes there as it opens, the circle
+  // in its middle at the field's own size, its caption under it; a size out; an exact spot, never from
+  // the location alone, waits to be moved to the spot; back to the circle round the phone.
   const start = fieldAsked(SHOP, S.seller, S.place).start!.radiusKm!
-  const out = [1, 2, 5, 10, 20, 50].find((r) => r > start)!
+  const out = [1, 2, 3, 5, 7, 10, 15, 20, 30, 50].find((r) => r > start)!
   const where = await placeScreen(page, WHERE)
-  assert.equal(await where.getByRole('radio', { name: `${start} km`, exact: true }).getAttribute('aria-checked'), 'true')
-  await where.locator('.place-caption', { hasText: /^Around / }).waitFor({ timeout: 20_000 })
-  await where.getByRole('radio', { name: `${out} km`, exact: true }).click()
-  await where.getByRole('radio', { name: 'Exact spot', exact: true }).click()
-  await where.getByText('Anyone can see this exact spot.', { exact: true }).waitFor()
+  assert.equal(await sizeOf(where), `${start} km`)
+  await where.locator('.place-caption', { hasText: new RegExp(`^Within ${start} km of `) }).waitFor({ timeout: 20_000 })
+  await setSize(where, `${out} km`)
+  await setSize(where, 'Exact spot')
+  await where.getByText('Move the map to the spot.', { exact: true }).waitFor()
   await where.locator('.map-pin.middle').waitFor()
-  await where.getByRole('radio', { name: `${out} km`, exact: true }).click()
-  await where.getByText('Anyone can see this exact spot.', { exact: true }).waitFor({ state: 'detached' })
+  assert.equal(await where.locator('.place-caption').count(), 0, 'no spot yet: the location alone is never one')
+  await setSize(where, `${out} km`)
+  await where.locator('.place-caption', { hasText: new RegExp(`^Within ${out} km of `) }).waitFor({ timeout: 20_000 })
   await closeRow(page, WHERE)
   const contactRow = await openRow(page, 'Contact')
   await contactRow.getByLabel('Contact', { exact: true }).fill('@coats')
@@ -2682,9 +2699,10 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   buyerAt = buyerAddress
   await button(buyer.page, 'Skip').click()
   // A phone that hasn't allowed its location. Its browser told no before (headless Chromium's
-  // answer for a site never granted): the map opens on the whole world, with no circle, no button for
-  // the location and no line, and says to move the map. A place searched for by its name: the map goes
-  // there, its caption under it. Then an exact spot: a pin in the middle, posted exactly there.
+  // answer for a site never granted): nothing is asked, and the map opens on the whole world, with no
+  // circle, no button for the location and no line, and says to move it or search. A place searched
+  // for by its name: the map goes there, its caption under it. Then an exact spot, there since it was
+  // searched for: a pin in the middle, posted exactly there.
   await buyer.page.locator('button.card', { hasText: BUYER_WORDS }).click()
   await button(buyer.page, 'New request').click()
   const buyerAsk = (name: string) => fieldAsked(SHOP, S.buyer, name)
@@ -2694,19 +2712,19 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   const map = await placeScreen(buyer.page, buyerAsk(S.place).label)
   assert.equal(await map.getByRole('button', { name: 'Your location' }).count(), 0, 'told no before: no button')
   assert.equal(await map.locator('.line').count(), 0, 'and no line')
-  await map.getByText('Move the map to where you mean.', { exact: true }).waitFor()
+  await map.getByText('Move the map, or search a place.', { exact: true }).waitFor()
   await map.getByRole('searchbox', { name: 'Search a place' }).fill('madrid')
   const madrid = map.getByRole('option').filter({ hasText: /Spain/ }).first()
   await madrid.waitFor()
   await madrid.click()
-  await map.locator('.place-caption', { hasText: /^Around / }).waitFor({ timeout: 20_000 })
+  await map.locator('.place-caption', { hasText: /^Within \d+ km of / }).waitFor({ timeout: 20_000 })
   await shot(buyer.page, 'place-searched')
-  await map.getByRole('radio', { name: 'Exact spot', exact: true }).click()
+  await setSize(map, 'Exact spot')
   await map.getByText('Anyone can see this exact spot.', { exact: true }).waitFor()
-  await map.locator('.place-caption', { hasText: /^Near / }).waitFor()
+  await map.locator('.place-caption', { hasText: /^Exact spot near / }).waitFor()
   await shot(buyer.page, 'place-spot')
   await closeRow(buyer.page, buyerAsk(S.place).label)
-  assert.match((await rowSays(buyer.page, buyerAsk(S.place).label))[0]!, /^Near /)
+  assert.match((await rowSays(buyer.page, buyerAsk(S.place).label))[0]!, /^Exact spot near /)
   await buyer.page.getByLabel(buyerAsk('description').label, { exact: true }).fill(WANTED)
   await button(buyer.page, 'Post').click()
   await buyer.page.locator('.listing-card', { hasText: WANTED }).waitFor({ timeout: 60_000 })
@@ -2718,8 +2736,8 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   const searched = madrids.find((f) => f.country === 'ES')!.place
   assert.ok(kmApart(spot, searched) < 0.05, `exactly where the map went, ${(kmApart(spot, searched) * 1000).toFixed(0)} m from the place found, never moved`)
   assert.equal(loadMarkets().checkEntry(SHOP, S.buyer, 'listing', wanted.entry.body), null, 'it fits the market')
-  // Never asked: the map's own button asks, and the browser's own prompt only on its tap; here the
-  // prompt is refused: one quiet line, and the button goes.
+  // Never asked: the location is asked for as the place opens, the browser's own prompt with it; here
+  // the prompt is refused: one quiet line, and the button goes.
   const { targetInfo } = await buyer.cdp.send('Target.getTargetInfo')
   await buyer.cdp.send('Browser.setPermission', { permission: { name: 'geolocation' }, setting: 'prompt', origin: APP.slice(0, -1), browserContextId: targetInfo.browserContextId! })
   await button(buyer.page, 'New request').click()
@@ -2727,7 +2745,6 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   await again.getByRole('button', { name: wordOf(S.handover, S.inPerson, S.market) }).click()
   await closeRow(buyer.page, buyerAsk(S.handover).label)
   const asking = await placeScreen(buyer.page, buyerAsk(S.place).label)
-  await asking.getByRole('button', { name: 'Your location' }).click()
   await asking.getByText("Your location isn't allowed.", { exact: true }).waitFor()
   assert.equal(await asking.getByRole('button', { name: 'Your location' }).count(), 0, 'refused: the line alone')
   await shot(buyer.page, 'place-refused')
@@ -4187,7 +4204,7 @@ test('several places in one field: the first round the phone, more searched for 
   const where = await placeScreen(page, field.label)
   // The phone allowed its location: the first circle round it.
   const here = await captionAt({ lat: String(SPOT.latitude), lon: String(SPOT.longitude), radiusKm: radius })
-  await where.locator('.place-caption', { hasText: `Around ${here}` }).waitFor({ timeout: 20_000 })
+  await where.locator('.place-caption', { hasText: `Within ${radius} km of ${here}` }).waitFor({ timeout: 20_000 })
   /** Another area: Add another area, then a place searched for by name and picked. */
   const add = async (words: string, found: RegExp) => {
     await where.getByRole('button', { name: 'Add another area' }).click()
@@ -4199,10 +4216,11 @@ test('several places in one field: the first round the phone, more searched for 
   await add('monterrey', /Monterrey/)
   const listed = () => where.locator('.place-row .row-button > span:not(.aside)').allTextContents()
   for (const until = Date.now() + 20_000; (await listed()).some((t) => t.startsWith('Within')); await page.waitForTimeout(200)) if (Date.now() > until) break
-  assert.deepEqual((await listed()).map((t) => t.replace(/,.*$/, '')), [`Around ${here.replace(/,.*$/, '')}`, 'Around Chamberí', 'Around Monterrey'], 'each its own row, by its caption, in order')
+  const of = (name: string) => `Within ${radius} km of ${name}`
+  assert.deepEqual((await listed()).map((t) => t.replace(/,.*$/, '')), [of(here.replace(/,.*$/, '')), of('Chamberí'), of('Monterrey')], 'each its own row, by its size and caption, in order')
   assert.equal(await where.locator('.place-row [data-icon="x"]').count(), 3, 'each its remove button')
   // Removed: its row goes, the others stay.
-  await where.getByRole('button', { name: /^Remove Around Monterrey/ }).click()
+  await where.getByRole('button', { name: new RegExp(`^Remove ${of('Monterrey')}`) }).click()
   assert.equal(await where.locator('.place-row').count(), 2)
   await shot(page, 'listing-places')
   await closeRow(page, field.label)
