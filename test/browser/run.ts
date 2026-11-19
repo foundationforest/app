@@ -89,16 +89,16 @@
 //     no Skip. On a laptop, no tabs: the sidebar, its places, the profiles with their markets' icons,
 //     Profiles with its small mint New, which opens New profile, no New profile row and no AI card;
 //     Appearance switching in place there too; a profile opened from it; Home's New profile at its top right.
-//  6. Two people: the first, whose phone allows its location, posts an offer from their profile,
-//     its price per hour side by side, its subjects from a long list, a row whose own screen has a search
-//     and ticks, its card its first line, its subjects, then $30 and per hour under it; its form the
-//     market's: no place until sessions are In person (a chip with its tick), then the place right
-//     after, one row with its pin, Choose on the map, and nothing of the map
-//     asked for yet; its screen: Area, the map from OpenFreeMap's stand-in with its attribution, a
-//     circle round the phone at the market's 5 km, its centre kept a few hundred metres from it, the
-//     slider moved to 10 and a place name given, Done, and the row says so, its name, then how far;
-//     opened again, the phone's back closes it, keeping the form; the place gone again with In person;
-//     a contact, which no market
+//  6. Two people: the first, whose phone allows its location, posts an offer from their profile:
+//     each field a row in the market's own order and words, its question in grey while empty,
+//     opening in place; its price, $30 for 1 of the market's own per (an hour), the whole job last;
+//     its subjects from a long list, a search and ticks; its card its first line, its subjects, then
+//     $30 and an hour under it; no place until sessions are In person (a chip with its tick), then
+//     the place right after, and nothing of the map asked for yet; opened, the map from
+//     OpenFreeMap's stand-in with its attribution, the circle in its middle at the market's radius,
+//     round the phone, its caption from places under it; Chamberí searched for by name, picked, and
+//     10 km; the row says Around Chamberí; nothing of where kept on the device; the place gone again
+//     with In person; a contact, which no market
 //     lists; asking nothing, the seed still held, so Post shows no unlock icon; the second
 //     opens its link with nothing set up, goes through Start, Yes, I'm new and the selfie (the link
 //     waiting in the tab through Didit's page and back), makes the profile on the other side from
@@ -169,18 +169,17 @@
 //     there Passkey 2; the first lists one passkey more.
 //  9. Things sold, with the index: the first, the page closed and opened again so Post shows its unlock
 //     icon, a moment hidden keeping it so, posts a coat with two photos in one unlock, redrawn on the device as JPEGs no longer
-//     than 1600 pixels, their notes gone, no per to pick; clothes from the kind's own screen, one choice,
-//     radio rows with no tick box and no Done, a tap picking it and closing the screen; and only then
-//     the questions it opens, after it: for women, one of several, its chip with its tick; the size,
-//     its values by their labels (XXS) on its own screen, nothing floating, closed by its Back; its condition, one of five chips, a second pick
-//     unpicking the first, no tick; picked up and shipped, a choice of several; its location the offer's kept point, the circle the map opens on, moved a
-//     little from the phone's, within 3 km of Lavapiés, an exact spot showing no pin and no Done
-//     until one is dropped; its card's price reading $40; the index lists it. A buyer, whose phone
-//     hasn't allowed its location: told no before,
-//     the map opens on the whole world, with no circle and no button for the location; a tap puts
-//     the circle there and the map fits it, a drag carries it east and keeps a second centre; then
-//     an exact spot, a tap on the map's middle, its one quiet line, posted exactly there; never
-//     asked, the map's button asks, and the prompt refused, one quiet line, the button gone; the
+//     than 1600 pixels, their notes gone, the whole deal its only price; clothes from the kind's long
+//     list, one choice, radio rows with no tick box; and only then the questions it opens, after it:
+//     for women, one of several, its chip with its tick; the size by its label (XXS), searched; two
+//     conditions, each its tick; in person and shipped; its circle round the phone, one step out,
+//     an exact spot saying anyone can see it, then the circle again; posted with its centre moved
+//     by up to a tenth of its radius, no name, nothing kept on the device; its card's price reading
+//     $40; the index lists it. A buyer, whose phone hasn't allowed its location: told no before,
+//     the map opens on the whole world, with no circle and no button for the location, and says to
+//     move it; Madrid searched for by name, then an exact spot, Near its caption, posted exactly
+//     where the map went, never moved; never asked, the map's button asks, and the prompt refused,
+//     one quiet line, the button gone; the
 //     map's code never in the service worker's install; their page closed and opened again, their
 //     profile's messages, none new, show a lock, Open your messages and Open, never "No new
 //     messages"; they write with the round pencil (their own address taken, From the other side;
@@ -220,8 +219,8 @@
 //     market changed, days ago (one price, not a list; answers in shapes gone): its card says Needs
 //     updating and opens its form, and Notifications holds "Your Shopping offer needs updating: its
 //     market changed." under Earlier, its sun square and no time, the tab counting it; opened
-//     there, every answer that still fits filled in, each one that didn't marked "Changed: answer
-//     again." until it is answered; posted, it goes in place of the old one, at its own path, fits,
+//     there, every answer that still fits filled in, each row whose answer didn't marked "Changed:
+//     answer again." until it is answered; posted, it goes in place of the old one, at its own path, fits,
 //     and the chip and the notice go. Then a review an older market shaped: its notice; opened, its
 //     kind kept, what still fits; posted, gone.
 //     Then a review of one of the person's own profiles, from their student about their tutor:
@@ -292,12 +291,12 @@
 //     up, the payment dropped; an ID already used, the ID greyed, I already use Forest alone under
 //     the cards; then the selfie, Continue kept through a reload, and in; from You, an ID already used again: the ID greyed, and no
 //     I already use Forest, Back and no Continue.
-// 18. A number with its unit (shoes' foot length, in centimetres): many before anything is typed,
-//     one for 1, many for 27, beside the number in the form; 27 centimetres on its card; and the
-//     beta market's one line at the form's top.
-// 19. Several places in one field (where a guest would stay): Lisbon, Porto and Faro, each set on
-//     its own screen, each its row with a remove button, Add another place under them; Faro removed,
-//     Porto renamed from its row; posted, both in the field, and both on the card.
+// 18. A number with its unit: many before anything is typed, one for 1, + adding one, many for 27,
+//     beside the number in the form; 27 and its unit on its row; and the beta market's one line at
+//     the form's top.
+// 19. Several places in one field: the first round the phone, Chamberí and Monterrey searched for by
+//     name with Add another area, each in the list by its caption with a remove button; Monterrey
+//     removed; posted, both in the field, each moved by up to a tenth of its radius.
 // 20. A language picked by its name: the long list every value by its name, a code searched
 //     showing no code, the name searched finding it; its row shows the name, the listing holds the
 //     code.
@@ -317,15 +316,14 @@
 //     list made longer with the same seed's addresses, never written, so no more proofs), every one
 //     in the sidebar, in Home's order, no All profiles, the sidebar scrolling inside itself and the
 //     page not; Home lists them all, and its one search is Search Forest.
-// 23. A range (a number field that takes one, such as a child's age in years): 18 typed, then its
-//     small Range, From 18 and To empty, "18 years and over" under them; posted, the field holds
-//     { from: "18" }; reopened a range again, From emptied and To 11, "11 years and under"; posted
-//     again at its own path, no second.
-// 24. A price list, a tutor's: MX$1,300 per lesson for 5, its count once a per is picked, its per's
-//     word after it; Add a price, in the last row's currency, $30 per hour; both rows numbered, each
-//     its remove button; posted, every price in order, the pack with its count; its card the first
-//     price as the index says it, "for 5 lessons", and "+1 more"; reopened, both, one removed, the
-//     last with no remove button.
+// 23. A range (a number the market asks as one, such as the ages a coach takes): From 18 and To
+//     empty, "18 years or more" under them; posted, the field holds { from: "18" }; reopened a range
+//     again, From emptied and To 11, "Up to 11 years"; posted again at its own path, no second.
+// 24. A price list, a tutor's: MX$1,300 for 5 months; Add another price, in the last one's currency,
+//     $25 for 45 minutes with its note, 50 minutes refused in a line; both numbered, each its remove
+//     button; posted, every price in order, counts as decimal text, 45 minutes as 0.75 of an hour; its
+//     card the first price, "for 5 months", and "+1 more"; reopened, both, one removed, the last with
+//     no remove button.
 // 25. Every market's own icon, from its market file, else its first letter, and its color by its
 //     number, the index's ten in their order, on New profile's tiles; markets numbered next to each
 //     other apart; the tutor's avatar on Home the same.
@@ -372,15 +370,13 @@ import { type Body, b64u, entry, liveContent, nextTime, proofsOf, readFolder, ve
 import { isLocked, openLocked } from '../../standard/folders/dist/locked.js'
 import { exportWords, mainKey, openingHalf } from '../../standard/keys/dist/index.js'
 import { checkVerification, stampFromJson } from '../../standard/proofs/dist/index.js'
-import { loadMarkets, previewOf } from '../../markets/build/dist/index.js'
+import { labelOf, loadMarkets, previewOf, valuesOf } from '../../markets/build/dist/index.js'
 import { type Served, serve } from '../../services/mcp/src/server.ts'
 import { App } from '../../services/mcp/test/app.ts'
 import { REDIRECT, aiApp } from '../../services/mcp/test/setup.ts'
 import { PALETTE, colorFor } from '../../services/index/src/avatar.ts'
 import { animalOf } from '../../src/animals.ts'
-import { radiusSteps } from '../../src/near.ts'
 import { unitWords } from '../../src/units.ts'
-import { fieldWords } from '../../src/words.ts'
 import { codeSentTo } from '../resend.ts'
 import { choiceWords, fieldWith, isFor, isLong, labelled, lessons, marketWords, opening, roleWords, shop, sides, twoSides, valueWords } from '../directory.ts'
 import { type Running, freePort, startServices } from './services.ts'
@@ -419,10 +415,14 @@ const BUYER_WORDS = `${SHOPPING} ${S.buyer}`
 /** A third market with two sides, whose role that offers the person makes across a deploy. */
 const D = twoSides(MARKETS, (m) => m.name !== LESSONS && m.name !== SHOP)
 const DEPLOY = marketWords(D.market.name)
-/** A choice's value as the form says it: its label, else in words. */
-const wordOf = (name: string, value: string, market = L.market) => choiceWords(market.listing[name]!, value)
-/** What a price is for, as its pick says it: per hour. */
-const per = (p: string) => `per ${p}`
+/** A choice's value as the form says it: the markets' words for it, with a capital. */
+const wordOf = (name: string, value: string, market = L.market) => choiceWords(market.listing[name]!, value, MARKETS.lists)
+/** A choice's values, its own or its shared list's. */
+const valuesIn = (name: string, market = L.market) => valuesOf(market.listing[name]!, MARKETS.lists)
+/** A field as its market asks it of a role: its label, its question, its hint. */
+const fieldAsked = (market: string, role: string, name: string, kind: 'listing' | 'review' = 'listing', about?: string) => MARKETS.ask(market, role, kind, about).find((f) => f.name === name)!
+/** What a price is for, one of it, as people say it: an hour, a month. */
+const forOne = (p: string) => `${/^(hour|[aeio])/.test(p) ? 'an' : 'a'} ${p}`
 
 let services: Running
 /** OpenFreeMap's stand-in, for the place screen's map. */
@@ -475,27 +475,23 @@ function kmApart(a: Point, b: Point): number {
 /** The distance between a place's point and SPOT, in kilometres. */
 const kmFromSpot = (p: Point) => kmApart(p, { lat: String(SPOT.latitude), lon: String(SPOT.longitude) })
 
-/** A place's screen, opened from its row in the form, named by its field, once its map is drawn. */
-async function placeScreen(page: Page, field: string) {
-  await page.getByRole('group', { name: field }).getByRole('button').click()
-  const screen = page.getByRole('region', { name: field })
-  await screen.locator('.maplibregl-canvas').waitFor()
-  return screen
+/** A place's input, opened in its row in the form, named by its label, once its map is drawn. */
+async function placeScreen(page: Page, label: string) {
+  const open = await openRow(page, label)
+  await open.locator('.maplibregl-canvas').waitFor()
+  return open
 }
 
-/** The middle of a place screen's map, on the page. */
+/** The middle of a place input's map, on the page. */
 async function middleOf(screen: Locator) {
   const box = (await screen.locator('.map').boundingBox())!
   return { x: box.x + box.width / 2, y: box.y + box.height / 2 }
 }
 
-/** The centres this device keeps for areas, once there are `n`. */
-async function keptPoints(page: Page, n: number): Promise<Point[]> {
-  for (const until = Date.now() + 10_000; ; await page.waitForTimeout(100)) {
-    const points = JSON.parse((await kept(page))['forest.points'] ?? '[]') as Point[]
-    if (points.length === n) return points
-    if (Date.now() > until) throw new Error(`the device keeps ${points.length} points, not ${n}`)
-  }
+/** The caption places gives a circle's centre, as the app picks it: the nearest place not much smaller than the circle, else the nearest. */
+async function captionAt(p: Point & { radiusKm: number }): Promise<string> {
+  const { places } = (await (await fetch(`${services.places}/v1/name?near=${Number(p.lat).toFixed(2)},${Number(p.lon).toFixed(2)}`)).json()) as { places: Array<{ caption: string; radiusKm: number }> }
+  return (places.find((f) => f.radiusKm * 5 >= p.radiusKm) ?? places[0])!.caption
 }
 
 /**
@@ -726,14 +722,32 @@ async function cardNamed(card: Locator, market: string, role: string) {
   assert.deepEqual(seen, [market, '700', role, '400'], `${market} ${role}: the market in bold over the role`)
 }
 
-/** On a field with a long list, its row tapped, then `words` on its own screen: of one choice, a radio row, picked, closes it; of several, a tick box, and Done does. */
-async function pick(page: Page, field: string, words: string) {
-  await page.getByRole('group', { name: field, exact: true }).locator('button.open-row').click()
-  const sheet = page.getByRole('region', { name: field })
-  const one = (await sheet.getByRole('radiogroup').count()) === 1
-  await sheet.getByRole(one ? 'radio' : 'checkbox', { name: words, exact: true }).click()
-  if (!one) await sheet.getByRole('button', { name: 'Done' }).click()
-  await sheet.waitFor({ state: 'detached' })
+/** A field's row in the posting form, by the label its market gives it. */
+const rowOf = (page: Page, label: string) => page.locator('.field-row').filter({ has: page.locator('.field-head .name').getByText(label, { exact: true }) })
+
+/** A field's row, opened in place: what it opens, its input inside. */
+async function openRow(page: Page, label: string): Promise<Locator> {
+  const head = rowOf(page, label).locator('.field-head')
+  if ((await head.getAttribute('aria-expanded')) !== 'true') await head.click()
+  return rowOf(page, label).locator('.field-open')
+}
+
+/** A field's row, closed by its Done. */
+async function closeRow(page: Page, label: string) {
+  await rowOf(page, label).locator('.field-open').getByRole('button', { name: 'Done', exact: true }).click()
+  await rowOf(page, label).locator('.field-open').waitFor({ state: 'detached' })
+}
+
+/** What a field's row says while closed: its answer's lines, or its question. */
+const rowSays = (page: Page, label: string) => rowOf(page, label).locator('.field-head .answer').allTextContents()
+
+/** On a field with a long list, opened, `words` searched for and picked: of one choice, its radio row; of several, its tick box. */
+async function pick(page: Page, label: string, words: string) {
+  const open = await openRow(page, label)
+  await open.getByRole('searchbox').fill(words)
+  const one = (await open.getByRole('radiogroup').count()) === 1
+  await open.getByRole(one ? 'radio' : 'checkbox', { name: words, exact: true }).click()
+  await closeRow(page, label)
 }
 
 /** The quiet tone, ink3, as the page draws it now. */
@@ -971,7 +985,7 @@ before(async () => {
   mcpDir = mkdtempSync(join(tmpdir(), 'forest-app-mcp-'))
   mcp = await serve({ appUrl: `${APP}connect`, dataDir: mcpDir, read: { index: services.index }, hostFetch: fetch }, '127.0.0.1', 0)
   // The app's one config file, pointed at these services (src/config.ts).
-  process.env.VITE_FOREST_CONFIG = JSON.stringify({ app: APP.slice(0, -1), verifier: services.verifier, host: services.host, connector: mcp.origin, index: services.index, tiles: tiles.origin })
+  process.env.VITE_FOREST_CONFIG = JSON.stringify({ app: APP.slice(0, -1), verifier: services.verifier, host: services.host, connector: mcp.origin, index: services.index, places: services.places, tiles: tiles.origin })
   await build({ root: app, configFile: `${app}vite.config.ts`, logLevel: 'warn', build: { outDir, emptyOutDir: true } })
   const renamed = { entryFileNames: 'assets/[name]-next-[hash].js', chunkFileNames: 'assets/[name]-next-[hash].js' }
   await build({ root: app, configFile: `${app}vite.config.ts`, logLevel: 'warn', build: { outDir: nextDir, emptyOutDir: true, rolldownOptions: { output: renamed } }, worker: { rolldownOptions: { output: renamed } } })
@@ -980,7 +994,7 @@ before(async () => {
   const real: string = vercel.headers.find((h: any) => h.source === '/(.*)').headers.find((h: any) => h.key === 'Content-Security-Policy').value
   csp = real
     .split('; ')
-    .map((d) => (d.startsWith('connect-src ') ? `connect-src 'self' ${services.verifier} ${services.host} ${mcp.origin} ${services.index} ${tiles.origin}` : d.startsWith('img-src ') ? d.replace('https://host.forest.foundation', services.host) : d))
+    .map((d) => (d.startsWith('connect-src ') ? `connect-src 'self' ${services.verifier} ${services.host} ${mcp.origin} ${services.index} ${services.places} ${tiles.origin}` : d.startsWith('img-src ') ? d.replace('https://host.forest.foundation', services.host) : d))
     .join('; ')
   server = await serveLikeVercel({ root: outDir, port, override: { 'Content-Security-Policy': csp } })
   // Chromium itself, not its headless shell, which does not take an insecure origin as secure; and WebAuthn wants a secure one.
@@ -1324,7 +1338,7 @@ test("the first profile: Later, Connect your AI and Skip, then back; every marke
   assert.equal(await page.locator('.market-tile').count(), 0, 'a page of its own, the tiles gone')
   assert.equal(await roles.locator('.market-icon svg').getAttribute('data-icon'), MARKETS.market(SHOP)!.icon ?? null, 'its icon')
   assert.equal(await roles.locator('p.lead').textContent(), summary, 'its summary')
-  assert.equal(await roles.getByText(description).count(), 0, 'not its description, which is for an AI')
+  if (description) assert.equal(await roles.getByText(description).count(), 0, 'not its description, which is for an AI')
   assert.equal(await roles.locator('p.lead').evaluate((p) => getComputedStyle(p).color), await muted(page), 'one quiet line')
   const beta = shopping.status === 'beta'
   assert.deepEqual([await roles.locator('h1 .chip.beta').allTextContents(), await roles.getByText('Beta: it works, at your own risk, and may change.', { exact: true }).count()], beta ? [['Beta'], 1] : [[], 0], 'a beta market says so, once, where its profile is made')
@@ -1661,103 +1675,101 @@ const entriesOf = async (address: string, kind: string) => [...liveContent(await
 
 test('two people: one posts an offer, its price per hour, the place only for sessions in person, a contact, asking nothing while the seed is held; the other opens its link, messages it, gets the reply, and reviews it from the thread; the Notifications tab counts it, and Messages', async () => {
   const { page, counts } = first
-  // The offer, from the tutor's profile, in the market's own fields; a price per one of its field's values.
+  // The offer, from the tutor's profile: each of the market's fields a row, its label, then its
+  // question in grey while it holds nothing; the listing's own words, an open box at the foot.
   await page.locator('button.card', { hasText: TUTOR_WORDS }).click()
   await button(page, 'New offer').click()
   await page.getByRole('heading', { name: 'New offer' }).waitFor()
-  await page.getByLabel('Description').fill(OFFER)
-  await page.getByLabel('Price').fill('30')
-  assert.deepEqual(await page.getByRole('group', { name: 'Per' }).getByRole('button').allTextContents(), L.per.map(per), "exactly the field's per values")
-  await page.getByRole('group', { name: 'Per' }).getByRole('button', { name: per(L.per[0]!) }).click()
-  assert.equal(await page.getByRole('group', { name: 'Per' }).getByRole('button', { name: per(L.per[0]!) }).getAttribute('aria-pressed'), 'true', 'side by side, one picked')
-  // A long list (a tutor's subjects): one row, Choose; tapped, its own screen, with a search and each with its tick; Done.
-  const listed = L.market.listing[L.choice]!.values!
+  const ask = (name: string) => fieldAsked(LESSONS, L.offer.role, name)
+  const [PRICE, CHOICE, MODE, PLACE, ABOUT] = [ask('price'), ask(L.choice), ask(L.mode), ask(L.place), ask('description')]
+  assert.deepEqual(await rowSays(page, PRICE.label), [PRICE.question], 'empty: its question')
+  await page.getByLabel(ABOUT.label, { exact: true }).fill(OFFER)
+  // The price: an amount for 1 of what the market's price may be for, hours, minutes or the whole job.
+  const price = await openRow(page, PRICE.label)
+  if (PRICE.hint) await price.getByText(PRICE.hint).waitFor()
+  await price.getByLabel('Amount', { exact: true }).fill('30')
+  const units = await price.getByLabel('For', { exact: true }).locator('option').allTextContents()
+  assert.deepEqual(units, [...L.per.flatMap((p) => (p === 'hour' ? ['hour', 'minute'] : [p])), 'the whole job'], "the field's own per, for 1 of each, minutes after hours, then the whole job")
+  await closeRow(page, PRICE.label)
+  assert.deepEqual(await rowSays(page, PRICE.label), [`$30 ${forOne(L.per[0]!)}`], 'closed: the price as people say it')
+  // A long list (a tutor's subjects): opened, a search over the values' words, each with its tick box; one ticked, a chip.
+  const listed = valuesIn(L.choice)
   const subject = wordOf(L.choice, listed[0]!)
-  const subjects = page.getByRole('group', { name: fieldWords(L.choice) }).locator('button.open-row')
-  assert.equal(await subjects.textContent(), 'Choose')
-  await subjects.click()
-  const picker = page.getByRole('region', { name: fieldWords(L.choice) })
-  assert.equal(await picker.getByRole('checkbox').count(), listed.length, 'every value')
+  const subjects = await openRow(page, CHOICE.label)
   const typed = subject.slice(0, 3).toLowerCase()
-  await picker.getByLabel('Search').fill(typed)
-  assert.deepEqual(await picker.getByRole('checkbox').allTextContents(), listed.map((v) => wordOf(L.choice, v)).filter((w) => w.toLowerCase().includes(typed)), 'the search, by their words')
-  await picker.getByRole('checkbox', { name: subject, exact: true }).click()
-  assert.equal(await picker.getByRole('checkbox', { name: subject, exact: true }).getAttribute('aria-checked'), 'true', 'ticked')
+  await subjects.getByRole('searchbox').fill(typed)
+  assert.deepEqual(await subjects.getByRole('checkbox').allTextContents(), listed.map((v) => wordOf(L.choice, v)).filter((w) => w.toLowerCase().includes(typed)), 'the search, by their words')
+  await subjects.getByRole('checkbox', { name: subject, exact: true }).click()
+  assert.deepEqual(await subjects.locator('.chips .chip').allTextContents(), [subject], 'picked, a chip')
   await shot(page, 'picker')
-  await picker.getByRole('button', { name: 'Done' }).click()
-  await picker.waitFor({ state: 'detached' })
-  assert.deepEqual(await subjects.locator('.chip').allTextContents(), [subject], 'the row shows it')
+  await closeRow(page, CHOICE.label)
+  assert.deepEqual(await rowSays(page, CHOICE.label), [subject], 'the row says it')
   // How sessions are held: no place until they are in person; then the place, right after, one row,
-  // and nothing of the map asked for yet: its code and its tiles come with its screen alone.
-  const [MODE, PLACE, IN_PERSON, ONLINE] = [fieldWords(L.mode), fieldWords(L.place), wordOf(L.mode, L.inPerson), wordOf(L.mode, L.online)]
-  const mode = page.getByRole('group', { name: MODE })
-  const place = page.getByRole('group', { name: PLACE })
+  // and nothing of the map asked for yet: its code and its tiles come with the place opened alone.
+  const [IN_PERSON, ONLINE] = [wordOf(L.mode, L.inPerson), wordOf(L.mode, L.online)]
   const mapCode: string[] = []
   const watch = (r: { url: () => string }) => void (/\/assets\/(PlaceMap|maplibre-gl-worker)-/.test(r.url()) && mapCode.push(r.url()))
   page.on('request', watch)
-  assert.equal(await place.count(), 0, 'no place before In person')
+  assert.equal(await rowOf(page, PLACE.label).count(), 0, 'no place before In person')
+  const mode = await openRow(page, MODE.label)
   await mode.getByRole('button', { name: IN_PERSON }).click()
   assert.equal(await mode.getByRole('button', { name: IN_PERSON }).locator('[data-icon="check"]').count(), 1, 'two that can both be picked: chips with their tick')
-  await place.getByRole('button', { name: 'Choose on the map' }).waitFor()
-  assert.equal(await place.locator('[data-icon="map-pin"]').count(), 1, 'its row, with its pin')
-  const labels = async () => (await page.locator('form > .field > .label').allTextContents()).map((l) => l.replace('Public.', ''))
-  const shownLabels = await labels()
-  assert.equal(shownLabels.indexOf(PLACE), shownLabels.indexOf(MODE) + 1, 'the place right after how sessions are held')
-  assert.equal(shownLabels.at(-1), 'Contact', 'contact last')
-  const previewed = previewOf(L.market).filter((n) => L.market.listing[n] && isFor(L.market.listing[n]!, L.offer.role) && !L.market.listing[n]!.when)
-  assert.deepEqual(shownLabels.slice(0, previewed.length), previewed.map(fieldWords), "the preview's fields first")
+  await closeRow(page, MODE.label)
+  await rowOf(page, PLACE.label).waitFor()
+  const labels = await page.locator('.field-head .name').allTextContents()
+  assert.equal(labels.indexOf(PLACE.label), labels.indexOf(MODE.label) + 1, 'the place right after how sessions are held')
+  assert.equal(labels.at(-1), 'Contact', 'contact last')
+  const expected = MARKETS.ask(LESSONS, L.offer.role)
+    .filter((f) => f.name !== 'description' && Object.entries(f.when ?? {}).every(([n, v]) => n === L.mode && v.includes(L.inPerson)))
+    .map((f) => f.label)
+  assert.deepEqual(labels, expected, "the market's own order and words")
   assert.deepEqual([mapCode, tiles.asked], [[], { styles: [], tilejson: 0, tiles: 0 }], 'nothing of the map yet')
-  // Its screen: an area, on OpenFreeMap's tiles (the stand-in's), its attribution shown; the map's
-  // own button for the location; a circle round the phone at the market's 5 km, its centre kept, a
-  // few hundred metres from the phone.
-  const placing = await placeScreen(page, PLACE)
-  assert.equal(await placing.getByRole('button', { name: 'Area' }).getAttribute('aria-pressed'), 'true')
+  // Opened: the map, on OpenFreeMap's tiles (the stand-in's), its attribution shown, the circle in its
+  // middle at the market's own radius; the location allowed already, so the map goes to the phone and
+  // the caption places gives that circle shows under it, never stored.
+  const placing = await placeScreen(page, PLACE.label)
   await placing.locator('.maplibregl-ctrl-attrib', { hasText: 'OpenFreeMap stand-in' }).waitFor()
   assert.ok(mapCode.some((u) => u.includes('/PlaceMap-')) && tiles.asked.styles[0] === 'positron' && tiles.asked.tiles > 0, "the map's code, its style and its tiles, now")
   page.off('request', watch)
   await placing.getByRole('button', { name: 'Your location' }).waitFor()
-  const radius = L.market.listing[L.place]!.radiusKm!
-  await placing.getByText(`Within ${radius} km`, { exact: true }).waitFor()
-  const [centre] = await keptPoints(page, 1)
-  const fromPhone = kmFromSpot(centre!)
-  assert.ok(fromPhone > 0.1 && fromPhone < 0.8, `the circle's centre moved a little from the phone's spot, ${fromPhone.toFixed(2)} km`)
-  // The radius on a slider, from the field's own: 10 km is one of its steps (1, 2, 3, 5, 10, and on).
-  const steps = radiusSteps(radius)
-  await placing.getByRole('slider', { name: 'Within' }).fill(String(steps.indexOf(10)))
-  await placing.getByText('Within 10 km', { exact: true }).waitFor()
-  await placing.getByLabel('Place name').fill('Chamberí')
+  const radius = PLACE.start!.radiusKm!
+  assert.equal(await placing.getByRole('radio', { name: `${radius} km`, exact: true }).getAttribute('aria-checked'), 'true', "the market's own radius")
+  const here = await captionAt({ lat: String(SPOT.latitude), lon: String(SPOT.longitude), radiusKm: radius })
+  await placing.locator('.place-caption', { hasText: `Around ${here}` }).waitFor({ timeout: 20_000 })
+  // A place searched for by its name: places' answers, each with where it is; one picked, the map goes there.
+  await placing.getByRole('searchbox', { name: 'Search a place' }).fill('chamberi')
+  const found = placing.getByRole('option', { name: /^Chamberí/ })
+  await found.waitFor()
+  await found.click()
+  await placing.locator('.place-caption', { hasText: 'Around Chamberí' }).waitFor({ timeout: 20_000 })
+  await placing.getByRole('radio', { name: '10 km', exact: true }).click()
   await shot(page, 'place-area')
-  await placing.getByRole('button', { name: 'Done' }).click()
-  await placing.waitFor({ state: 'detached' })
-  await place.getByRole('button', { name: /^Chamberí\s*Within 10 km$/ }).waitFor()
-  // Opened again, on that circle; the phone's back closes it, keeping nothing changed there, and the form keeps all it holds.
-  await placeScreen(page, PLACE)
-  await placing.getByText('Within 10 km', { exact: true }).waitFor()
-  await placing.getByRole('slider', { name: 'Within' }).fill('0')
-  await page.goBack()
-  await placing.waitFor({ state: 'detached' })
-  await place.getByRole('button', { name: /^Chamberí\s*Within 10 km$/ }).waitFor()
-  assert.equal(await page.getByLabel('Description').inputValue(), OFFER)
-  assert.equal(new URL(page.url()).pathname, '/listing', 'still the offer')
-  await page.getByLabel('Contact').fill('ada@example.com')
-  await page.getByText('Public.').waitFor()
+  await closeRow(page, PLACE.label)
+  assert.match((await rowSays(page, PLACE.label))[0]!, /^Around Chamberí/, 'closed: its caption')
+  assert.equal((await kept(page))['forest.points'], undefined, 'nothing of where it is kept on the device')
+  assert.equal(await page.getByLabel(ABOUT.label, { exact: true }).inputValue(), OFFER, 'the form keeps all it holds')
+  const contact = await openRow(page, 'Contact')
+  await contact.getByLabel('Contact', { exact: true }).fill('ada@example.com')
+  await rowOf(page, 'Contact').getByText('Public.').waitFor()
+  await closeRow(page, 'Contact')
   await shot(page, 'listing-offer-in-person')
   // Online only: the place goes, and nothing of it is posted.
-  await mode.getByRole('button', { name: IN_PERSON }).click()
-  await place.waitFor({ state: 'detached' })
-  await mode.getByRole('button', { name: ONLINE }).click()
+  const again = await openRow(page, MODE.label)
+  await again.getByRole('button', { name: IN_PERSON }).click()
+  await rowOf(page, PLACE.label).waitFor({ state: 'detached' })
+  await again.getByRole('button', { name: ONLINE }).click()
+  await closeRow(page, MODE.label)
   // You's reload dropped the seed: Post will ask, and says so.
   assert.equal(await iconsInTheirButtonsColor(page), 1, "Post's unlock icon, in its text color")
   await shot(page, 'listing-offer')
   let asked = counts.asserted
   await button(page, 'Post').click()
-  // Its card: its description's first line, then its subjects, quietly; its price at the right, the amount, then per hour under it.
+  // Its card: its description's first line, then its subjects, quietly; its price at the right, the amount, then an hour under it.
   const offerRow = page.locator('.listing-card', { hasText: OFFER })
   await offerRow.waitFor({ timeout: 60_000 })
-  // Its quiet line: the first of its preview's fields it holds, past its description and price.
   const lined = previewOf(L.market).find((n) => n === L.choice || n === L.mode)!
   assert.deepEqual(await offerRow.locator('.two > *').allTextContents(), [OFFER, lined === L.choice ? subject : ONLINE])
-  assert.deepEqual(await offerRow.locator('.price-col > *').allTextContents(), ['$30', per(L.per[0]!)])
+  assert.deepEqual(await offerRow.locator('.price-col > *').allTextContents(), ['$30', forOne(L.per[0]!)])
   assert.equal(counts.asserted - asked, 1, 'one unlock')
   // Edited and posted again: the seed held since that unlock, Post shows no unlock icon, and asks nothing.
   await offerRow.click()
@@ -1963,7 +1975,7 @@ test('two people: one posts an offer, its price per hour, the place only for ses
   for (let i = 0; i < 6; i++) await score.press('ArrowLeft')
   await second.page.locator('.score .big', { hasText: '9.4' }).waitFor()
   await second.page.getByLabel('Comment').fill('Clear and patient.')
-  assert.equal(await second.page.getByText(`$30 ${per(L.per[0]!)}`).count(), 0, 'none of their listings to name')
+  assert.equal(await second.page.getByText(`$30 ${forOne(L.per[0]!)}`).count(), 0, 'none of their listings to name')
   await shot(second.page, 'review-someone')
   await button(second.page, 'Post').click()
   await second.page.getByLabel('Message').waitFor({ timeout: 60_000 })
@@ -2532,82 +2544,83 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   // The page closed and opened again on the profile: the seed dropped, so Post will ask, and show it.
   await closed(page)
   await button(page, 'New offer').click()
-  await page.getByLabel('Description').fill(COAT)
-  await page.getByLabel('Price').fill('40')
-  assert.equal(await page.getByRole('group', { name: 'Per' }).count(), 0, 'a coat has no per to pick')
+  const ask = (name: string) => fieldAsked(SHOP, S.seller, name)
+  const [PHOTOS, KIND, WEARER, SIZE, SEVERAL, HANDOVER, WHERE] = [S.photos, S.opener, S.follow, S.sized, S.several, S.handover, S.place].map((n) => ask(n).label) as [string, string, string, string, string, string, string]
+  await page.getByLabel(ask('description').label, { exact: true }).fill(COAT)
+  const priceRow = await openRow(page, ask('price').label)
+  await priceRow.getByLabel('Amount', { exact: true }).fill('40')
+  assert.deepEqual(await priceRow.getByLabel('For', { exact: true }).locator('option').allTextContents(), ['the whole job'], 'a coat has no per: the whole deal alone')
+  await closeRow(page, ask('price').label)
+  assert.deepEqual(await rowSays(page, ask('price').label), ['$40'])
   const big = photoPng(2400, 1200, '#1e5e43', 'GPS 40.4089 -3.7007')
   const small = photoPng(800, 1000, '#313c34', 'GPS 40.4089 -3.7007')
-  await page.locator('input[type=file]').setInputFiles([
+  const photosRow = await openRow(page, PHOTOS)
+  await photosRow.locator('input[type=file]').setInputFiles([
     { name: 'coat.png', mimeType: 'image/png', buffer: big },
     { name: 'back.png', mimeType: 'image/png', buffer: small },
   ])
   await page.locator('.tile img').nth(1).waitFor()
   assert.equal(await page.locator('.tile img').count(), 2)
   assert.match((await page.locator('.tile img').first().getAttribute('src')) ?? '', /^blob:/, 'shown from the device until sent')
-  // The kind, a long list of one: on its sheet, rows with a radio mark and no tick box, no Done, and a tap picks it and
-  // closes the sheet. Only then who it's for, and the size by its labels, the questions it opens, right after it. Who it's
-  // for takes several: each chip picked shows its tick.
+  await closeRow(page, PHOTOS)
+  assert.deepEqual(await rowSays(page, PHOTOS), ['2 photos'])
+  // The kind, a long list of one: opened, a search and rows with a radio mark, no tick box. Only then
+  // who it's for and the size, the questions it opens, right after it. Who it's for takes several:
+  // each chip picked shows its tick.
   const M = S.market.listing
-  const [KIND, WEARER, SIZE, ONE, SEVERAL, WHERE] = [S.opener, S.follow, S.sized, S.one, S.several, S.place].map(fieldWords) as [string, string, string, string, string, string]
-  const kindsOpened = Object.keys(M).filter((n) => M[n]!.when?.[S.opener]?.includes(S.kind) && Object.keys(M[n]!.when!).length === 1 && isFor(M[n]!, S.seller)).map(fieldWords)
-  assert.deepEqual(await page.getByRole('group', { name: WEARER, exact: true }).count(), 0, `no ${WEARER.toLowerCase()} before the kind`)
-  for (const opened of kindsOpened) assert.equal(await page.locator('form > .field > .label', { hasText: new RegExp(`^${opened}$`) }).count(), 0, `no ${opened} before the kind`)
-  await page.getByRole('group', { name: KIND, exact: true }).locator('button.open-row').click()
-  const kindSheet = page.getByRole('region', { name: KIND })
-  assert.deepEqual([await kindSheet.getByRole('radiogroup').count(), await kindSheet.getByRole('checkbox').count(), await kindSheet.locator('.tick').count(), await kindSheet.getByRole('button', { name: 'Done' }).count()], [1, 0, 0, 0], 'one choice: radio rows, no tick box, no Done')
-  assert.equal(await kindSheet.getByRole('radio').first().locator('.radio').count(), 1, 'each row its radio mark')
+  const kindsOpened = Object.keys(M).filter((n) => M[n]!.when?.[S.opener]?.includes(S.kind) && Object.keys(M[n]!.when!).length === 1 && isFor(M[n]!, S.seller)).map((n) => ask(n).label)
+  for (const opened of [WEARER, ...kindsOpened]) assert.equal(await rowOf(page, opened).count(), 0, `no ${opened} before the kind`)
+  const kindRow = await openRow(page, KIND)
+  assert.deepEqual([await kindRow.getByRole('radiogroup').count(), await kindRow.getByRole('checkbox').count()], [1, 0], 'one choice: radio rows, no tick box')
+  assert.equal(await kindRow.getByRole('radio').first().locator('.radio').count(), 1, 'each row its radio mark')
   await shot(page, 'picker-one')
-  await kindSheet.getByRole('radio', { name: wordOf(S.opener, S.kind, S.market), exact: true }).click()
-  await kindSheet.waitFor({ state: 'detached' })
-  assert.equal(await page.getByRole('group', { name: KIND, exact: true }).locator('button.open-row').textContent(), wordOf(S.opener, S.kind, S.market), 'one picked, in words, on its row')
-  const coatLabels = (await page.locator('form > .field > .label').allTextContents()).map((l) => l.replace('Public.', ''))
-  const opened = kindsOpened.map((n) => coatLabels.indexOf(n))
-  assert.ok(opened.every((i) => i > coatLabels.indexOf(KIND)), `the questions the kind opens, after it: ${coatLabels.join(', ')}`)
+  await closeRow(page, KIND)
+  await pick(page, KIND, wordOf(S.opener, S.kind, S.market))
+  assert.deepEqual(await rowSays(page, KIND), [wordOf(S.opener, S.kind, S.market)], 'one picked, in words, on its row')
+  const coatLabels = await page.locator('.field-head .name').allTextContents()
+  assert.ok(kindsOpened.every((n) => coatLabels.indexOf(n) > coatLabels.indexOf(KIND)), `the questions the kind opens, after it: ${coatLabels.join(', ')}`)
   assert.equal(coatLabels.at(-1), 'Contact')
-  const wearer = page.getByRole('group', { name: WEARER, exact: true })
+  const wearer = await openRow(page, WEARER)
   const women = wordOf(S.follow, S.other, S.market)
   await wearer.getByRole('button', { name: women }).click()
   assert.deepEqual([await wearer.getByRole('button', { name: women }).getAttribute('aria-pressed'), await wearer.getByRole('button', { name: women }).locator('[data-icon="check"]').count()], ['true', 1], 'one of several, its tick')
-  await page.getByRole('group', { name: SIZE, exact: true }).locator('button.open-row').click()
-  const sizeScreen = page.getByRole('region', { name: SIZE })
-  assert.deepEqual(await sizeScreen.getByRole('radio').allTextContents(), M[S.sized]!.values!.map((v) => wordOf(S.sized, v, S.market)), 'each value by its label, else in words')
-  await nothingFloats(page, "a long list's own screen")
-  await sizeScreen.getByRole('button', { name: 'Back' }).click()
-  await sizeScreen.waitFor({ state: 'detached' })
-  const size = Object.keys(M[S.sized]!.labels!)[0]!
-  await pick(page, SIZE, wordOf(S.sized, size, S.market))
-  // A choice of one among chips behaves as one: picking another unpicks the first, and none shows a tick.
-  const [good, likeNew] = [M[S.one]!.values![2]!, M[S.one]!.values![1]!].map((v) => wordOf(S.one, v, S.market)) as [string, string]
-  const condition = page.getByRole('radiogroup', { name: ONE })
-  await condition.getByRole('radio', { name: good }).click()
-  await condition.getByRole('radio', { name: likeNew }).click()
-  assert.deepEqual(await condition.getByRole('radio', { checked: true }).allTextContents(), [likeNew], 'one picked, the other unpicked')
-  assert.equal(await condition.locator('[data-icon="check"]').count(), 0, 'no tick')
-  // A choice of several: picked up and shipped.
-  const [pickup, shipped] = M[S.several]!.values! as [string, string]
-  const delivery = page.getByRole('group', { name: SEVERAL })
-  await delivery.getByRole('button', { name: wordOf(S.several, pickup, S.market) }).click()
-  await delivery.getByRole('button', { name: wordOf(S.several, shipped, S.market) }).click()
-  // Where the coat is: on its screen, the circle round the phone's one kept point, the offer's; the
-  // slider from the field's own radius one step out. An exact spot: its one quiet line, and no pin, so
-  // no Done, until one is dropped; back to the area, Done.
-  const start = M[S.place]!.radiusKm!
-  const out = radiusSteps(start)[radiusSteps(start).indexOf(start) + 1]!
-  const location = page.getByRole('group', { name: WHERE })
-  await location.getByRole('button', { name: 'Choose on the map' }).waitFor()
+  await closeRow(page, WEARER)
+  // The size, by the market's labels for it: XL, never xl.
+  const size = Object.keys(M[S.sized]!.ask!.labels!).find((v) => v !== v.toUpperCase()) ?? Object.keys(M[S.sized]!.ask!.labels!)[0]!
+  const sizeWords = wordOf(S.sized, size, S.market)
+  assert.notEqual(sizeWords, valueWords(size), 'its label, not its value in words')
+  await pick(page, SIZE, sizeWords)
+  assert.deepEqual(await rowSays(page, SIZE), [sizeWords])
+  // A choice of several among chips: two picked, each with its tick.
+  const [good, likeNew] = [valuesIn(S.several, S.market)[2]!, valuesIn(S.several, S.market)[1]!]
+  const condition = await openRow(page, SEVERAL)
+  await condition.getByRole('button', { name: wordOf(S.several, likeNew, S.market) }).click()
+  await condition.getByRole('button', { name: wordOf(S.several, good, S.market) }).click()
+  assert.equal(await condition.locator('[data-icon="check"]').count(), 2, 'both, each its tick')
+  await closeRow(page, SEVERAL)
+  // In person and shipped: the place, and where it ships, follow.
+  const handover = await openRow(page, HANDOVER)
+  await handover.getByRole('button', { name: wordOf(S.handover, S.inPerson, S.market) }).click()
+  await handover.getByRole('button', { name: wordOf(S.handover, S.away, S.market) }).click()
+  await closeRow(page, HANDOVER)
+  // Where the coat is: the phone allowed its location, so the map goes there, the circle in its middle
+  // at the field's own radius, its caption under it; one step out; an exact spot says anyone can see
+  // it; back to the circle.
+  const start = fieldAsked(SHOP, S.seller, S.place).start!.radiusKm!
+  const out = [1, 2, 5, 10, 20, 50].find((r) => r > start)!
   const where = await placeScreen(page, WHERE)
-  await where.getByText(`Within ${start} km`, { exact: true }).waitFor()
-  await where.getByRole('slider', { name: 'Within' }).fill(String(radiusSteps(start).indexOf(out)))
-  await where.getByText(`Within ${out} km`, { exact: true }).waitFor()
-  await where.getByLabel('Place name').fill('Lavapiés, Madrid')
-  await where.getByRole('button', { name: 'Exact spot' }).click()
+  assert.equal(await where.getByRole('radio', { name: `${start} km`, exact: true }).getAttribute('aria-checked'), 'true')
+  await where.locator('.place-caption', { hasText: /^Around / }).waitFor({ timeout: 20_000 })
+  await where.getByRole('radio', { name: `${out} km`, exact: true }).click()
+  await where.getByRole('radio', { name: 'Exact spot', exact: true }).click()
   await where.getByText('Anyone can see this exact spot.', { exact: true }).waitFor()
-  assert.equal(await where.locator('.maplibregl-marker').count(), 0, 'no pin until one is dropped')
-  assert.ok(await where.getByRole('button', { name: 'Done' }).isDisabled(), 'so no Done')
-  await where.getByRole('button', { name: 'Area' }).click()
-  await where.getByRole('button', { name: 'Done' }).click()
-  await location.getByRole('button', { name: new RegExp(`^Lavapiés, Madrid\\s*Within ${out} km$`) }).waitFor()
-  await page.getByLabel('Contact').fill('@coats')
+  await where.locator('.map-pin.middle').waitFor()
+  await where.getByRole('radio', { name: `${out} km`, exact: true }).click()
+  await where.getByText('Anyone can see this exact spot.', { exact: true }).waitFor({ state: 'detached' })
+  await closeRow(page, WHERE)
+  const contactRow = await openRow(page, 'Contact')
+  await contactRow.getByLabel('Contact', { exact: true }).fill('@coats')
+  await closeRow(page, 'Contact')
   // The page hidden a moment keeps the seed, which closing it dropped: Post asks, and shows it.
   await away(page)
   assert.equal(await asks(button(page, 'Post')), true, 'the unlock icon on Post')
@@ -2621,14 +2634,16 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   const [[coatPath, coat]] = (await entriesOf(seller, 'listing')) as unknown as [[string, { entry: { body: any } }]]
   const body = coat.entry.body
   assert.deepEqual(
-    [body.description, body.price, body[S.opener], body[S.follow], body[S.sized], body[S.one], body[S.several], body.contact],
-    [COAT, [{ amount: '40', currency: 'USD' }], S.kind, [S.other], size, M[S.one]!.values![1], [pickup, shipped], '@coats'],
-    'no per; the kind, who, the size by its value, one condition, several deliveries',
+    [body.description, body.price, body[S.opener], body[S.follow], body[S.sized], body[S.several], body[S.handover], body.contact],
+    [COAT, [{ amount: '40', currency: 'USD' }], S.kind, [S.other], [size], [likeNew, good], [S.inPerson, S.away], '@coats'],
+    'no per; the kind, who, the size by its value, two conditions, two ways to hand it over',
   )
-  assert.deepEqual([body[S.place].radiusKm, body[S.place].area], [out, 'Lavapiés, Madrid'])
-  const km = kmFromSpot(body[S.place])
-  assert.ok(km > 0.1 && km < 0.8, `its point moved a little from the phone's, ${km.toFixed(2)} km`)
-  assert.deepEqual(JSON.parse((await kept(page))['forest.points']!), [{ lat: body[S.place].lat, lon: body[S.place].lon }], "the device's one kept point, which the offer's place took too: never a new one from the same spot")
+  // Posted round the phone, its centre moved by up to a tenth of its radius, and nothing kept on the device.
+  const [placed] = body[S.place] as Array<Point & { radiusKm: number }>
+  assert.deepEqual([body[S.place].length, placed!.radiusKm, Object.keys(placed!).sort()], [1, out, ['lat', 'lon', 'radiusKm']], 'one circle, no name')
+  const km = kmFromSpot(placed!)
+  assert.ok(km <= out * 0.1 + 0.05, `its centre moved at most a tenth of ${out} km from the phone, ${km.toFixed(3)} km`)
+  assert.equal((await kept(page))['forest.points'], undefined, 'nothing of where it is kept on the device')
   assert.equal(loadMarkets().checkEntry(SHOP, S.seller, 'listing', body), null, 'it fits the market')
   assert.equal(body[S.photos].length, 2)
   assert.deepEqual(body.files.map((f: any) => [f.sha256, f.type]), body[S.photos].map((sha: string) => [sha, 'image/jpeg']), 'each photo named in its files, a JPEG')
@@ -2667,57 +2682,55 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   buyerAt = buyerAddress
   await button(buyer.page, 'Skip').click()
   // A phone that hasn't allowed its location. Its browser told no before (headless Chromium's
-  // answer for a site never granted): the map opens on the whole world, with no circle, no Done, no
-  // button for the location and no line. A tap puts the circle there, round the centre it keeps, and
-  // the map fits it; a drag carries it east, more than a kept centre's reach, so a second is kept.
+  // answer for a site never granted): the map opens on the whole world, with no circle, no button for
+  // the location and no line, and says to move the map. A place searched for by its name: the map goes
+  // there, its caption under it. Then an exact spot: a pin in the middle, posted exactly there.
   await buyer.page.locator('button.card', { hasText: BUYER_WORDS }).click()
   await button(buyer.page, 'New request').click()
-  const map = await placeScreen(buyer.page, WHERE)
+  const buyerAsk = (name: string) => fieldAsked(SHOP, S.buyer, name)
+  const handing = await openRow(buyer.page, buyerAsk(S.handover).label)
+  await handing.getByRole('button', { name: wordOf(S.handover, S.inPerson, S.market) }).click()
+  await closeRow(buyer.page, buyerAsk(S.handover).label)
+  const map = await placeScreen(buyer.page, buyerAsk(S.place).label)
   assert.equal(await map.getByRole('button', { name: 'Your location' }).count(), 0, 'told no before: no button')
   assert.equal(await map.locator('.line').count(), 0, 'and no line')
-  assert.ok(await map.getByRole('button', { name: 'Done' }).isDisabled(), 'no circle yet')
-  const middle = await middleOf(map)
-  await buyer.page.mouse.click(middle.x, middle.y)
-  const [tapped] = await keptPoints(buyer.page, 1)
-  await buyer.page.waitForTimeout(1_000)
-  await buyer.page.mouse.move(middle.x, middle.y)
-  await buyer.page.mouse.down()
-  for (let step = 1; step <= 10; step++) await buyer.page.mouse.move(middle.x + step * 12, middle.y)
-  await buyer.page.mouse.up()
-  const [, carried] = await keptPoints(buyer.page, 2)
-  assert.ok(Number(carried!.lon) > Number(tapped!.lon) && kmApart(tapped!, carried!) > 0.8, `carried east, ${kmApart(tapped!, carried!).toFixed(2)} km`)
-  await shot(buyer.page, 'place-carried')
-  // An exact spot, a tap on the map's middle, where the first circle put it, the map the same size
-  // as for the area: posted exactly there.
-  await map.getByRole('button', { name: 'Exact spot' }).click()
+  await map.getByText('Move the map to where you mean.', { exact: true }).waitFor()
+  await map.getByRole('searchbox', { name: 'Search a place' }).fill('madrid')
+  const madrid = map.getByRole('option').filter({ hasText: /Spain/ }).first()
+  await madrid.waitFor()
+  await madrid.click()
+  await map.locator('.place-caption', { hasText: /^Around / }).waitFor({ timeout: 20_000 })
+  await shot(buyer.page, 'place-searched')
+  await map.getByRole('radio', { name: 'Exact spot', exact: true }).click()
   await map.getByText('Anyone can see this exact spot.', { exact: true }).waitFor()
-  assert.deepEqual(await middleOf(map), middle, 'the map kept its size')
-  await buyer.page.mouse.click(middle.x, middle.y)
-  await map.locator('.maplibregl-marker').waitFor()
+  await map.locator('.place-caption', { hasText: /^Near / }).waitFor()
   await shot(buyer.page, 'place-spot')
-  await map.getByRole('button', { name: 'Done' }).click()
-  await buyer.page.getByRole('group', { name: WHERE }).getByRole('button', { name: 'An exact spot' }).waitFor()
-  await buyer.page.getByLabel('Description').fill(WANTED)
+  await closeRow(buyer.page, buyerAsk(S.place).label)
+  assert.match((await rowSays(buyer.page, buyerAsk(S.place).label))[0]!, /^Near /)
+  await buyer.page.getByLabel(buyerAsk('description').label, { exact: true }).fill(WANTED)
   await button(buyer.page, 'Post').click()
   await buyer.page.locator('.listing-card', { hasText: WANTED }).waitFor({ timeout: 60_000 })
   const [[, wanted]] = (await entriesOf(buyerAddress, 'listing')) as unknown as [[string, { entry: { body: any } }]]
-  const spot = wanted.entry.body[S.place]
+  const [spot] = wanted.entry.body[S.place]
   assert.equal(spot.radiusKm, 0, 'an exact spot')
-  assert.match(spot.lat, /^-?\d+\.\d{5}$/, 'to about a metre')
-  assert.ok(kmApart(spot, tapped!) < 0.05, `where the pin was dropped, ${(kmApart(spot, tapped!) * 1000).toFixed(0)} m from the map's middle`)
+  assert.match(spot.lat, /^-?\d+(\.\d{1,4})?$/, 'to about 10 m')
+  const { places: madrids } = (await (await fetch(`${services.places}/v1/find?q=madrid`)).json()) as { places: Array<{ country: string; place: Point }> }
+  const searched = madrids.find((f) => f.country === 'ES')!.place
+  assert.ok(kmApart(spot, searched) < 0.05, `exactly where the map went, ${(kmApart(spot, searched) * 1000).toFixed(0)} m from the place found, never moved`)
   assert.equal(loadMarkets().checkEntry(SHOP, S.buyer, 'listing', wanted.entry.body), null, 'it fits the market')
   // Never asked: the map's own button asks, and the browser's own prompt only on its tap; here the
   // prompt is refused: one quiet line, and the button goes.
   const { targetInfo } = await buyer.cdp.send('Target.getTargetInfo')
   await buyer.cdp.send('Browser.setPermission', { permission: { name: 'geolocation' }, setting: 'prompt', origin: APP.slice(0, -1), browserContextId: targetInfo.browserContextId! })
   await button(buyer.page, 'New request').click()
-  const asking = await placeScreen(buyer.page, WHERE)
+  const again = await openRow(buyer.page, buyerAsk(S.handover).label)
+  await again.getByRole('button', { name: wordOf(S.handover, S.inPerson, S.market) }).click()
+  await closeRow(buyer.page, buyerAsk(S.handover).label)
+  const asking = await placeScreen(buyer.page, buyerAsk(S.place).label)
   await asking.getByRole('button', { name: 'Your location' }).click()
   await asking.getByText("Your location isn't allowed.", { exact: true }).waitFor()
   assert.equal(await asking.getByRole('button', { name: 'Your location' }).count(), 0, 'refused: the line alone')
   await shot(buyer.page, 'place-refused')
-  await asking.getByRole('button', { name: 'Back' }).click()
-  await asking.waitFor({ state: 'detached' })
   await button(buyer.page, 'Close').click()
   await button(buyer.page, 'Back').click()
   // The page closed and opened again, so no seed is held; before the unlock, with none new, a lock and Open your messages, and Open.
@@ -2752,12 +2765,12 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   const score = buyer.page.getByLabel('Score')
   await score.focus()
   await score.press('End')
-  const asked2 = S.market.review![S.review]!
-  const [QUESTION, YES_, NO_] = [fieldWords(S.review), choiceWords(asked2, asked2.values![0]!), choiceWords(asked2, asked2.values![1]!)]
-  const question = buyer.page.getByRole('group', { name: QUESTION })
-  assert.deepEqual([await question.locator('strong').textContent(), await question.getByRole('button').allTextContents()], [QUESTION, asked2.values!.map((v) => choiceWords(asked2, v))])
+  const asked2 = fieldAsked(SHOP, S.buyer, S.review, 'review', S.seller)
+  const [QUESTION, YES_, NO_] = [asked2.question, asked2.choices![0]!.label, asked2.choices![1]!.label]
+  const question = buyer.page.getByRole('group', { name: asked2.label })
+  assert.deepEqual([await question.locator('strong').textContent(), await question.getByRole('button').allTextContents()], [QUESTION, asked2.choices!.map((c) => c.label)], "the market's own question for a seller, and its words for each answer")
   const [words, chips] = [(await question.locator('strong').boundingBox())!, (await question.getByRole('button', { name: NO_ }).boundingBox())!]
-  assert.ok(Math.abs(words.y + words.height / 2 - (chips.y + chips.height / 2)) < 4 && chips.x > words.x, 'in one row: its words, then its chips')
+  assert.ok(chips.y >= words.y - 4, 'its question, then its chips')
   await question.getByRole('button', { name: YES_ }).click()
   assert.equal(await buyer.page.getByRole('button', { name: COAT }).count(), 0, 'no listing of theirs to name')
   await buyer.page.getByLabel('Comment').fill('Just like the photos.')
@@ -2765,7 +2778,7 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   await button(buyer.page, 'Post').click()
   await buyer.page.getByLabel('Message').waitFor({ timeout: 60_000 })
   const [[, reviewed]] = (await entriesOf(buyerAddress, 'review')) as unknown as [[string, { entry: { body: any } }]]
-  assert.deepEqual(reviewed.entry.body, { [S.review]: asked2.values![0], subject: seller, text: 'Just like the photos.', score: '10' })
+  assert.deepEqual(reviewed.entry.body, { [S.review]: asked2.choices![0]!.value, subject: seller, text: 'Just like the photos.', score: '10' })
 
   // From the buyer's profile, its Reviews tab and Review someone: who first, on a sheet, the seller among
   // those it has a conversation with; a vouch, written again in its place, then a report, each about
@@ -2797,7 +2810,7 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   assert.equal(await kinds.getByRole('button', { name: 'Vouch' }).locator('.icon').getAttribute('data-icon'), 'handshake')
   assert.equal(await buyer.page.locator('.kind-mark .sq.mint [data-icon="handshake"]').count(), 1, 'its mint square')
   assert.equal(await buyer.page.getByLabel('Score').count(), 0, 'no score: a vouch')
-  assert.equal(await buyer.page.getByRole('group', { name: QUESTION }).count(), 0, "a review's question only")
+  assert.equal(await buyer.page.getByRole('group', { name: asked2.label }).count(), 0, "a review's question only")
   assert.equal(await buyer.page.getByLabel('Comment').getAttribute('placeholder'), 'How do you know them? (optional)')
   assert.match((await button(buyer.page, 'Vouch').last().getAttribute('class')) ?? '', /primary/)
   await shot(buyer.page, 'review-vouch')
@@ -2903,7 +2916,7 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   await page.getByText(new RegExp(`^On your ${SELLER_WORDS}, `)).waitFor()
   await page.locator('.score-big', { hasText: '10' }).locator('[data-icon="star"]').waitFor()
   const facts = page.locator('.facts')
-  await facts.getByText(QUESTION).waitFor()
+  await facts.getByText(asked2.label, { exact: true }).waitFor()
   await facts.getByText(YES_, { exact: true }).waitFor()
   assert.equal(await facts.getByText('Offer').count(), 0, 'no listing named')
   const from = page.locator('button.whorow')
@@ -3137,8 +3150,8 @@ test('a listing its market no longer fits: its card says Needs updating, and Not
   const main = await mainKey(seed, SELLER_LABEL)
   const path = 'listing/0123456789abcdef0123456789abcdef'
   const M = S.market.listing
-  const [KIND, WEARER, SEVERAL, WHERE, CHAIN] = [S.opener, S.follow, S.several, S.place, S.chain].map(fieldWords) as [string, string, string, string, string]
-  const start = M[S.place]!.radiusKm!
+  const ask = (name: string) => fieldAsked(SHOP, S.seller, name)
+  const [KIND, WEARER, SEVERAL, CHAIN, SIZE, PRICE] = [S.opener, S.follow, S.several, S.chain, S.sized, 'price'].map((n) => ask(n).label) as [string, string, string, string, string, string]
   const old: Body = { description: TROUSERS, price: { amount: '25', currency: 'USD' }, [S.opener]: S.kind, [S.follow]: S.other, [S.sized]: 'EU 38', [S.several]: 'either', [S.place]: { area: 'Lavapiés, Madrid' }, contact: '@coats' }
   assert.notEqual(loadMarkets().checkEntry(SHOP, S.seller, 'listing', old), null, "it doesn't fit the market today")
   // Three days ago, so it was posted before what came today.
@@ -3156,7 +3169,7 @@ test('a listing its market no longer fits: its card says Needs updating, and Not
   await shot(page, 'profile-update')
   await row.click()
   await page.getByRole('heading', { name: 'Offer', exact: true }).waitFor()
-  assert.equal(await page.getByLabel('Description').inputValue(), TROUSERS)
+  assert.equal(await page.getByLabel(ask('description').label, { exact: true }).inputValue(), TROUSERS)
   await button(page, 'Close').click()
   await row.waitFor()
   await button(page, 'Back').click()
@@ -3178,32 +3191,29 @@ test('a listing its market no longer fits: its card says Needs updating, and Not
   await notice.click()
   await page.getByRole('heading', { name: 'Offer', exact: true }).waitFor()
   // What still fits, filled in: the description, the kind and the contact. Each answer that didn't
-  // fit marked, under its name: the price, one where the market now takes a list; who it's for, the
-  // size, the delivery and the location, asked again; the location set again on its screen, round the phone's
-  // kept point at the field's own radius, its old area gone with it.
-  assert.equal(await page.getByLabel('Description').inputValue(), TROUSERS)
-  assert.equal(await page.getByLabel('Price').inputValue(), '')
-  const marked = async () => (await page.locator('.field.changed > .label').allTextContents()).sort()
-  const SIZE = fieldWords(S.sized)
-  assert.deepEqual(await marked(), ['Price', WEARER, SIZE, SEVERAL, WHERE].sort(), 'what no longer fit, marked')
-  assert.deepEqual([...new Set(await page.locator('.field.changed .changed-line').allTextContents())], ['Changed: answer again.'])
-  assert.equal(await page.locator('.field', { hasText: 'Description' }).locator('.changed-line').count(), 0, 'what fits, not marked')
-  await page.getByLabel('Price').fill('25')
-  assert.deepEqual(await marked(), [WEARER, SIZE, SEVERAL, WHERE].sort(), 'answered, its mark gone')
-  assert.equal(await page.getByRole('group', { name: KIND, exact: true }).locator('button.open-row').textContent(), wordOf(S.opener, S.kind, S.market))
-  assert.equal(await page.getByLabel('Contact').inputValue(), '@coats')
-  assert.equal(await page.getByRole('group', { name: WEARER, exact: true }).locator('[aria-pressed=true]').count(), 0)
-  assert.equal(await page.getByRole('group', { name: SEVERAL, exact: true }).locator('[aria-pressed=true]').count(), 0)
-  await page.getByRole('group', { name: WHERE }).getByRole('button', { name: 'Choose on the map' }).waitFor()
-  const again = await placeScreen(page, WHERE)
-  await again.getByText(`Within ${start} km`, { exact: true }).waitFor()
-  await again.getByRole('button', { name: 'Done' }).click()
-  await page.getByRole('group', { name: WHERE }).getByRole('button', { name: `Within ${start} km`, exact: true }).waitFor()
+  // fit marked on its row: the price, one where the market now takes a list; who it's for, the size
+  // and the condition, asked again. Where it is waits on how it is handed over, which the old one
+  // never said, so it is not asked at all.
+  assert.equal(await page.getByLabel(ask('description').label, { exact: true }).inputValue(), TROUSERS)
+  assert.deepEqual(await rowSays(page, PRICE), [ask('price').question])
+  const marked = async () => (await page.locator('.field-row.changed .field-head .name').allTextContents()).sort()
+  assert.deepEqual(await marked(), [PRICE, WEARER, SIZE, SEVERAL].sort(), 'what no longer fit, marked')
+  assert.deepEqual([...new Set(await page.locator('.field-row.changed .changed-line').allTextContents())], ['Changed: answer again.'])
+  const price = await openRow(page, PRICE)
+  await price.getByLabel('Amount', { exact: true }).fill('25')
+  await closeRow(page, PRICE)
+  assert.deepEqual(await marked(), [WEARER, SIZE, SEVERAL].sort(), 'answered, its mark gone')
+  assert.deepEqual(await rowSays(page, KIND), [wordOf(S.opener, S.kind, S.market)])
+  assert.deepEqual(await rowSays(page, 'Contact'), ['@coats'])
+  assert.equal(await rowOf(page, ask(S.place).label).count(), 0, 'no place: nothing says how it is handed over')
   await shot(page, 'listing-update')
   // Who it's for, then the question that answer opens, down the chain: for children, their age.
-  const chained = M[S.chain]!.values![0]!
-  assert.equal(await page.getByRole('group', { name: CHAIN, exact: true }).count(), 0, `no ${CHAIN.toLowerCase()} before who it's for`)
-  await page.getByRole('group', { name: WEARER, exact: true }).getByRole('button', { name: wordOf(S.follow, S.opens, S.market) }).click()
+  const chained = valuesIn(S.chain, S.market)[0]!
+  assert.equal(await rowOf(page, CHAIN).count(), 0, `no ${CHAIN.toLowerCase()} before who it's for`)
+  const wearer = await openRow(page, WEARER)
+  assert.equal(await wearer.locator('[aria-pressed=true]').count(), 0, 'nothing picked')
+  await wearer.getByRole('button', { name: wordOf(S.follow, S.opens, S.market) }).click()
+  await closeRow(page, WEARER)
   await pick(page, CHAIN, wordOf(S.chain, chained, S.market))
   await button(page, 'Post').click()
   // Back on Notifications: posted, it fits, so the notice is gone, and the tab counts it no more.
@@ -3219,10 +3229,10 @@ test('a listing its market no longer fits: its card says Needs updating, and Not
   const body = listed.find(([p]) => p === path)![1].entry.body as any
   assert.equal(loadMarkets().checkEntry(SHOP, S.seller, 'listing', body), null, 'it fits the market')
   assert.deepEqual(
-    [body.description, body.price, body[S.opener], body[S.follow], body[S.chain], body.contact, body[S.place].radiusKm, body[S.place].area],
-    [TROUSERS, [{ amount: '25', currency: 'USD' }], S.kind, [S.opens], chained, '@coats', start, undefined],
+    [body.description, body.price, body[S.opener], body[S.follow], body[S.chain], body.contact],
+    [TROUSERS, [{ amount: '25', currency: 'USD' }], S.kind, [S.opens], [chained], '@coats'],
   )
-  assert.deepEqual([body[S.sized], body[S.several]], [undefined, undefined], "what didn't fit, gone")
+  assert.deepEqual([body[S.sized], body[S.several], body[S.place]], [undefined, undefined, undefined], "what didn't fit, gone")
   await button(page, 'Home').click()
   await page.locator('button.card', { hasText: SELLER_WORDS }).click()
   await page.locator('.listing-card', { hasText: TROUSERS }).waitFor()
@@ -3376,8 +3386,11 @@ const SWITCHES = ['read-inbox', 'read', 'write', 'message']
 const BY_THE_AI = 'Physics for secondary school, written by the AI.'
 /** The AI's listing as its row shows it: its subjects, then its price; its description shows when it is opened. */
 /** What the AI writes: a description and two values of the lessons' long list, which its card's quiet line shows. */
-const BY_THE_AI_BODY = { description: BY_THE_AI, [L.choice]: L.market.listing[L.choice]!.values!.slice(0, 2) }
-const AI_ROW = L.market.listing[L.choice]!.values!.slice(0, 2).map((v) => wordOf(L.choice, v)).join(', ')
+const BY_THE_AI_BODY = { description: BY_THE_AI, [L.choice]: valuesIn(L.choice).slice(0, 2) }
+const AI_ROW = valuesIn(L.choice)
+  .slice(0, 2)
+  .map((v, i) => labelOf(L.market.listing[L.choice]!, v, MARKETS.lists, i === 0))
+  .join(', ')
 
 /** An AI app, as services' tests make one (mcp/test/setup.ts): the MCP SDK's own client, whose first call that acts gets the challenge, and the address it sends the browser to, to log in. */
 async function aiLogin(): Promise<AiApp> {
@@ -3496,12 +3509,18 @@ test('a whole visit asks exactly once: post, edit, message, open messages, revie
   const asked = counts.asserted
   // Post: the one unlock.
   await button(page, 'New offer').click()
-  await page.getByLabel('Description').fill(VISIT)
-  await page.getByLabel('Price').fill('20')
-  await page.getByRole('group', { name: 'Per' }).getByRole('button', { name: per(L.per[0]!) }).click()
-  await pick(page, fieldWords(L.choice), wordOf(L.choice, L.market.listing[L.choice]!.values![1]!))
-  await page.getByRole('group', { name: fieldWords(L.mode) }).getByRole('button', { name: wordOf(L.mode, L.online) }).click()
-  await page.getByLabel('Contact').fill('ada@example.com')
+  const ask = (name: string) => fieldAsked(LESSONS, L.offer.role, name)
+  await page.getByLabel(ask('description').label, { exact: true }).fill(VISIT)
+  const price = await openRow(page, ask('price').label)
+  await price.getByLabel('Amount', { exact: true }).fill('20')
+  await closeRow(page, ask('price').label)
+  await pick(page, ask(L.choice).label, wordOf(L.choice, valuesIn(L.choice)[1]!))
+  const mode = await openRow(page, ask(L.mode).label)
+  await mode.getByRole('button', { name: wordOf(L.mode, L.online) }).click()
+  await closeRow(page, ask(L.mode).label)
+  const contact = await openRow(page, 'Contact')
+  await contact.getByLabel('Contact', { exact: true }).fill('ada@example.com')
+  await closeRow(page, 'Contact')
   assert.equal(await asks(button(page, 'Post')), true, 'Post will ask: the one unlock of the visit')
   await button(page, 'Post').click()
   const posted = page.locator('.listing-card', { hasText: VISIT }).filter({ hasText: '$20' })
@@ -3511,7 +3530,9 @@ test('a whole visit asks exactly once: post, edit, message, open messages, revie
   // Edit.
   await posted.click()
   await page.getByRole('heading', { name: 'Offer', exact: true }).waitFor()
-  await page.getByLabel('Price').fill('25')
+  const repriced = await openRow(page, ask('price').label)
+  await repriced.getByLabel('Amount', { exact: true }).fill('25')
+  await closeRow(page, ask('price').label)
   assert.equal(await asks(button(page, 'Post')), false, 'hidden, and the seed still held')
   await button(page, 'Post').click()
   const edited = page.locator('.listing-card', { hasText: VISIT }).filter({ hasText: '$25' })
@@ -4116,121 +4137,119 @@ async function profileOf(page: Page, label: string) {
   await page.getByRole('heading', { name: words }).waitFor({ timeout: 120_000 })
 }
 
-/** A choice answered on a form, by its value, as suits its field: a long list on its sheet, else its chip or its button. */
-async function choose(page: Page, market: string, name: string, value: string) {
-  const field = MARKETS.market(market)!.listing[name]!
-  const words = choiceWords(field, value)
-  if (isLong(field)) return pick(page, fieldWords(name), words)
-  const group = page.getByRole(field.many || field.values!.length <= 3 ? 'group' : 'radiogroup', { name: fieldWords(name), exact: true })
-  await group.getByRole(field.many || field.values!.length <= 3 ? 'button' : 'radio', { name: words, exact: true }).click()
+/** A choice answered on a form, by its value, as suits its field: a long list searched, else its chip or its button. */
+async function choose(page: Page, market: string, role: string, name: string, value: string) {
+  const field = fieldAsked(market, role, name)
+  const words = field.choices!.find((c) => c.value === value)!.label
+  if (field.choices!.length > 8) return pick(page, field.label, words)
+  const open = await openRow(page, field.label)
+  await open.getByRole(!field.several && field.choices!.length > 3 ? 'radio' : 'button', { name: words, exact: true }).click()
+  await closeRow(page, field.label)
 }
 
 test('a number with its unit, in the form and on its listing: one in the singular, more in the plural; a beta market says so, once, in the form', async () => {
   const { page } = first
-  const n = fieldWith(MARKETS, 'a number with a unit, which its preview names', (f, name, side) => f.type === 'number' && f.unit !== undefined && previewOf(side.market).includes(name))
+  const n = fieldWith(MARKETS, 'a number with a unit, asked as one number, which its preview names', (f, name, side) => f.piece === 'number' && f.unit !== undefined && previewOf(side.market).includes(name) && !fieldAsked(side.market.name, side.role, name).start?.range)
   await profileOf(page, n.label)
   await button(page, `New ${n.offers ? 'offer' : 'request'}`).click()
   assert.equal(await page.getByText(BETA_LINE, { exact: true }).count(), n.market.status === 'beta' ? 1 : 0, 'a beta market says so, once; a live one says nothing')
   // The answers that open it, then the number, its unit after it, in words as the number typed says.
-  for (const [name, value] of Object.entries(opening(n.market, n.field))) await choose(page, n.market.name, name, Array.isArray(value) ? value[0]! : value)
-  const NUMBER = fieldWords(n.name)
-  const unit = page.locator('.field', { has: page.getByLabel(NUMBER, { exact: true }) }).locator('.number .unit')
+  for (const [name, value] of Object.entries(opening(n.market, n.field))) await choose(page, n.market.name, n.role, name, Array.isArray(value) ? value[0]! : value)
+  const NUMBER = fieldAsked(n.market.name, n.role, n.name).label
+  const open = await openRow(page, NUMBER)
+  const unit = open.locator('.number .unit').first()
   assert.equal(await unit.textContent(), unitWords(n.field.unit!), 'many, before anything is typed')
-  await page.getByLabel(NUMBER, { exact: true }).fill('1')
+  await open.getByLabel(NUMBER, { exact: true }).fill('1')
   assert.equal(await unit.textContent(), unitWords(n.field.unit!, '1'), 'one')
-  await page.getByLabel(NUMBER, { exact: true }).fill('27')
+  await open.getByRole('button', { name: `More ${NUMBER.toLowerCase()}` }).click()
+  assert.equal(await open.getByLabel(NUMBER, { exact: true }).inputValue(), '2', '+ adds one')
+  await open.getByLabel(NUMBER, { exact: true }).fill('27')
   assert.equal(await unit.textContent(), unitWords(n.field.unit!, '27'), 'more')
   await shot(page, 'listing-unit')
-  await button(page, 'Post').click()
-  // On its card: the number with its unit.
+  await closeRow(page, NUMBER)
   const said = `27 ${unitWords(n.field.unit!, '27')}`
-  const card = page.locator('.listing-card', { hasText: said })
-  await card.waitFor({ timeout: 60_000 })
-  const [[, posted]] = (await entriesOf((await mainKey(seed, n.label)).address, 'listing')).filter(([, c]) => (c.entry.body as Record<string, unknown>)[n.name] === '27') as unknown as [[string, { entry: { body: Record<string, unknown> } }]]
-  assert.equal(posted.entry.body[n.name], '27', 'the number as it was typed, in its unit')
+  assert.deepEqual(await rowSays(page, NUMBER), [said], 'the row: the number with its unit')
+  await button(page, 'Post').click()
+  await page.getByRole('tab', { selected: true }).waitFor({ timeout: 60_000 })
+  const [[, posted]] = (await entriesOf((await mainKey(seed, n.label)).address, 'listing')).filter(([, c]) => JSON.stringify((c.entry.body as Record<string, unknown>)[n.name]) === JSON.stringify(n.field.several ? ['27'] : '27')) as unknown as [[string, { entry: { body: Record<string, unknown> } }]]
+  assert.deepEqual(posted.entry.body[n.name], n.field.several ? ['27'] : '27', 'the number as it was typed, in its unit')
   assert.equal(loadMarkets().checkEntry(n.market.name, n.role, 'listing', posted.entry.body), null, 'it fits the market')
-  await shot(page, 'listing-unit-card')
   say(`a number with its unit: ${said}`)
 })
 
-test('several places in one field: each set on its own screen, each its row with its remove button, one more added; posted, the listing holds them all and its card shows them all', async () => {
+test('several places in one field: the first round the phone, more searched for by name, each in the list with its caption and its remove button; posted, the listing holds them all, each moved by up to a tenth of its radius', async () => {
   const { page } = first
-  const at = fieldWith(MARKETS, 'a list of places', (f) => f.type === 'place' && f.many === true && !f.when)
+  const at = fieldWith(MARKETS, 'places waiting on nothing', (f) => f.piece === 'place' && f.several === true && !f.when)
   await profileOf(page, at.label)
   await button(page, `New ${at.offers ? 'offer' : 'request'}`).click()
-  const WHERE = fieldWords(at.name)
-  const group = page.getByRole('group', { name: WHERE, exact: true })
-  const radius = at.field.radiusKm!
-  /** A place added from the row at the foot of the list: its screen, round the phone, named, and Done. */
-  const add = async (row: string, name: string) => {
-    await group.getByRole('button', { name: row }).click()
-    const screen = page.getByRole('region', { name: WHERE })
-    await screen.locator('.maplibregl-canvas').waitFor()
-    await screen.getByText(`Within ${radius} km`, { exact: true }).waitFor()
-    await screen.getByLabel('Place name').fill(name)
-    await screen.getByRole('button', { name: 'Done' }).click()
-    await screen.waitFor({ state: 'detached' })
-    await group.getByRole('button', { name: new RegExp(`^${name}\\s*Within ${radius} km$`) }).waitFor()
+  const field = fieldAsked(at.market.name, at.role, at.name)
+  const radius = field.start!.radiusKm!
+  const where = await placeScreen(page, field.label)
+  // The phone allowed its location: the first circle round it.
+  const here = await captionAt({ lat: String(SPOT.latitude), lon: String(SPOT.longitude), radiusKm: radius })
+  await where.locator('.place-caption', { hasText: `Around ${here}` }).waitFor({ timeout: 20_000 })
+  /** Another area: Add another area, then a place searched for by name and picked. */
+  const add = async (words: string, found: RegExp) => {
+    await where.getByRole('button', { name: 'Add another area' }).click()
+    await where.getByRole('searchbox', { name: 'Search a place' }).fill(words)
+    await where.getByRole('option', { name: found }).first().click()
+    await where.locator('.place-caption', { hasText: found }).waitFor({ timeout: 20_000 })
   }
-  await add('Choose on the map', 'Lisbon')
-  await add('Add another place', 'Porto')
-  await add('Add another place', 'Faro')
-  assert.deepEqual(await group.locator('.place-row strong').allTextContents(), ['Lisbon', 'Porto', 'Faro'], 'each its own row, in order')
+  await add('chamberi', /Chamberí/)
+  await add('monterrey', /Monterrey/)
+  const listed = () => where.locator('.place-row .row-button > span:not(.aside)').allTextContents()
+  for (const until = Date.now() + 20_000; (await listed()).some((t) => t.startsWith('Within')); await page.waitForTimeout(200)) if (Date.now() > until) break
+  assert.deepEqual((await listed()).map((t) => t.replace(/,.*$/, '')), [`Around ${here.replace(/,.*$/, '')}`, 'Around Chamberí', 'Around Monterrey'], 'each its own row, by its caption, in order')
+  assert.equal(await where.locator('.place-row [data-icon="x"]').count(), 3, 'each its remove button')
   // Removed: its row goes, the others stay.
-  await group.getByRole('button', { name: 'Remove Faro' }).click()
-  assert.deepEqual(await group.locator('.place-row strong').allTextContents(), ['Lisbon', 'Porto'])
-  assert.equal(await group.locator('.place-row [data-icon="x"]').count(), 2, 'each its remove button')
-  // Changed: a row opens its own place, which Done keeps.
-  await group.getByRole('button', { name: /^Porto/ }).click()
-  const again = page.getByRole('region', { name: WHERE })
-  await again.getByLabel('Place name').fill('Porto, Portugal')
-  await again.getByRole('button', { name: 'Done' }).click()
-  await again.waitFor({ state: 'detached' })
-  assert.deepEqual(await group.locator('.place-row strong').allTextContents(), ['Lisbon', 'Porto, Portugal'])
+  await where.getByRole('button', { name: /^Remove Around Monterrey/ }).click()
+  assert.equal(await where.locator('.place-row').count(), 2)
   await shot(page, 'listing-places')
-  const DESTINATIONS = 'Two weeks on the coast, either city.'
-  if (at.market.listing.description) await page.getByLabel('Description').fill(DESTINATIONS)
+  await closeRow(page, field.label)
+  assert.equal((await rowSays(page, field.label)).length, 2, 'the row: both, each a line')
+  const DESTINATIONS = 'Either side of the city.'
+  if (at.market.listing.description) await page.getByLabel(fieldAsked(at.market.name, at.role, 'description').label, { exact: true }).fill(DESTINATIONS)
   await button(page, 'Post').click()
-  const both = `Lisbon, within ${radius} km; Porto, Portugal, within ${radius} km`
-  await page.locator('.listing-card', { hasText: both }).waitFor({ timeout: 60_000 })
-  const [[, posted]] = (await entriesOf((await mainKey(seed, at.label)).address, 'listing')).filter(([, c]) => Array.isArray((c.entry.body as Record<string, unknown>)[at.name])) as unknown as [[string, { entry: { body: Record<string, Array<{ area: string; radiusKm: number }>> } }]]
-  assert.deepEqual(posted.entry.body[at.name]!.map((p) => [p.area, p.radiusKm]), [['Lisbon', radius], ['Porto, Portugal', radius]], 'both places, in one field')
+  await page.getByRole('tab', { selected: true }).waitFor({ timeout: 60_000 })
+  const [[, posted]] = (await entriesOf((await mainKey(seed, at.label)).address, 'listing')).filter(([, c]) => Array.isArray((c.entry.body as Record<string, unknown>)[at.name]) && ((c.entry.body as Record<string, unknown[]>)[at.name]!.length === 2)) as unknown as [[string, { entry: { body: Record<string, Array<Point & { radiusKm: number }>> } }]]
+  const [first_, second_] = posted.entry.body[at.name]!
+  assert.deepEqual([first_!.radiusKm, second_!.radiusKm], [radius, radius], 'both places, in one field, at the field\'s own radius')
+  assert.ok(kmFromSpot(first_!) <= radius * 0.1 + 0.05, `the first round the phone, moved ${kmFromSpot(first_!).toFixed(3)} km`)
+  const { places: chamberi } = (await (await fetch(`${services.places}/v1/find?q=chamberi`)).json()) as { places: Array<{ place: Point }> }
+  assert.ok(kmApart(second_!, chamberi[0]!.place) <= radius * 0.1 + 0.05, 'the second round Chamberí')
   assert.equal(loadMarkets().checkEntry(at.market.name, at.role, 'listing', posted.entry.body), null, 'it fits the market')
-  await shot(page, 'listing-places-card')
-  say('several places in one field: two posted, both on the card')
+  say('several places in one field: two posted, each moved by up to a tenth of its radius')
 })
 
 test("a language picked by its name: the long list shows names, never codes, and searches them; the listing holds the code", async () => {
   const { page } = first
-  const lang = fieldWith(MARKETS, 'a long list with labels its words do not say', (f) => isLong(f) && labelled(f) !== undefined && !f.when)
+  const lang = fieldWith(MARKETS, 'a shared long list, such as languages, whose names its codes do not say', (f) => typeof f.values === 'string' && isLong(f, MARKETS.lists) && labelled(f, MARKETS.lists) !== undefined && !f.when)
   await profileOf(page, lang.label)
   await button(page, `New ${lang.offers ? 'offer' : 'request'}`).click()
-  const LANGUAGES = fieldWords(lang.name)
-  const code = labelled(lang.field)!
-  const name = lang.field.labels![code]!
-  const values = lang.field.values!
-  await page.getByRole('group', { name: LANGUAGES, exact: true }).locator('button.open-row').click()
-  const sheet = page.getByRole('region', { name: LANGUAGES })
-  const rows = sheet.getByRole(lang.field.many ? 'checkbox' : 'radio')
-  assert.deepEqual(await rows.allTextContents(), values.map((v) => choiceWords(lang.field, v)), 'every one by its name')
+  const field = fieldAsked(lang.market.name, lang.role, lang.name)
+  const code = labelled(lang.field, MARKETS.lists)!
+  const name = labelOf(lang.field, code, MARKETS.lists, true)
+  const open = await openRow(page, field.label)
+  const rows = open.getByRole(lang.field.several ? 'checkbox' : 'radio')
+  const words = field.choices!.map((c) => c.label)
+  assert.deepEqual(await rows.allTextContents(), words.slice(0, 8), 'the first, each by its name, until something is typed')
   // Its code, searched: no row reads it.
-  await sheet.getByLabel('Search').fill(code)
-  assert.ok(!(await rows.allTextContents()).includes(valueWords(code)), 'never a code')
+  await open.getByRole('searchbox').fill(code)
+  assert.ok(!(await rows.allTextContents()).includes(valueWords(code)) && !(await rows.allTextContents()).includes(code), 'never a code')
   // Its name, searched: the names that hold what is typed.
-  await sheet.getByLabel('Search').fill(name.toLowerCase())
-  assert.deepEqual(await rows.allTextContents(), values.map((v) => choiceWords(lang.field, v)).filter((w) => w.toLowerCase().includes(name.toLowerCase())), 'found by its name')
+  await open.getByRole('searchbox').fill(name.toLowerCase())
+  assert.deepEqual(await rows.allTextContents(), words.filter((w) => w.toLowerCase().includes(name.toLowerCase())), 'found by its name')
   await rows.getByText(name, { exact: true }).click()
-  if (lang.field.many) await sheet.getByRole('button', { name: 'Done' }).click()
-  await sheet.waitFor({ state: 'detached' })
-  const row = page.getByRole('group', { name: LANGUAGES, exact: true }).locator('button.open-row')
-  assert.equal(lang.field.many ? (await row.locator('.chip').allTextContents()).join() : await row.textContent(), name, 'the row shows its name')
+  assert.deepEqual(await open.locator('.chips .chip').allTextContents(), [name], 'picked, by its name')
   await shot(page, 'listing-language')
+  await closeRow(page, field.label)
+  assert.deepEqual(await rowSays(page, field.label), [name], 'the row shows its name')
   const SPOKEN = `Speaking ${name}.`
-  if (lang.market.listing.description) await page.getByLabel('Description').fill(SPOKEN)
+  if (lang.market.listing.description) await page.getByLabel(fieldAsked(lang.market.name, lang.role, 'description').label, { exact: true }).fill(SPOKEN)
   await button(page, 'Post').click()
-  await page.locator('.listing-card', { hasText: lang.market.listing.description ? SPOKEN : name }).waitFor({ timeout: 60_000 })
-  const posted = (await entriesOf((await mainKey(seed, lang.label)).address, 'listing')).map(([, c]) => c.entry.body as Record<string, unknown>).find((b) => b[lang.name] !== undefined)!
-  assert.deepEqual(posted[lang.name], lang.field.many ? [code] : code, 'the code, as the market holds it')
+  await page.getByRole('tab', { selected: true }).waitFor({ timeout: 60_000 })
+  const posted = (await entriesOf((await mainKey(seed, lang.label)).address, 'listing')).map(([, c]) => c.entry.body as Record<string, unknown>).find((b) => (lang.market.listing.description ? b.description === SPOKEN : b[lang.name] !== undefined))!
+  assert.deepEqual(posted[lang.name], lang.field.several ? [code] : code, 'the code, as the market holds it')
   say(`a language by its name: ${name}, posted as ${code}`)
 })
 
@@ -4611,107 +4630,112 @@ test("Email: Off to start; one page, each step in turn and in place: two profile
   say('Email: two profiles, a code, a wrong one, On, Save, a new address, a second code waiting, a second browser, Turn off')
 })
 
-/** The index's words for a range in `unit`: 9 to 11 years, 18 years and over, 11 years and under. */
-const rangeWords = (unit: string, from: string, to: string) =>
-  from && to ? `${from} to ${to} ${unitWords(unit, to)}` : from ? `${from} ${unitWords(unit, from)} and over` : `${to} ${unitWords(unit, to)} and under`
-
-test("a range: a number turned into From and To with its small Range, either end left empty; its words as the index says them; posted open at the top, reopened a range, posted again open at the bottom, in place", async () => {
+test("a range: a number the market asks as From and To, either end left empty; its words as the markets read them; posted open at the top, reopened a range, posted again open at the bottom, in place", async () => {
   const { page } = first
-  const r = fieldWith(MARKETS, 'a number that takes a range, in a market whose listings have a description', (f, _, side) => f.type === 'number' && f.range === true && side.market.listing.description !== undefined)
+  const r = fieldWith(MARKETS, 'a number asked as a range, with a unit, in a market whose listings have a description', (f, name, side) => f.piece === 'number' && f.unit !== undefined && fieldAsked(side.market.name, side.role, name).start?.range === true && side.market.listing.description !== undefined)
   const unit = r.field.unit!
+  const said = (value: object) => MARKETS.read({ ...r.field, several: undefined }, value)
+  const held = (value: object) => (r.field.several ? [value] : value)
   await profileOf(page, r.label)
   await button(page, `New ${r.offers ? 'offer' : 'request'}`).click()
-  for (const [name, value] of Object.entries(opening(r.market, r.field))) await choose(page, r.market.name, name, Array.isArray(value) ? value[0]! : value)
+  for (const [name, value] of Object.entries(opening(r.market, r.field))) await choose(page, r.market.name, r.role, name, Array.isArray(value) ? value[0]! : value)
   const RANGED = 'Open at the top, then at the bottom.'
-  await page.getByLabel('Description').fill(RANGED)
-  const NAME = fieldWords(r.name)
-  const field = page.locator('.field').filter({ has: page.getByText(NAME, { exact: true }) })
-  // One number first, its unit after it, and a small Range beside it.
-  await field.getByLabel(NAME, { exact: true }).fill('18')
-  assert.equal(await field.locator('.number .unit').textContent(), unitWords(unit, '18'))
-  await field.getByRole('button', { name: 'Range', exact: true }).click()
-  // From and To, the number typed kept as From, To empty: no limit that way.
-  const group = page.getByRole('group', { name: NAME, exact: true })
-  assert.deepEqual([await group.getByLabel('From').inputValue(), await group.getByLabel('To').inputValue()], ['18', ''])
-  assert.deepEqual([await group.getByLabel('From').getAttribute('placeholder'), await group.getByLabel('To').getAttribute('placeholder')], ['From', 'To'])
-  assert.equal(await group.locator('.range-words').textContent(), rangeWords(unit, '18', ''), 'open at the top')
-  await group.getByLabel('To').fill('25')
-  assert.equal(await group.locator('.range-words').textContent(), rangeWords(unit, '18', '25'), 'from one to another')
-  await group.getByLabel('To').fill('')
+  await page.getByLabel(fieldAsked(r.market.name, r.role, 'description').label, { exact: true }).fill(RANGED)
+  const NAME = fieldAsked(r.market.name, r.role, r.name).label
+  // From and To, each empty for no limit that way, its unit after them.
+  let open = await openRow(page, NAME)
+  assert.deepEqual([await open.getByLabel('From', { exact: true }).getAttribute('placeholder'), await open.getByLabel('To', { exact: true }).getAttribute('placeholder')], ['From', 'To'])
+  await open.getByLabel('From', { exact: true }).fill('18')
+  assert.equal(await open.locator('.range .unit').textContent(), unitWords(unit, '18'))
+  assert.equal(await open.locator('.range-words').textContent(), said({ from: '18' }), 'open at the top')
+  await open.getByLabel('To', { exact: true }).fill('25')
+  assert.equal(await open.locator('.range-words').textContent(), said({ from: '18', to: '25' }), 'from one to another')
+  await open.getByLabel('To', { exact: true }).fill('')
   await shot(page, 'listing-range')
+  await closeRow(page, NAME)
+  assert.deepEqual(await rowSays(page, NAME), [said({ from: '18' })])
   await button(page, 'Post').click()
   const card = page.locator('.listing-card', { hasText: RANGED })
   await card.waitFor({ timeout: 60_000 })
   const address = (await mainKey(seed, r.label)).address
   const postedOf = async () => (await entriesOf(address, 'listing')).filter(([, c]) => (c.entry.body as Record<string, unknown>).description === RANGED)
   const [[path, posted]] = (await postedOf()) as unknown as [[string, { entry: { body: Record<string, unknown> } }]]
-  assert.deepEqual(posted.entry.body[r.name], { from: '18' }, 'its top left out')
+  assert.deepEqual(posted.entry.body[r.name], held({ from: '18' }), 'its top left out')
   assert.equal(loadMarkets().checkEntry(r.market.name, r.role, 'listing', posted.entry.body), null, 'it fits the market')
 
-  // Reopened: a range again, with its words; open at the bottom now, as the index says it.
+  // Reopened: a range again, with its words; open at the bottom now.
   await card.click()
   await page.getByRole('heading', { name: r.offers ? 'Offer' : 'Request', exact: true }).waitFor()
-  assert.deepEqual([await group.getByLabel('From').inputValue(), await group.getByLabel('To').inputValue()], ['18', ''])
-  assert.equal(await group.locator('.range-words').textContent(), rangeWords(unit, '18', ''))
-  await group.getByLabel('From').fill('')
-  await group.getByLabel('To').fill('11')
-  assert.equal(await group.locator('.range-words').textContent(), rangeWords(unit, '', '11'), 'open at the bottom')
+  open = await openRow(page, NAME)
+  assert.deepEqual([await open.getByLabel('From', { exact: true }).inputValue(), await open.getByLabel('To', { exact: true }).inputValue()], ['18', ''])
+  await open.getByLabel('From', { exact: true }).fill('')
+  await open.getByLabel('To', { exact: true }).fill('11')
+  assert.equal(await open.locator('.range-words').textContent(), said({ to: '11' }), 'open at the bottom')
   await button(page, 'Post').click()
   await card.waitFor({ timeout: 60_000 })
   for (const until = Date.now() + 30_000; ; await page.waitForTimeout(300)) {
     const now = (await postedOf()) as unknown as Array<[string, { entry: { body: Record<string, unknown> } }]>
-    if (now.length === 1 && JSON.stringify(now[0]![1].entry.body[r.name]) === JSON.stringify({ to: '11' })) {
+    if (now.length === 1 && JSON.stringify(now[0]![1].entry.body[r.name]) === JSON.stringify(held({ to: '11' }))) {
       assert.equal(now[0]![0], path, 'in place: its own path, and no second')
       break
     }
     if (Date.now() > until) throw new Error(`the range posted again: ${JSON.stringify(now.map(([p, c]) => [p, c.entry.body[r.name]]))}`)
   }
-  say(`a range: ${rangeWords(unit, '18', '')}, then ${rangeWords(unit, '', '11')}`)
+  say(`a range: ${said({ from: '18' })}, then ${said({ to: '11' })}`)
 })
 
-test('a price list: two prices, the first a pack with its count, posted; its card the first price as the index says it, and +1 more; reopened, both, each with its remove button until one is left', async () => {
+test('a price list: two prices, the first for several of what the market prices by, posted; its card the first price as people say it, and +1 more; reopened, both, each with its remove button until one is left; a length in minutes, held as hours', async () => {
   const { page } = first
-  const [pack, hour] = [L.per[1]!, L.per[0]!]
-  /** A per's word for several, as the index says it: lessons, people. */
-  const several = (per: string) => (per === 'person' ? 'people' : /(s|x|z|ch|sh)$/.test(per) ? `${per}es` : `${per}s`)
+  const [pack, hour] = [L.per.find((p) => p !== 'hour')!, 'hour']
+  assert.ok(L.per.includes(hour), 'lessons are priced by the hour')
   await profileOf(page, TUTOR_LABEL)
   await button(page, 'New offer').click()
+  const ask = (name: string) => fieldAsked(LESSONS, L.offer.role, name)
   const PRICED = 'Five lessons for less, or by the hour.'
-  await page.getByLabel('Description').fill(PRICED)
-  // One price to start, with no remove button, so the last is never removed; its count once a per is picked.
-  assert.equal(await page.getByRole('button', { name: /^Remove price/ }).count(), 0, 'no remove button on the last price')
-  await page.getByLabel('Currency', { exact: true }).selectOption('MXN')
-  await page.getByLabel('Price', { exact: true }).fill('1300')
-  assert.equal(await page.getByLabel('How many', { exact: true }).count(), 0, 'no count before a per')
-  await page.getByRole('group', { name: 'Per', exact: true }).getByRole('button', { name: `per ${pack}`, exact: true }).click()
-  await page.getByLabel('How many', { exact: true }).fill('5')
-  assert.equal(await page.locator('.price-count .unit').textContent(), several(pack), 'its per, many')
-  // Add a price: a second row, both numbered, each with its remove button.
-  await button(page, 'Add a price').click()
-  await page.getByLabel('Price 2', { exact: true }).fill('30')
-  assert.equal(await page.getByLabel('Currency 2', { exact: true }).inputValue(), 'MXN', "in the last row's currency")
-  await page.getByLabel('Currency 2', { exact: true }).selectOption('USD')
-  await page.getByRole('group', { name: 'Per 2', exact: true }).getByRole('button', { name: `per ${hour}`, exact: true }).click()
-  assert.equal(await page.getByRole('button', { name: /^Remove price/ }).count(), 2, 'each its remove button')
+  await page.getByLabel(ask('description').label, { exact: true }).fill(PRICED)
+  // One price to start, with no remove button, so the last is never removed.
+  const open = await openRow(page, ask('price').label)
+  assert.equal(await open.getByRole('button', { name: /^Remove price/ }).count(), 0, 'no remove button on the last price')
+  await open.getByLabel('Currency', { exact: true }).selectOption('MXN')
+  await open.getByLabel('Amount', { exact: true }).fill('1300')
+  await open.getByLabel('For', { exact: true }).selectOption(pack)
+  await open.getByLabel('How many', { exact: true }).fill('5')
+  assert.equal(await open.getByLabel('For', { exact: true }).locator('option:checked').textContent(), `${pack}s`, 'its per, many')
+  // Add another price: a second, both numbered, each with its remove button, in the last one's currency.
+  await open.getByRole('button', { name: 'Add another price' }).click()
+  await open.getByLabel('Amount 2', { exact: true }).fill('25')
+  assert.equal(await open.getByLabel('Currency 2', { exact: true }).inputValue(), 'MXN', "in the last one's currency")
+  await open.getByLabel('Currency 2', { exact: true }).selectOption('USD')
+  // 45 minutes: held as 0.75 of an hour. 50 is no exact part of an hour: said, and not posted so.
+  await open.getByLabel('For 2', { exact: true }).selectOption('minutes')
+  await open.getByLabel('How many 2', { exact: true }).fill('50')
+  await open.getByText('Minutes go in steps of 3, such as 45.', { exact: true }).waitFor()
+  await open.getByLabel('How many 2', { exact: true }).fill('45')
+  await open.getByText('Minutes go in steps of 3, such as 45.', { exact: true }).waitFor({ state: 'detached' })
+  await open.getByLabel('Note 2', { exact: true }).fill('at least 2 lessons')
+  assert.equal(await open.getByRole('button', { name: /^Remove price/ }).count(), 2, 'each its remove button')
   await shot(page, 'listing-prices')
+  await closeRow(page, ask('price').label)
+  assert.deepEqual(await rowSays(page, ask('price').label), [`MX$1,300 for 5 ${pack}s`, '$25 for 45 minutes'])
   await button(page, 'Post').click()
   const card = page.locator('.listing-card', { hasText: PRICED })
   await card.waitFor({ timeout: 60_000 })
-  // Small, as the index's cards show it: the first price, what it is for, and how many more.
-  assert.deepEqual(await card.locator('.price-col > *').allTextContents(), ['MX$1,300', `for 5 ${several(pack)}`, '+1 more'])
+  // Small: the first price, what it is for, and how many more.
+  assert.deepEqual(await card.locator('.price-col > *').allTextContents(), ['MX$1,300', `for 5 ${pack}s`, '+1 more'])
   const [[, posted]] = (await entriesOf((await mainKey(seed, TUTOR_LABEL)).address, 'listing')).filter(([, c]) => (c.entry.body as Record<string, unknown>).description === PRICED) as unknown as [[string, { entry: { body: Record<string, unknown> } }]]
-  assert.deepEqual(posted.entry.body.price, [{ amount: '1300', currency: 'MXN', per: pack, count: 5 }, { amount: '30', currency: 'USD', per: hour }], 'every price, in order, the pack with its count')
+  assert.deepEqual(posted.entry.body.price, [{ amount: '1300', currency: 'MXN', per: pack, count: '5' }, { amount: '25', currency: 'USD', per: hour, count: '0.75', note: 'at least 2 lessons' }], 'every price, in order, a count as decimal text, a length in hours')
   assert.equal(loadMarkets().checkEntry(LESSONS, L.offer.role, 'listing', posted.entry.body), null, 'it fits the market')
-  // Reopened: every price, as posted; one removed, the last has no remove button.
+  // Reopened: every price, as posted, the length in minutes again; one removed, the last has no remove button.
   await card.click()
   await page.getByRole('heading', { name: 'Offer', exact: true }).waitFor()
-  assert.deepEqual([await page.getByLabel('Price 1', { exact: true }).inputValue(), await page.getByLabel('How many 1', { exact: true }).inputValue(), await page.getByLabel('Price 2', { exact: true }).inputValue()], ['1300', '5', '30'])
-  await button(page, 'Remove price 2').click()
-  assert.equal(await page.getByRole('button', { name: /^Remove price/ }).count(), 0, 'the last one stays')
-  assert.equal(await page.getByLabel('Price', { exact: true }).inputValue(), '1300')
+  const again = await openRow(page, ask('price').label)
+  assert.deepEqual([await again.getByLabel('Amount 1', { exact: true }).inputValue(), await again.getByLabel('How many 1', { exact: true }).inputValue(), await again.getByLabel('Amount 2', { exact: true }).inputValue(), await again.getByLabel('How many 2', { exact: true }).inputValue()], ['1300', '5', '25', '45'])
+  await again.getByRole('button', { name: 'Remove price 2' }).click()
+  assert.equal(await again.getByRole('button', { name: /^Remove price/ }).count(), 0, 'the last one stays')
+  assert.equal(await again.getByLabel('Amount', { exact: true }).inputValue(), '1300')
   await button(page, 'Close').click()
   await card.waitFor()
-  say(`a price list: MX$1,300 for 5 ${several(pack)}, +1 more`)
+  say(`a price list: MX$1,300 for 5 ${pack}s, +1 more, and $25 for 45 minutes`)
 })
 
 test("every market's own icon, from its market file, and its color by its number, the index's ten in their order, so markets numbered next to each other differ; one of the person's own profiles the same", async () => {

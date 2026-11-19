@@ -4,8 +4,9 @@
 // line under it saying what the one picked is. Score: the score big with its star, over a slider, 1
 // to 10 in tenths, its thumb hidden until touched, so no score looks chosen. Vouch: says they're
 // real and honest, without a score, its mint square. Report: warns others it's fake or a scam, its
-// red one. Then, for a score, the market's own fields for their role, a choice of two in one row,
-// its words and its chips; then one comment, its placeholder by what is picked; and the button at
+// red one. Then, for a score, the market's own fields for their role, each by the market's own
+// words for it (`ask`): a choice of two in one row, its question and its chips, any other field its
+// piece's own input (Field.tsx); then one comment, its placeholder by what is picked; and the button at
 // the foot names what it does: Post, Vouch, or Report, in red. No review here names one of their
 // listings. Before the unlock, the app checks it as for any entry: they are on the other side of
 // the same market, and none of the person's own profiles (flows/entries.ts); a refusal shows once.
@@ -20,18 +21,16 @@ import { type Body, publicKeyFromAddress } from '@foundationforest/folders'
 
 import { config } from '../config.ts'
 import { type Profile, passkey } from '../device.ts'
-import { Field } from '../fields/Field.tsx'
+import { Input } from '../fields/Field.tsx'
 import type { Picked } from '../fields/Photos.tsx'
 import { type Posted, type Subject, addressIn, check, newPath, post, subjectOf, unpost, writtenAbout } from '../flows/entries.ts'
 import { fitting } from '../form.ts'
 import { useProfiles } from '../hooks.ts'
 import { Icon } from '../icons.tsx'
 import { Loader } from '../mark.tsx'
-import { type Field as MarketField, type Kind, fieldsOf, markets, pairOf } from '../markets.ts'
+import { type Asked, type Kind, askOf, markets, pairOf } from '../markets.ts'
 import { withSeed } from '../passkey.ts'
-import { choiceWords } from '../show.ts'
 import { AskAgain, Line, type Note, Quiet, Seg, Top, UnlockIcon, noteOf, useAction } from '../ui.tsx'
-import { fieldWords } from '../words.ts'
 import { clean } from './Listing.tsx'
 import { Who, WhoAvatar } from './Who.tsx'
 import { WhoStep } from './WhoStep.tsx'
@@ -138,7 +137,7 @@ export function Review({ me, subject: given, edit, report = false, onDone, onBac
         onClose={onBack}
       />
     )
-  const fields = kind === 'review' ? Object.entries(fieldsOf(market, 'review', role, subject?.role)).filter(([n]) => !SHARED.includes(n)) : []
+  const fields = kind === 'review' ? askOf(name, role, 'review', subject?.role).filter((f) => !SHARED.includes(f.name)) : []
   const busy = send.busy || remove.busy
   const k = KINDS[kind]
   const at = score ? `${((Number(score) - 1) / 9) * 100}%` : '0%'
@@ -196,11 +195,14 @@ export function Review({ me, subject: given, edit, report = false, onDone, onBac
             </span>
           </div>
         )}
-        {fields.map(([n, f]) =>
-          f.type === 'choice' && !f.many && f.values?.length === 2 ? (
-            <Question key={n} name={n} field={f} value={values[n]} onChange={(v) => setValues((was) => ({ ...was, [n]: v as Body[string] }))} />
+        {fields.map((f) =>
+          f.piece === 'choice' && !f.several && f.choices?.length === 2 ? (
+            <Question key={f.name} field={f} value={values[f.name]} onChange={(v) => setValues((was) => ({ ...was, [f.name]: v as Body[string] }))} />
           ) : (
-            <Field key={n} name={n} field={f} value={values[n]} onChange={(v) => setValues((was) => ({ ...was, [n]: v as Body[string] }))} picked={picked} />
+            <label key={f.name} className="field">
+              <span className="label">{f.question}</span>
+              <Input field={f} value={values[f.name]} onChange={(v) => setValues((was) => ({ ...was, [f.name]: v as Body[string] }))} picked={picked} />
+            </label>
           ),
         )}
         <textarea aria-label="Comment" placeholder={k.asks} rows={4} value={text} onChange={(e) => setText(e.target.value)} />
@@ -221,17 +223,16 @@ export function Review({ me, subject: given, edit, report = false, onDone, onBac
   )
 }
 
-/** A market's choice of two for a review, in one row: its words, the market's own name for the field, then its two chips. */
-function Question({ name, field, value, onChange }: { name: string; field: MarketField; value: unknown; onChange: (v: string | undefined) => void }) {
-  const words = fieldWords(name)
+/** A market's choice of two for a review, in one row: its question, in the market's own words, then its two chips. */
+function Question({ field, value, onChange }: { field: Asked; value: unknown; onChange: (v: string | undefined) => void }) {
   return (
-    <div className="qrow" role="group" aria-label={words}>
-      <strong>{words}</strong>
-      {(field.values ?? []).map((v) => {
-        const on = value === v
+    <div className="qrow" role="group" aria-label={field.label}>
+      <strong>{field.question}</strong>
+      {(field.choices ?? []).map((c) => {
+        const on = value === c.value
         return (
-          <button key={v} type="button" className={on ? 'chip here' : 'chip'} aria-pressed={on} onClick={() => onChange(on ? undefined : v)}>
-            {choiceWords(field, v)}
+          <button key={c.value} type="button" className={on ? 'chip here' : 'chip'} aria-pressed={on} onClick={() => onChange(on ? undefined : c.value)}>
+            {c.label}
           </button>
         )
       })}

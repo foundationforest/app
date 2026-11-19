@@ -139,7 +139,7 @@ export function Profile({ address, tab, onTab, onBack, onListing, onReviews, onE
           <Line note={note} />
           {listings && (
             <div className="cards">
-              {market && listings.map((l) => <ListingCard key={l.path} market={market} body={l.body} update={!fits(pair.market, pair.role, l.body)} onClick={() => onListing(l)} />)}
+              {market && listings.map((l) => <ListingCard key={l.path} market={market} body={l.body} request={!pair.offers} update={!fits(pair.market, pair.role, l.body)} onClick={() => onListing(l)} />)}
             </div>
           )}
           <div className="foot">

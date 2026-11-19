@@ -14,11 +14,11 @@ import { fieldWith } from './directory.ts'
 import { type World, freshDevice, verifiedWith, world } from './world.ts'
 
 // A market with a review field kept for reviews of one role, and another role, which writes them.
-const found = fieldWith(markets, 'a choice for reviews of one role, in a market with another', (f, _, side) => f.type === 'choice' && f.roles !== undefined && side.market.roles.some((r) => !f.roles!.includes(r.role)), 'review')
+const found = fieldWith(markets, 'a choice for reviews of one role, in a market with another', (f, _, side) => f.piece === 'choice' && f.roles !== undefined && side.market.roles.some((r) => !f.roles!.includes(r.role)), 'review')
 const name = found.market.name
 const reviewed = found.role
 const writer = found.market.roles.find((r) => !found.field.roles!.includes(r.role))!.role
-const answer = { [found.name]: found.field.values![0]! }
+const answer = { [found.name]: (found.field.values as string[])[0]! }
 
 let w: World
 beforeAll(async () => void (w = await world()))

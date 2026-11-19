@@ -6,8 +6,8 @@
 // of what each posted, the same way; what is new on each;
 // whether a profile was made on another device; the messages opened in this page; the passkeys added
 // to the Profiles folder (backups, as the standard names them); whether a seed is held in it;
-// the names the person gave others and the morning email; what the index says of anyone's profile; and whether a newer
-// version of the app is live.
+// the names the person gave others and the morning email; what the index says of anyone's profile;
+// the captions places gives the places a screen shows; and whether a newer version of the app is live.
 
 import { useEffect, useState } from 'react'
 
@@ -27,6 +27,9 @@ import { onOpened, opened } from './opened.ts'
 import { ordered } from './order.ts'
 import { type Held, onRated, ratedOf } from './rated.ts'
 import { readRated } from './services/index.ts'
+import { captionOf } from './services/places.ts'
+import type { Caption } from './show.ts'
+import type { PlaceValue } from './markets.ts'
 import { entryIn, newerLive } from './version.ts'
 
 /** A render again whenever what the device keeps changes. */
@@ -323,4 +326,21 @@ export function useNewVersion(): boolean {
     }
   }, [])
   return newer
+}
+
+/** The captions places gives `list`, the places a screen shows, each asked once a page: a render again as each comes; none for a place places can't name. */
+export function useCaptions(list: PlaceValue[]): Caption {
+  const [known, setKnown] = useState<Record<string, string>>({})
+  const key = (p: PlaceValue) => `${p.lat},${p.lon},${p.radiusKm}`
+  const keys = [...new Set(list.map(key))].sort().join(' ')
+  useEffect(() => {
+    let live = true
+    for (const p of list) {
+      void captionOf(config.places, p).then((caption) => {
+        if (live && caption) setKnown((was) => (was[key(p)] === caption ? was : { ...was, [key(p)]: caption }))
+      })
+    }
+    return () => void (live = false)
+  }, [keys])
+  return (p) => known[key(p)]
 }

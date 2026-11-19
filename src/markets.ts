@@ -1,16 +1,34 @@
 // The markets, from their files as the build hands them over (build/markets.ts), through the markets'
-// browser entry, which takes them as data and runs no eval: the directory, each market file,
-// checkEntry and previewOf. As the app shows them: each market and role a pair, in the market's own words,
-// "Tutoring tutor", no symbol between (on screen, the market in bold and the role muted: Named, in
-// ui.tsx); every market with its roles, its summary and whether it is beta, as New profile lists them; each kind
-// of entry's fields for a role; the other side of a market; and whether the directory lists a
+// browser entry, which takes them as data and runs no eval: the directory, the shared lists, each
+// market file, checkEntry, ask, match and read. As the app shows them: each market and role a pair,
+// in the market's own words, "Tutoring tutor", no symbol between (on screen, the market in bold and
+// the role muted: Named, in ui.tsx); every market with its roles, its summary and whether it is
+// beta, as New profile lists them; the fields each kind of entry asks a role, in order, with the
+// market's own words for them (ask); the other side of a market; and whether the directory lists a
 // profile's market, since a profile in a market that is gone is forgotten by the device.
 
-import { type Field, type Fields, type Kind, type Market, type Markets, type Role, SHARED, loadMarkets, previewOf } from '@foundationforest/markets/browser'
+import {
+  type Asked,
+  type DateValue,
+  type Field,
+  type Kind,
+  type Market,
+  type Markets,
+  type PlaceValue,
+  type PriceValue,
+  type Role,
+  type Start,
+  type Weekday,
+  WEEKDAYS,
+  labelOf,
+  loadMarkets,
+  previewOf,
+} from '@foundationforest/markets/browser'
 import files from 'virtual:markets'
 
-export type { Field, Fields, Kind, Market }
-/** The listing fields that matter first, as the markets manual's Preview says: the markets' own. */
+export type { Asked, DateValue, Field, Kind, Market, PlaceValue, PriceValue, Start, Weekday }
+export { WEEKDAYS }
+/** The listing fields that matter first, as the pieces page's market file says: the markets' own. */
 export { previewOf }
 
 export const markets = loadMarkets(files)
@@ -40,7 +58,7 @@ export const roleWords = (role: string) => {
 
 /**
  * A market as New profile lists it: its name, its words, its roles, and whether it is beta (the
- * markets manual's Status), else live; its name as its tile shows it, `family` small over `kind`
+ * pieces page's Status), else live; its name as its tile shows it, `family` small over `kind`
  * where its first word is another market's too (Stays over Work), else `kind` alone; and its
  * summary, the one line its file gives for where someone picks a market, for its role sheet.
  */
@@ -119,19 +137,16 @@ export function kindWords(kind: Kind, label: string): string {
 }
 
 /**
- * The fields a `kind` entry by a `role` profile holds in `market`: a listing's, those of the
- * market's listing fields that are for its role, and contact, which every listing may hold and no
- * market lists; a review's, the shared ones and the market's own, those for the role of the profile
- * it is about (`aboutRole`), all of them while that is not known; a vouch's and a report's, the
- * shared ones.
+ * The fields a `kind` entry by a `role` profile asks in `market`, in the order a form asks them, each
+ * with its piece, its rules and the market's words for it (the markets' `ask`): a listing's, its
+ * market's fields for its role and contact, which every listing may hold; a review's, the shared
+ * ones and the market's own, those for the role of the profile it is about (`aboutRole`), all of
+ * them while that is not known; a vouch's and a report's, the shared ones.
  */
-export function fieldsOf(market: Market, kind: Kind, role: string, aboutRole?: string): Fields {
-  const forRole = (fields: Fields, who: string | undefined): Fields =>
-    Object.fromEntries(Object.entries(fields).filter(([, f]) => !f.roles || who === undefined || f.roles.includes(who)))
-  if (kind === 'listing') return { ...forRole(market.listing, role), ...SHARED.listing }
-  if (kind === 'review') return { ...SHARED.review, ...forRole(market.review ?? {}, aboutRole) }
-  return SHARED[kind]
-}
+export const askOf = (market: string, role: string, kind: Kind = 'listing', aboutRole?: string): Asked[] => markets.ask(market, role, kind, aboutRole)
+
+/** A choice's value as it reads, by the field's own words for it, else its shared list's, else in words: `xl` is XL, `es` Spanish. */
+export const choiceWords = (field: Field, value: string, first = true) => labelOf(field, value, markets.lists, first)
 
 /** The person's profiles in the order the app lists them: those whose role offers first, then by their words. */
 export const offersFirst = <P extends { label: string }>(list: P[]): Array<P & { pair: Pair }> =>

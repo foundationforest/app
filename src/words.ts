@@ -167,16 +167,18 @@ export function fieldWords(name: string): string {
   return words.charAt(0).toUpperCase() + words.slice(1)
 }
 
-/** A field whose value runs backwards, as one red line: a span that ends before it starts, a range from more to less. */
-export function turnedSays(name: string, field: { type: string }): Said {
-  return new Said(field.type === 'moment' ? `${fieldWords(name)} ends before it starts.` : `${fieldWords(name)}: From is more than To.`, true)
+/** A field whose answer runs backwards, as one red line, by its market's label: days that end before they start, a range from more to less. */
+export function turnedSays(field: { label: string; piece: string }): Said {
+  return new Said(field.piece === 'date' ? `${field.label} ends before it starts.` : `${field.label}: From is more than To.`, true)
 }
 
 /**
  * What checkEntry said (the markets' package, in its own words for a program), as one red line: the
- * field it names that does not fit, or the entry as a whole. `names` are the body's fields.
+ * field it names that does not fit, by its market's label, one its market has no more by its name in
+ * words, or the entry as a whole. `fields` are the market's, as it asks them.
  */
-export function entrySays(why: string, names: string[]): Said {
-  const named = names.find((n) => why.startsWith(`${n} `) || why.endsWith(` ${n}`))
-  return new Said(named ? `${fieldWords(named)} doesn't fit.` : "This doesn't fit the market.", true)
+export function entrySays(why: string, fields: Array<{ name: string; label: string }>): Said {
+  const named = fields.find((f) => why.startsWith(`${f.name} `) || why.endsWith(` ${f.name}`))
+  const gone = / has no field (\S+)$/.exec(why)?.[1]
+  return new Said(named ? `${named.label} doesn't fit.` : gone ? `${fieldWords(gone)} doesn't fit.` : "This doesn't fit the market.", true)
 }

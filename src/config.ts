@@ -14,6 +14,8 @@ export type Config = {
   connector: string
   /** The index, which rates each profile: the app reads what it says of the person's own. */
   index: string
+  /** Places, services' place lookup: words to towns and colonias for the place screen's search, and the name nearest a place's centre for its caption. Only ever a help: with no answer, a place reads by its size. */
+  places: string
   /** The map's tiles, OpenFreeMap: its styles, light and dark, at /styles/positron and /styles/dark, on the place screen alone. */
   tiles: string
   /** The pages About Forest opens, each in a new tab: how this copy treats what people give it, its terms, and its source code. Links, never fetched. */
@@ -28,6 +30,7 @@ const OURS: Config = {
   host: 'https://host.forest.foundation',
   connector: 'https://mcp.forest.foundation',
   index: 'https://index.forest.foundation',
+  places: 'https://places.forest.foundation',
   tiles: 'https://tiles.openfreemap.org',
   privacy: 'https://forest.foundation/privacy',
   terms: 'https://forest.foundation/terms',
