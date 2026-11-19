@@ -1,62 +1,77 @@
-// Where a listing's place is centred (near.ts): an area near the spot it was put on, never on it;
-// moved once per place and kept, so listings from one place share one centre, that spot inside even
-// a 1 km circle; another place, another centre, and the first again back there; an exact spot, the
-// pin itself; the radii an area's slider offers; and the ring the map draws.
+// Where a listing's place is centred (near.ts): a circle set on the map is posted with its centre
+// moved by up to a tenth of its radius, worked out from the seed, the same way every time for that
+// profile and radius, so nothing is kept on the device and listings from one spot share one centre;
+// another profile or another radius, another way; an exact spot, as it is; only a place set on the
+// map in this page is moved, never one an edit keeps; the radii the place screen offers; and the
+// ring the map draws.
 
-import { beforeEach, expect, test } from 'vitest'
+import { expect, test } from 'vitest'
 
-import * as device from '../src/device.ts'
-import { MOVED, RADII, SAME_PLACE_KM, exactPoint, kmBetween, pointFor, radiusSteps, ring, spotOf } from '../src/near.ts'
-import { freshDevice } from './world.ts'
+import { newSeed } from '@foundationforest/keys'
 
-beforeEach(freshDevice)
+import { MOVED, PLACE_TEXT, RADII, kmBetween, moveOf, placeAt, pointOf, postedAt, ring, setOnMap, spotOf, wasSet, withPlacesMoved } from '../src/near.ts'
 
 const HOME = { lat: 40.41678, lon: -3.70379 }
-const WORK = { lat: 40.45306, lon: -3.68835 }
+const LABEL = 'home-cleaning/cleaner'
 
-test('moved once, a few hundred metres, and kept: the same centre again from that place, a little off, never a new one', () => {
-  const first = pointFor(HOME)
-  const km = kmBetween(spotOf(first), HOME)
-  // Rounded to 3 decimals, about 100 m, after the move.
-  expect(km).toBeGreaterThan(MOVED.least - 0.1)
-  expect(km).toBeLessThan(MOVED.most + 0.1)
-  expect(km, 'the real spot inside even a 1 km circle').toBeLessThan(1)
-  expect(first.lat).toMatch(/^-?\d+\.\d{3}$/)
-  expect(device.points()).toEqual([first])
-  for (const noise of [0.0003, -0.0008, 0.0015]) expect(pointFor({ lat: HOME.lat + noise, lon: HOME.lon - noise })).toEqual(first)
-  expect(device.points(), 'nothing new kept').toEqual([first])
-})
-
-test('another place, another centre; back home, the first again', () => {
-  const home = pointFor(HOME)
-  const work = pointFor(WORK)
-  expect(work).not.toEqual(home)
-  expect(kmBetween(spotOf(work), WORK)).toBeLessThan(SAME_PLACE_KM)
-  expect(pointFor(HOME)).toEqual(home)
-  expect(device.points()).toEqual([home, work])
-})
-
-test('every direction and distance in the ring, as random gives them', () => {
-  for (const [a, b] of [[0, 0], [1, 0.25], [0.5, 0.5], [0.999, 0.999]] as const) {
-    device.forget()
-    const rolls = [a, b]
-    const km = kmBetween(spotOf(pointFor(HOME, () => rolls.shift()!)), HOME)
-    expect(km).toBeGreaterThan(MOVED.least - 0.1)
-    expect(km).toBeLessThan(MOVED.most + 0.1)
+test('a circle moved by up to a tenth of its radius, the same way every time for one profile and radius; another profile, or another radius, another way', async () => {
+  const seed = newSeed()
+  for (const radiusKm of RADII) {
+    const place = { ...pointOf(HOME, 4), radiusKm }
+    const once = await postedAt(seed, LABEL, place)
+    expect(await postedAt(seed, LABEL, place), 'the same way again').toEqual(once)
+    const km = kmBetween(HOME, spotOf(once))
+    expect(km, `${radiusKm} km`).toBeLessThanOrEqual(radiusKm * MOVED + 0.02)
+    expect(once.radiusKm).toBe(radiusKm)
   }
+  const at = { ...pointOf(HOME, 4), radiusKm: 10 }
+  const mine = await postedAt(seed, LABEL, at)
+  expect(await postedAt(newSeed(), LABEL, at), 'another seed').not.toEqual(mine)
+  expect(await postedAt(seed, 'home-cleaning/client', at), 'another profile').not.toEqual(mine)
+  const [five, ten] = [await moveOf(seed, LABEL, 5), await moveOf(seed, LABEL, 10)]
+  expect(five.bearing, 'another radius, another direction, so two radii never point back to the spot').not.toBe(ten.bearing)
+  expect(PLACE_TEXT(10, LABEL)).toBe('forest-app/place/10/home-cleaning/cleaner')
 })
 
-test('an exact spot: the pin itself, to about a metre, keeping nothing', () => {
-  expect(exactPoint(HOME)).toEqual({ lat: '40.41678', lon: '-3.70379' })
-  expect(exactPoint({ lat: -0.000001, lon: 180.5 })).toEqual({ lat: '0.00000', lon: '-179.50000' })
-  expect(device.points()).toEqual([])
+test('over many seeds, the moves spread evenly over the small disc: every direction, near and far', async () => {
+  const moves = await Promise.all(Array.from({ length: 400 }, () => moveOf(newSeed(), LABEL, 10)))
+  for (const m of moves) expect(m.km).toBeLessThanOrEqual(1)
+  const quarter = (b: number) => Math.floor(b / (Math.PI / 2))
+  for (const q of [0, 1, 2, 3]) expect(moves.filter((m) => quarter(m.bearing) === q).length, `quarter ${q}`).toBeGreaterThan(60)
+  expect(moves.filter((m) => m.km < 0.5).length, 'a quarter of the disc is within half its radius').toBeGreaterThan(60)
+  expect(moves.filter((m) => m.km < 0.5).length).toBeLessThan(140)
 })
 
-test("an area's radii: from 1 km up to 50, with the field's own", () => {
-  expect(RADII[0]).toBe(1)
-  expect(RADII.at(-1)).toBe(50)
-  expect(radiusSteps(5)).toEqual(RADII)
-  expect(radiusSteps(4)).toEqual([1, 2, 3, 4, 5, 10, 15, 20, 30, 50])
+test('an exact spot, as it is; only a place set on the map in this page is moved, an edit\'s kept one and an AI\'s as they are', async () => {
+  const seed = newSeed()
+  const spot = { lat: '40.41678', lon: '-3.70379', radiusKm: 0 }
+  expect(await postedAt(seed, LABEL, spot)).toEqual(spot)
+  const set = placeAt(HOME, 2)
+  expect(wasSet(set)).toBe(true)
+  const kept = { lat: '40.4342', lon: '-3.7031', radiusKm: 1 }
+  expect(wasSet(kept)).toBe(false)
+  const fields = [
+    { name: 'area', piece: 'place' },
+    { name: 'jobs', piece: 'choice' },
+  ]
+  const body = { area: [kept, set], jobs: ['windows'] }
+  const out = await withPlacesMoved(seed, LABEL, fields, body)
+  expect(out.jobs).toEqual(['windows'])
+  expect(out.area[0], 'kept as posted').toEqual(kept)
+  expect(out.area[1]).toEqual(await postedAt(seed, LABEL, set))
+  expect(out.area[1]).not.toEqual(set)
+  const one = await withPlacesMoved(seed, LABEL, fields, { area: setOnMap({ ...kept }) })
+  expect(one.area, 'a field of one').toEqual(await postedAt(seed, LABEL, kept))
+})
+
+test('a point as a place holds it: decimal text, no trailing zeros, never -0; the longitude wrapped', () => {
+  expect(pointOf(HOME, 4)).toEqual({ lat: '40.4168', lon: '-3.7038' })
+  expect(pointOf({ lat: -0.000001, lon: 180.5 }, 4)).toEqual({ lat: '0', lon: '-179.5' })
+  expect(pointOf({ lat: 40.1, lon: 100 }, 4)).toEqual({ lat: '40.1', lon: '100' })
+})
+
+test('the radii the place screen offers: from 1 km up to 50', () => {
+  expect(RADII).toEqual([1, 2, 5, 10, 20, 50])
 })
 
 test('the ring the map draws: every point at the radius, closed', () => {

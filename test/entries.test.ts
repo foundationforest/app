@@ -19,8 +19,10 @@ import { PHOTO_TYPE, newPhotos, sendPhotos, withFiles } from '../src/flows/photo
 import { walletKey } from '../src/flows/profiles.ts'
 import { addressIn, check, newPath, post, readEntries, subjectOf, unpost, writtenAbout } from '../src/flows/entries.ts'
 import { fits, fitting } from '../src/form.ts'
-import { type Field, markets } from '../src/markets.ts'
-import { Said, fieldWords } from '../src/words.ts'
+import { valuesOf } from '@foundationforest/markets/browser'
+
+import { type Field, askOf, markets } from '../src/markets.ts'
+import { Said } from '../src/words.ts'
 import { fieldWith, isFor, lessons as findLessons, oneRole, opening, sides, twoSides } from './directory.ts'
 import { type World, freshDevice, verifiedWith, world } from './world.ts'
 
@@ -32,6 +34,9 @@ beforeEach(() => {
   w.decideAll('approved')
 })
 
+/** A field's label, as its market asks it of a role: what a refusal names. */
+const labelIn = (market: string, role: string, name: string) => askOf(market, role).find((f) => f.name === name)!.label
+
 /** The first of a role's fields that `fits`, waiting on nothing, as [name, field]. */
 const fieldOf = (market: { listing: Record<string, Field> }, role: string, fits: (f: Field, name: string) => boolean) =>
   Object.entries(market.listing).find(([n, f]) => isFor(f, role) && !f.when && fits(f, n))
@@ -39,26 +44,28 @@ const fieldOf = (market: { listing: Record<string, Field> }, role: string, fits:
 /** Lessons, as a tutor posts them (directory.ts): the description, a price per its first value, the first of a long list, and a contact. */
 const lessons = (() => {
   const found = findLessons(markets)
-  const lesson = { description: 'Maths for secondary school, one hour online.', price: [{ amount: '30', currency: 'USD', per: found.per[0]! }], [found.choice]: [found.market.listing[found.choice]!.values![0]!], contact: 'ada@example.com' }
+  const lesson = { description: 'Maths for secondary school, one hour online.', price: [{ amount: '30', currency: 'USD', per: found.per[0]! }], [found.choice]: [valuesOf(found.market.listing[found.choice]!, markets.lists)[0]!], contact: 'ada@example.com' }
   return { ...found, lesson }
 })()
 const MATHS = lessons.lesson
 const TUTOR = lessons.offer.label
 const STUDENT = lessons.request.label
 const NAME = lessons.market.name
+/** A tutor's price refused, by the label its market gives it. */
+const PRICE = `${askOf(lessons.market.name, lessons.offer.role).find((f) => f.name === 'price')!.label} doesn't fit.`
 
 /** Another market with two sides. */
 const elsewhere = twoSides(markets, (m) => m.name !== NAME)
 
-/** A role whose listings hold photos, a price with no per, and a place, none waiting on another field: things sold, as a seller posts them. */
+/** A role whose listings hold photos, waiting on nothing, a price with no per, and places, with the answers they wait on: things sold, as a seller posts them. */
 const shop = (() => {
   for (const side of sides(markets)) {
     const { market, role } = side
-    const photos = fieldOf(market, role, (f) => f.type === 'file' && f.many === true)
-    const place = fieldOf(market, role, (f) => f.type === 'place' && !f.many)
-    if (photos && place && market.listing.price?.type === 'money' && !market.listing.price.per) return { ...side, photos: photos[0], place: place[0] }
+    const photos = fieldOf(market, role, (f) => f.piece === 'photo' && f.several === true)
+    const place = Object.entries(market.listing).find(([, f]) => isFor(f, role) && f.piece === 'place' && f.several === true)
+    if (photos && place && market.listing.price?.piece === 'price' && !market.listing.price.per) return { ...side, photos: photos[0], place: place[0], open: opening(market, place[1]) }
   }
-  throw new Error('No market in the directory has a role with photos, a price with no per, and a place')
+  throw new Error('No market in the directory has a role with photos, a price with no per, and places')
 })()
 
 /** Why `check` refused, as the line the screen shows. */
@@ -95,16 +102,16 @@ describe('a listing', () => {
 
   test('before the unlock: a field that does not fit, in red, by its name; a listing with nothing in it, quiet; no field demanded', async () => {
     // A role, a many choice its listings hold, and a field kept for another role's listings.
-    const theirs = fieldWith(markets, "kept for another role's listings", (f, _, side) => f.roles !== undefined && side.market.listing.price?.type === 'money' && side.market.roles.some((r) => !f.roles!.includes(r.role)))
+    const theirs = fieldWith(markets, "a choice kept for another role's listings", (f, _, side) => f.piece === 'choice' && f.roles !== undefined && side.market.listing.price?.piece === 'price' && side.market.roles.some((r) => !f.roles!.includes(r.role)))
     const role = theirs.market.roles.find((r) => !theirs.field.roles!.includes(r.role))!.role
-    const [many, manyField] = fieldOf(theirs.market, role, (f) => f.type === 'choice' && f.many === true)!
+    const [many, manyField] = fieldOf(theirs.market, role, (f) => f.piece === 'choice' && f.several === true)!
     const p = await verifiedWith(w, `${theirs.market.name}/${role}`)
     const me = p.profiles[0]!
-    const value = theirs.field.type === 'choice' ? theirs.field.values![0]! : 'none'
-    expect(await refusal(check(w, me, 'listing', { description: 'A leak.', price: [{ amount: 'thirty', currency: 'USD' }] }, [me]))).toEqual(["Price doesn't fit.", true])
-    expect(await refusal(check(w, me, 'listing', { description: 'A leak.', [theirs.name]: theirs.field.many ? [value] : value }, [me])), "a field for the other role's listings").toEqual([`${fieldWords(theirs.name)} doesn't fit.`, true])
+    const value = valuesOf(theirs.field, markets.lists)[0]!
+    expect(await refusal(check(w, me, 'listing', { description: 'A leak.', price: [{ amount: 'thirty', currency: 'USD' }] }, [me]))).toEqual([`${labelIn(theirs.market.name, role, 'price')} doesn't fit.`, true])
+    expect(await refusal(check(w, me, 'listing', { description: 'A leak.', [theirs.name]: theirs.field.several ? [value] : value }, [me])), "a field for the other role's listings").toEqual([`${labelIn(theirs.market.name, theirs.role, theirs.name)} doesn't fit.`, true])
     expect(await refusal(check(w, me, 'listing', {}, [me]))).toEqual(['Add something first.', false])
-    await check(w, me, 'listing', { [many]: [manyField.values![0]!] }, [me])
+    await check(w, me, 'listing', { [many]: [valuesOf(manyField, markets.lists)[0]!] }, [me])
     expect(theirs.market.listing.colour, 'a field no market has').toBeUndefined()
     expect(await refusal(check(w, me, 'listing', { description: 'A leak.', colour: 'red' }, [me])), 'a field the market does not have').toEqual(["Colour doesn't fit.", true])
   })
@@ -128,7 +135,7 @@ describe('a listing', () => {
     const old = { ...today, [lessons.place]: { online: true } }
     // An older app's check let it through; post writes what it is given.
     const path = await post(w, p.seed, me, 'listing', old)
-    expect(await refusal(check(w, me, 'listing', old, [me]))).toEqual([`${fieldWords(lessons.place)} doesn't fit.`, true])
+    expect(await refusal(check(w, me, 'listing', old, [me]))).toEqual([`${labelIn(NAME, lessons.offer.role, lessons.place)} doesn't fit.`, true])
     const [read] = await readEntries(w, me.address)
     expect(fits(NAME, lessons.offer.role, read!.body)).toBe(false)
     const kept = fitting(NAME, lessons.offer.role, read!.body)
@@ -185,19 +192,19 @@ describe('a review, a vouch or a report', () => {
 
   test("a market with one role: a review is about another of that role, and a review field kept for some roles is checked against the subject's", async () => {
     const one = oneRole(markets)
-    const said = fieldWith(markets, 'a choice for reviews in a market with one role', (f, _, side) => f.type === 'choice' && side.market.roles.length === 1, 'review')
+    const said = fieldWith(markets, 'a choice for reviews in a market with one role', (f, _, side) => f.piece === 'choice' && side.market.roles.length === 1, 'review')
     const a = await verifiedWith(w, said.label)
     const b = await verifiedWith(w, said.label)
     expect(said.market.name).toBe(one.market.name)
-    await check(w, b.profiles[0]!, 'review', { subject: a.profiles[0]!.address, [said.name]: said.field.values![0]! }, b.profiles)
+    await check(w, b.profiles[0]!, 'review', { subject: a.profiles[0]!.address, [said.name]: valuesOf(said.field, markets.lists)[0]! }, b.profiles)
     // A field kept for reviews of one role, in a market with another, which writes them.
-    const kept = fieldWith(markets, 'a choice for reviews of one role, in a market with another', (f, _, side) => f.type === 'choice' && f.roles !== undefined && side.market.roles.some((r) => !f.roles!.includes(r.role)), 'review')
+    const kept = fieldWith(markets, 'a choice for reviews of one role, in a market with another', (f, _, side) => f.piece === 'choice' && f.roles !== undefined && side.market.roles.some((r) => !f.roles!.includes(r.role)), 'review')
     const writer = kept.market.roles.find((r) => !kept.field.roles!.includes(r.role))!.role
-    const answer = { [kept.name]: kept.field.values![0]! }
+    const answer = { [kept.name]: valuesOf(kept.field, markets.lists)[0]! }
     const client = await verifiedWith(w, `${kept.market.name}/${writer}`)
     const repairer = await verifiedWith(w, kept.label)
     await check(w, client.profiles[0]!, 'review', { subject: repairer.profiles[0]!.address, ...answer }, client.profiles)
-    expect(await refusal(check(w, repairer.profiles[0]!, 'review', { subject: client.profiles[0]!.address, ...answer }, repairer.profiles)), `${kept.name} is for reviews of ${kept.role}`).toEqual([`${fieldWords(kept.name)} doesn't fit.`, true])
+    expect(await refusal(check(w, repairer.profiles[0]!, 'review', { subject: client.profiles[0]!.address, ...answer }, repairer.profiles)), `${kept.name} is for reviews of ${kept.role}`).toEqual([`${askOf(kept.market.name, writer, 'review', kept.role).find((f) => f.name === kept.name)!.label} doesn't fit.`, true])
     expect(markets.checkEntry(kept.market.name, kept.role, 'review', { subject: 'x', ...answer }, writer)).toBe(loadMarkets().checkEntry(kept.market.name, kept.role, 'review', { subject: 'x', ...answer }, writer))
   })
 })
@@ -207,7 +214,7 @@ const photo = (size: number) => new Uint8Array(randomBytes(size))
 const shaOf = (bytes: Uint8Array) => createHash('sha256').update(bytes).digest('hex')
 
 describe('photos', () => {
-  test('a listing with two photos: named in its files, written, then each sent to the host, which serves it to anyone; no per; a place a point and a radius, never an area alone', async () => {
+  test('a listing with two photos: named in its files, written, then each sent to the host, which serves it to anyone; no per; a place a point and a radius and no name, never an area alone', async () => {
     const p = await verifiedWith(w, shop.label)
     const me = p.profiles[0]!
     const [a, b] = [photo(20_000), photo(30_000)]
@@ -215,17 +222,18 @@ describe('photos', () => {
       [shaOf(a), a],
       [shaOf(b), b],
     ])
-    const given: Body = { description: 'A wool coat, worn twice.', price: [{ amount: '40', currency: 'EUR' }], [shop.place]: { lat: '40.409', lon: '-3.701', radiusKm: 2, area: 'Lavapiés, Madrid' }, [shop.photos]: [shaOf(a), shaOf(b)] }
+    const given: Body = { description: 'A wool coat, worn twice.', price: [{ amount: '40', currency: 'EUR' }], ...shop.open, [shop.place]: [{ lat: '40.409', lon: '-3.701', radiusKm: 2 }], [shop.photos]: [shaOf(a), shaOf(b)] }
     const body = withFiles(given, [shop.photos], picked)
     expect(body.files).toEqual([
       { sha256: shaOf(a), type: PHOTO_TYPE, size: 20_000 },
       { sha256: shaOf(b), type: PHOTO_TYPE, size: 30_000 },
     ])
     await check(w, me, 'listing', body, [me])
-    const place = `${fieldWords(shop.place)} doesn't fit.`
-    expect(await refusal(check(w, me, 'listing', { ...body, price: [{ amount: '40', currency: 'EUR', per: 'hour' }] }, [me])), 'a jacket takes no per').toEqual(["Price doesn't fit.", true])
-    expect(await refusal(check(w, me, 'listing', { ...body, [shop.place]: { area: 'Lavapiés, Madrid' } }, [me])), 'an area alone').toEqual([place, true])
-    expect(await refusal(check(w, me, 'listing', { ...body, [shop.place]: { online: true } }, [me])), 'online is never a place').toEqual([place, true])
+    const place = `${labelIn(shop.market.name, shop.role, shop.place)} doesn't fit.`
+    expect(await refusal(check(w, me, 'listing', { ...body, price: [{ amount: '40', currency: 'EUR', per: 'hour' }] }, [me])), 'a jacket takes no per').toEqual([`${labelIn(shop.market.name, shop.role, 'price')} doesn't fit.`, true])
+    expect(await refusal(check(w, me, 'listing', { ...body, [shop.place]: [{ area: 'Lavapiés, Madrid' }] }, [me])), 'an area alone').toEqual([place, true])
+    expect(await refusal(check(w, me, 'listing', { ...body, [shop.place]: [{ lat: '40.409', lon: '-3.701', radiusKm: 2, area: 'Lavapiés, Madrid' }] }, [me])), 'a place has no name').toEqual([place, true])
+    expect(await refusal(check(w, me, 'listing', { ...body, [shop.place]: [{ online: true }] }, [me])), 'online is never a place').toEqual([place, true])
     const path = await post(w, p.seed, me, 'listing', body, undefined, newPhotos(body, picked))
     for (const bytes of [a, b]) {
       const res = await fetch(`${w.host}/v1/files/${shaOf(bytes)}`)
@@ -248,31 +256,39 @@ describe('photos', () => {
     expect(lessons.per, 'a night is none of them').not.toContain('night')
     await check(w, me, 'listing', { ...MATHS, price: [{ amount: '30', currency: 'USD', per: lessons.per[1]! }] }, [me])
     await check(w, me, 'listing', { ...MATHS, price: [{ amount: '300', currency: 'USD' }] }, [me])
-    expect(await refusal(check(w, me, 'listing', { ...MATHS, price: [{ amount: '30', currency: 'USD', per: 'night' }] }, [me]))).toEqual(["Price doesn't fit.", true])
+    expect(await refusal(check(w, me, 'listing', { ...MATHS, price: [{ amount: '30', currency: 'USD', per: 'night' }] }, [me]))).toEqual([PRICE, true])
+    // Per hour, a count is a length, 45 minutes as 0.75 hours; per anything else, whole.
+    expect(lessons.per).toContain('hour')
+    await check(w, me, 'listing', { ...MATHS, price: [{ amount: '25', currency: 'USD', per: 'hour', count: '0.75', note: 'at least 2 hours' }] }, [me])
+    const other = lessons.per.find((per) => per !== 'hour')!
+    expect(await refusal(check(w, me, 'listing', { ...MATHS, price: [{ amount: '25', currency: 'USD', per: other, count: '1.5' }] }, [me])), `a count of ${other}s is whole`).toEqual([PRICE, true])
   })
 
   test('a price list: two prices, one a pack with its count; a single price, as before the markets moved, red; a count with no per, red', async () => {
     const p = await verifiedWith(w, TUTOR)
     const me = p.profiles[0]!
     const [one, two = one] = lessons.per as [string, string?]
-    await check(w, me, 'listing', { ...MATHS, price: [{ amount: '30', currency: 'USD', per: one }, { amount: '130', currency: 'USD', per: two, count: 5 }] }, [me])
-    expect(await refusal(check(w, me, 'listing', { ...MATHS, price: { amount: '30', currency: 'USD', per: one } }, [me])), 'one price is a list of one').toEqual(["Price doesn't fit.", true])
-    expect(await refusal(check(w, me, 'listing', { ...MATHS, price: [{ amount: '30', currency: 'USD', count: 5 }] }, [me])), 'a count counts its per').toEqual(["Price doesn't fit.", true])
+    await check(w, me, 'listing', { ...MATHS, price: [{ amount: '30', currency: 'USD', per: one }, { amount: '130', currency: 'USD', per: two, count: '5' }] }, [me])
+    expect(await refusal(check(w, me, 'listing', { ...MATHS, price: { amount: '30', currency: 'USD', per: one } }, [me])), 'one price is a list of one').toEqual([PRICE, true])
+    expect(await refusal(check(w, me, 'listing', { ...MATHS, price: [{ amount: '30', currency: 'USD', count: '5' }] }, [me])), 'a count counts its per').toEqual([PRICE, true])
   })
 
-  test('a span that ends before it starts, and a range from more to less: each refused before the unlock in its own line; in order, each in its own zone, and open at either end, they fit', async () => {
-    const span = fieldWith(markets, 'a moment', (f) => f.type === 'moment')
-    const range = fieldWith(markets, 'a number that takes a range', (f) => f.type === 'number' && f.range === true)
+  test('days that end before they start, and a range from more to less: each refused before the unlock in its own line, by the label its market gives; in order, and open at either end, they fit', async () => {
+    const span = fieldWith(markets, 'a date of several, waiting on nothing', (f) => f.piece === 'date' && f.several === true && !f.when)
+    const range = fieldWith(markets, 'a number', (f) => f.piece === 'number')
     const s = (await verifiedWith(w, span.label)).profiles[0]!
-    const at = (value: Body[string]): Body => ({ ...opening(span.market, span.field), [span.name]: value })
-    expect(await refusal(check(w, s, 'listing', at({ from: '2026-12-02T10:00:00+01:00', to: '2026-12-01T10:00:00+01:00' }), [s]))).toEqual([`${fieldWords(span.name)} ends before it starts.`, true])
-    // 10:00 at +01:00 is 09:00 UTC, before 09:30 at +00:00, though the clocks read the other way.
-    await check(w, s, 'listing', at({ from: '2026-12-01T10:00:00+01:00', to: '2026-12-01T09:30:00+00:00' }), [s])
+    const at = (value: Body[string]): Body => ({ [span.name]: value })
+    const spanLabel = labelIn(span.market.name, span.role, span.name)
+    expect(await refusal(check(w, s, 'listing', at([{ from: '2027-06-02', to: '2027-06-01' }]), [s]))).toEqual([`${spanLabel} ends before it starts.`, true])
+    await check(w, s, 'listing', at([{ from: '2027-06-01', to: '2027-06-02' }]), [s])
+    await check(w, s, 'listing', at([{ every: ['friday'], start: '22:00', end: '02:00', zone: 'Europe/Lisbon' }]), [s])
+    expect(await refusal(check(w, s, 'listing', at([{ every: ['friday'], start: '22:00' }]), [s])), 'hours name their zone').toEqual([`${spanLabel} doesn't fit.`, true])
     const r = (await verifiedWith(w, range.label)).profiles[0]!
-    const of = (value: Body[string]): Body => ({ ...opening(range.market, range.field), [range.name]: value })
-    expect(await refusal(check(w, r, 'listing', of({ from: '11', to: '9' }), [r]))).toEqual([`${fieldWords(range.name)}: From is more than To.`, true])
+    const of = (value: Body[string]): Body => ({ ...opening(range.market, range.field), [range.name]: range.field.several ? [value] : value })
+    const rangeLabel = labelIn(range.market.name, range.role, range.name)
+    expect(await refusal(check(w, r, 'listing', of({ from: '11', to: '9' }), [r]))).toEqual([`${rangeLabel}: From is more than To.`, true])
     for (const fine of [{ from: '9', to: '11' }, { from: '18' }, { to: '11' }, '10'] as Body[string][]) await check(w, r, 'listing', of(fine), [r])
-    expect(await refusal(check(w, r, 'listing', of({}), [r])), 'a range with neither end').toEqual([`${fieldWords(range.name)} doesn't fit.`, true])
+    expect(await refusal(check(w, r, 'listing', of({}), [r])), 'a range with neither end').toEqual([`${rangeLabel} doesn't fit.`, true])
   })
 
   test('a photo refused for its price: one more credit from the wallet, and sent; posted again at its path after a photo failed, still one listing', async () => {

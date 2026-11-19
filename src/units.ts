@@ -1,4 +1,4 @@
-// A number's unit in words, as the screens say it beside the number (the markets manual's Units):
+// A number's unit in words, as the screens say it beside the number (the pieces page's Units):
 // one or many as the number says (1 night, 3 nights). Its own module, with no imports, so the
 // browser test says it the same way.
 

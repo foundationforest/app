@@ -60,10 +60,9 @@ test('Forget this device: everything but the ids of the passkeys it knows, so St
   device.noteMade('b', { maker: 'Bitwarden' })
   device.keepNames({ B: 'Rodrigo' })
   device.markUsed('A')
-  device.keepPoint({ lat: '40.420', lon: '-3.700' })
   device.forget()
   expect({ ...localStorage }).toEqual({ 'forest.passkeys': JSON.stringify(['OtherPasskeyIdOtherPass', ID]) })
-  expect([device.passkey(), device.under(), device.theme(), device.checks(), device.cursors(), device.seen(), device.connections(), device.knownKeys(), device.folder(), device.madeHere(), device.points(), device.used(), device.names()]).toEqual([null, null, 'device', [], {}, {}, [], [], null, {}, [], {}, {}])
+  expect([device.passkey(), device.under(), device.theme(), device.checks(), device.cursors(), device.seen(), device.connections(), device.knownKeys(), device.folder(), device.madeHere(), device.used(), device.names()]).toEqual([null, null, 'device', [], {}, {}, [], [], null, {}, {}, {}])
 })
 
 test("the passkeys it made or added: each by its entry's id, or the first's, its maker and the name it was given; one dropped alone; anything else dropped; kept through a start", () => {

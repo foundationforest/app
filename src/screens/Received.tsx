@@ -10,11 +10,10 @@
 
 import { useProfiles, useIndexed, useRated } from '../hooks.ts'
 import { Icon } from '../icons.tsx'
-import { kindWords, markets, pairOf } from '../markets.ts'
+import { askOf, kindWords, markets, pairOf } from '../markets.ts'
 import { fitting } from '../form.ts'
-import { previewLines, ratingText, valueText } from '../show.ts'
+import { answerText, previewLines, ratingText } from '../show.ts'
 import { Named, Rating, SaidChip, Top, day } from '../ui.tsx'
-import { fieldWords } from '../words.ts'
 import { Who, WhoAvatar } from './Who.tsx'
 
 type Props = { mine: string; at: string; onBack: () => void; onMessage: (writer: string) => void; onReview: (writer: string) => void; onReport: (writer: string) => void; onWho: (writer: string) => void }
@@ -32,12 +31,15 @@ export function Received({ mine, at, onBack, onMessage, onReview, onReport, onWh
   const named = typeof body.listing === 'string' ? rated?.listings[body.listing] : undefined
   const rows: Array<[string, string]> = []
   if (r?.kind === 'review' && market?.review) {
-    for (const [name, field] of Object.entries(market.review)) {
-      const text = valueText(field, body[name])
-      if (text) rows.push([fieldWords(name), text])
+    // The market's own fields of a review about this profile's role, by the words it asks them with:
+    // a review's are picked by the role reviewed, whoever wrote it.
+    for (const field of askOf(pair.market, pair.role, 'review', pair.role)) {
+      if (!Object.hasOwn(market.review, field.name)) continue
+      const text = answerText(field, body[field.name])
+      if (text) rows.push([field.label, text])
     }
   }
-  if (named && market) rows.push([kindWords('listing', me.label), previewLines(market, fitting(pair.market, pair.role, named))[0] ?? ''])
+  if (named && market) rows.push([kindWords('listing', me.label), previewLines(market, fitting(pair.market, pair.role, named), { request: !pair.offers })[0] ?? ''])
   const writerRating = r && theirs && 'rated' in theirs ? theirs.rated.rating : null
   return (
     <main>

@@ -8,8 +8,10 @@
 // the verifier lets Didit and Stripe send a person back; and Stripe, the verifier's own stand-in
 // (verifier/test/fakes.ts, FakePayments), so the ID check is for sale: the test pays a payment on its
 // page. And Resend's key at the host, with a stand-in Resend (../resend.ts) that keeps each email the
-// host is asked to send, so the Email page's code is read from it: no email goes anywhere.
-// `./standard.sh services` readies them.
+// host is asked to send, so the Email page's code is read from it: no email goes anywhere. And
+// places, built from its own tests' small world (places/test/fixtures.ts), served on loopback as
+// GeoNames and Correos de México would serve it: Madrid and Chamberí are in it, round the spot the
+// test's phones stand at. `./standard.sh services` readies them.
 
 import { type ChildProcess, spawn } from 'node:child_process'
 import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
@@ -19,6 +21,9 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { readConfig as hostConfig, startHost } from '../../services/host/src/host.ts'
+import { openPlaces } from '../../services/places/src/places.ts'
+import { serve as servePlaces, web as placesWeb } from '../../services/places/src/web.ts'
+import { buildFixture, serveSources } from '../../services/places/test/fixtures.ts'
 import { startIndex } from '../../services/index/src/index.ts'
 import { readConfig as verifierConfig, startVerifier } from '../../services/verifier/src/service.ts'
 import { FakePayments } from '../../services/verifier/test/fakes.ts'
@@ -52,7 +57,7 @@ async function answers(url: string, child: ChildProcess): Promise<void> {
   }
 }
 
-export type Running = { verifier: string; host: string; index: string; faceKey: string; idKey: string; payments: FakePayments; sent: Sent[]; stop(): Promise<void> }
+export type Running = { verifier: string; host: string; index: string; places: string; faceKey: string; idKey: string; payments: FakePayments; sent: Sent[]; stop(): Promise<void> }
 
 export async function startServices({ appOrigin, say }: { appOrigin: string; say: (line: string) => void }): Promise<Running> {
   const dir = mkdtempSync(join(tmpdir(), 'forest-app-browser-'))
@@ -121,7 +126,16 @@ export async function startServices({ appOrigin, say }: { appOrigin: string; say
     const index = `http://127.0.0.1:${indexPort}`
     const ix = await startIndex({ dataDir: join(dir, 'index'), publicUrl: index, readSeconds: INDEX_SECONDS, listsRoot: lists, port: indexPort, hostname: '127.0.0.1', log: log('index') })
     closers.push(() => ix.close())
-    return { verifier: verifier.url, host, index, faceKey: verifier.keys.face, idKey: verifier.keys.id, payments, sent: resend.sent, stop }
+
+    // Places, its small world built as its own tests build it, then served read-only.
+    const sources = await serveSources()
+    const { file } = await buildFixture(sources, { dir: join(dir, 'places') })
+    await sources.close()
+    const places = openPlaces(file)
+    const placesServer = await servePlaces(placesWeb(places), 0, '127.0.0.1')
+    closers.push(() => new Promise<void>((resolve) => placesServer.close(() => (places.close(), resolve()))))
+    const placesUrl = `http://127.0.0.1:${(placesServer.address() as AddressInfo).port}`
+    return { verifier: verifier.url, host, index, places: placesUrl, faceKey: verifier.keys.face, idKey: verifier.keys.id, payments, sent: resend.sent, stop }
   } catch (err) {
     await stop()
     throw err

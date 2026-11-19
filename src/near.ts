@@ -1,26 +1,28 @@
-// Where a listing's place is centred (the markets manual's Types, place). An area: near the spot the
-// person puts it on, never on it. The first time an area is put somewhere, the app moves that spot
-// once, about 0.2 to 0.6 km in a random direction, and keeps that point on the device (device.ts);
-// an area put within 0.8 km of a kept point is centred on it again. So listings from one place
-// share one centre and never average out to the person's home, and the spot they put it on stays
-// inside even a 1 km circle. An exact spot is exactly where the person drops the pin, kept nowhere.
-// And the radii an area's slider offers, and the ring the map draws for it.
+// Where a listing's place is centred (the pieces page's place). An area: a circle the person puts
+// where they mean, which is often round their door, so the centre is moved before it is posted, by up
+// to a tenth of the radius, the same way each time for that profile and radius: the direction and
+// how far, worked out from the seed with HKDF, so no one but the person can undo it, and nothing is
+// kept on the device. Listings from one spot at one radius share one centre, so they never average
+// back to it; the spot stays well inside even a 1 km circle. Only a place set on the map in this form
+// is moved: one an edit keeps, or an AI wrote, is posted as it is. An exact spot, radius 0, a public
+// place, is exactly where the person put it. And the radii the place screen offers, and the ring the
+// map draws for a circle.
 
-import { type Point, keepPoint, points } from './device.ts'
+import { hkdf } from '@foundationforest/keys'
 
-export type { Point }
+import type { PlaceValue } from '@foundationforest/markets/browser'
 
-/** Where the device is, in degrees. */
+/** A point in degrees, as decimal text, as a place holds it. */
+export type Point = { lat: string; lon: string }
+
+/** Where something is, in degrees. */
 export type Spot = { lat: number; lon: number }
 
-/** How far a new centre is moved from the device's spot, in kilometres. */
-export const MOVED = { least: 0.2, most: 0.6 }
+/** The most a centre is moved, as a part of its radius. */
+export const MOVED = 0.1
 
-/** A listing from within this many kilometres of a kept centre is centred on it again. */
-export const SAME_PLACE_KM = 0.8
-
-/** The radii an area's slider offers, in kilometres, up to 50. */
-export const RADII = [1, 2, 3, 5, 10, 15, 20, 30, 50]
+/** The radii the place screen offers, in kilometres: 0 is an exact spot. */
+export const RADII = [1, 2, 5, 10, 20, 50]
 
 const EARTH_KM = 6371
 const rad = (deg: number) => (deg * Math.PI) / 180
@@ -40,37 +42,68 @@ export function pointOf(spot: Spot, places: number): Point {
   const lat = Math.max(-90, Math.min(90, spot.lat))
   const lon = ((((spot.lon + 180) % 360) + 360) % 360) - 180
   const text = (n: number) => {
-    const t = n.toFixed(places)
-    return /^-0(\.0+)?$/.test(t) ? t.slice(1) : t
+    const t = n.toFixed(places).replace(/\.?0+$/, '')
+    return /^-0$/.test(t) ? '0' : t
   }
   return { lat: text(lat), lon: text(lon) }
 }
 
 /** `spot` moved `km` kilometres toward `bearing`, in radians from north. */
-function moved(spot: Spot, km: number, bearing: number): Spot {
+export function moved(spot: Spot, km: number, bearing: number): Spot {
   const d = km / EARTH_KM
   return { lat: spot.lat + deg(d * Math.cos(bearing)), lon: spot.lon + deg((d * Math.sin(bearing)) / Math.max(Math.cos(rad(spot.lat)), 0.01)) }
 }
 
 /**
- * The centre of an area put on `spot`: the point kept near it, else a new one, moved once and kept.
- * To 3 decimals, about 100 m, since it is rough anyway.
+ * The text HKDF mixes the seed with for a place's move: the app's own, not one of the standard's
+ * (whose all start `forest/`), the radius before the label, so no label spells another radius's.
  */
-export function pointFor(spot: Spot, random: () => number = Math.random): Point {
-  const kept = points().find((p) => kmBetween(spotOf(p), spot) <= SAME_PLACE_KM)
-  if (kept) return kept
-  // Evenly over the ring's area, in any direction.
-  const km = Math.sqrt(MOVED.least ** 2 + random() * (MOVED.most ** 2 - MOVED.least ** 2))
-  const point = pointOf(moved(spot, km, random() * 2 * Math.PI), 3)
-  keepPoint(point)
-  return point
+export const PLACE_TEXT = (radiusKm: number, label: string) => `forest-app/place/${radiusKm}/${label}`
+
+/** How a profile's circles of `radiusKm` are moved: a direction, in radians from north, and how far, in kilometres, up to a tenth of the radius, evenly over that small disc. */
+export async function moveOf(seed: Uint8Array, label: string, radiusKm: number): Promise<{ bearing: number; km: number }> {
+  const bytes = await hkdf(seed, PLACE_TEXT(radiusKm, label), 8)
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength)
+  const [a, b] = [view.getUint32(0) / 2 ** 32, view.getUint32(4) / 2 ** 32]
+  return { bearing: a * 2 * Math.PI, km: radiusKm * MOVED * Math.sqrt(b) }
 }
 
-/** An exact spot, where the pin is: to 5 decimals, about a metre. */
-export const exactPoint = (spot: Spot): Point => pointOf(spot, 5)
+/** A circle as it is posted: its centre moved as the profile moves circles of its radius, to 4 decimals, about 10 m. An exact spot, as it is. */
+export async function postedAt(seed: Uint8Array, label: string, place: PlaceValue): Promise<PlaceValue> {
+  if (place.radiusKm === 0) return place
+  const { bearing, km } = await moveOf(seed, label, place.radiusKm)
+  return { ...pointOf(moved(spotOf(place), km, bearing), 4), radiusKm: place.radiusKm }
+}
 
-/** The radii an area's slider offers, with the one its field starts at. */
-export const radiusSteps = (start: number): number[] => [...new Set([...RADII, start])].sort((a, b) => a - b)
+/** The places set on the map in a form open now, which are moved as they are posted: any other, kept by an edit or written by an AI, is posted as it is. */
+const set = new WeakSet<object>()
+
+/** A place set on the map, to be moved as it is posted. */
+export function setOnMap(place: PlaceValue): PlaceValue {
+  set.add(place)
+  return place
+}
+
+/** Whether a place was set on the map in this page. */
+export const wasSet = (place: unknown) => typeof place === 'object' && place !== null && set.has(place)
+
+/**
+ * A body as it is posted: each place in `fields` set on the map, a field's one or each of its
+ * several, moved (postedAt); the rest as they are.
+ */
+export async function withPlacesMoved<B extends Record<string, unknown>>(seed: Uint8Array, label: string, fields: Array<{ name: string; piece: string }>, body: B): Promise<B> {
+  const out: Record<string, unknown> = { ...body }
+  const move = async (v: unknown) => (wasSet(v) ? postedAt(seed, label, v as PlaceValue) : v)
+  for (const { name, piece } of fields) {
+    if (piece !== 'place' || out[name] === undefined) continue
+    const v = out[name]
+    out[name] = Array.isArray(v) ? await Promise.all(v.map(move)) : await move(v)
+  }
+  return out as B
+}
+
+/** A spot where the map's middle is, as a place holds it: to 4 decimals, about 10 m. */
+export const placeAt = (spot: Spot, radiusKm: number): PlaceValue => setOnMap({ ...pointOf(spot, 4), radiusKm })
 
 /** The edge of the circle `km` round `centre`, as the map draws it: `sides` points, [lon, lat], the first again at the end. */
 export function ring(centre: Spot, km: number, sides = 64): Array<[number, number]> {

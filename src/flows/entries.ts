@@ -1,4 +1,4 @@
-// A profile's entries, of every kind the markets define (the markets manual): a listing at
+// A profile's entries, of every kind the markets define (the pieces page): a listing at
 // listing/<id>, a review at review/<id>, a vouch at vouch/<id> and a report at report/<id>, each at
 // a random id. Reading them needs nothing unlocked: a folder is public. Before the unlock, the app
 // checks what is to be posted: a listing holding something; no span ending before it starts, and no
@@ -18,7 +18,7 @@ import { mainKey } from '@foundationforest/keys'
 import type { Services } from '../config.ts'
 import { type Profile, markUsed } from '../device.ts'
 import { backwards } from '../form.ts'
-import { KINDS, type Kind, fieldsOf, markets, otherSide, pairOf } from '../markets.ts'
+import { KINDS, type Kind, askOf, markets, otherSide, pairOf } from '../markets.ts'
 import { readView, writeAll } from '../services/host.ts'
 import { Said, entrySays, turnedSays } from '../words.ts'
 import { paid } from './paid.ts'
@@ -92,10 +92,13 @@ export async function check(s: Services, me: Profile, kind: Kind, body: Body, mi
   if (kind === 'listing' && Object.keys(body).every((name) => name === 'files')) throw new Said('Add something first.')
   if (kind !== 'listing' && typeof body.subject !== 'string') throw new Said('Add their address.')
   const subject = kind === 'listing' ? undefined : await subjectOf(s, me, body.subject as string, mine)
-  const turned = backwards(fieldsOf(market, kind, role, subject?.role), body)
-  if (turned) throw turnedSays(...turned)
+  const fields = askOf(name, role, kind, subject?.role)
+  const turned = backwards(fields, body)
+  if (turned) throw turnedSays(turned)
   const why = markets.checkEntry(name, role, kind, body, subject?.role)
-  if (why) throw entrySays(why, Object.keys(body))
+  // A field for another role is named too, by the words its market asks it with for that role.
+  const others = market.roles.flatMap((r) => (kind === 'listing' ? askOf(name, r.role, kind) : askOf(name, role, kind, r.role)))
+  if (why) throw entrySays(why, [...fields, ...others])
 }
 
 /**

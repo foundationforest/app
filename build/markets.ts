@@ -1,11 +1,12 @@
 // The markets, read at build time from the markets checkout (markets/ at MARKETS) and handed to the
-// app as data, the module `virtual:markets`: directory.json, build/types.json and the file of each
-// market the directory lists, as the markets' browser entry takes them
+// app as data, the module `virtual:markets`: directory.json, build/lists.json (the shared lists a
+// choice may name, such as languages) and the file of each market the directory lists, as the
+// markets' browser entry takes them
 // (@foundationforest/markets/browser, which src/markets.ts runs in the page, with no eval). The page
 // reads no files; this runs in Node, at the build.
 //
 // And the icons those markets name, the module `virtual:market-icons`: each a Phosphor icon (the
-// markets manual's Naming), imported by name from the app's copy of Phosphor, so the page carries
+// pieces page's Naming), imported by name from the app's copy of Phosphor, so the page carries
 // the icons its own directory names and no others. A name this copy lacks is left out, and its
 // market shows its first letter; test/avatar.test.ts fails on any name in the markets' icons.json
 // this copy lacks, so a gap fails the checks before any market names it.
@@ -14,7 +15,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import type { Plugin } from 'vite'
 
-import type { Directory, Files, Market } from '@foundationforest/markets/browser'
+import type { Directory, Files, Lists, Market } from '@foundationforest/markets/browser'
 
 const CHECKOUT = new URL('../markets/', import.meta.url)
 const ID = 'virtual:markets'
@@ -25,7 +26,7 @@ const read = (path: string): unknown => JSON.parse(readFileSync(new URL(path, CH
 /** The files the browser entry takes, from the checkout. */
 export function files(): Files {
   const directory = read('directory.json') as Directory
-  return { directory, types: read('build/types.json'), markets: directory.markets.map(({ name }) => read(`markets/${name}.json`) as Market) }
+  return { directory, lists: read('build/lists.json') as Lists, markets: directory.markets.map(({ name }) => read(`markets/${name}.json`) as Market) }
 }
 
 /** The icons a market may name: the markets' icons.json, which pins a Phosphor release. */

@@ -20,7 +20,6 @@ import { files } from '../build/markets.ts'
 import { proofFiles } from '../build/proofs.ts'
 import { BG, INK } from '../build/shell.ts'
 import { config } from '../src/config.ts'
-import { rfc3339 } from '../src/fields/Moment.tsx'
 import { kindWords, listOf, listed, marketList, marketWords, markets, otherSide, pairOf, pairs, roleWords, tileName } from '../src/markets.ts'
 import { PATHS, RETURNS } from '../src/paths.ts'
 import { contactHref } from '../src/show.ts'
@@ -39,13 +38,14 @@ test('Vercel installs, then runs ./standard.sh, then the build', () => {
   expect(vercel.outputDirectory).toBe('dist')
 })
 
-test("the CSP: the page reaches its own origin, its verifier, host, connector and index, and the map's tiles, and nothing else; it shows photos from the host and its bucket, and those picked here; About Forest's pages are links, never reached", () => {
+test("the CSP: the page reaches its own origin, its verifier, host, connector and index, places, and the map's tiles, and nothing else; it shows photos from the host and its bucket, and those picked here; About Forest's pages are links, never reached", () => {
   expect(config).toEqual({
     app: 'https://app.forest.foundation',
     verifier: 'https://verifier.forest.foundation',
     host: 'https://host.forest.foundation',
     connector: 'https://mcp.forest.foundation',
     index: 'https://index.forest.foundation',
+    places: 'https://places.forest.foundation',
     tiles: 'https://tiles.openfreemap.org',
     privacy: 'https://forest.foundation/privacy',
     terms: 'https://forest.foundation/terms',
@@ -53,7 +53,7 @@ test("the CSP: the page reaches its own origin, its verifier, host, connector an
   })
   const sources = csp.split('; ').flatMap((d) => d.split(' ').slice(1))
   for (const link of [config.privacy, config.terms, config.source]) expect(sources, link).not.toContain(new URL(link).origin)
-  expect(directive('connect-src')).toEqual(["'self'", config.verifier, config.host, config.connector, config.index, config.tiles])
+  expect(directive('connect-src')).toEqual(["'self'", config.verifier, config.host, config.connector, config.index, config.places, config.tiles])
   // The host answers a photo with a redirect to its bucket, at either address its FILES_STYLE gives.
   expect(directive('img-src')).toEqual(["'self'", 'blob:', config.host, 'https://t3.storageapi.dev', 'https://reserved-basket-15it-i6omre.t3.storageapi.dev'])
   for (const name of ['default-src', 'style-src', 'font-src', 'worker-src', 'manifest-src']) expect(directive(name), name).toEqual(["'self'"])
@@ -244,11 +244,13 @@ test("CI runs in Playwright's own image at the version package.json pins, so its
   expect(workflow, 'nothing installed from Ubuntu at run time').not.toMatch(/playwright install/)
 })
 
-test("checkEntry's words, as one line naming the field by its name in words", () => {
+test("checkEntry's words, as one line naming the field by the label its market gives it", () => {
   expect(fieldWords('groupSize')).toBe('Group size')
-  expect(entrySays('subjects takes a list, each different, each one of maths, physics', ['subjects']).message).toBe("Subjects doesn't fit.")
-  expect(entrySays('a listing in pottery has no field colour', ['colour']).message).toBe("Colour doesn't fit.")
-  expect(entrySays('pottery is not a market in the directory', ['description']).message).toBe("This doesn't fit the market.")
+  const fields = [{ name: 'subjects', label: 'Subjects' }, { name: 'days', label: 'Days and times' }]
+  expect(entrySays('subjects takes a list, each different, each one of maths, physics', fields).message).toBe("Subjects doesn't fit.")
+  expect(entrySays('days takes a list of one or more dates', fields).message).toBe("Days and times doesn't fit.")
+  expect(entrySays('a listing in pottery has no field glazeColour', fields).message, 'a field the market has no more, by its name in words').toBe("Glaze colour doesn't fit.")
+  expect(entrySays('pottery is not a market in the directory', fields).message).toBe("This doesn't fit the market.")
 })
 
 test('a contact opens with a tap: a phone, an email, a link; a handle shows as it is', () => {
@@ -256,9 +258,4 @@ test('a contact opens with a tap: a phone, an email, a link; a handle shows as i
   expect(contactHref('ada@example.com')).toBe('mailto:ada@example.com')
   expect(contactHref('https://example.com/ada')).toBe('https://example.com/ada')
   expect(contactHref('@ada')).toBeUndefined()
-})
-
-test('a moment with its offset', () => {
-  expect(rfc3339('2026-11-02T18:00')).toMatch(/^2026-11-02T18:00:00[+-]\d\d:\d\d$/)
-  expect(rfc3339('')).toBeUndefined()
 })
