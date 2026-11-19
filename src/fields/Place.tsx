@@ -2,7 +2,7 @@
 // form, a search for a place by its name (places, services/places.ts), the map with the circle fixed
 // in its middle, which the person moves under it (PlaceMap.tsx, loaded with it alone), the device's
 // own spot a tap away, and a slider for the circle's size: all the way left an exact spot, then 1 km
-// up to 50 km, starting where the market starts the field for the role. Under them, the place in
+// up to 100 km, starting where the market starts the field for the role. Under them, the place in
 // words, by the name places gives its middle, Within 10 km of Chamberí, Madrid, shown and never
 // stored; an exact spot says anyone can see it. The device's location is asked for as the input
 // opens, where the browser hasn't been told no: a circle drops round it, so nothing needs typing; an
@@ -43,8 +43,8 @@ export const NO_LOCATION = { refused: "Your location isn't allowed.", unavailabl
 /** How long the search waits after the last key, in milliseconds. */
 const TYPED_MS = 250
 
-/** The sizes the slider stops at, in kilometres: 0, an exact spot, then 1 to 50, closer together where a few kilometres matter. */
-export const SIZES = [0, 1, 2, 3, 5, 7, 10, 15, 20, 30, 50]
+/** The sizes the slider stops at, in kilometres: 0, an exact spot, then 1 to 100, closer together where a few kilometres matter, so a finger can pick 1 km as easily as 100. */
+export const SIZES = [0, 1, 2, 3, 5, 7, 10, 15, 20, 30, 50, 75, 100]
 
 /** The slider's stops: its sizes, with the field's own and the places' own where they are not among them. */
 export const sizesFor = (...more: number[]) => [...new Set([...SIZES, ...more])].sort((a, b) => a - b)
@@ -133,7 +133,6 @@ export function PlaceField({ field, value, onChange }: { field: Asked; value: un
           ))}
         </div>
       )}
-      <Search near={current ? spotOf(current) : null} onPick={(f) => ((sentBy.current = 'search'), setGoTo({ spot: { lat: f.lat, lon: f.lon }, radiusKm: radius }))} />
       <div className="map-box">
         {noMap ? (
           <p className="line">{PLACE_SAYS.noMap}</p>
@@ -154,6 +153,7 @@ export function PlaceField({ field, value, onChange }: { field: Asked; value: un
             />
           </Suspense>
         )}
+        <Search near={current ? spotOf(current) : null} onPick={(f) => ((sentBy.current = 'search'), setGoTo({ spot: { lat: f.lat, lon: f.lon }, radiusKm: radius }))} />
         {!noMap && locator.can && (
           <button type="button" className="locate" aria-label="Your location" disabled={locator.asking} onClick={locator.locate}>
             {locator.asking ? <Loader /> : <Icon name="crosshair" />}
@@ -162,11 +162,7 @@ export function PlaceField({ field, value, onChange }: { field: Asked; value: un
       </div>
       {locator.failed && <p className="line">{NO_LOCATION[locator.failed]}</p>}
       <div className="size">
-        <div className="size-ends" aria-hidden>
-          <span>{PLACE_SAYS.exact}</span>
-          <strong>{sizeWords(radius)}</strong>
-          <span>{sizeWords(sizes.at(-1)!)}</span>
-        </div>
+        <span aria-hidden>{PLACE_SAYS.exact}</span>
         <input
           type="range"
           aria-label={PLACE_SAYS.size}
@@ -177,6 +173,7 @@ export function PlaceField({ field, value, onChange }: { field: Asked; value: un
           value={Math.max(0, sizes.indexOf(radius))}
           onChange={(e) => size(sizes[Number(e.target.value)]!)}
         />
+        <span aria-hidden>{sizeWords(sizes.at(-1)!)}</span>
       </div>
       <Caption place={current} radiusKm={radius} waiting={located !== null} />
       {several && current && (

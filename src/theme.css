@@ -4063,30 +4063,52 @@ button.quiet.add {
 }
 
 .size {
-  display: grid;
-  gap: 6px;
-}
-
-.size-ends {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
   font-size: 13px;
   color: var(--ink3);
 }
 
-.size-ends > strong {
-  font-size: 16.5px;
-  color: var(--ink);
-}
-
 .size > input[type='range'] {
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   min-height: 32px;
   padding: 0;
   box-shadow: none;
   background: none;
   accent-color: var(--ink);
+}
+
+.size > input[type='range']:focus {
+  box-shadow: none;
+}
+
+.size > input[type='range']:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+  border-radius: 999px;
+}
+
+/* The search, over the map, at its top; what it finds drops down over the map. */
+.map-box > .place-search {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  right: calc(var(--touch) + 20px);
+  z-index: 3;
+}
+
+.map-box > .place-search > input {
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.12), inset 0 0 0 1px var(--line);
+}
+
+.map-box > .place-search > .found {
+  max-height: 220px;
+  overflow-y: auto;
+  border-radius: 16px;
+  background: var(--card);
+  box-shadow: 0 2px 10px rgb(0 0 0 / 0.15);
 }
 
 .place-caption {
