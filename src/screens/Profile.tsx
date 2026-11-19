@@ -152,7 +152,7 @@ export function Profile({ address, tab, onTab, onBack, onListing, onReviews, onE
       ) : (
         <>
           <Line note={note} />
-          {!note && <Written entries={entries} onEdit={onEdit} {...(market && { onReview })} onWho={onWho} />}
+          {!note && <Written address={address} entries={entries} onEdit={onEdit} {...(market && { onReview })} onWho={onWho} />}
         </>
       )}
     </main>

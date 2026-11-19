@@ -14,6 +14,7 @@ import { mainKey, newAccessKey } from '@foundationforest/keys'
 import { inboxPayment } from '../services/host/client/client.ts'
 import * as device from '../src/device.ts'
 import type { Profile } from '../src/device.ts'
+import { aboutOf } from '../src/about.ts'
 import { newMessages, openAll, send } from '../src/flows/inbox.ts'
 import { walletKey } from '../src/flows/profiles.ts'
 import { leaveAll } from '../src/services/host.ts'
@@ -61,6 +62,22 @@ test('a message written from a listing carries it, its full address beside the t
   const read = (await openAll(w, tutor.seed, [t], checkHere)).threads[0]!.messages.find((m) => m.text === 'Another shape.')
   expect(read).toBeDefined()
   expect(read!.listing).toBeUndefined()
+})
+
+test("a third person's listing in a message: carried as written, but the conversation is about no listing of a stranger's choosing; one of theirs or one of the person's own, it is", async () => {
+  const tutor = await verifiedWith(w, OFFERS)
+  const student = await verifiedWith(w, REQUESTS)
+  const third = await verifiedWith(w, OFFERS)
+  const [t, s, x] = [tutor.profiles[0]!, student.profiles[0]!, third.profiles[0]!]
+  const theirs = `${x.address}/listing/lessons`
+  await send(w, student.seed, s.label, t.address, ASK, theirs)
+  const [thread] = (await openAll(w, tutor.seed, [t], checkHere)).threads
+  expect(thread!.messages[0]!.listing, 'read as it was written').toBe(theirs)
+  expect(aboutOf(thread!.messages, t.address, s.address), "a third person's listing: no About, the message as ever").toBeUndefined()
+  const own = `${t.address}/listing/lessons`
+  await send(w, student.seed, s.label, t.address, 'And this one?', own)
+  const [again] = (await openAll(w, tutor.seed, [t], checkHere)).threads
+  expect(aboutOf(again!.messages, t.address, s.address), "the tutor's own listing: the conversation is about it").toBe(own)
 })
 
 test('a message and its reply: counted with nothing unlocked, opened in one unlock, from whom; what each sent shows on any device, never as new', async () => {

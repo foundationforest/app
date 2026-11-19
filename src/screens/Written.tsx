@@ -7,11 +7,12 @@
 import type { Posted } from '../flows/entries.ts'
 import { givenOf } from '../flows/feedback.ts'
 import { Icon } from '../icons.tsx'
+import { listingOf } from '../about.ts'
 import { SaidCard } from './SaidCard.tsx'
 
-type Props = { entries: Posted[] | null; onEdit: (given: Posted) => void; onReview?: () => void; onWho: (address: string) => void }
+type Props = { address: string; entries: Posted[] | null; onEdit: (given: Posted) => void; onReview?: () => void; onWho: (address: string) => void }
 
-export function Written({ entries, onEdit, onReview, onWho }: Props) {
+export function Written({ address, entries, onEdit, onReview, onWho }: Props) {
   const written = entries ? givenOf(entries) : null
   return (
     <>
@@ -21,7 +22,7 @@ export function Written({ entries, onEdit, onReview, onWho }: Props) {
           {written.map((g) => {
             const subject = typeof g.body.subject === 'string' ? g.body.subject : null
             return subject ? (
-              <SaidCard key={g.path} kind={g.kind as 'review' | 'vouch' | 'report'} score={g.body.score} text={g.body.text} listing={g.body.listing} who={subject} time={g.time} onClick={() => onEdit(g)} does={`Edit your ${g.kind}`} onWho={() => onWho(subject)} />
+              <SaidCard key={g.path} kind={g.kind as 'review' | 'vouch' | 'report'} score={g.body.score} text={g.body.text} listing={listingOf(g.body.listing, [subject, address])} who={subject} time={g.time} onClick={() => onEdit(g)} does={`Edit your ${g.kind}`} onWho={() => onWho(subject)} />
             ) : null
           })}
         </div>

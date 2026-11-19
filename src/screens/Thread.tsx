@@ -3,8 +3,9 @@
 // own profile there); their name or short key with their badges; their market under it, no role,
 // since in a market a person talks only with the other side; a tap opening their profile
 // (Them.tsx); and at the right Review, outlined, its star in the sun, for a review, a vouch or a
-// report about them. Then, when a message in it was written from a listing, the first such names
-// it in the About box (AboutListing.tsx) above the messages: the listing's photo, title and price,
+// report about them. Then, when a message in it was written from a listing of theirs or of the
+// person's own there, the first such names it in the About box (AboutListing.tsx) above the
+// messages; a listing of anyone else is left out (about.ts): the listing's photo, title and price,
 // a tap opening it on the index, or No longer listed. Then the messages, theirs on the card with an
 // edge, the person's own on the soft green, in ink; a quiet line with the day ("Today") wherever the
 // day changes; the time under the last message of each run, quietly.
@@ -28,6 +29,7 @@ import { useOpening } from '../opening.ts'
 import { withSeed } from '../passkey.ts'
 import { pairOf } from '../markets.ts'
 import { Line, Top, UnlockIcon, clock, dayWords, lastOfRun, newDay, useAction } from '../ui.tsx'
+import { aboutOf } from '../about.ts'
 import { AboutBox } from './AboutListing.tsx'
 import { Who, WhoAvatar } from './Who.tsx'
 
@@ -51,8 +53,8 @@ export function Thread({ mine, them, pane = false, onBack, onReview, onWho }: Pr
   })
   if (!me) return null
   const messages = thread?.messages ?? []
-  // The listing the conversation is about: the one the first message written from a listing names.
-  const about = messages.find((m) => m.listing)?.listing
+  // The listing the conversation is about: the one the first message written from one of theirs, or of the person's own, names.
+  const about = aboutOf(messages, mine, them)
   const Root = pane ? 'div' : 'main'
   return (
     <Root className={pane ? 'pane-body convo' : undefined}>

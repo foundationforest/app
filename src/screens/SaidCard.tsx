@@ -1,21 +1,22 @@
 // A review, vouch or report as a card: its score with its star, or its chip; right after it the
 // other profile, by the person's name for it or its short key and nothing else (its own page says
 // the market); when, at the right, and a dot while it is new; then what they wrote; then, for a
-// review that names its listing, its About box (AboutListing.tsx). A tap on the card does what it is
+// review that names a listing of its writer's or its subject's, its About box (AboutListing.tsx; who
+// shows it gives only such a listing, about.ts). A tap on the card does what it is
 // for (`onClick`: open it, edit it); a tap on who (`onWho`) opens their profile, and one on the
 // About box the listing on the index. With more than one, the card's tap sits under the others',
 // since a button holds no button.
 
 import { Dot, SaidChip, ago, day } from '../ui.tsx'
-import { AboutBox, isListing } from './AboutListing.tsx'
+import { AboutBox } from './AboutListing.tsx'
 import { NameOf } from './Who.tsx'
 
 type Props = {
   kind: 'review' | 'vouch' | 'report'
   score: unknown
   text: unknown
-  /** The listing a review names, its full address; anything else shows nothing. */
-  listing?: unknown
+  /** The listing a review names, its full address, when it is its writer's or its subject's (about.ts, `listingOf`). */
+  listing?: string | undefined
   /** The other profile's address: who wrote it, or who it is about. */
   who: string
   time?: number
@@ -45,7 +46,7 @@ export function SaidCard({ kind, score, text, listing, who, time, dated = false,
     </span>
   )
   const body = typeof text === 'string' && text ? <span className="said-text">{text}</span> : null
-  const about = isListing(listing) ? <AboutBox address={listing} /> : null
+  const about = listing ? <AboutBox address={listing} /> : null
   if (onClick && !onWho && !about)
     return (
       <button className="card said-card" onClick={onClick}>

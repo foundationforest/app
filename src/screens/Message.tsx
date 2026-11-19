@@ -32,7 +32,8 @@ import { holdThread, opened } from '../opened.ts'
 import { withSeed } from '../passkey.ts'
 import { checkInWorker, proveInWorker } from '../proof/prove.ts'
 import { Line, type Note, Top, UnlockIcon, useAction } from '../ui.tsx'
-import { ListingTop, isListing } from './AboutListing.tsx'
+import { listingOf } from '../about.ts'
+import { ListingTop } from './AboutListing.tsx'
 import { Who, WhoAvatar } from './Who.tsx'
 
 type Props = { to: string; listing?: string; onSent: (mine: string, them: string) => void; onBack: () => void }
@@ -45,7 +46,7 @@ export function Message({ to: given, listing: from, onSent, onBack }: Props) {
   const to = addressIn(given)
   const named = to.length > 0 && publicKeyFromAddress(to) !== null
   // The listing it is written from: one of theirs, by its full address; any other is left out.
-  const listing = isListing(from) && from.startsWith(`${to}/listing/`) ? from : undefined
+  const listing = listingOf(from, [to])
   const [who, setWho] = useState<Known | undefined>(undefined)
   const [text, setText] = useState('')
   useEffect(() => {

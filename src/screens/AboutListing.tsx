@@ -4,8 +4,9 @@
 //   title and its first price; a tap opens it on the index, in a new tab. One the index no longer
 //   lists (deleted, or its profile or its fit gone), or doesn't hold: "No longer listed", its
 //   market's icon, and no tap. A conversation shows it above its messages, for the first message
-//   written from a listing; a review that names its listing, wherever the review shows. While it is
-//   read, or with the index out of reach, nothing.
+//   written from a listing; a review that names its listing, wherever the review shows; each only
+//   for a listing of someone in it (about.ts). While it is read, or with the index out of reach,
+//   nothing.
 // - the listing a message is written from, at the top of the writing screen (Message.tsx): its
 //   photo, its title, its price, and who posted it, their animal, the person's name for them else
 //   their short key, and their rating.
@@ -19,7 +20,7 @@ import { config } from '../config.ts'
 import { photoUrl } from '../flows/photos.ts'
 import { fitting } from '../form.ts'
 import { markets, pairs } from '../markets.ts'
-import { type IndexedListing, LISTING_ADDRESS, readListing } from '../services/index.ts'
+import { type IndexedListing, readListing } from '../services/index.ts'
 import { cardLines, ratingText } from '../show.ts'
 import { Rating } from '../ui.tsx'
 import { firstPhoto } from './ListingCard.tsx'
@@ -59,9 +60,6 @@ export function useListing(address: string): IndexedListing | null | undefined {
   }, [address])
   return l
 }
-
-/** Whether `listing` is a listing's full address: `<profile address>/listing/<id>`. */
-export const isListing = (listing: unknown): listing is string => typeof listing === 'string' && LISTING_ADDRESS.test(listing)
 
 /** What a listing shows of itself: its market, its title, its first price and its first photo; null for one whose market or role the directory doesn't hold. */
 function shownOf(l: IndexedListing): { market: string; title: string; price: string | null; photo: string | undefined } | null {

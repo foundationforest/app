@@ -1,7 +1,8 @@
 // Connect your AI: its sparkle on a neutral square, what an AI app then does for the person, three
 // choices, Claude, ChatGPT and Other, the one picked on the soft green, Claude when the screen
 // opens, and one card with three steps for it:
-// - an AI app whose plugin directory lists Forest (config.ts, `listedIn`): open Plugins in it,
+// - an AI app whose plugin directory lists Forest (config.ts, `listedIn`): open Plugins in it (in
+//   Claude, under it, Customize, then Plugins: Claude's own path, so no other app's step says it),
 //   search Forest and add it, connect it and accept in Forest; under the card, "Forest not there?
 //   Add it by its address", which picks Other;
 // - any other, Other too: copy Forest's address (this app's connector, in full, as an AI app's
@@ -71,7 +72,7 @@ export function ConnectAi({ onBack }: Props) {
       {listed ? (
         <>
           <ol className="step-card">
-            <Step n={1} words={`In ${app}, open Plugins`} small="Customize, then Plugins." />
+            <Step n={1} words={`In ${app}, open Plugins`} {...(app === 'Claude' && { small: 'Customize, then Plugins.' })} />
             <Step n={2} words="Search Forest, and add it" />
             <Step n={3} {...ACCEPT} />
           </ol>

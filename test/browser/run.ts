@@ -245,7 +245,8 @@
 //     host as another app or an AI writes one: on the Reviews tab of who wrote it, under its words,
 //     About, the listing's title, its market's icon on its color, opening it on the index in a new
 //     tab; on the page of the profile it is about, among the reviews it received, the same box; named
-//     again, a listing the index holds none of: No longer listed, and no tap.
+//     again, a listing the index holds none of: No longer listed, and no tap; named again, the tutor's
+//     offer, a profile in neither: no About, the review as ever.
 //     Then a review of one of the person's own profiles, from their student about their tutor:
 //     refused on the who page, in one red line, nothing asked; Close, back on its Reviews tab. Someone else, their Reviews tab
 //     empty but for its one quiet line, vouches for the tutor: Notifications shows it first, new,
@@ -1453,7 +1454,7 @@ test("the first profile: Later, Connect your AI and its back, on to Home; every 
   await shot(page, 'connect-ai')
   await laptopShot(page, 'laptop-connect-ai')
   await choices.getByRole('button', { name: 'ChatGPT' }).click()
-  assert.deepEqual(await steps(), ['1In ChatGPT, open PluginsCustomize, then Plugins.', '2Search Forest, and add it', '3Connect it, then accept in ForestForest opens here: unlock, and pick the profiles it can use.'], 'ChatGPT, which lists Forest: the search steps, in its name')
+  assert.deepEqual(await steps(), ['1In ChatGPT, open Plugins', '2Search Forest, and add it', '3Connect it, then accept in ForestForest opens here: unlock, and pick the profiles it can use.'], "ChatGPT, which lists Forest: the search steps, in its name, without Claude's Customize, then Plugins")
   assert.equal(await foot.count(), 0, 'no foot button')
   await shot(page, 'connect-ai-listed')
   await button(page, 'Forest not there? Add it by its address').click()
@@ -3420,7 +3421,7 @@ test('a review an older market shaped: Notifications holds a notice for it, Upda
   say('an old review: its notice in Notifications, what fits filled in, posted in the shape today')
 })
 
-test("a review that names its listing, as another app or an AI writes one: its About box wherever it shows, on the Reviews tab of who wrote it and on the profile it is about, the listing's title, a tap opening it on the index; one the index holds none of: No longer listed", async () => {
+test("a review that names its listing, as another app or an AI writes one: its About box wherever it shows, on the Reviews tab of who wrote it and on the profile it is about, the listing's title, a tap opening it on the index; one the index holds none of: No longer listed; one of a profile in neither: no About", async () => {
   const { page } = first
   // The seller's review of the buyer, written again to the host naming the buyer's request: a review's listing is the deal's.
   const main = await mainKey(seed, SELLER_LABEL)
@@ -3472,6 +3473,17 @@ test("a review that names its listing, as another app or an AI writes one: its A
   await gone.getByText('No longer listed', { exact: true }).waitFor({ timeout: 30_000 })
   assert.deepEqual(await gone.evaluate((a) => [a.tagName, a.querySelector('.about-word')?.textContent]), ['DIV', 'About'], 'no tap')
   await shot(page, 'review-about-gone')
+  // Named again, a listing of a profile that is in neither (the tutor's offer, listed on the index): no About box, the review
+  // as ever, so a review can't borrow someone else's listing.
+  const [[offerPath]] = (await entriesOf(tutor, 'listing')).filter(([, e]) => (e.entry.body as { description?: unknown }).description === OFFER)
+  await named(`${tutor}/${offerPath}`)
+  await page.goto(APP)
+  await page.locator('button.card', { hasText: SELLER_WORDS }).click()
+  await page.getByRole('tab', { name: 'Reviews' }).click()
+  const borrowed = page.locator('main .cards > .said-card', { hasText: PAID })
+  await borrowed.getByText(PAID, { exact: true }).waitFor()
+  await page.waitForTimeout(1_500)
+  assert.equal(await borrowed.locator('.about-box').count(), 0, "a third profile's listing: no About")
   await named(wantedAt)
   await page.goto(APP)
   say('a review naming its listing: About, its title, opening it on the index; one gone, No longer listed')

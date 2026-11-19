@@ -21,6 +21,7 @@ import { ratingText, reviewCount } from '../show.ts'
 import { Badges, Line, type Note, Top, short } from '../ui.tsx'
 import { Naming } from './Naming.tsx'
 import { pageOf } from './Profile.tsx'
+import { listingOf } from '../about.ts'
 import { SaidCard } from './SaidCard.tsx'
 import { labelOf, useWho } from './Who.tsx'
 
@@ -100,7 +101,7 @@ export function Them({ address, onBack, onMessage, onReview, onWho }: Props) {
           <h2 className="sect">Reviews they received</h2>
           <div className="cards">
             {rated.received.map((r) => (
-              <SaidCard key={r.address} kind={r.kind} score={r.body.score} text={r.body.text} listing={r.body.listing} who={r.writer} {...(r.time !== undefined && { time: r.time })} dated onWho={() => onWho(r.writer)} />
+              <SaidCard key={r.address} kind={r.kind} score={r.body.score} text={r.body.text} listing={listingOf(r.body.listing, [r.writer, address])} who={r.writer} {...(r.time !== undefined && { time: r.time })} dated onWho={() => onWho(r.writer)} />
             ))}
           </div>
         </>

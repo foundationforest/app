@@ -13,7 +13,8 @@ import { Icon } from '../icons.tsx'
 import { askOf, markets, pairOf } from '../markets.ts'
 import { answerText, ratingText } from '../show.ts'
 import { Named, Rating, SaidChip, Top, day } from '../ui.tsx'
-import { AboutBox, isListing } from './AboutListing.tsx'
+import { listingOf } from '../about.ts'
+import { AboutBox } from './AboutListing.tsx'
 import { Who, WhoAvatar } from './Who.tsx'
 
 type Props = { mine: string; at: string; onBack: () => void; onMessage: (writer: string) => void; onReview: (writer: string) => void; onReport: (writer: string) => void; onWho: (writer: string) => void }
@@ -28,6 +29,8 @@ export function Received({ mine, at, onBack, onMessage, onReview, onReport, onWh
   const pair = pairOf(me.label)
   const market = markets.market(pair.market)
   const body = r?.body ?? {}
+  // The listing it names, when it is the writer's or this profile's own: any other is left out.
+  const about = r ? listingOf(body.listing, [r.writer, mine]) : undefined
   const rows: Array<[string, string]> = []
   if (r?.kind === 'review' && market?.review) {
     // The market's own fields of a review about this profile's role, by the words it asks them with:
@@ -69,7 +72,7 @@ export function Received({ mine, at, onBack, onMessage, onReview, onReport, onWh
               ))}
             </dl>
           )}
-          {isListing(body.listing) && <AboutBox address={body.listing} />}
+          {about && <AboutBox address={about} />}
           <h2 className="sect">From</h2>
           <button className="whorow" onClick={() => onWho(r.writer)}>
             <WhoAvatar address={r.writer} />
