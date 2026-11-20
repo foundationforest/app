@@ -13,6 +13,12 @@
 // where their folder is; the app reaches its one host only (the CSP), so it reads them there. A
 // message whose body has no text, or that does not count, is not shown.
 //
+// A body is the two apps' to agree (the standard's The inbox): `{ text }`, and, on the first message
+// written from a listing, `listing` beside it, the listing's full address, `<profile
+// address>/listing/<id>`, the shape a review's `listing` has, so the conversation says what it is
+// about. A convention between this app and services' MCP server; a `listing` of any other shape is
+// left out, and the text shows as ever.
+//
 // Sending signs with the profile's main key, locks to the recipient's keys (inboxEntry), and leaves
 // the message with their host, paid from the sending profile's folder by its bytes (the credits
 // client's inboxPayment), topped up from the wallet when the host refuses for price (paid.ts). Then
@@ -29,13 +35,14 @@ import { inboxPayment } from '../../services/host/client/client.ts'
 import type { Services } from '../config.ts'
 import { type Profile, cursors, markUsed, saveCursors } from '../device.ts'
 import { leaveAll, readAllInbox, readView, writeAll } from '../services/host.ts'
+import { LISTING_ADDRESS } from '../services/index.ts'
 import { type Check, about } from '../services/verifier.ts'
 import { Said, hostSays } from '../words.ts'
 import { paid } from './paid.ts'
 import { randomId, walletKey } from './profiles.ts'
 
-/** One message in a thread: from the other side, or one of the person's own (`mine`), with its text. */
-export type Message = { id: string; time: number; text: string; mine: boolean }
+/** One message in a thread: from the other side, or one of the person's own (`mine`), with its text, and the listing it was written from, when it names one. */
+export type Message = { id: string; time: number; text: string; mine: boolean; listing?: string }
 
 /** Who a profile is, as its profile entry says: its market and role, and each check whose verification from this app's verifier checks, the selfie's first. Null when no host here holds its profile entry. */
 export type Who = { market: string; role: string; checks: Check[] } | null
@@ -93,9 +100,11 @@ export async function whoIs(s: Services, address: string, check: CheckProofs): P
   return { who: { market: body.market, role: body.role, checks: await checksOf(s, address, body, check) }, body }
 }
 
-const textOf = (body: unknown): string | null => {
-  const text = (body as { text?: unknown } | null)?.text
-  return typeof text === 'string' && text.length > 0 ? text : null
+/** What a message's body says: its text, and the listing it names, when its address has a listing's shape; null with no text. */
+export const saidIn = (body: unknown): { text: string; listing?: string } | null => {
+  const { text, listing } = (body ?? {}) as { text?: unknown; listing?: unknown }
+  if (typeof text !== 'string' || text.length === 0) return null
+  return { text, ...(typeof listing === 'string' && LISTING_ADDRESS.test(listing) && { listing }) }
 }
 
 /**
@@ -127,16 +136,16 @@ export async function openAll(s: Services, seed: Uint8Array, list: Profile[], ch
       const opened = await openInbox(e.entry, identity).catch(() => null)
       if (!opened) continue
       const { message } = opened
-      const text = textOf(message.body)
-      if (!text || !senderCounts(message, (await sender(message.from)).body)) continue
-      await add(p.address, message.from, { id: e.id, time: message.time, text, mine: false })
+      const said = saidIn(message.body)
+      if (!said || !senderCounts(message, (await sender(message.from)).body)) continue
+      await add(p.address, message.from, { id: e.id, time: message.time, ...said, mine: false })
     }
     for (const [path, { entry: e }] of liveContent(await readView(s.host, p.address))) {
       if (!path.startsWith('sent/') || !isLocked(e.body)) continue
       const copy = await openLocked(e.body, identity).catch(() => null)
-      const text = textOf(copy?.body)
-      if (!copy || typeof copy.to !== 'string' || typeof copy.time !== 'number' || !text) continue
-      await add(p.address, copy.to, { id: path, time: copy.time, text, mine: true })
+      const said = saidIn(copy?.body)
+      if (!copy || typeof copy.to !== 'string' || typeof copy.time !== 'number' || !said) continue
+      await add(p.address, copy.to, { id: path, time: copy.time, ...said, mine: true })
     }
   }
   const out = [...threads.values()]
@@ -147,22 +156,24 @@ export async function openAll(s: Services, seed: Uint8Array, list: Profile[], ch
 
 /**
  * `text`, from the person's profile `label` to the profile at `to`, left with its host and paid from
- * the profile's folder; then its copy in that folder. The profile written from is used (device.ts).
- * Gives back the message as its thread shows it.
+ * the profile's folder; then its copy in that folder. With `listing`, the listing it is written from,
+ * its full address, beside the text in both. The profile written from is used (device.ts). Gives
+ * back the message as its thread shows it.
  */
-export async function send(s: Services, seed: Uint8Array, label: string, to: string, text: string): Promise<Message> {
+export async function send(s: Services, seed: Uint8Array, label: string, to: string, text: string, listing?: string): Promise<Message> {
   const theirs = await profileEntry(s.host, to)
   if (!theirs) throw new Said('No profile is at this address.', true)
   if (!(theirs.hosts as unknown[] | undefined)?.includes(s.host)) throw new Said("This profile is on another host, which Forest can't reach yet.")
   if (typeof theirs.openKey !== 'string') throw hostSays('no_inbox')
   const [main, wallet] = await Promise.all([mainKey(seed, label), walletKey(seed)])
   const time = Date.now()
-  const left = await inboxEntry(main, to, { text }, time, theirs, s.host)
+  const body = { text, ...(listing && { listing }) }
+  const left = await inboxEntry(main, to, body, time, theirs, s.host)
   await paid(s.host, main.address, wallet, () => leaveAll(s.host, [left], inboxPayment(main)))
   const view = await readView(s.host, main.address)
   const path = `sent/${randomId()}`
-  const copy = await lock({ to, time, body: { text } }, lockKeysOf(view.current.get('profile')?.entry.body))
+  const copy = await lock({ to, time, body }, lockKeysOf(view.current.get('profile')?.entry.body))
   await paid(s.host, main.address, wallet, () => writeAll(s.host, [entry(main, path, copy, nextTime(time, view, path))]))
   markUsed(main.address)
-  return { id: path, time, text, mine: true }
+  return { id: path, time, text, mine: true, ...(listing && { listing }) }
 }

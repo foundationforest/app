@@ -22,6 +22,8 @@ import { useHeldOutgrown, useHeldRated, useNews, useProfiles } from '../hooks.ts
 import { Icon } from '../icons.tsx'
 import { kindWords, marketWords, pairOf } from '../markets.ts'
 import { Dot, MessagesButton, Named, SaidChip, Top, ago, newDay } from '../ui.tsx'
+import { listingOf } from '../about.ts'
+import { AboutBox } from './AboutListing.tsx'
 import { NameOf, WhoAvatar } from './Who.tsx'
 
 type Props = { onMessages: () => void; onReviews: (address: string) => void; onUpdate: (address: string, posted: Posted) => void; onWho: (address: string) => void }
@@ -106,6 +108,7 @@ export function Notifications({ onMessages, onReviews, onUpdate, onWho }: Props)
 /** A review, vouch or report that came to the profile of `label`: who wrote it, what it is, when, its score or chip and who wrote it, what they wrote. The row's tap sits under who wrote it, since a button holds no button. */
 function Came({ n, label, onOpen, onWho }: { n: Notice; label: string; onOpen: () => void; onWho: () => void }) {
   const r = n.received
+  const about = listingOf(r.body.listing, [r.writer, n.on])
   return (
     <div className="nrow came">
       <button type="button" className="said-open" aria-label={`${kindWords(r.kind, label)} on your ${pairOf(label).words}`} onClick={onOpen} />
@@ -126,6 +129,7 @@ function Came({ n, label, onOpen, onWho }: { n: Notice; label: string; onOpen: (
           </button>
         </span>
         {typeof r.body.text === 'string' && r.body.text && <span className="said-text">{r.body.text}</span>}
+        {about && <AboutBox address={about} />}
       </span>
       {n.fresh && <Dot />}
     </div>

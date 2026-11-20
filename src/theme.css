@@ -1,10 +1,13 @@
 /* The app's look. Tokens by role: the page's ground (bg), cards on it (card), what sits sunk in it
    (sunk); three inks, strongest first; two hairlines; the edge that alone marks a field or a tick
-   box; two greens in each look, and nothing else green: the strong one (forest) finishes something
-   (Create, Post, Save, Send, Continue, and unread counts, your own messages, ticked boxes) and is
-   the ink on the soft one; the soft one (mint) starts or marks something (New, Review, Add, badges,
-   chips, a check that says you have it). Start's ground is the strong green in the light look and
-   the soft green in the dark one; sun for stars and warnings, red for errors, reports and removing.
+   box; two greens in each look, and nothing else green. The strong one (forest) does something: a
+   screen's main button, Send, Create; if it is strong green, tapping it acts. It is also the ink
+   on the soft one. The soft one (mint) is picked, yours or done: where you are (the tab, the
+   sidebar's place, the conversation open), a picked choice, chip or tick, your own messages (in
+   ink), Verified, Yours. The ink is for words, counts, the new dot and the check badges (the black
+   squares); every other action is outlined in it, and a text link underlined in it. Start's
+   ground is the strong green in the light look and the soft green in the dark one; sun for stars
+   and warnings, red for errors, reports and removing.
    Dark is its own set; the device's setting picks one unless data-theme on <html> says otherwise.
    Every text 4.5:1 against what is behind it, every icon and needed edge 3:1, light and dark
    (test/contrast.test.ts), and the build test fails on any other green (test/build.test.ts); the
@@ -31,7 +34,6 @@
   --danger: #b73f2c;
   --danger-bg: #f9e3dd;
   --on-danger: #ffffff;
-  --seg-on: var(--card);
   --shadow: 0 1px 2px rgb(17 26 21 / 0.05), 0 10px 28px -14px rgb(17 26 21 / 0.18);
   /* Start's ground and what is written on it: the strong green in this look (the soft one in the dark
      look); its quiet text and a red that reads on it. Its one button, cream, in both looks. */
@@ -41,10 +43,10 @@
   --on-start-danger: #ffc4b8;
   --cream: #f2f0e8;
   --on-cream: var(--forest);
-  /* A market's tile: its color on this much of it over the card; its first word, over the rest of
-     its name, this much of it toward the ink (the light avatar's). */
+  /* A profile's header: its market's color on this much of it over the card. A market's tile: this
+     much black over its color, none in this look. */
   --tile-tint: 13%;
-  --tile-word: 60%;
+  --tile-dark: 0;
   /* A light avatar: its market's color on this much of it over the card, its icon this much of it toward the ink. */
   --look-tint: 16%;
   --look-icon: 85%;
@@ -79,9 +81,9 @@
     --on-start2: var(--ink2);
     --on-start-danger: var(--danger);
     --on-cream: var(--bg);
-    --seg-on: var(--line2);
     --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 10px 28px -14px rgb(0 0 0 / 0.6);
     --tile-tint: 18%;
+    --tile-dark: 0.18;
     --look-tint: 24%;
     --look-icon: 45%;
     --look-to: #ffffff;
@@ -113,9 +115,9 @@
   --on-start2: var(--ink2);
   --on-start-danger: var(--danger);
   --on-cream: var(--bg);
-  --seg-on: var(--line2);
   --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 10px 28px -14px rgb(0 0 0 / 0.6);
   --tile-tint: 18%;
+  --tile-dark: 0.18;
   --look-tint: 24%;
   --look-icon: 45%;
   --look-to: #ffffff;
@@ -255,9 +257,9 @@ main {
   height: 22px;
 }
 
-/* Buttons: one filled strong green per screen, for the main action, what finishes something; plain (the card, with an edge),
-   soft (mint) and text (quiet) for the rest; red text only to remove or report, filled red to
-   confirm it. */
+/* Buttons: filled strong green for what a screen is for, what acts (its main button, Send,
+   Create); every other action plain, the card outlined in ink, or text (quiet); red text only to
+   remove or report, filled red to confirm it. */
 button {
   font: inherit;
   font-size: 17px;
@@ -268,7 +270,7 @@ button {
   border: 0;
   border-radius: 16px;
   background: var(--card);
-  box-shadow: inset 0 0 0 1px var(--line2);
+  box-shadow: inset 0 0 0 1.5px var(--ink);
   padding: 0 22px;
   cursor: pointer;
   display: inline-flex;
@@ -284,7 +286,7 @@ button:disabled {
 
 button:focus-visible,
 a:focus-visible {
-  outline: 2px solid var(--forest);
+  outline: 2px solid var(--ink);
   outline-offset: 2px;
 }
 
@@ -296,12 +298,6 @@ button > .icon {
 button.primary {
   background: var(--forest);
   color: var(--on-forest);
-  box-shadow: none;
-}
-
-button.soft {
-  background: var(--mint);
-  color: var(--forest);
   box-shadow: none;
 }
 
@@ -363,7 +359,7 @@ button.round {
   height: 42px;
   padding: 0;
   border-radius: 50%;
-  box-shadow: inset 0 0 0 1px var(--line);
+  box-shadow: inset 0 0 0 1.5px var(--ink);
 }
 
 button.round.primary {
@@ -448,7 +444,7 @@ button.solid .icon {
 .loader.big {
   display: block;
   margin: 24px auto;
-  color: var(--forest);
+  color: var(--ink);
   /* Only once the wait passes half a second: a shorter one shows nothing. */
   animation: late 0s linear 0.5s both;
 }
@@ -697,6 +693,150 @@ a.row {
   flex: none;
 }
 
+.thumb.lg {
+  width: 72px;
+  height: 72px;
+  border-radius: 16px;
+}
+
+/* A listing with no photo: its market's icon, white on its color; a blank square when its market is gone. */
+.mthumb {
+  display: grid;
+  place-items: center;
+  background: var(--h, var(--sunk));
+  color: #ffffff;
+}
+
+.mthumb .icon {
+  width: 24px;
+  height: 24px;
+}
+
+.thumb.lg.mthumb .icon {
+  width: 34px;
+  height: 34px;
+}
+
+/* About: the listing a conversation or a review is about, small: About, its picture, its title and
+   price; a tap opens it on the index. Gone, No longer listed. Above the messages, and under a
+   review's words, above the card's own tap. */
+.about-box {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: var(--card);
+  box-shadow: inset 0 0 0 1px var(--line);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.about-word {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink3);
+}
+
+.about-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.about-row .thumb {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+}
+
+.about-row .mthumb .icon {
+  width: 20px;
+  height: 20px;
+}
+
+.about-row .two {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.about-row strong {
+  font-size: 15px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.about-row .two > span {
+  font-size: 14px;
+  color: var(--ink2);
+}
+
+.about-box.gone strong {
+  color: var(--ink2);
+}
+
+.thread > .about-box {
+  align-self: stretch;
+  margin-bottom: 10px;
+}
+
+/* The writing screen's quiet line under the message: the profile it is sent from, with its
+   market's icon; or, with none, one line and Create. */
+.from-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 14.5px;
+  color: var(--ink3);
+}
+
+.from-line > .icon {
+  width: 18px;
+  height: 18px;
+}
+
+/* The listing a message is written from, at the top of the writing screen: a card of its own. */
+.listing-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 20px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+}
+
+.listing-top .two {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.listing-top strong {
+  font-size: 17px;
+  line-height: 1.25;
+}
+
+.listing-top .d {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.listing-top .by {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  font-size: 14.5px;
+  min-width: 0;
+}
+
 /* Small things: a status chip, how many are new, the dot, a rating. */
 span.chip {
   display: inline-flex;
@@ -734,14 +874,6 @@ span.chip .icon {
   color: var(--danger);
 }
 
-/* A beta market's chip: small, on its tile's corner and beside its page's title. */
-span.chip.beta {
-  height: 22px;
-  padding: 0 8px;
-  font-size: 12px;
-  font-weight: 700;
-}
-
 .said-chip {
   display: inline-flex;
 }
@@ -752,8 +884,8 @@ span.chip.beta {
   height: 20px;
   padding: 0 6px;
   border-radius: 10px;
-  background: var(--forest);
-  color: var(--on-forest);
+  background: var(--ink);
+  color: var(--bg);
   font-size: 12px;
   font-weight: 800;
   line-height: 20px;
@@ -765,7 +897,7 @@ span.chip.beta {
   width: 9px;
   height: 9px;
   border-radius: 50%;
-  background: var(--forest);
+  background: var(--ink);
   flex: none;
 }
 
@@ -846,8 +978,8 @@ span.chip.beta {
   width: 22px;
   height: 22px;
   border-radius: 7px;
-  background: var(--mint);
-  color: var(--forest);
+  background: var(--ink);
+  color: var(--bg);
 }
 
 .vb.alone {
@@ -1039,17 +1171,33 @@ span.chip.beta {
 .side .brand {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 4px 12px 14px;
+  gap: 8px;
+  padding: 0 2px 14px 0;
 }
 
-.side .brand .wordmark {
-  font-size: 21px;
-}
-
-.side .search {
+/* The mark alone, a link to Home, in the ink. */
+button.mark-home {
   flex: none;
-  margin: 0 2px 10px;
+  width: 36px;
+  min-height: 46px;
+  height: 46px;
+  padding: 0;
+  border-radius: 12px;
+  background: none;
+  box-shadow: none;
+  color: var(--ink);
+}
+
+/* The search beside it, on one line. */
+.side .brand .search {
+  gap: 8px;
+  padding: 0 12px;
+}
+
+.side .brand .search .grow {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .navs {
@@ -1073,10 +1221,9 @@ button.nav {
 }
 
 button.nav.on {
-  background: var(--card);
-  color: var(--ink);
+  background: var(--mint);
+  color: var(--forest);
   font-weight: 700;
-  box-shadow: inset 0 0 0 1px var(--line);
 }
 
 button.nav > .icon {
@@ -1187,10 +1334,9 @@ button.nav.profile .role {
 .choice .here,
 .tabs .here,
 .seg .here {
-  background: var(--seg-on);
-  color: var(--ink);
+  background: var(--mint);
+  color: var(--forest);
   font-weight: 700;
-  box-shadow: 0 1px 2px rgb(17 26 21 / 0.12);
 }
 
 /* A checkbox's box: its edge when empty, the forest green with its tick when ticked. */
@@ -1206,9 +1352,9 @@ button.nav.profile .role {
 }
 
 .tick.on {
-  background: var(--forest);
+  background: var(--mint);
   box-shadow: none;
-  color: var(--on-forest);
+  color: var(--forest);
 }
 
 .row .tick .icon {
@@ -1306,13 +1452,13 @@ input[type='range'] {
   box-shadow: none;
   background: none;
   padding: 0;
-  accent-color: var(--forest);
+  accent-color: var(--ink);
 }
 
 input:focus,
 textarea:focus,
 select:focus {
-  outline: 2px solid var(--forest);
+  outline: 2px solid var(--ink);
   outline-offset: 1px;
 }
 
@@ -1332,8 +1478,8 @@ button.chip {
 }
 
 button.chip.here {
-  background: var(--ink);
-  color: var(--bg);
+  background: var(--mint);
+  color: var(--forest);
   box-shadow: none;
   font-weight: 700;
 }
@@ -1381,7 +1527,7 @@ button.chip.here {
   margin-top: -10px;
   border: none;
   border-radius: 50%;
-  background: var(--forest);
+  background: var(--ink);
 }
 
 .score input[type='range']::-moz-range-thumb {
@@ -1389,7 +1535,7 @@ button.chip.here {
   height: 26px;
   border: none;
   border-radius: 50%;
-  background: var(--forest);
+  background: var(--ink);
 }
 
 .score input.untouched::-webkit-slider-thumb {
@@ -1430,8 +1576,8 @@ button.chip.here {
 .said.mine {
   align-self: flex-end;
   border-radius: 20px 20px 7px 20px;
-  background: var(--forest);
-  color: var(--on-forest);
+  background: var(--mint);
+  color: var(--ink);
   box-shadow: none;
 }
 
@@ -1675,7 +1821,7 @@ button.chip.here {
 }
 
 .map-pin {
-  color: var(--forest);
+  color: var(--ink);
   cursor: grab;
 }
 
@@ -1866,6 +2012,13 @@ button.ghost .icon {
   color: var(--ink3);
 }
 
+/* A beta market's page: Beta, one quiet line under its name. */
+.beta-line {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink3);
+}
+
 /* A notice: what came of something, in the sun. */
 .notice {
   display: flex;
@@ -1887,12 +2040,12 @@ button.ghost .icon {
   color: inherit;
 }
 
-/* Get verified: two cards, each one tap while its check is to do: its icon square, its name and
-   line, its price, a chevron, then under a hairline what it gives. Done, the mint Verified chip
-   alone; one that can't help any more, greyed, its name and line alone. */
+/* Get verified's two cards. Each: its badge (the black square), its name and line, its price at
+   the right in ink; under a hairline what it gives, a tick each; the ID's quiet note; then its
+   button, strong green, the card's whole width. Done, shrunk to its head, the soft Verified at its
+   right; one that can't help any more, greyed, its name and line alone. */
 /* The ID card's one quiet line while the verifier takes test payments: Stripe's test card. */
 .vcard .vtest {
-  padding-left: 62px;
   font-size: 13px;
   line-height: 1.3;
   font-weight: 500;
@@ -1922,9 +2075,30 @@ button.ghost .icon {
   line-height: 1.45;
 }
 
-button.vcard:disabled,
 .vcard.tried {
   opacity: 0.5;
+}
+
+.vcard > button.primary {
+  width: 100%;
+}
+
+/* The ID's note above its button: quiet, grey, its icon. */
+.vnote {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--sunk);
+  font-size: 14.5px;
+  font-weight: 500;
+  color: var(--ink2);
+}
+
+.vnote .icon {
+  width: 18px;
+  height: 18px;
 }
 
 .vcard.tried {
@@ -1955,6 +2129,7 @@ button.vcard:disabled,
 
 .price3 .d {
   font-size: 24px;
+  color: var(--ink);
 }
 
 .price3 .once {
@@ -1984,12 +2159,6 @@ button.vcard:disabled,
   color: inherit;
 }
 
-.vhead > .icon {
-  width: 18px;
-  height: 18px;
-  color: var(--ink3);
-}
-
 .vico {
   flex: none;
   display: grid;
@@ -1997,8 +2166,8 @@ button.vcard:disabled,
   width: 48px;
   height: 48px;
   border-radius: 14px;
-  background: var(--mint);
-  color: var(--forest);
+  background: var(--ink);
+  color: var(--bg);
 }
 
 .vico .icon {
@@ -2010,7 +2179,7 @@ button.vcard:disabled,
 .vlist {
   list-style: none;
   margin: 0;
-  padding: 12px 0 0 62px;
+  padding: 12px 0 0;
   display: grid;
   gap: 9px;
   border-top: 1px solid var(--line);
@@ -2026,30 +2195,34 @@ button.vcard:disabled,
   color: var(--ink2);
 }
 
-.vlist .got {
-  flex: none;
+.vlist .icon {
+  width: 17px;
+  height: 17px;
+  color: var(--ink);
 }
 
-/* A quiet green word under Get verified's cards: I already use Forest, in the middle; What the
-   checks keep, smaller, at the left. */
-button.green-text {
+/* A text link: in ink, underlined. Under Get verified's cards, I already use Forest, in the
+   middle, and What the checks keep, smaller, at the left; Connect your AI's Forest not there?. */
+button.text-link {
   align-self: center;
   min-height: 34px;
   padding: 0 2px;
   background: none;
   box-shadow: none;
   font-size: 15px;
-  color: var(--forest);
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
   gap: 6px;
 }
 
-button.green-text.keeps-link {
+button.text-link.keeps-link {
   align-self: flex-start;
   min-height: 30px;
   font-size: 14.5px;
 }
 
-button.green-text > .icon {
+button.text-link > .icon {
   width: 18px;
   height: 18px;
 }
@@ -2117,68 +2290,58 @@ button.green-text > .icon {
   gap: 12px;
 }
 
-/* A market's tile: its icon at the top left, Beta quietly at the top right, its name at the bottom,
-   its first word small over the rest where another market shares it. */
+/* A market's tile: its color filling it, under a soft dark fade behind the words, black from
+   nothing at its middle to a quarter at its bottom (in the dark look, a layer of black over all of
+   it as well); its icon big, white at 28%, at the top right, cut by the tile's edge; its name in
+   white at the bottom left, large, so it reads at the large text's 3:1 on every color. Nothing
+   else. */
 button.market-tile {
   position: relative;
+  overflow: hidden;
+  isolation: isolate;
   flex-direction: column;
   align-items: flex-start;
-  justify-content: flex-start;
-  gap: 14px;
-  min-height: 124px;
-  padding: 16px;
-  border-radius: 20px;
-  background: color-mix(in srgb, var(--h) var(--tile-tint), var(--card));
+  justify-content: flex-end;
+  min-height: 104px;
+  height: 104px;
+  padding: 14px 16px;
+  border-radius: 22px;
+  background:
+    linear-gradient(to bottom, rgb(0 0 0 / 0) 50%, rgb(0 0 0 / 0.25)),
+    linear-gradient(rgb(0 0 0 / var(--tile-dark)), rgb(0 0 0 / var(--tile-dark))),
+    var(--h);
   box-shadow: none;
   text-align: left;
-  line-height: 1.2;
 }
 
-button.market-tile .icon,
-button.market-tile .letter {
-  width: 28px;
-  height: 28px;
-  color: color-mix(in srgb, var(--h) var(--look-icon), var(--look-to));
-}
-
-button.market-tile .letter {
-  font-size: 26px;
-  font-weight: 800;
-  line-height: 28px;
-}
-
-button.market-tile .beta {
+button.market-tile > .icon,
+button.market-tile > .letter {
   position: absolute;
-  top: 14px;
-  right: 14px;
-  font-size: 12px;
-  font-weight: 700;
-  line-height: 1;
-  color: var(--ink3);
+  z-index: -1;
+  top: -14px;
+  right: -16px;
+  width: 96px;
+  height: 96px;
+  color: rgb(255 255 255 / 0.28);
+}
+
+button.market-tile > .letter {
+  font-size: 96px;
+  font-weight: 800;
+  line-height: 96px;
+  text-align: center;
 }
 
 button.market-tile .tile-name {
-  margin-top: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  min-width: 0;
-}
-
-button.market-tile .fam {
-  font-size: 12.5px;
-  font-weight: 700;
-  color: color-mix(in srgb, var(--h) var(--tile-word), var(--look-to));
-}
-
-button.market-tile .kind {
-  font-size: 17px;
+  font-size: 19px;
   font-weight: 800;
+  line-height: 1.15;
   letter-spacing: -0.01em;
+  color: #ffffff;
   overflow-wrap: anywhere;
 }
 
-/* New profile on a laptop: wider, its tiles four to a row. */
+/* New profile on a laptop: wider, its tiles as many columns of about 170px as fit. */
 .content > main.new-profile {
   max-width: calc(980px + 72px);
 }
@@ -2187,19 +2350,21 @@ button.market-tile .kind {
   max-width: 420px;
 }
 
-.content > main.new-profile .market-tiles {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+@media (min-width: 900px) {
+  .market-tiles {
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  }
 }
 
-/* A market's page: its icon on a tint of its color, as its tile has it, over its name. */
+/* A market's page: its icon on its color, white, as a profile of it shows, over its name. */
 .market-icon {
   display: grid;
   place-items: center;
   width: 64px;
   height: 64px;
   border-radius: 20px;
-  background: color-mix(in srgb, var(--h) var(--tile-tint), var(--card));
-  color: color-mix(in srgb, var(--h) var(--look-icon), var(--look-to));
+  background: var(--h);
+  color: #ffffff;
 }
 
 .market-icon .icon {
@@ -2254,15 +2419,15 @@ button.big-choice {
   font-size: 14px;
 }
 
-/* Connect your AI: its mint square, the switch, the three steps in one card, the address with Copy. */
+/* Connect your AI: its sparkle on a neutral square, the three choices, the three steps in one card, the address with Copy. */
 .ai-mark {
   display: grid;
   place-items: center;
   width: 52px;
   height: 52px;
   border-radius: 16px;
-  background: var(--mint);
-  color: var(--forest);
+  background: var(--sunk);
+  color: var(--ink);
 }
 
 .ai-mark .icon {
@@ -2298,16 +2463,26 @@ button.big-choice {
   width: 26px;
   height: 26px;
   border-radius: 50%;
-  box-shadow: inset 0 0 0 2px var(--line2);
-  color: var(--ink3);
+  background: var(--sunk);
+  color: var(--ink);
   font-size: 13px;
   font-weight: 800;
 }
 
 .step-card .t {
+  display: block;
   font-size: 17px;
   font-weight: 700;
   line-height: 26px;
+}
+
+/* A step's small line, under its words. */
+.step-card .s {
+  display: block;
+  margin-top: 2px;
+  font-size: 14.5px;
+  line-height: 1.35;
+  color: var(--ink3);
 }
 
 .copy-field {
@@ -2462,11 +2637,6 @@ button.card.said-card {
 .sq.sun {
   background: var(--sun-bg);
   color: var(--on-sun);
-}
-
-.sq.mint {
-  background: var(--mint);
-  color: var(--forest);
 }
 
 .sq.red {
@@ -2646,15 +2816,32 @@ button.thread-row {
 }
 
 .thread-top > .name {
-  flex: 1;
+  flex: 0 1 auto;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.thread-top > .xs {
+/* Their market, small and quiet, after who; the time at the right, bold while something is new. */
+.thread-top > .mk {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13.5px;
+  color: var(--ink3);
+}
+
+.thread-top > .when {
   flex: none;
+  margin-left: auto;
+}
+
+.thread-row.fresh .thread-top > .when {
+  color: var(--ink);
+  font-weight: 800;
 }
 
 .thread-last {
@@ -2736,11 +2923,7 @@ button.convo-head .mkr {
   font-size: 14px;
 }
 
-button.round.soft {
-  box-shadow: none;
-}
-
-.top-right button.soft.small {
+.top-right button.small {
   min-height: 32px;
   padding: 0 11px;
   border-radius: 10px;
@@ -2763,7 +2946,7 @@ button.round.soft {
   align-self: flex-end;
 }
 
-/* Someone as a card: New message's To and From. */
+/* Someone as a card: who a message is to, on the writing screen. */
 .person {
   display: flex;
   align-items: center;
@@ -2814,11 +2997,11 @@ button.round.soft {
 }
 
 .score input[type='range']::-webkit-slider-runnable-track {
-  background: linear-gradient(to right, var(--forest) var(--at, 0%), var(--edge) var(--at, 0%));
+  background: linear-gradient(to right, var(--ink) var(--at, 0%), var(--edge) var(--at, 0%));
 }
 
 .score input[type='range']::-moz-range-track {
-  background: linear-gradient(to right, var(--forest) var(--at, 0%), var(--edge) var(--at, 0%));
+  background: linear-gradient(to right, var(--ink) var(--at, 0%), var(--edge) var(--at, 0%));
 }
 
 .score input[type='range']::-webkit-slider-thumb {
@@ -2826,14 +3009,14 @@ button.round.soft {
   height: 32px;
   margin-top: -13px;
   background: var(--card);
-  box-shadow: 0 0 0 2px var(--forest), 0 4px 10px -2px rgb(17 26 21 / 0.3);
+  box-shadow: 0 0 0 2px var(--ink), 0 4px 10px -2px rgb(17 26 21 / 0.3);
 }
 
 .score input[type='range']::-moz-range-thumb {
   width: 32px;
   height: 32px;
   background: var(--card);
-  box-shadow: 0 0 0 2px var(--forest), 0 4px 10px -2px rgb(17 26 21 / 0.3);
+  box-shadow: 0 0 0 2px var(--ink), 0 4px 10px -2px rgb(17 26 21 / 0.3);
 }
 
 .score .ends {
@@ -2982,7 +3165,18 @@ button.chip .icon {
 
 .sq.plain {
   background: var(--sunk);
-  color: var(--ink2);
+  color: var(--ink);
+}
+
+/* A check's badge on a row's square, in You: the black square. */
+.sq.ink {
+  background: var(--ink);
+  color: var(--bg);
+}
+
+/* A star on an outlined button (Review): the sun, beside its word, which says it. */
+button .icon.sun {
+  color: var(--sun);
 }
 
 /* A check not done, in You: its badge's outline, dashed, its icon quiet; a tap starts it. */
@@ -3094,8 +3288,8 @@ button.danger.text {
 }
 
 .radio.on {
-  box-shadow: inset 0 0 0 2px var(--forest);
-  background: radial-gradient(circle, var(--forest) 0 5px, transparent 5.5px);
+  box-shadow: none;
+  background: radial-gradient(circle, var(--forest) 0 5px, var(--mint) 5.5px);
 }
 
 .row.pick > .icon {
@@ -3163,8 +3357,8 @@ button.card.profile-card {
   height: 20px;
   padding: 0 6px;
   border-radius: 10px;
-  background: var(--forest);
-  color: var(--on-forest);
+  background: var(--ink);
+  color: var(--bg);
   font-size: 11.5px;
   font-weight: 800;
   line-height: 20px;
@@ -3217,8 +3411,8 @@ button.addround {
   height: 38px;
   padding: 0;
   border-radius: 50%;
-  background: var(--mint);
-  color: var(--forest);
+  background: var(--forest);
+  color: var(--on-forest);
   box-shadow: none;
 }
 
@@ -3390,14 +3584,13 @@ main.home .titled > button.new-profile {
   margin: auto;
 }
 
-/* The conversation open beside the list: raised, a card of its own. */
+/* The conversation open beside the list: where the person is, on the soft green. */
 button.thread-row.here {
-  background: var(--card);
-  box-shadow: var(--shadow);
+  background: var(--mint);
 }
 
 button.thread-row.here .mb {
-  box-shadow: 0 0 0 2.5px var(--card);
+  box-shadow: 0 0 0 2.5px var(--mint);
 }
 
 /* The laptop sidebar's New, at the right of Profiles: a small mint pill. */
@@ -3406,16 +3599,18 @@ button.minipill {
   height: 28px;
   padding: 0 10px;
   border-radius: 999px;
-  background: var(--mint);
-  color: var(--forest);
-  box-shadow: none;
+  background: var(--card);
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1.5px var(--ink);
   font-size: 13px;
   gap: 4px;
   margin-left: auto;
 }
 
 button.minipill.on {
-  box-shadow: inset 0 0 0 1px var(--forest);
+  background: var(--mint);
+  color: var(--forest);
+  box-shadow: none;
 }
 
 button.minipill .icon {
@@ -3423,8 +3618,8 @@ button.minipill .icon {
   height: 14px;
 }
 
-/* A market's role on its page: its avatar and its name; the check where the person has it, else
-   Create. */
+/* A market's role on its page, a card: its name; at its right, the soft green Yours where the
+   person has it (a tap on the card opens that profile), else Create, strong green. */
 .big-choice {
   display: flex;
   align-items: center;
@@ -3440,33 +3635,25 @@ button.minipill .icon {
   line-height: 1.25;
 }
 
-/* A check that says you have this (a role you hold, what a check on Get verified gives): the soft
-   green's circle, the check in the strong green. */
-.got {
+/* A role the person has: Yours, its check, on the soft green. */
+.yours {
+  flex: none;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
+  gap: 5px;
+  height: 34px;
+  padding: 0 13px;
+  border-radius: 999px;
   background: var(--mint);
   color: var(--forest);
+  font-size: 14px;
+  font-weight: 700;
 }
 
-.got .icon {
-  width: 12px;
-  height: 12px;
+.yours .icon {
+  width: 15px;
+  height: 15px;
   color: inherit;
-}
-
-.got.lg {
-  width: 28px;
-  height: 28px;
-}
-
-.got.lg .icon {
-  width: 17px;
-  height: 17px;
 }
 
 button.create {
@@ -3503,15 +3690,17 @@ button.create .icon {
   height: 24px;
   padding: 0 9px;
   border-radius: 999px;
-  background: var(--mint);
-  color: var(--forest);
+  background: none;
+  box-shadow: inset 0 0 0 1.5px var(--ink);
+  color: var(--ink);
   font-size: 12.5px;
   font-weight: 700;
 }
 
-/* Every passkey but the first: Backup, in neutral grey, so it reads differently from Main's mint. */
+/* Every passkey but the first: Backup, in neutral grey, so it reads differently from Main's outline. */
 .backupchip {
   background: var(--sunk);
+  box-shadow: none;
   color: var(--ink2);
 }
 
@@ -3776,43 +3965,15 @@ a.out {
   min-height: 40px;
   padding: 0 4px;
   align-self: flex-start;
-  color: var(--forest);
+  color: var(--ink);
   font-weight: 600;
-  text-decoration: none;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 a.out .icon {
   width: 16px;
   height: 16px;
-}
-
-/* Naming someone, in place: the full key in a box, with Copy. */
-.keybox {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 12px 14px;
-  border-radius: 14px;
-  background: var(--sunk);
-  color: var(--ink2);
-  font-family: ui-monospace, Menlo, monospace;
-  font-size: 13.5px;
-  line-height: 1.5;
-  word-break: break-all;
-}
-
-.keybox > .icon {
-  width: 18px;
-  height: 18px;
-  margin-top: 2px;
-  color: var(--ink3);
-}
-
-.keybox button.round {
-  width: 32px;
-  height: 32px;
-  min-height: 32px;
-  margin: -4px -6px -4px 0;
 }
 
 /* Messages' chips: a dot in the profile's market's color, then its market and role. */
@@ -4128,7 +4289,7 @@ button.quiet.add {
 }
 
 .place-row.here > button.row-button {
-  box-shadow: inset 0 0 0 2px var(--forest);
+  background: var(--mint);
 }
 
 /* Days and times: a list of times, each with its Every week switch, its days, its hours. */
@@ -4208,8 +4369,8 @@ button.quiet.add {
 }
 
 .weekdays > button.day.here {
-  background: var(--ink);
-  color: var(--bg);
+  background: var(--mint);
+  color: var(--forest);
   box-shadow: none;
 }
 

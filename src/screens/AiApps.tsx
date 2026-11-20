@@ -1,4 +1,4 @@
-// Your AI, from You: one card of the AI apps connected, each a row on a mint square with its name and
+// Your AI, from You: one card of the AI apps connected, each a row, its sparkle on a neutral square, with its name and
 // how many of this device's profiles it acts for (6 profiles; a profile the device has forgotten is
 // not counted, and nothing says since when). A row opens in place, under itself, as a passkey does,
 // with its profiles as ticks, Save and Disconnect (AiApp.tsx), and a second tap closes it; then
@@ -30,7 +30,7 @@ export function AiApps({ onBack, onConnect }: Props) {
         {aiApps.map((c) => (
           <div key={c.address} role="listitem" className="opens">
             <button type="button" className="row" aria-expanded={open === c.address} onClick={() => setOpen(open === c.address ? null : c.address)}>
-              <span className="sq sm mint">
+              <span className="sq sm plain">
                 <Icon name="sparkle" />
               </span>
               <span className="two">

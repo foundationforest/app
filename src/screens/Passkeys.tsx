@@ -1,7 +1,7 @@
 // Passkeys, from You: every passkey that opens the person's profiles, in one card, read with nothing
-// unlocked. Their first passkey, the one the seed comes from, with a mint Main chip; then each added
-// after it (a backup, as the standard names it), oldest first, each with a Backup chip in neutral
-// grey, so it reads differently from Main's mint. Each a row: the same key on its square
+// unlocked. Their first passkey, the one the seed comes from, with a Main chip outlined in ink; then
+// each added after it (a backup, as the standard names it), oldest first, each with a Backup chip in
+// neutral grey, so it reads differently from Main's. Each a row: the same key on its square
 // for every one, its name, a chevron. Its name is the one the person gave it on this device, else
 // its maker's, read from the id it sent as it was made (managers.ts), else Passkey; a name shown
 // already takes the next number (Apple 2). With one alone, a quiet line on why a second. Then Add a
@@ -101,7 +101,7 @@ export function Passkeys({ onBack, onAdd, onWords }: Props) {
               )}
             </div>
           ))}
-          <Opens icon="plus" words="Add a passkey" green onClick={onAdd} />
+          <Opens icon="plus" words="Add a passkey" adds onClick={onAdd} />
         </div>
       )}
       {backups?.length === 0 && <p className="line">{WHY_SECOND}</p>}

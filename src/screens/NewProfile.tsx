@@ -1,9 +1,8 @@
 // Your first profile, once the person is verified, or New profile, from Home: every market as a
-// tile, live and beta alike, two to a row on a phone, four on a laptop: a tint of its color, its icon
-// in its color at the top left, Beta in small quiet text at the top right of a beta one, and its name
-// at the bottom, its first word small above the rest where another market shares it (Stays over
-// Work; markets.ts, `tileName`). Over them, a search box over the markets' whole names and their
-// roles'. A tile opens the market's page (Market.tsx), its roles; one tap on a role asks the passkey if
+// tile, live and beta alike, two to a row on a phone, on a laptop as many columns of about 170px as
+// fit: its color filling it, its icon big and faint at the top right, cut by the tile's edge, and its
+// whole name in white at the bottom left; nothing else, Beta saying itself on the market's page.
+// Over them, a search box over the markets' whole names and their roles'. A tile opens the market's page (Market.tsx), its roles; one tap on a role asks the passkey if
 // no seed is held and makes the profile: its folder funded, its verification proven on the device,
 // its profile entry written, its label in the Profiles folder. Meanwhile, the loader and "Making
 // your Tutoring tutor". Your first profile is a setup step: being verified can't be undone, so it
@@ -94,11 +93,7 @@ export function NewProfile({ market: name, onMarket, onMade, onOpen, onBack, onL
           return (
             <button key={m.market} className="market-tile" style={{ '--h': colorOf(m.market) } as CSSProperties} aria-label={m.beta ? `${m.words}, beta` : m.words} onClick={() => onMarket(m.market)}>
               {icon ? <MarketIcon name={icon} /> : <span className="letter" aria-hidden>{m.words.charAt(0)}</span>}
-              {m.beta && <span className="beta">Beta</span>}
-              <span className="tile-name">
-                {m.family && <span className="fam">{m.family}</span>}
-                <span className="kind">{m.kind}</span>
-              </span>
+              <span className="tile-name">{m.words}</span>
             </button>
           )
         })}

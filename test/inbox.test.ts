@@ -14,6 +14,7 @@ import { mainKey, newAccessKey } from '@foundationforest/keys'
 import { inboxPayment } from '../services/host/client/client.ts'
 import * as device from '../src/device.ts'
 import type { Profile } from '../src/device.ts'
+import { aboutOf } from '../src/about.ts'
 import { newMessages, openAll, send } from '../src/flows/inbox.ts'
 import { walletKey } from '../src/flows/profiles.ts'
 import { leaveAll } from '../src/services/host.ts'
@@ -34,6 +35,50 @@ const newCount = async (host: string, list: Profile[]) => Object.values(await ne
 
 const ASK = 'Is Tuesday at six free?'
 const YES = 'Tuesday at six, yes.'
+
+test('a message written from a listing carries it, its full address beside the text, in the message and in its copy; the reply carries none; a listing of any other shape is left out', async () => {
+  const tutor = await verifiedWith(w, OFFERS)
+  const student = await verifiedWith(w, REQUESTS)
+  const [t, s] = [tutor.profiles[0]!, student.profiles[0]!]
+  const listing = `${t.address}/listing/lessons`
+
+  const asked = await send(w, student.seed, s.label, t.address, ASK, listing)
+  expect(asked).toMatchObject({ text: ASK, mine: true, listing })
+  await send(w, tutor.seed, t.label, s.address, YES)
+  const [thread] = (await openAll(w, tutor.seed, [t], checkHere)).threads
+  expect(thread!.messages.map((m) => [m.text, m.listing]), 'the first names the listing; the reply carries only its text').toEqual([
+    [ASK, listing],
+    [YES, undefined],
+  ])
+  freshDevice()
+  const [mine] = (await openAll(w, student.seed, [s], checkHere)).threads
+  expect(mine!.messages[0], 'its copy in the sender\'s folder too, so any device shows what it was about').toMatchObject({ text: ASK, mine: true, listing })
+
+  // A body another app wrote, its listing not a listing's address: its text shows, the listing left out.
+  const main = await mainKey(student.seed, s.label)
+  const theirs = (await readFolder([w.host], t.address, Date.now())).current.get('profile')!.entry.body!
+  const odd = await inboxEntry(main, t.address, { text: 'Another shape.', listing: 'not an address' }, Date.now(), theirs, w.host)
+  await leaveAll(w.host, [odd], inboxPayment(main))
+  const read = (await openAll(w, tutor.seed, [t], checkHere)).threads[0]!.messages.find((m) => m.text === 'Another shape.')
+  expect(read).toBeDefined()
+  expect(read!.listing).toBeUndefined()
+})
+
+test("a third person's listing in a message: carried as written, but the conversation is about no listing of a stranger's choosing; one of theirs or one of the person's own, it is", async () => {
+  const tutor = await verifiedWith(w, OFFERS)
+  const student = await verifiedWith(w, REQUESTS)
+  const third = await verifiedWith(w, OFFERS)
+  const [t, s, x] = [tutor.profiles[0]!, student.profiles[0]!, third.profiles[0]!]
+  const theirs = `${x.address}/listing/lessons`
+  await send(w, student.seed, s.label, t.address, ASK, theirs)
+  const [thread] = (await openAll(w, tutor.seed, [t], checkHere)).threads
+  expect(thread!.messages[0]!.listing, 'read as it was written').toBe(theirs)
+  expect(aboutOf(thread!.messages, t.address, s.address), "a third person's listing: no About, the message as ever").toBeUndefined()
+  const own = `${t.address}/listing/lessons`
+  await send(w, student.seed, s.label, t.address, 'And this one?', own)
+  const [again] = (await openAll(w, tutor.seed, [t], checkHere)).threads
+  expect(aboutOf(again!.messages, t.address, s.address), "the tutor's own listing: the conversation is about it").toBe(own)
+})
 
 test('a message and its reply: counted with nothing unlocked, opened in one unlock, from whom; what each sent shows on any device, never as new', async () => {
   const tutor = await verifiedWith(w, OFFERS)

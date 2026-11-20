@@ -1,7 +1,12 @@
-// Where this copy of the app is, the services it talks to, and the pages About Forest links to (its
-// privacy and terms, and its source code): the one place they are set. A copy hosted elsewhere sets
+// Where this copy of the app is, the services it talks to, the AI apps whose plugin directories list
+// Forest, and the pages About Forest links to (its privacy and terms, and its source code): the one
+// place they are set. A copy hosted elsewhere sets
 // its own here, and in vercel.json's content security policy. The browser
 // test builds the app with its own loopback copies, named in VITE_FOREST_CONFIG at build time.
+
+/** The AI apps Connect your AI names. */
+export const AI_APPS = ['Claude', 'ChatGPT'] as const
+export type AiApp = (typeof AI_APPS)[number]
 
 export type Config = {
   /** The app's own address: the verifier sends people back here after a check, and Share links here. */
@@ -12,6 +17,8 @@ export type Config = {
   host: string
   /** The connector, over MCP, which an AI app acts through. */
   connector: string
+  /** The AI apps whose plugin directory lists Forest: Connect your AI has the person search for it there; any other is added by the connector's address. */
+  listedIn: AiApp[]
   /** The index, which rates each profile: the app reads what it says of the person's own. */
   index: string
   /** Places, services' place lookup: words to towns and colonias for the place screen's search, and the name nearest a place's centre for its caption. Only ever a help: with no answer, a place reads by its size. */
@@ -29,6 +36,8 @@ const OURS: Config = {
   verifier: 'https://verifier.forest.foundation',
   host: 'https://host.forest.foundation',
   connector: 'https://mcp.forest.foundation',
+  // No plugin directory lists Forest yet: adding an app's name here switches it to the search steps.
+  listedIn: [],
   index: 'https://index.forest.foundation',
   places: 'https://places.forest.foundation',
   tiles: 'https://tiles.openfreemap.org',

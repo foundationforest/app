@@ -15,6 +15,7 @@ import { newest } from '../flows/feedback.ts'
 import { useProfiles, useRated } from '../hooks.ts'
 import { ratingText, reviewCount, saidCount } from '../show.ts'
 import { Named, Rating, Top } from '../ui.tsx'
+import { listingOf } from '../about.ts'
 import { SaidCard } from './SaidCard.tsx'
 
 type Props = { address: string; onBack: () => void; onOpen: (at: string) => void }
@@ -52,7 +53,7 @@ export function Reviews({ address, onBack, onOpen }: Props) {
           </div>
           <div className="cards">
             {rated.received.map((r) => (
-              <SaidCard key={r.address} kind={r.kind} score={r.body.score} text={r.body.text} who={r.writer} {...(r.time !== undefined && { time: r.time })} fresh={(r.time ?? 0) > since} onClick={() => onOpen(r.address)} />
+              <SaidCard key={r.address} kind={r.kind} score={r.body.score} text={r.body.text} listing={listingOf(r.body.listing, [r.writer, address])} who={r.writer} {...(r.time !== undefined && { time: r.time })} fresh={(r.time ?? 0) > since} onClick={() => onOpen(r.address)} />
             ))}
           </div>
         </>

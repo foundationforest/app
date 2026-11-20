@@ -47,7 +47,7 @@ export async function readEntries(s: Services, address: string): Promise<Posted[
 /**
  * The address a person gives for a subject: an address as it is, or the one a link names: a
  * profile's page on an index, as Share hands it out (`<index>/profiles/<address>`, or its JSON twin),
- * or an older Share link to this app's New message (`/message?to=<address>`).
+ * or a message link to this app (`/message?to=<address>`).
  */
 export function addressIn(given: string): string {
   const text = given.trim()

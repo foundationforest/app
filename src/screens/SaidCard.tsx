@@ -1,16 +1,22 @@
 // A review, vouch or report as a card: its score with its star, or its chip; right after it the
 // other profile, by the person's name for it or its short key and nothing else (its own page says
-// the market); when, at the right, and a dot while it is new; then what they wrote. A tap on the
-// card does what it is for (`onClick`: open it, edit it); a tap on who (`onWho`) opens their profile.
-// With both, the card's tap sits under the name's, since a button holds no button.
+// the market); when, at the right, and a dot while it is new; then what they wrote; then, for a
+// review that names a listing of its writer's or its subject's, its About box (AboutListing.tsx; who
+// shows it gives only such a listing, about.ts). A tap on the card does what it is
+// for (`onClick`: open it, edit it); a tap on who (`onWho`) opens their profile, and one on the
+// About box the listing on the index. With more than one, the card's tap sits under the others',
+// since a button holds no button.
 
 import { Dot, SaidChip, ago, day } from '../ui.tsx'
+import { AboutBox } from './AboutListing.tsx'
 import { NameOf } from './Who.tsx'
 
 type Props = {
   kind: 'review' | 'vouch' | 'report'
   score: unknown
   text: unknown
+  /** The listing a review names, its full address, when it is its writer's or its subject's (about.ts, `listingOf`). */
+  listing?: string | undefined
   /** The other profile's address: who wrote it, or who it is about. */
   who: string
   time?: number
@@ -23,7 +29,7 @@ type Props = {
   onWho?: () => void
 }
 
-export function SaidCard({ kind, score, text, who, time, dated = false, fresh = false, onClick, does = 'Open', onWho }: Props) {
+export function SaidCard({ kind, score, text, listing, who, time, dated = false, fresh = false, onClick, does = 'Open', onWho }: Props) {
   const head = (
     <span className="said-head">
       <SaidChip kind={kind} score={score} />
@@ -40,7 +46,8 @@ export function SaidCard({ kind, score, text, who, time, dated = false, fresh = 
     </span>
   )
   const body = typeof text === 'string' && text ? <span className="said-text">{text}</span> : null
-  if (onClick && !onWho)
+  const about = listing ? <AboutBox address={listing} /> : null
+  if (onClick && !onWho && !about)
     return (
       <button className="card said-card" onClick={onClick}>
         {head}
@@ -52,6 +59,7 @@ export function SaidCard({ kind, score, text, who, time, dated = false, fresh = 
       {onClick && <button type="button" className="said-open" aria-label={does} onClick={onClick} />}
       {head}
       {body}
+      {about}
     </div>
   )
 }

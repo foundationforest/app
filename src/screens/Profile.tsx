@@ -143,7 +143,7 @@ export function Profile({ address, tab, onTab, onBack, onListing, onReviews, onE
             </div>
           )}
           <div className="foot">
-            <button className="soft" onClick={() => onListing()}>
+            <button className="primary" onClick={() => onListing()}>
               <Icon name="plus" bold />
               New {word.toLowerCase()}
             </button>
@@ -152,7 +152,7 @@ export function Profile({ address, tab, onTab, onBack, onListing, onReviews, onE
       ) : (
         <>
           <Line note={note} />
-          {!note && <Written entries={entries} onEdit={onEdit} {...(market && { onReview })} onWho={onWho} />}
+          {!note && <Written address={address} entries={entries} onEdit={onEdit} {...(market && { onReview })} onWho={onWho} />}
         </>
       )}
     </main>

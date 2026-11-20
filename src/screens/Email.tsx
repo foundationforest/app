@@ -100,7 +100,7 @@ export function Email({ onBack }: { onBack: () => void }) {
         <span className="two">
           <strong>{shown}</strong>
         </span>
-        <button type="button" className="soft small" disabled={busy} onClick={() => change(shown)}>
+        <button type="button" className="small" disabled={busy} onClick={() => change(shown)}>
           Change
         </button>
       </div>

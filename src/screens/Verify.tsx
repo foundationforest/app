@@ -439,14 +439,14 @@ export function Verify({ setup, id, step: first, failed: failedFirst, from, onVe
       {another && (
         <>
           <Line note={already.note} />
-          <button className="green-text" disabled={busy} onClick={() => already.run()}>
+          <button className="text-link" disabled={busy} onClick={() => already.run()}>
             {already.busy ? <Loader /> : <><UnlockIcon always /> I already use Forest</>}
           </button>
         </>
       )}
       {idCheck.forSale && standing('id') === 'open' && (
         <>
-          <button className="green-text keeps-link" aria-expanded={keeps} aria-controls="keeps" onClick={() => setKeeps(!keeps)}>
+          <button className="text-link keeps-link" aria-expanded={keeps} aria-controls="keeps" onClick={() => setKeeps(!keeps)}>
             <Icon name="info" /> What the checks keep
           </button>
           {keeps && <Keeps consent={consent} note={noConsent} />}
