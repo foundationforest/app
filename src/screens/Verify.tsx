@@ -1,10 +1,14 @@
 // Get verified: "So people know you're real.", and two cards (Checks.tsx), a page the person comes
-// back to. Each check runs in this tab, away from the app and back. The selfie opens its check at
-// once. The ID goes straight to Stripe: first the verifier is asked for an ID stamp it signed this
-// seed already (one ID stamp a person), kept there, and nothing paid; else the payment is made, and
-// Stripe's page sends the person back to /paid, where the payment, kept on the device, opens the ID
-// check at once, with no tap between. Paying needs the seed's stamp number, so it asks for an unlock
-// when no seed is held. Back from Stripe's page without paying, the payment is dropped, nothing said.
+// back to. Each check runs in this tab, away from the app and back. Every check is opened for the
+// seed's stamp number, which alone it can give a stamp to, so opening one, and paying, asks for an
+// unlock when no seed is held. The selfie opens its check at once. The ID goes straight to Stripe:
+// first the verifier is asked for an ID stamp it signed this seed already (one ID stamp a person),
+// kept there, and nothing paid; else the payment is made, and Stripe's page sends the person back to
+// /paid, where the payment, kept on the device, opens the ID check at once. The page back from
+// Stripe holds no seed, so it asks the passkey by itself, where the browser lets it; where the
+// browser wants a tap first, or no passkey answered, Continue, with the unlock icon, and Back to the
+// two checks, the payment waiting. Back from Stripe's page without paying, the payment is dropped,
+// nothing said.
 //
 // Didit sends the person back to /back after the check. The page that opens there holds no seed:
 // the one held went with the page that left. So it asks the passkey at once, by itself, where the
@@ -14,9 +18,13 @@
 // that card Verified. Open it again goes back to the same check.
 //
 // Something that went wrong says so in one notice at the top, in the verifier's words for it
-// (words.ts), its session done, so the next tap opens a new one. A check that can't help this person
-// any more is greyed: the selfie after a face seen before (it would match again), the ID after an
-// ID already used. While the verifier doesn't sell the ID check (GET /, `forSale`), its card isn't
+// (words.ts), its session done, so the next tap opens a new one. Only the verifier's answer gives a
+// stamp: Didit's own page may say a check passed that the verifier then refuses, a face seen before
+// among them. A check that can't help this person any more is greyed: the selfie after a face seen
+// before (it would match again), the ID after an ID already used, and every check not done after a
+// face that isn't the one this seed was verified with, or one too like too many recent tries, since
+// both checks take the face. Someone whose earlier stamps all count for nothing (the verifier's keys
+// changed since) is sent here from Start with one line at the top saying so, until a check is done. While the verifier doesn't sell the ID check (GET /, `forSale`), its card isn't
 // there, nor What the checks keep, and a face seen before says the ID check opens soon. After either, from Start, under the cards, the quiet I already use Forest, for
 // someone who made a passkey here by mistake: it asks for the passkey they use, and adds this one to
 // it (flows/backups.ts, `linkTo`), and they're in. From You or Home it never shows: there the person
@@ -53,7 +61,7 @@ import { RETURNS } from '../paths.ts'
 import { proveInWorker } from '../proof/prove.ts'
 import { Line, type Note, Notice, Top, UnlockIcon, YoureVerified, noteOf, useAction } from '../ui.tsx'
 import { Reloading } from '../version.ts'
-import { FACE_SEEN_NOT_FOR_SALE } from '../words.ts'
+import { CHECK_AGAIN, FACE_SEEN_NOT_FOR_SALE } from '../words.ts'
 import { CheckCard, Keeps, type Standing } from './Checks.tsx'
 
 /** How often the stamp is asked for while the check is open, and for how long. */
@@ -67,6 +75,8 @@ type Props = {
   step: Step
   /** A check that will never pass, found as Start took the verification up. */
   failed?: NotPassed
+  /** From Start, for someone whose stamps all count for nothing: one line at the top says so, until a check is done. */
+  again?: boolean
   /** Opened back from Stripe's page (`paid`), which opens the ID check at once; or from Didit's (`checked`), which asks the passkey at once. */
   from?: 'paid' | 'checked'
   /** Continue, from Start, once a check is done: on to the first profile. */
@@ -88,7 +98,7 @@ type Known = { stampNumber: bigint; wallet: string }
 
 const knownOf = async (seed: Uint8Array): Promise<Known> => ({ stampNumber: await stampNumberAt(config, seed), wallet: (await walletKey(seed)).address })
 
-export function Verify({ setup, id, step: first, failed: failedFirst, from, onVerified, onIn, onBack }: Props) {
+export function Verify({ setup, id, step: first, failed: failedFirst, again, from, onVerified, onIn, onBack }: Props) {
   // Worked out at once while a seed is held.
   // A failure says itself where it is awaited, as the stamp is asked for.
   const [atOpen] = useState(() => {
@@ -109,6 +119,8 @@ export function Verify({ setup, id, step: first, failed: failedFirst, from, onVe
   const [waiting, setWaiting] = useState(first.at === 'away')
   // Back from Stripe's page, paid: the ID check opening, with nothing else on the screen.
   const [leaving, setLeaving] = useState(from === 'paid' && first.at === 'start')
+  // Back from Stripe's page, and the passkey didn't answer by itself: Continue asks it.
+  const [tapToOpen, setTapToOpen] = useState(false)
   const [asking, setAsking] = useState(false)
   const [failed, setFailed] = useState<NotPassed | null>(failedFirst ?? null)
   // What the checks keep, open on its sheet.
@@ -240,9 +252,21 @@ export function Verify({ setup, id, step: first, failed: failedFirst, from, onVe
     else if (from === 'checked' && first.at === 'away') void byItself.run()
   }, [])
 
+  /** The seed's stamp number, which a check is opened for: what the seed gave on this screen, else one unlock, kept for the asking. */
+  const numberOf = async (): Promise<bigint> => {
+    const got = known.current ?? withSeed(id, knownOf)
+    known.current = got
+    try {
+      return (await got).stampNumber
+    } catch (err) {
+      if (known.current === got) known.current = null
+      throw err
+    }
+  }
+
   /** The check under way, opened: its page, in this tab, in place of this one when `replace` (back from Stripe, so the browser's back doesn't come here again). */
   const toCheck = async (at: number, replace = false) => {
-    const url = await open(config, id, returnUrl())
+    const url = await open(config, id, numberOf, returnUrl())
     if (turn.current !== at) return
     if (replace) location.replace(url)
     else location.assign(url)
@@ -255,6 +279,8 @@ export function Verify({ setup, id, step: first, failed: failedFirst, from, onVe
     try {
       await toCheck(at, replace)
     } catch (err) {
+      // Back from Stripe's page, where the browser wants a tap before the passkey, or none answered: Continue, nothing said.
+      if (replace && err instanceof NoAnswer) return setTapToOpen(true)
       setLeaving(false)
       if (err instanceof NotPassed) return notPassed(err)
       // Back from Stripe's page without paying: the two checks again, nothing said.
@@ -376,15 +402,34 @@ export function Verify({ setup, id, step: first, failed: failedFirst, from, onVe
     )
   }
 
-  // Back from Stripe's page: the ID check opening, nothing to tap.
-  if (leaving)
+  // Back from Stripe's page: the ID check opening, the passkey asked by itself; where it can't be,
+  // Continue asks it, and Back goes to the two checks, the payment waiting.
+  if (leaving) {
+    const tap = tapToOpen && !opening.busy
     return (
       <main>
+        {tap && (
+          <Top
+            onBack={() => {
+              setLeaving(false)
+              setTapToOpen(false)
+              toChecks()
+            }}
+          />
+        )}
         <div className="fill" />
-        <Loader big />
+        {!tap && <Loader big />}
         <div className="fill" />
+        {tap && (
+          <div className="foot">
+            <button className="primary" onClick={() => void opening.run('id', true)}>
+              <UnlockIcon /> Continue
+            </button>
+          </div>
+        )}
       </main>
     )
+  }
 
   if (waiting) {
     // With no seed held, the stamp can't be asked for from here: Continue asks for one, unless the page is asking by itself.
@@ -414,8 +459,10 @@ export function Verify({ setup, id, step: first, failed: failedFirst, from, onVe
   }
 
   // A check done is Verified; one that can't help any more is greyed: the selfie after a face seen
-  // before, which would match again; the ID after an ID already used.
-  const standing = (c: Check): Standing => (held.has(c) ? 'done' : failed?.code === (c === 'face' ? 'face_seen' : 'duplicate_document') ? 'tried' : 'open')
+  // before, which would match again; the ID after an ID already used; and both after a face that
+  // isn't this seed's person, or too like too many recent tries, since both checks take the face.
+  const greyed = (c: Check) => failed?.code === 'other_person' || failed?.code === 'too_many_matches' || failed?.code === (c === 'face' ? 'face_seen' : 'duplicate_document')
+  const standing = (c: Check): Standing => (held.has(c) ? 'done' : greyed(c) ? 'tried' : 'open')
   const busy = opening.busy || paying.busy || already.busy
   const anyDone = held.has('face') || held.has('id')
   const another = setup && (failed?.code === 'face_seen' || failed?.code === 'duplicate_document')
@@ -429,7 +476,7 @@ export function Verify({ setup, id, step: first, failed: failedFirst, from, onVe
         <h1>Get verified</h1>
         <p className="lead">So people know you're real.</p>
       </div>
-      {failed && <Notice>{warning}</Notice>}
+      {failed ? <Notice>{warning}</Notice> : again && !anyDone && <Notice>{CHECK_AGAIN}</Notice>}
       <Line note={paying.note ?? opening.note} />
       <div className="vcards">
         {shown.map((c) => (

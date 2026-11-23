@@ -182,9 +182,10 @@
 //     there Passkey 2; the first lists one passkey more.
 //  9. Things sold, with the index: the first, the page closed and opened again so Post shows its unlock
 //     icon, a moment hidden keeping it so, posts a coat with two photos in one unlock, redrawn on the device as JPEGs no longer
-//     than 1600 pixels, their notes gone, the whole deal its only price; clothes from the kind's long
-//     list, one choice, radio rows with no tick box; and only then the questions it opens, after it:
-//     for women, one of several, its chip with its tick; the size by its label (XXS), searched; two
+//     than 1600 pixels, their notes gone, the whole deal its only price; clothing, what is sold, one
+//     choice among chips, each a radio, no tick box; then the kind it opens, clothes, side by side;
+//     and only then the questions the kind opens, after it: for women, one of several, its chip with
+//     its tick; the size by its label (XXS), searched; two
 //     conditions, each its tick; in person and shipped; its circle round the phone as the place
 //     opens, a size out, an exact spot waiting to be moved since the location alone is never one,
 //     then the circle again; posted with its centre moved
@@ -199,11 +200,11 @@
 //     messages"; no New message: a link to their own profile, From the other side, Create; /message
 //     alone, Messages; then the coat's link, as an index's Message link opens it, ?to= and &listing=:
 //     the listing at the top, its first photo, its price, who posted it, their animal and short key;
-//     the box; From your Clothing buyer profile with its market's icon; Send, strong green; the
+//     the box; From your Goods selling buyer profile with its market's icon; Send, strong green; the
 //     message carries the listing beside its text, in its locked copy too, and the conversation shows
 //     About above its messages, the coat's photo, title and price, opening it on the index. They
-//     review the seller from the thread, a score with the market's own question in one row, As
-//     described, Yes or No, naming no listing; then, from their profile's Reviews tab, under its
+//     review the seller from the thread, a score and words, no question of the market's, since it
+//     asks none, naming no listing; then, from their profile's Reviews tab, under its
 //     quiet line, Review someone, outlined, its star in the sun, asks who first, on a page of its own,
 //     the seller among those they have a conversation with ("That's
 //     this profile." there, once): a vouch, its neutral square, written again in the same place, and a
@@ -236,12 +237,12 @@
 //     chip closing it.
 //     Then a listing its market no longer fits, written to the host as the app wrote it before the
 //     market changed, days ago (one price, not a list; answers in shapes gone): its card says Needs
-//     updating and opens its form, and Notifications holds "Your Shopping offer needs updating: its
-//     market changed." under Earlier, its sun square and no time, the tab counting it; opened
+//     updating and opens its form, and Notifications holds "Your Goods selling offer needs updating:
+//     its market changed." under Earlier, its sun square and no time, the tab counting it; opened
 //     there, every answer that still fits filled in, each row whose answer didn't marked "Changed:
 //     answer again." until it is answered; posted, it goes in place of the old one, at its own path, fits,
-//     and the chip and the notice go. Then a review an older market shaped: its notice; opened, its
-//     kind kept, what still fits; posted, gone. Then a review that names its listing, written to the
+//     and the chip and the notice go. Then a review an older market shaped, with an answer to a
+//     question it asks no more: its notice; opened, its kind kept, what still fits; posted, gone. Then a review that names its listing, written to the
 //     host as another app or an AI writes one: on the Reviews tab of who wrote it, under its words,
 //     About, the listing's title, its market's icon on its color, opening it on the index in a new
 //     tab; on the page of the profile it is about, among the reviews it received, the same box; named
@@ -298,7 +299,8 @@
 //     lines, What the checks keep, Back and no Continue, nothing floating; the ID card, one tap: it asks the
 //     verifier first for an ID stamp this seed has, by its stamp number, one unlock since no seed is
 //     held, none there; paid through the verifier's own stand-in for Stripe, the payment kept on the
-//     device; Stripe's page, then at once, nothing tapped, Didit's, both in this tab, no tab opened;
+//     device; Stripe's page; back from it, one unlock asked by the page itself, for the stamp number
+//     the check is opened for, then at once, nothing tapped, Didit's, both in this tab, no tab opened;
 //     back from Didit, one unlock asked by the page itself, back on Get verified, both Verified, no
 //     Continue and nothing left to tap; both verifications on every profile, and both badges, the
 //     same black square, the selfie's first, beside Your profiles on a laptop (no outline, none on
@@ -309,9 +311,10 @@
 // 16. The seed held 5 minutes after the last action, on the page's clock: then Post shows its unlock
 //     icon again.
 // 17. A selfie that doesn't pass: Get verified, its notice, "That selfie didn't pass. Try again, or
-//     use your ID.", both cards open, What the checks keep; then the ID: one tap, the stand-in Stripe,
-//     then the ID check at once, in this tab, no Start between, one unlock back from it by itself,
-//     the ID Verified, the notice gone, Continue, and Your first profile.
+//     use your ID.", both cards open, What the checks keep; then the ID: one tap, the stand-in Stripe;
+//     back from it, where the browser wants a tap before the passkey, Continue with the unlock icon,
+//     and Back; one tap, then the ID check, in this tab, no Start between, one unlock back from it by
+//     itself, the ID Verified, the notice gone, Continue, and Your first profile.
 //     Then every other warning, from Start: an ID check that didn't pass, both open; its tries used
 //     up, the payment dropped; an ID already used, the ID greyed, I already use Forest alone under
 //     the cards; then the selfie, Continue kept through a reload, and in; from You, an ID already used again: the ID greyed, and no
@@ -342,7 +345,10 @@
 //     page not; Home lists them all, and its one search is Search Forest.
 // 23. A range (a number the market asks as one, such as the ages a coach takes): From 18 and To
 //     empty, "18 years or more" under them; posted, the field holds { from: "18" }; reopened a range
-//     again, From emptied and To 11, "Up to 11 years"; posted again at its own path, no second.
+//     again, From emptied and To 11, "Up to 11 years"; posted again at its own path, no second. Then
+//     spots, a coach's: the description the form's first field; the listing's spots, a whole number
+//     with − and +, no unit; Saturdays from 10 to 12, with that time's own spots under Advanced, its
+//     hint, read with the time ("3 spots"); posted, both held; reopened, Advanced open by itself.
 // 24. A price list, a tutor's: MX$1,300 for 5 months; Add another price, in the last one's currency,
 //     $25 for 45 minutes with its note, 50 minutes refused in a line; both numbered, each its remove
 //     button; posted, every price in order, counts as decimal text, 45 minutes as 0.75 of an hour; its
@@ -616,7 +622,7 @@ const badge = (within: { getByRole: Page['getByRole'] }, check: 'face' | 'id' = 
 /** Home, its card for `words` there, and `check` among how the person is verified (on a phone, Home shows no badges: the device's own word for it): the profiles found, and how the person is verified. */
 async function homeWith(page: Page, words: string, check: 'face' | 'id' = 'face', timeout = 60_000) {
   await page.locator('button.card', { hasText: words }).waitFor({ timeout })
-  await page.waitForFunction((c) => (JSON.parse(localStorage.getItem('forest.verified') ?? '[]') as string[]).includes(c), check, { timeout })
+  await page.waitForFunction((c) => (JSON.parse(localStorage.getItem('forest.counted') ?? '[]') as string[]).includes(c), check, { timeout })
 }
 
 /** Which badge it is, as drawn: the black square, its icon in the page's ground; a face being scanned inside, the selfie check's; an ID card, the ID check's. */
@@ -877,7 +883,7 @@ async function elsewhere(p: Phone) {
 /** A role's Create on its market's page: Create seller. */
 const create = (role: string) => ({ name: `Create ${role}`, exact: true })
 
-/** A profile's name, "Clothing seller", as its market and its role. */
+/** A profile's name, "Goods selling seller", as its market and its role. */
 const split = (words: string) => [words.slice(0, words.lastIndexOf(' ')), words.slice(words.lastIndexOf(' ') + 1)] as [string, string]
 
 /** A market's tile on New profile, by its words: a beta one's name says so (Tutoring, beta). */
@@ -1330,9 +1336,9 @@ test("the selfie: its card, its check in this tab, back through /back, where the
   const stamp = stampFromJson(JSON.parse((await openLocked(body, identity)).stamp as string))
   assert.equal(stamp.verifier, services.faceKey, "the stamp from the verifier's face key")
   const local = await kept(page)
-  assert.deepEqual(Object.keys(local).sort(), ['forest.folder', 'forest.passkey', 'forest.passkeys', 'forest.verified'])
+  assert.deepEqual(Object.keys(local).sort(), ['forest.counted', 'forest.folder', 'forest.passkey', 'forest.passkeys'])
   assert.deepEqual(await page.evaluate(() => Object.keys(sessionStorage)), [], 'nothing waits in this tab')
-  assert.deepEqual(JSON.parse(local['forest.verified']!), ['face'], 'how the person is verified')
+  assert.deepEqual(JSON.parse(local['forest.counted']!), ['face'], 'how the person is verified')
   assert.deepEqual(JSON.parse(local['forest.folder']!), { address: wallet.address, labels: {} }, "the Profiles folder's address, never a key")
   for (const secret of [Buffer.from(seed).toString('hex'), Buffer.from(seed).toString('base64url'), String(stamp.signature.S)]) assert.ok(!JSON.stringify(local).includes(secret), 'nothing of the seed or the stamp kept')
   say(`verified: the stamp in the Profiles folder, the wallet at ${left} credits`)
@@ -2646,7 +2652,7 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   await closed(page)
   await button(page, 'New offer').click()
   const ask = (name: string) => fieldAsked(SHOP, S.seller, name)
-  const [PHOTOS, KIND, WEARER, SIZE, SEVERAL, HANDOVER, WHERE] = [S.photos, S.opener, S.follow, S.sized, S.several, S.handover, S.place].map((n) => ask(n).label) as [string, string, string, string, string, string, string]
+  const [PHOTOS, TOP, KIND, WEARER, SIZE, SEVERAL, HANDOVER, WHERE] = [S.photos, S.top, S.opener, S.follow, S.sized, S.several, S.handover, S.place].map((n) => ask(n).label) as [string, string, string, string, string, string, string, string]
   await page.getByLabel(ask('description').label, { exact: true }).fill(COAT)
   const priceRow = await openRow(page, ask('price').label)
   await priceRow.getByLabel('Amount', { exact: true }).fill('40')
@@ -2665,20 +2671,25 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   assert.match((await page.locator('.tile img').first().getAttribute('src')) ?? '', /^blob:/, 'shown from the device until sent')
   await closeRow(page, PHOTOS)
   assert.deepEqual(await rowSays(page, PHOTOS), ['2 photos'])
-  // The kind, a long list of one: opened, a search and rows with a radio mark, no tick box. Only then
-  // who it's for and the size, the questions it opens, right after it. Who it's for takes several:
-  // each chip picked shows its tick.
+  // What is sold, a choice of one among more than a few: chips, each a radio, no tick box. Only
+  // then the kind it opens, a few of one, as chips; then who it's for and the size, the questions the
+  // kind opens, right after it. Who it's for takes several: each chip picked shows its tick.
   const M = S.market.listing
   const kindsOpened = Object.keys(M).filter((n) => M[n]!.when?.[S.opener]?.includes(S.kind) && Object.keys(M[n]!.when!).length === 1 && isFor(M[n]!, S.seller)).map((n) => ask(n).label)
-  for (const opened of [WEARER, ...kindsOpened]) assert.equal(await rowOf(page, opened).count(), 0, `no ${opened} before the kind`)
-  const kindRow = await openRow(page, KIND)
-  assert.deepEqual([await kindRow.getByRole('radiogroup').count(), await kindRow.getByRole('checkbox').count()], [1, 0], 'one choice: radio rows, no tick box')
-  assert.equal(await kindRow.getByRole('radio').first().locator('.radio').count(), 1, 'each row its radio mark')
+  for (const opened of [KIND, WEARER, ...kindsOpened]) assert.equal(await rowOf(page, opened).count(), 0, `no ${opened} before what is sold`)
+  const topRow = await openRow(page, TOP)
+  assert.deepEqual([await topRow.getByRole('radiogroup').count(), await topRow.getByRole('checkbox').count()], [1, 0], 'one choice: radios, no tick box')
+  assert.equal(await topRow.locator('.chips button[role=radio]').count(), valuesIn(S.top, S.market).length, 'each value a chip')
   await shot(page, 'picker-one')
+  await topRow.getByRole('radio', { name: wordOf(S.top, S.topValue, S.market), exact: true }).click()
+  await closeRow(page, TOP)
+  assert.deepEqual(await rowSays(page, TOP), [wordOf(S.top, S.topValue, S.market)], 'one picked, in words, on its row')
+  const kindRow = await openRow(page, KIND)
+  await kindRow.getByRole('button', { name: wordOf(S.opener, S.kind, S.market), exact: true }).click()
   await closeRow(page, KIND)
-  await pick(page, KIND, wordOf(S.opener, S.kind, S.market))
   assert.deepEqual(await rowSays(page, KIND), [wordOf(S.opener, S.kind, S.market)], 'one picked, in words, on its row')
   const coatLabels = await page.locator('.field-head .name').allTextContents()
+  assert.ok(coatLabels.indexOf(KIND) > coatLabels.indexOf(TOP), `the kind after what is sold: ${coatLabels.join(', ')}`)
   assert.ok(kindsOpened.every((n) => coatLabels.indexOf(n) > coatLabels.indexOf(KIND)), `the questions the kind opens, after it: ${coatLabels.join(', ')}`)
   assert.equal(coatLabels.at(-1), 'Contact')
   const wearer = await openRow(page, WEARER)
@@ -2736,9 +2747,9 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   const [[coatPath, coat]] = (await entriesOf(seller, 'listing')) as unknown as [[string, { entry: { body: any } }]]
   const body = coat.entry.body
   assert.deepEqual(
-    [body.description, body.price, body[S.opener], body[S.follow], body[S.sized], body[S.several], body[S.handover], body.contact],
-    [COAT, [{ amount: '40', currency: 'USD' }], S.kind, [S.other], [size], [likeNew, good], [S.inPerson, S.away], '@coats'],
-    'no per; the kind, who, the size by its value, two conditions, two ways to hand it over',
+    [body.description, body.price, body[S.top], body[S.opener], body[S.follow], body[S.sized], body[S.several], body[S.handover], body.contact],
+    [COAT, [{ amount: '40', currency: 'USD' }], S.topValue, S.kind, [S.other], [size], [likeNew, good], [S.inPerson, S.away], '@coats'],
+    'no per; what is sold, the kind, who, the size by its value, two conditions, two ways to hand it over',
   )
   // Posted round the phone, its centre moved by up to a tenth of its radius, and nothing kept on the device.
   const [placed] = body[S.place] as Array<Point & { radiusKm: number }>
@@ -2898,25 +2909,21 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   const [aboutBox, firstSaid] = [(await about.boundingBox())!, (await buyer.page.locator('.said.mine').first().boundingBox())!]
   assert.ok(aboutBox.y + aboutBox.height <= firstSaid.y, 'above the messages')
   await shot(buyer.page, 'thread-about')
-  // Score, with the market's own question for a seller, in its own words, in one row: Yes or No.
+  // A score and words: the market asks a review nothing of its own, so the form holds no question of it.
   await button(buyer.page, 'Review').click()
   const score = buyer.page.getByLabel('Score')
   await score.focus()
   await score.press('End')
-  const asked2 = fieldAsked(SHOP, S.buyer, S.review, 'review', S.seller)
-  const [QUESTION, YES_, NO_] = [asked2.question, asked2.choices![0]!.label, asked2.choices![1]!.label]
-  const question = buyer.page.getByRole('group', { name: asked2.label })
-  assert.deepEqual([await question.locator('strong').textContent(), await question.getByRole('button').allTextContents()], [QUESTION, asked2.choices!.map((c) => c.label)], "the market's own question for a seller, and its words for each answer")
-  const [words, chips] = [(await question.locator('strong').boundingBox())!, (await question.getByRole('button', { name: NO_ }).boundingBox())!]
-  assert.ok(chips.y >= words.y - 4, 'its question, then its chips')
-  await question.getByRole('button', { name: YES_ }).click()
+  const own = MARKETS.ask(SHOP, S.buyer, 'review', S.seller).filter((f) => !['subject', 'listing', 'score', 'text'].includes(f.name))
+  for (const f of own) assert.equal(await buyer.page.getByRole('group', { name: f.label }).count(), 1, `the market's own question, ${f.label}`)
+  assert.equal(await buyer.page.locator('.qrow').count(), own.length, 'no question the market does not ask')
   assert.equal(await buyer.page.getByRole('button', { name: COAT }).count(), 0, 'no listing of theirs to name')
   await buyer.page.getByLabel('Comment').fill('Just like the photos.')
-  await shot(buyer.page, 'review-question')
+  await shot(buyer.page, 'review-score')
   await button(buyer.page, 'Post').click()
   await buyer.page.getByLabel('Message').waitFor({ timeout: 60_000 })
   const [[, reviewed]] = (await entriesOf(buyerAddress, 'review')) as unknown as [[string, { entry: { body: any } }]]
-  assert.deepEqual(reviewed.entry.body, { [S.review]: asked2.choices![0]!.value, subject: seller, text: 'Just like the photos.', score: '10' })
+  assert.deepEqual(reviewed.entry.body, { subject: seller, text: 'Just like the photos.', score: '10' })
 
   // From the buyer's profile, its Reviews tab and Review someone: who first, on a sheet, the seller among
   // those it has a conversation with; a vouch, written again in its place, then a report, each about
@@ -2948,7 +2955,7 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   assert.equal(await kinds.getByRole('button', { name: 'Vouch' }).locator('.icon').getAttribute('data-icon'), 'handshake')
   assert.equal(await buyer.page.locator('.kind-mark .sq.plain [data-icon="handshake"]').count(), 1, 'its neutral square: nothing else is green')
   assert.equal(await buyer.page.getByLabel('Score').count(), 0, 'no score: a vouch')
-  assert.equal(await buyer.page.getByRole('group', { name: asked2.label }).count(), 0, "a review's question only")
+  assert.equal(await buyer.page.locator('.qrow').count(), 0, "a review's questions only, where its market asks any")
   assert.equal(await buyer.page.getByLabel('Comment').getAttribute('placeholder'), 'How do you know them? (optional)')
   assert.match((await button(buyer.page, 'Vouch').last().getAttribute('class')) ?? '', /primary/)
   await shot(buyer.page, 'review-vouch')
@@ -3055,16 +3062,13 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   }
   await page.locator('.rated').getByText(`Rated by ${new URL(services.index).host}`).waitFor()
   await shot(page, 'profile-reviews')
-  // A card opened: the review as received, the day, the score big with its star, its market's field,
-  // and no listing named; From, a row: who wrote it, by their key, their badge, their market and
+  // A card opened: the review as received, the day, the score big with its star, no field of its
+  // market's, since it asks none, and no listing named; From, a row: who wrote it, by their key, their badge, their market and
   // role; at the foot Message and Review back side by side, Report under them in red.
   await received.click()
   await page.getByText(new RegExp(`^On your ${SELLER_WORDS}, `)).waitFor()
   await page.locator('.score-big', { hasText: '10' }).locator('[data-icon="star"]').waitFor()
-  const facts = page.locator('.facts')
-  await facts.getByText(asked2.label, { exact: true }).waitFor()
-  await facts.getByText(YES_, { exact: true }).waitFor()
-  assert.equal(await facts.getByText('Offer').count(), 0, 'no listing named')
+  assert.equal(await page.locator('.facts').count(), 0, 'no field, and no listing named')
   const from = page.locator('button.whorow')
   await badge(from).waitFor()
   await from.locator('.name.key', { hasText: short(buyerAddress) }).waitFor()
@@ -3296,7 +3300,7 @@ test('a listing its market no longer fits: its card says Needs updating, and Not
   const M = S.market.listing
   const ask = (name: string) => fieldAsked(SHOP, S.seller, name)
   const [KIND, WEARER, SEVERAL, CHAIN, SIZE, PRICE] = [S.opener, S.follow, S.several, S.chain, S.sized, 'price'].map((n) => ask(n).label) as [string, string, string, string, string, string]
-  const old: Body = { description: TROUSERS, price: { amount: '25', currency: 'USD' }, [S.opener]: S.kind, [S.follow]: S.other, [S.sized]: 'EU 38', [S.several]: 'either', [S.place]: { area: 'Lavapiés, Madrid' }, contact: '@coats' }
+  const old: Body = { description: TROUSERS, price: { amount: '25', currency: 'USD' }, [S.top]: S.topValue, [S.opener]: S.kind, [S.follow]: S.other, [S.sized]: 'EU 38', [S.several]: 'either', [S.place]: { area: 'Lavapiés, Madrid' }, contact: '@coats' }
   assert.notEqual(loadMarkets().checkEntry(SHOP, S.seller, 'listing', old), null, "it doesn't fit the market today")
   // Three days ago, so it was posted before what came today.
   const view = await readFolder([services.host], main.address, Date.now())
@@ -3334,7 +3338,7 @@ test('a listing its market no longer fits: its card says Needs updating, and Not
   await shot(page, 'notifications-update')
   await notice.click()
   await page.getByRole('heading', { name: 'Offer', exact: true }).waitFor()
-  // What still fits, filled in: the description, the kind and the contact. Each answer that didn't
+  // What still fits, filled in: the description, what is sold, the kind and the contact. Each answer that didn't
   // fit marked on its row: the price, one where the market now takes a list; who it's for, the size
   // and the condition, asked again. Where it is waits on how it is handed over, which the old one
   // never said, so it is not asked at all.
@@ -3373,8 +3377,8 @@ test('a listing its market no longer fits: its card says Needs updating, and Not
   const body = listed.find(([p]) => p === path)![1].entry.body as any
   assert.equal(loadMarkets().checkEntry(SHOP, S.seller, 'listing', body), null, 'it fits the market')
   assert.deepEqual(
-    [body.description, body.price, body[S.opener], body[S.follow], body[S.chain], body.contact],
-    [TROUSERS, [{ amount: '25', currency: 'USD' }], S.kind, [S.opens], [chained], '@coats'],
+    [body.description, body.price, body[S.top], body[S.opener], body[S.follow], body[S.chain], body.contact],
+    [TROUSERS, [{ amount: '25', currency: 'USD' }], S.topValue, S.kind, [S.opens], [chained], '@coats'],
   )
   assert.deepEqual([body[S.sized], body[S.several], body[S.place]], [undefined, undefined, undefined], "what didn't fit, gone")
   await button(page, 'Home').click()
@@ -3389,11 +3393,11 @@ const PAID = 'Paid on time, picked it up as agreed.'
 
 test('a review an older market shaped: Notifications holds a notice for it, Update this review; opened, what still fits is filled in; posted, it fits and the notice is gone', async () => {
   const { page } = first
-  // Written to the host from the seller about the buyer, as an older app might have: the market's
-  // review question is for reviews of sellers only.
+  // Written to the host from the seller about the buyer, as an older app might have: with an answer to
+  // a question the market asks no more.
   const main = await mainKey(seed, SELLER_LABEL)
   const path = 'review/0123456789abcdef0123456789abcdef'
-  const old = { subject: buyerAt, score: '8', text: PAID, [S.review]: S.market.review![S.review]!.values![0]! }
+  const old = { subject: buyerAt, score: '8', text: PAID, speed: 'fast' }
   assert.notEqual(loadMarkets().checkEntry(SHOP, S.seller, 'review', old, S.buyer), null, "it doesn't fit the market today")
   const view = await readFolder([services.host], main.address, Date.now())
   const [outcome] = await write([services.host], [entry(main, path, old, nextTime(Date.now(), view, path))])
@@ -4170,7 +4174,7 @@ test("a deploy while the app is open: one quiet line says a new version is ready
   say('a deploy while open: one reload onto the next version, and the profile made')
 })
 
-test("the ID check through the stand-in Stripe, from You's Add, $5: Get verified, the selfie Verified, the ID one tap with nothing floating, Back and no Continue; one unlock for the stamp number, then Stripe, then the check, in this same tab with no tap between, and back on Get verified, one unlock asked by the page itself, both Verified; both verifications on every profile", async () => {
+test("the ID check through the stand-in Stripe, from You's Add, $5: Get verified, the selfie Verified, the ID one tap with nothing floating, Back and no Continue; one unlock for the stamp number, then Stripe; back, the page asks one by itself for the check's stamp number, then the check, in this same tab with no tap between; and back on Get verified, one unlock asked by the page itself, both Verified; both verifications on every profile", async () => {
   const { page, context, counts } = first
   await page.goto(APP)
   await button(page, 'You').click()
@@ -4184,8 +4188,9 @@ test("the ID check through the stand-in Stripe, from You's Add, $5: Get verified
   assert.equal(await page.locator('.notice').count(), 0)
   await shot(page, 'verify-from-you')
   // The ID card: one tap, no sheet. It asks the verifier first for an ID stamp it signed this seed already, by its stamp
-  // number: one unlock, with no seed held; none signed, so the payment, kept on the device, then Stripe's page, straight
-  // into the ID check, then back, all in this tab, with no tap between; back from Didit, the page asks the passkey by itself.
+  // number: one unlock, with no seed held; none signed, so the payment, kept on the device, then Stripe's page; back
+  // from it, the page holds no seed, so it asks the passkey by itself for the stamp number the check is opened for,
+  // then the ID check, then back, all in this tab, with no tap between; back from Didit, the page asks it by itself again.
   const opened = context.pages().length
   const since = first.went.length
   const paying = counts.asserted
@@ -4193,7 +4198,7 @@ test("the ID check through the stand-in Stripe, from You's Add, $5: Get verified
   await backFrom(first, since)
   assert.deepEqual(wentFrom(first, since), [['stripe', true], ['didit', true]], "Stripe's page, then Didit's, in this tab, nothing tapped between")
   await page.locator('.vcard[data-check="id"] .donechip').waitFor({ timeout: 180_000 })
-  assert.equal(counts.asserted - paying, 2, 'one unlock for the stamp number before Stripe; one, asked by the page itself, for the stamp, its gift, and every profile')
+  assert.equal(counts.asserted - paying, 3, 'one unlock for the stamp number before Stripe; one, asked by the page itself back from Stripe, to open the check for it; one, by the page itself back from Didit, for the stamp, its gift, and every profile')
   assert.equal(context.pages().length, opened, 'no tab opened')
   assert.equal(await page.locator('.vcard .donechip').count(), 2, 'back on Get verified: both Verified')
   assert.deepEqual([await button(page, 'Continue').count(), await button(page, 'What the checks keep').count()], [0, 0], 'no Continue from You; nothing left to tap, so no What the checks keep')
@@ -4288,7 +4293,7 @@ test('the seed held for 5 minutes after the last action: a button that will not 
   say('the seed held 5 minutes after the last action, then dropped: the unlock icon back')
 })
 
-test("a selfie that doesn't pass: Get verified, its notice, both cards open; then the ID, one tap, straight to the stand-in Stripe, then the check, in this tab with no tap between and no Start, back on Get verified, the ID Verified, Continue, and Your first profile", async () => {
+test("a selfie that doesn't pass: Get verified, its notice, both cards open; then the ID, one tap, straight to the stand-in Stripe; back, where the browser wants a tap before the passkey, Continue with the unlock icon, and Back; one tap, then the check, in this tab and no Start; back from Didit, the passkey asked by the page itself; on Get verified, the ID Verified, Continue, and Your first profile", async () => {
   const p = await phone()
   // The verifier answers the first stamp asked for as Didit declined it; then as it is.
   let asked = 0
@@ -4309,20 +4314,30 @@ test("a selfie that doesn't pass: Get verified, its notice, both cards open; the
   await shot(p.page, 'declined')
   const sessions = JSON.parse((await kept(p.page))['forest.setup']!)
   assert.equal(sessions.session, undefined, 'the declined session dropped')
-  // The ID: one tap, no sheet, straight to Stripe's page, which goes on to the check; back from Didit's, one unlock by itself. Not in yet here, and no Start.
+  // The ID: one tap, no sheet, straight to Stripe's page. Back from it, the page holds no seed, and here the browser wants a
+  // tap before the passkey is asked for the stamp number the check is opened for: Continue, with the unlock icon, and Back
+  // to the two checks. One tap, then the check; back from Didit's, one unlock by the page itself. Not in yet here, and no Start.
   const since = p.went.length
   const unlocks = p.counts.asserted
+  await wantsATap(p)
   await checkCard(p.page, 'ID').click()
+  const continuing = button(p.page, 'Continue')
+  await continuing.waitFor({ timeout: 60_000 })
+  assert.ok(await asks(continuing), 'Continue, with the unlock icon')
+  assert.equal(await button(p.page, 'Back').count(), 1, 'and Back, to the two checks, the payment waiting')
+  assert.equal(await p.page.locator('.line.red').count(), 0, 'nothing said of the passkey')
+  await shot(p.page, 'paid-continue')
+  await continuing.click()
   await backFrom(p, since)
-  assert.deepEqual(wentFrom(p, since), [['stripe', true], ['didit', true]], 'in this tab, nothing tapped between')
+  assert.deepEqual(wentFrom(p, since), [['stripe', true], ['didit', true]], 'in this tab')
   await p.page.locator('.vcard[data-check="id"] .donechip').waitFor({ timeout: 90_000 })
   assert.equal(await p.page.locator('.notice').count(), 0, 'the warning gone with the check that passed')
-  assert.equal(p.counts.asserted - unlocks, 1, 'one unlock, by the page itself')
+  assert.equal(p.counts.asserted - unlocks, 2, 'two unlocks: one tap at Continue back from Stripe, and one by the page itself back from Didit')
   await button(p.page, 'Continue').click()
   await p.page.getByRole('heading', { name: 'Your first profile' }).waitFor({ timeout: 90_000 })
   assert.equal(await button(p.page, 'Start').count(), 0)
   await p.page.locator('.chip.new', { hasText: "You're verified" }).locator('[data-icon="identification-card"]').waitFor()
-  assert.deepEqual(JSON.parse((await kept(p.page))['forest.verified']!), ['id'], 'verified by the ID alone')
+  assert.deepEqual(JSON.parse((await kept(p.page))['forest.counted']!), ['id'], 'verified by the ID alone')
   await p.context.close()
 })
 
@@ -4884,6 +4899,58 @@ test("a range: a number the market asks as From and To, either end left empty; i
     if (Date.now() > until) throw new Error(`the range posted again: ${JSON.stringify(now.map(([p, c]) => [p, c.entry.body[r.name]]))}`)
   }
   say(`a range: ${said({ from: '18' })}, then ${said({ to: '11' })}`)
+})
+
+test("spots: the description the form's first field; the listing's spots by the market's word for them, a whole number; a time's own under Advanced, its hint, posted with the time and read with it; reopened, Advanced open by itself, holding them", async () => {
+  const { page } = first
+  const weekly = (f: { piece: string; several?: boolean; when?: unknown; start?: { way?: string; hours?: boolean } }) => f.piece === 'date' && f.several === true && !f.when && f.start?.way === 'weekly' && f.start?.hours === true
+  const sp = fieldWith(MARKETS, 'spots, beside times asked weekly with their hours', (_, name, side) => name === 'spots' && MARKETS.ask(side.market.name, side.role).some(weekly))
+  const day = MARKETS.ask(sp.market.name, sp.role).find(weekly)!
+  const [DESCRIPTION, SPOTS, DAYS] = [fieldAsked(sp.market.name, sp.role, 'description').label, fieldAsked(sp.market.name, sp.role, 'spots').label, day.label]
+  const OWN = `${SPOTS} at this time`
+  const TEXT = 'Saturday mornings, in the park.'
+  await profileOf(page, sp.label)
+  await button(page, `New ${sp.offers ? 'offer' : 'request'}`).click()
+  assert.equal(await page.locator('#listing > :first-child textarea').getAttribute('aria-label'), DESCRIPTION, 'the description, first, as the market asks it')
+  await page.getByLabel(DESCRIPTION, { exact: true }).fill(TEXT)
+  // The listing's spots: a whole number, − and + beside it, no unit.
+  let open = await openRow(page, SPOTS)
+  await open.getByLabel(SPOTS, { exact: true }).fill('5')
+  await open.getByRole('button', { name: `More ${SPOTS.toLowerCase()}` }).click()
+  assert.equal(await open.locator('.unit').count(), 0, 'no unit')
+  await closeRow(page, SPOTS)
+  assert.deepEqual(await rowSays(page, SPOTS), ['6'])
+  // A time, every Saturday from 10 to 12, and its own spots under Advanced, closed till tapped.
+  open = await openRow(page, DAYS)
+  await open.getByRole('button', { name: 'Saturday', exact: true }).click()
+  await open.getByLabel('From', { exact: true }).fill('10:00')
+  await open.getByLabel('To', { exact: true }).fill('12:00')
+  assert.equal(await open.getByLabel(OWN, { exact: true }).count(), 0, 'Advanced closed')
+  const advanced = open.getByRole('button', { name: 'Advanced' })
+  assert.equal(await advanced.getAttribute('aria-expanded'), 'false')
+  await advanced.click()
+  await open.getByText("Only for this time. 0 when it's full.", { exact: true }).waitFor()
+  await open.getByLabel(OWN, { exact: true }).fill('3')
+  await shot(page, 'listing-spots')
+  await closeRow(page, DAYS)
+  assert.match((await rowSays(page, DAYS)).join(' '), /, 3 spots/, 'read with its time')
+  await button(page, 'Post').click()
+  const card = page.locator('.listing-card', { hasText: TEXT })
+  await card.waitFor({ timeout: 60_000 })
+  const address = (await mainKey(seed, sp.label)).address
+  const [[, posted]] = (await entriesOf(address, 'listing')).filter(([, c]) => (c.entry.body as Record<string, unknown>).description === TEXT) as unknown as [[string, { entry: { body: any } }]]
+  const body = posted.entry.body
+  assert.deepEqual([body.spots, body[day.name].map((t: any) => [t.every, t.start, t.end, t.spots])], ['6', [[['saturday'], '10:00', '12:00', '3']]], "the listing's spots, and the time's own")
+  assert.equal(loadMarkets().checkEntry(sp.market.name, sp.role, 'listing', body), null, 'it fits the market')
+  // Reopened: Advanced open by itself, the time's own spots in it.
+  await card.click()
+  await page.getByRole('heading', { name: sp.offers ? 'Offer' : 'Request', exact: true }).waitFor()
+  open = await openRow(page, DAYS)
+  assert.equal(await open.getByRole('button', { name: 'Advanced' }).getAttribute('aria-expanded'), 'true', 'open by itself')
+  assert.equal(await open.getByLabel(OWN, { exact: true }).inputValue(), '3')
+  await button(page, 'Close').click()
+  await card.waitFor()
+  say(`spots: ${body.spots}, and ${body[day.name][0].spots} on Saturdays from 10 to 12, under Advanced`)
 })
 
 test('a price list: two prices, the first for several of what the market prices by, posted; its card the first price as people say it, and +1 more; reopened, both, each with its remove button until one is left; a length in minutes, held as hours', async () => {

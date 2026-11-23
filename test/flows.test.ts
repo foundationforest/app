@@ -1,7 +1,10 @@
 // The flows, against services' own verifier and host on loopback (world.ts), with the device's
-// storage in memory: a verification, from its gift to its stamp kept; Start picking one up
-// wherever it stopped; a face seen before; a stamp from a key the verifier no longer signs with,
-// which counts for nothing; back to the two checks, losing nothing; a new profile, its folder
+// storage in memory: a verification, from its gift to its stamp kept with its list of facts, which a
+// stamp asked back never takes the place of; Start picking one up wherever it stopped; a face seen
+// before, the person already verified with this seed not being the one at the camera, and too many
+// tries alike, each refused after Didit passed it; a stamp from a key the verifier no longer signs
+// with, which counts for nothing, and a person whose stamps all do, who checks again; back to the two
+// checks, losing nothing; a new profile, its folder
 // funded and topped up; a profile made on another device, told with nothing unlocked and listed in
 // one unlock; and the same seed read the same way by the app and by the reference app (services'
 // mcp/test/app.ts).
@@ -11,9 +14,11 @@ import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'vitest'
 import { type Body, entry, nextTime, proofsOf, readFolder, verificationCheck } from '@foundationforest/folders'
 import { lock } from '@foundationforest/folders/locked'
 import { mainKey, newAccessKey, newSeed, payAddresses } from '@foundationforest/keys'
-import { checkVerification, signStamp, stampFromJson, stampToJson } from '@foundationforest/proofs'
+import { checkVerification, factListOf, signStamp, stampFromJson, stampToJson } from '@foundationforest/proofs'
 
 import { App } from '../services/mcp/test/app.ts'
+import { MATCHES_LISTED } from '../services/verifier/src/didit.ts'
+import { passed } from '../services/verifier/test/fakes.ts'
 import * as device from '../src/device.ts'
 import { readCard } from '../src/flows/cards.ts'
 import { anyNew, labelIds, takeElsewhere } from '../src/flows/elsewhere.ts'
@@ -22,9 +27,10 @@ import { addTo, openProfiles, walletKey } from '../src/flows/profiles.ts'
 import { showStamps } from '../src/flows/stamps.ts'
 import { enter } from '../src/flows/start.ts'
 import { NotPassed, ask, choose, collect, finish, open, resume, stampNumberAt, stepOf } from '../src/flows/verify.ts'
-import { NoCredits } from '../src/services/credits.ts'
+import { NoCredits, fund } from '../src/services/credits.ts'
 import { writeAll } from '../src/services/host.ts'
 import { about, stampsBack } from '../src/services/verifier.ts'
+import { CHECK_FIRST } from '../src/words.ts'
 import { OFFERS, OTHER_OFFERS, OTHER_REQUESTS, REQUESTS, split } from './labels.ts'
 import { FACE_CREDITS, type World, freshDevice, proveHere, world } from './world.ts'
 
@@ -41,9 +47,25 @@ const person = () => ({ seed: newSeed(), id: `passkey-${crypto.randomUUID()}` })
 /** The seed as a passkey gives it again: a copy, since the flows zero nothing but what they are handed for good. */
 const again = (p: ReturnType<typeof person>) => ({ seed: new Uint8Array(p.seed), id: p.id })
 
+/** The face check opened for `p`, as the app opens it: its session. */
+async function opened(p: ReturnType<typeof person>): Promise<string> {
+  await open(w, p.id, () => stampNumberAt(w, p.seed))
+  return device.under()!.session!
+}
+
+/** A face as Didit lists it among those like the one it is checking: a session's own, or, with no session, the template Didit keeps of one that gave a stamp. */
+const like = (session: string, template = false) => ({ vendorData: w.faceCheck.vendorData.get(session)!, sessionId: template ? null : session })
+
+/** What asking for the stamp came to, refused: its code and its line. */
+async function refused(p: ReturnType<typeof person>): Promise<[string, string]> {
+  const err = await ask(w, p.id, await stampNumberAt(w, p.seed)).catch((e: unknown) => e)
+  expect(err).toBeInstanceOf(NotPassed)
+  return [(err as NotPassed).code, (err as NotPassed).message]
+}
+
 /** A person verified as the app verifies them: the check opened, the stamp asked for, collected and kept. */
 async function verified(p = person()) {
-  await open(w, p.id)
+  await open(w, p.id, () => stampNumberAt(w, p.seed))
   const step = await ask(w, p.id, await stampNumberAt(w, p.seed))
   if (step.at !== 'signed') throw new Error(`not signed: ${step.at}`)
   await finish(w, p.id, p.seed, step.stamp, proveHere)
@@ -53,7 +75,7 @@ async function verified(p = person()) {
 describe('a verification', () => {
   test('the gift in the wallet, the stamp kept in the Profiles folder, nothing of it left on the device', async () => {
     const p = person()
-    const url = await open(w, p.id, 'https://app.example/back')
+    const url = await open(w, p.id, () => stampNumberAt(w, p.seed), 'https://app.example/back')
     expect(url).toMatch(/^https:\/\/verify\.example\/session\//)
     const [session, back] = [...w.faceCheck.callbacks].at(-1)!
     expect(back, 'where Didit sends the person after').toBe('https://app.example/back')
@@ -83,25 +105,55 @@ describe('a verification', () => {
     expect(folder.current.get('profile')?.entry.body, 'its profile entry holds only its hosts').toEqual({ hosts: [w.host] })
   })
 
-  // services' next verifier answers face_seen where it held a face for review; the one at SERVICES
-  // can't yet, so here its answer stands in front of it, for that one route.
-  test("a face seen before (face_seen): its session ends, and the line points to the ID", async () => {
-    const p = person()
-    await open(w, p.id)
-    const real = globalThis.fetch
-    globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) =>
-      String(input) === `${w.verifier}/face/stamp` ? new Response(JSON.stringify({ error: 'face_seen' }), { status: 403 }) : real(input, init)) as typeof fetch
-    try {
-      const err = await ask(w, p.id, await stampNumberAt(w, p.seed)).catch((e: unknown) => e)
-      expect(err).toBeInstanceOf(NotPassed)
-      expect([(err as NotPassed).code, (err as NotPassed).message, (err as NotPassed).red]).toEqual(['face_seen', 'A similar face is already verified. Verify with your ID instead.', false])
-    } finally {
-      globalThis.fetch = real
-    }
-    expect(stepOf(p.id), 'the session done: the next open is a new one').toEqual({ at: 'start' })
+  test('kept with its list of facts, the names the verifier gives its face key; asked back, it comes without one, and never takes its place', async () => {
+    const p = await verified()
+    const [kept] = (await openProfiles(p.seed, w.host)).stamps
+    expect(factListOf(stampFromJson(JSON.parse(kept!))).map((fact) => fact.name), 'its list, as the verifier names its facts').toEqual((await about(w.verifier)).face.facts)
+    const back = (await stampsBack(w.verifier, await stampNumberAt(w, p.seed))).face!
+    expect(JSON.parse(back).factList, 'asked back: no list').toBeUndefined()
+    await finish(w, p.id, p.seed, back, proveHere)
+    expect((await openProfiles(p.seed, w.host)).stamps, 'the one with its list, alone').toEqual([kept])
   })
 
-  test("a stamp from a key the verifier no longer signs with (the ID key before services#123): how the person is verified drops it, and no profile shows a verification of it", async () => {
+  test("a face seen before (face_seen), after Didit's page said it passed: no stamp, nothing kept, and the line points to the ID", async () => {
+    const a = person()
+    const first = await opened(a)
+    expect(await ask(w, a.id, await stampNumberAt(w, a.seed))).toMatchObject({ at: 'signed' })
+    const b = person()
+    const session = await opened(b)
+    // Approved at Didit, as its own page shows it, with the face of another stamp number listed.
+    w.faceCheck.set(session, passed('ada', { matches: [like(first)] }))
+    expect(await refused(b)).toEqual(['face_seen', 'A similar face is already verified. Verify with your ID instead.'])
+    expect(stepOf(b.id), 'the session done: the next open is a new one').toEqual({ at: 'start' })
+    expect((await openProfiles(b.seed, w.host)).stamps, 'no stamp kept').toEqual([])
+    expect(await stampsBack(w.verifier, await stampNumberAt(w, b.seed)), 'none signed').toEqual({ face: null, id: null })
+    expect(device.checks()).toEqual([])
+  })
+
+  test('someone else at the camera, on a seed verified already (other_person), and too many recent tries alike (too_many_matches): each refused after Didit passed it, in its line', async () => {
+    const p = await verified()
+    choose(p.id, 'face')
+    const stranger = await opened(p)
+    w.faceCheck.set(stranger, passed('bob'))
+    expect(await refused(p)).toEqual(['other_person', "This doesn't match the person already verified with this passkey."])
+    expect((await openProfiles(p.seed, w.host)).stamps, 'nothing more kept').toHaveLength(1)
+
+    // Didit's whole list, each one of this seed's own tries that gave no stamp: too many to tell apart.
+    const q = person()
+    const tries: string[] = []
+    for (let i = 0; i < MATCHES_LISTED; i++) {
+      const s = await opened(q)
+      w.decide(s, 'declined')
+      await refused(q)
+      tries.push(s)
+    }
+    const last = await opened(q)
+    w.faceCheck.set(last, passed('ada', { matches: tries.map((s) => like(s)), full: true }))
+    expect(await refused(q)).toEqual(['too_many_matches', 'Too many recent checks look alike. Try again tomorrow.'])
+    expect(stepOf(q.id)).toEqual({ at: 'start' })
+  })
+
+  test("a stamp from a key the verifier no longer signs with, beside one from its current key: how the person is verified drops it, and no profile shows a verification of it", async () => {
     const p = await verified()
     const n = await stampNumberAt(w, p.seed)
     const old = signStamp(crypto.getRandomValues(new Uint8Array(32)), { stampNumber: n, facts: 1n, verifierName: (await about(w.verifier)).name })
@@ -120,13 +172,42 @@ describe('a verification', () => {
     expect(await stampsBack(w.verifier, n), 'the verifier hands back only its own').toEqual({ face: expect.any(String), id: null })
   })
 
+  test("every stamp from keys the verifier no longer signs with: Start lists the profiles, then Get verified, saying so; no new profile till a check; then each profile shows the new stamp", async () => {
+    // Someone's Forest as an app made it before the verifier's keys changed: its stamp from a key the
+    // verifier no longer signs with, and a profile showing it; the wallet funded by a friend's.
+    const donor = await verified()
+    const p = person()
+    await fund(w.host, (await walletKey(p.seed)).address, 6, await walletKey(donor.seed))
+    const n = await stampNumberAt(w, p.seed)
+    const old = signStamp(crypto.getRandomValues(new Uint8Array(32)), { stampNumber: n, facts: 1n, verifierName: (await about(w.verifier)).name })
+    const ref = new App({ seed: p.seed, hosts: [w.host] })
+    await ref.keep(old)
+    await ref.fund((await mainKey(p.seed, OFFERS)).address, 1)
+    const address = await ref.addProfile(OFFERS)
+
+    freshDevice()
+    expect(await enter(w, again(p), proveHere)).toEqual({ to: 'verify', step: { at: 'choose' }, again: true })
+    expect(device.profiles(), 'their profiles listed').toEqual([{ label: OFFERS, address }])
+    expect([device.passkey(), device.checks()], 'not in use here until a check is done, and no check counts').toEqual([null, []])
+    await expect(makeProfile(w, p.seed, OTHER_OFFERS, proveHere)).rejects.toThrow(CHECK_FIRST)
+
+    await opened(p)
+    const step = await ask(w, p.id, n)
+    if (step.at !== 'signed') throw new Error(`not signed: ${step.at}`)
+    await finish(w, p.id, p.seed, step.stamp, proveHere)
+    expect([device.passkey(), device.checks()]).toEqual([p.id, ['face']])
+    const body = (await readFolder([w.host], address, Date.now())).current.get('profile')!.entry.body!
+    expect(proofsOf(body).map((x) => x.verifier), 'the new stamp shown beside the old').toEqual([old.verifier, w.keys.face])
+    expect(await enter(w, again(p), proveHere)).toEqual({ to: 'profiles' })
+  })
+
   test('not finished: still away; declined, expired or not passed: its session ends, in the one line for a check that didn\'t pass, and the next open is a new check', async () => {
     const p = person()
     w.decideAll('unfinished')
-    const first = await open(w, p.id)
+    const first = await open(w, p.id, () => stampNumberAt(w, p.seed))
     const n = await stampNumberAt(w, p.seed)
     expect((await ask(w, p.id, n)).at).toBe('away')
-    expect(await open(w, p.id), 'a tab closed midway opens the same check again').toBe(first)
+    expect(await open(w, p.id, () => stampNumberAt(w, p.seed)), 'a tab closed midway opens the same check again').toBe(first)
     for (const [decision, line, red] of [
       ['declined', "That selfie didn't pass. Try again, or use your ID.", false],
       ['expired', "That selfie didn't pass. Try again, or use your ID.", false],
@@ -138,7 +219,7 @@ describe('a verification', () => {
       expect([(err as NotPassed).message, (err as NotPassed).red]).toEqual([line, red])
       expect(device.under()?.session, 'Start opens a new check').toBeUndefined()
       expect(device.under()?.gift, 'with the same gift buy').toBeDefined()
-      expect(await open(w, p.id), 'a new one').not.toBe(first)
+      expect(await open(w, p.id, () => stampNumberAt(w, p.seed)), 'a new one').not.toBe(first)
     }
     w.decideAll('approved')
     expect((await ask(w, p.id, n)).at).toBe('signed')
@@ -155,7 +236,7 @@ describe('Start picks up a verification stopped anywhere, and loses nothing', ()
   test('the check opened, then the page closed before it was finished', async () => {
     const p = person()
     w.decideAll('unfinished')
-    await open(w, p.id)
+    await open(w, p.id, () => stampNumberAt(w, p.seed))
     expect(await enter(w, again(p), proveHere)).toEqual({ to: 'verify', step: { at: 'away' } })
     w.decideAll('approved')
     expect(await enter(w, again(p), proveHere)).toEqual({ to: 'profiles' })
@@ -167,7 +248,7 @@ describe('Start picks up a verification stopped anywhere, and loses nothing', ()
 
   test('the stamp and its ticket kept, then the page closed before the gift was collected', async () => {
     const p = person()
-    await open(w, p.id)
+    await open(w, p.id, () => stampNumberAt(w, p.seed))
     await ask(w, p.id, await stampNumberAt(w, p.seed))
     expect(await enter(w, again(p), proveHere)).toEqual({ to: 'profiles' })
     expect((await after(p)).wallet).toBeGreaterThan(FACE_CREDITS - 0.1)
@@ -175,7 +256,7 @@ describe('Start picks up a verification stopped anywhere, and loses nothing', ()
 
   test('the gift collected, then the page closed before the stamp was kept: asked again, the same stamp, no second gift', async () => {
     const p = person()
-    await open(w, p.id)
+    await open(w, p.id, () => stampNumberAt(w, p.seed))
     await ask(w, p.id, await stampNumberAt(w, p.seed))
     await collect(w, p.id, (await walletKey(p.seed)).address)
     expect(await enter(w, again(p), proveHere)).toEqual({ to: 'profiles' })
@@ -187,7 +268,7 @@ describe('Start picks up a verification stopped anywhere, and loses nothing', ()
 
   test("the check's hour over before the app asked again: the stamp handed back by its stamp number, the gift collected with its kept ticket", async () => {
     const p = person()
-    await open(w, p.id)
+    await open(w, p.id, () => stampNumberAt(w, p.seed))
     await ask(w, p.id, await stampNumberAt(w, p.seed))
     w.decide(device.under()!.session!, 'past_its_hour')
     expect(await enter(w, again(p), proveHere)).toEqual({ to: 'profiles' })
@@ -196,7 +277,7 @@ describe('Start picks up a verification stopped anywhere, and loses nothing', ()
 
   test('the gift collected twice by a setup taken up again is spent once', async () => {
     const p = person()
-    await open(w, p.id)
+    await open(w, p.id, () => stampNumberAt(w, p.seed))
     await ask(w, p.id, await stampNumberAt(w, p.seed))
     const kept = device.under()!
     const wallet = (await walletKey(p.seed)).address
@@ -208,7 +289,7 @@ describe('Start picks up a verification stopped anywhere, and loses nothing', ()
 
   test('a device lost after the stamp was signed: a new one gets the stamp back, but a lost gift is lost', async () => {
     const p = person()
-    await open(w, p.id)
+    await open(w, p.id, () => stampNumberAt(w, p.seed))
     await ask(w, p.id, await stampNumberAt(w, p.seed))
     freshDevice()
     await expect(enter(w, again(p), proveHere)).rejects.toBeInstanceOf(NoCredits)
@@ -219,11 +300,11 @@ describe('back to Get verified, a check picked again loses nothing', () => {
   test('the same check: the check under way stays as it was, so the same page opens again', async () => {
     const p = person()
     w.decideAll('unfinished')
-    const url = await open(w, p.id)
+    const url = await open(w, p.id, () => stampNumberAt(w, p.seed))
     const kept = device.under()
     choose(p.id, 'face')
     expect(device.under()).toEqual(kept)
-    expect(await open(w, p.id)).toBe(url)
+    expect(await open(w, p.id, () => stampNumberAt(w, p.seed))).toBe(url)
   })
 
   test("the other check: its open check dropped, the gift's buy and the ID check's payment kept; a payment no stamp used outlives the face check, so the ID check opens paid", async () => {
@@ -232,7 +313,7 @@ describe('back to Get verified, a check picked again loses nothing', () => {
     device.keepUnder({ passkey: p.id, check: 'id', payment: 'cs_test_paid' })
     choose(p.id, 'face')
     expect(device.under()).toEqual({ passkey: p.id, check: 'face', payment: 'cs_test_paid' })
-    await open(w, p.id)
+    await open(w, p.id, () => stampNumberAt(w, p.seed))
     const { gift } = device.under()!
     choose(p.id, 'id')
     expect(device.under(), 'the face check dropped').toEqual({ passkey: p.id, check: 'id', payment: 'cs_test_paid', gift })
@@ -289,7 +370,7 @@ describe('a new profile', () => {
     const pricey = await world({ entryPerKb: '0.5' })
     try {
       const p = person()
-      await open(pricey, p.id)
+      await open(pricey, p.id, () => stampNumberAt(pricey, p.seed))
       const step = await ask(pricey, p.id, await stampNumberAt(pricey, p.seed))
       await finish(pricey, p.id, p.seed, (step as { stamp: string }).stamp, proveHere)
       const wallet = (await walletKey(p.seed)).address
@@ -374,7 +455,7 @@ describe('Start, on a device that knows nothing', () => {
   test('same seed, same Forest: what the reference app made, the app finds, with its verification', async () => {
     // The stamp and its gift as the app gets them; then everything else by the reference app.
     const p = person()
-    await open(w, p.id)
+    await open(w, p.id, () => stampNumberAt(w, p.seed))
     const step = await ask(w, p.id, await stampNumberAt(w, p.seed))
     await collect(w, p.id, (await walletKey(p.seed)).address)
     const ref = new App({ seed: p.seed, hosts: [w.host] })
@@ -391,13 +472,13 @@ describe('Start, on a device that knows nothing', () => {
 
 test('what the device keeps, through all of it: its own keys, and nothing of the seed, a key or a stamp', async () => {
   const p = person()
-  await open(w, p.id)
+  await open(w, p.id, () => stampNumberAt(w, p.seed))
   const step = await ask(w, p.id, await stampNumberAt(w, p.seed))
   const during = JSON.stringify({ ...localStorage })
   await finish(w, p.id, p.seed, (step as { stamp: string }).stamp, proveHere)
   await makeProfile(w, p.seed, OTHER_OFFERS, proveHere)
   const after = JSON.stringify({ ...localStorage })
-  expect(Object.keys(localStorage).sort()).toEqual(['forest.folder', 'forest.passkey', 'forest.passkeys', 'forest.profiles', 'forest.read', 'forest.seen', 'forest.verified'])
+  expect(Object.keys(localStorage).sort()).toEqual(['forest.counted', 'forest.folder', 'forest.passkey', 'forest.passkeys', 'forest.profiles', 'forest.read', 'forest.seen'])
   expect([device.folder()?.address, Object.values(device.folder()?.labels ?? {})], "the Profiles folder's address, and its one label entry read here").toEqual([(await walletKey(p.seed)).address, [OTHER_OFFERS]])
   expect([device.cursors(), device.seen()], 'the profile made here, marked new from its start').toEqual([{ [(await mainKey(p.seed, OTHER_OFFERS)).address]: 0 }, { [(await mainKey(p.seed, OTHER_OFFERS)).address]: 0 }])
   const hex = (b: Uint8Array) => Buffer.from(b).toString('hex')

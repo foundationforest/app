@@ -19,7 +19,8 @@ import { type Picked, Photos } from './Photos.tsx'
 import { PlaceField } from './Place.tsx'
 import { Price } from './Price.tsx'
 
-export type FieldProps = { field: Asked; value: unknown; onChange: (value: unknown) => void; picked: Picked; changed?: boolean; request?: boolean }
+/** `spots`: the listing's spots field, when the listing holds spots, so each of its times may hold its own (Date.tsx). */
+export type FieldProps = { field: Asked; value: unknown; onChange: (value: unknown) => void; picked: Picked; changed?: boolean; request?: boolean; spots?: Asked }
 
 /** What a field whose answer no longer fit says under its name. */
 export const CHANGED = 'Changed: answer again.'
@@ -78,7 +79,7 @@ export function LongText({ field, value, onChange }: Pick<FieldProps, 'field' | 
 }
 
 /** The input a field's piece takes. */
-export function Input({ field, value, onChange, picked }: FieldProps) {
+export function Input({ field, value, onChange, picked, spots }: FieldProps) {
   switch (field.piece) {
     case 'text':
       return field.ask?.long ? (
@@ -97,7 +98,7 @@ export function Input({ field, value, onChange, picked }: FieldProps) {
     case 'place':
       return <PlaceField field={field} value={value} onChange={onChange} />
     case 'date':
-      return <DateField field={field} value={value} onChange={onChange} />
+      return <DateField field={field} value={value} onChange={onChange} {...(spots && { spots })} />
     case 'photo':
       return <Photos label={field.label} many={field.several === true} value={value} onChange={onChange} picked={picked} />
   }

@@ -1,18 +1,20 @@
 // A listing, new or edited, from a profile: an offer or a request, as the profile's role names it.
 // At the top, Close, its title in the middle (New offer), the profile's avatar at the right; in a
-// beta market, one line under it (BETA, said once where a listing is made). Its form: the market's
-// own fields and contact, each a row that opens in place (Field.tsx), one at a time, in the order the
-// market asks them (form.ts), each shown once the answers it depends on hold and dropped when they no
-// longer do, the photos among them; then the listing's own words, its description, an open box at
-// the foot. On a laptop, beside the form, How it reads: the listing as others see it, as it is
-// filled in (ListingRead.tsx). An edit opens with what still fits its market today, so a listing an
-// older market shaped is posted again in today's, in place of the old one; each field whose answer
-// no longer fit says so under its name until it is answered again. Everything is checked before the
-// unlock (flows/entries.ts); then one unlock moves each circle set on the map by up to a tenth of its
-// radius (near.ts), signs it, writes it and sends its new photos. Its path is set as the form opens,
-// so posting again after a photo did not go writes the same listing, never a second. Post stays at
-// the foot as the form scrolls; an edit's Delete is under it, in red, asking again in its own place:
-// Delete this offer?, Cancel and Delete.
+// beta market, one line under it (BETA, said once where a listing is made). Its form: first the
+// listing's own words, its description, an open box, since the market asks it first and its first
+// line is the listing's title; then the market's own fields and contact, each a row that opens in
+// place (Field.tsx), one at a time, in the order the market asks them (form.ts), each shown once
+// the answers it depends on hold and dropped when they no longer do, the photos among them; where
+// the listing holds spots, each of its times may hold its own (Date.tsx). On a laptop, beside the
+// form, How it reads: the listing as others see it, as it is filled in (ListingRead.tsx). An edit
+// opens with what still fits its market today, so a listing an older market shaped is posted again
+// in today's, in place of the old one; each field whose answer no longer fit says so under its name
+// until it is answered again. Everything is checked before the unlock (flows/entries.ts); then one
+// unlock moves each circle set on the map by up to a tenth of its radius (near.ts), signs it,
+// writes it and sends its new photos. Its path is set as the form opens, so posting again after a
+// photo did not go writes the same listing, never a second. Post stays at the foot as the form
+// scrolls; an edit's Delete is under it, in red, asking again in its own place: Delete this offer?,
+// Cancel and Delete.
 
 import { useRef, useState } from 'react'
 
@@ -44,9 +46,10 @@ export function Listing({ me, edit, onDone, onBack }: Props) {
   const { market: name, role, offers } = pairOf(me.label)
   const market = markets.market(name)
   const fields = market ? formFields(market, role) : []
-  // The listing's own words, at the foot; every other field a row.
+  // The listing's own words, first; every other field a row. Its spots, when it holds them, which each of its times may hold its own of.
   const about = fields.find((f) => f.name === 'description' && f.piece === 'text')
   const rows = fields.filter((f) => f !== about)
+  const spots = fields.find((f) => f.name === 'spots' && f.piece === 'number')
   const [open, setOpen] = useState<string | null>(null)
   // What still fits, and which answers didn't, so their fields are marked.
   const [start] = useState(() => (edit ? fitted(name, role, edit.body) : { body: {}, dropped: [] }))
@@ -86,6 +89,7 @@ export function Listing({ me, edit, onDone, onBack }: Props) {
             void send.run()
           }}
         >
+          {about && <LongText field={about} value={values[about.name]} onChange={(v) => set(about.name, v)} />}
           {rows
             .filter((f) => applies(f, values))
             .map((f) => (
@@ -100,9 +104,9 @@ export function Listing({ me, edit, onDone, onBack }: Props) {
                 onClose={() => setOpen(null)}
                 onChange={(v) => set(f.name, v)}
                 picked={picked}
+                {...(spots && { spots })}
               />
             ))}
-          {about && <LongText field={about} value={values[about.name]} onChange={(v) => set(about.name, v)} />}
         </form>
         <aside className="how-it-reads" aria-label="How it reads">
           <p className="xs muted">How it reads</p>

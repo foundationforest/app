@@ -190,22 +190,14 @@ describe('a review, a vouch or a report', () => {
     expect(await writtenAbout(w, me, 'report', other.profiles[0]!.address), 'about no one else').toBeUndefined()
   })
 
-  test("a market with one role: a review is about another of that role, and a review field kept for some roles is checked against the subject's", async () => {
+  test("a market with one role: a review is about another of that role, and a field its market doesn't ask doesn't fit", async () => {
     const one = oneRole(markets)
-    const said = fieldWith(markets, 'a choice for reviews in a market with one role', (f, _, side) => f.piece === 'choice' && side.market.roles.length === 1, 'review')
-    const a = await verifiedWith(w, said.label)
-    const b = await verifiedWith(w, said.label)
-    expect(said.market.name).toBe(one.market.name)
-    await check(w, b.profiles[0]!, 'review', { subject: a.profiles[0]!.address, [said.name]: valuesOf(said.field, markets.lists)[0]! }, b.profiles)
-    // A field kept for reviews of one role, in a market with another, which writes them.
-    const kept = fieldWith(markets, 'a choice for reviews of one role, in a market with another', (f, _, side) => f.piece === 'choice' && f.roles !== undefined && side.market.roles.some((r) => !f.roles!.includes(r.role)), 'review')
-    const writer = kept.market.roles.find((r) => !kept.field.roles!.includes(r.role))!.role
-    const answer = { [kept.name]: valuesOf(kept.field, markets.lists)[0]! }
-    const client = await verifiedWith(w, `${kept.market.name}/${writer}`)
-    const repairer = await verifiedWith(w, kept.label)
-    await check(w, client.profiles[0]!, 'review', { subject: repairer.profiles[0]!.address, ...answer }, client.profiles)
-    expect(await refusal(check(w, repairer.profiles[0]!, 'review', { subject: client.profiles[0]!.address, ...answer }, repairer.profiles)), `${kept.name} is for reviews of ${kept.role}`).toEqual([`${askOf(kept.market.name, writer, 'review', kept.role).find((f) => f.name === kept.name)!.label} doesn't fit.`, true])
-    expect(markets.checkEntry(kept.market.name, kept.role, 'review', { subject: 'x', ...answer }, writer)).toBe(loadMarkets().checkEntry(kept.market.name, kept.role, 'review', { subject: 'x', ...answer }, writer))
+    const a = await verifiedWith(w, one.label)
+    const b = await verifiedWith(w, one.label)
+    await check(w, b.profiles[0]!, 'review', { subject: a.profiles[0]!.address, score: '8', text: 'On time.' }, b.profiles)
+    // A field a market asked once, or any other it doesn't ask, doesn't fit, by its name in words.
+    expect(await refusal(check(w, b.profiles[0]!, 'review', { subject: a.profiles[0]!.address, score: '8', speed: 'fast' }, b.profiles))).toEqual(["Speed doesn't fit.", true])
+    expect(markets.checkEntry(one.market.name, one.role, 'review', { subject: 'x', speed: 'fast' }, one.role)).toBe(loadMarkets().checkEntry(one.market.name, one.role, 'review', { subject: 'x', speed: 'fast' }, one.role))
   })
 })
 

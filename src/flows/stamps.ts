@@ -1,10 +1,11 @@
 // Every profile shows every stamp from the verifier's current keys (GET /): one from a key it no
-// longer signs with (the ID key before services#123) counts for nothing, and no verification is made
-// of it. When the person's Profiles folder holds a stamp a profile entry does not show yet (the ID
-// check's, after the face check's), a verification of it is made on the device for that profile and
-// added beside the ones the entry has; then the entry is written again, as the reference app writes
-// one (its other fields as they were), free at the host, which never refuses a later profile entry
-// but for its size.
+// longer signs with (either key from before it signed the standard's facts as a list) counts for
+// nothing, and no verification is made of it. When the person's Profiles folder holds a stamp a
+// profile entry does not show yet (the ID check's, after the face check's, or a new check's after a
+// retired key's), a verification of it is made on the device for that profile and added beside the
+// ones the entry has; then the entry is written again, as the reference app writes one (its other
+// fields as they were), free at the host, which never refuses a later profile entry but for its
+// size.
 
 import { type Body, entry, nextTime, proofsOf } from '@foundationforest/folders'
 import { mainKey } from '@foundationforest/keys'

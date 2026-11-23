@@ -75,7 +75,7 @@ import { NewVersion } from './ui.tsx'
 type Screen =
   | { at: 'start'; noPasskey?: boolean }
   | { at: 'import-words' }
-  | { at: 'verify'; setup: boolean; id: string; step: Step; failed?: NotPassed; from?: Back }
+  | { at: 'verify'; setup: boolean; id: string; step: Step; failed?: NotPassed; again?: true; from?: Back }
   | { at: 'home' }
   | { at: 'new'; market?: string }
   | { at: 'profile'; address: string; tab?: Tab }
@@ -290,7 +290,7 @@ function Screens() {
   const connecting = () => !!waiting.current && 'login' in waiting.current
   /** Past Start: not verified, to the verification, saying why when a check didn't pass; else in. */
   const entered = (e: Entered, id: string) => {
-    if (e.to === 'verify') return go({ at: 'verify', setup: true, id, step: e.step, ...(e.failed && { failed: e.failed }) })
+    if (e.to === 'verify') return go({ at: 'verify', setup: true, id, step: e.step, ...(e.failed && { failed: e.failed }), ...(e.again && { again: e.again }) })
     inside()
   }
   const review = (address: string, more: { subject?: string; edit?: Posted; report?: boolean } = {}) => go({ at: 'review', address, ...more }, true)
@@ -333,6 +333,7 @@ function Screens() {
             id={screen.id}
             step={screen.step}
             {...(screen.failed && { failed: screen.failed })}
+            {...(screen.again && { again: true })}
             {...(screen.from && { from: screen.from })}
             onVerified={inside}
             onIn={(e) => entered(e, screen.id)}

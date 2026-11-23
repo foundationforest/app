@@ -6,22 +6,31 @@
 // market says hours matter, else behind Add hours. Never a part of the day: "mornings" is no time.
 // The zone is the device's own, named under the times, and held only with hours. A time with no
 // weekday or no day is left out; none, nothing. What the format holds that this doesn't show, a
-// weekly time's first day, stays as it was.
+// weekly time's first day, stays as it was. In a listing that holds spots (the pieces page's spots:
+// how many places an offer has, or how many people a request is for), each time has Advanced, a
+// quiet link at its foot, which opens under itself that time's own spots, a whole number from 0
+// that wins for that time, by the market's word for the listing's spots (Guests at this time); open
+// by itself when the time holds some, and a second tap closes it, keeping them.
 
-import { useRef, useState } from 'react'
+import { useId, useRef, useState } from 'react'
 
 import { Icon } from '../icons.tsx'
 import { type Asked, type DateValue, WEEKDAYS, type Weekday } from '../markets.ts'
 import { deviceZone, zoneWords } from '../show.ts'
 import { Seg } from '../ui.tsx'
+import { One } from './Number.tsx'
 
-type Props = { field: Asked; value: unknown; onChange: (v: unknown) => void }
+/** `spots`: the listing's spots field as its market asks it, when the listing holds spots, so each time may hold its own. */
+type Props = { field: Asked; value: unknown; onChange: (v: unknown) => void; spots?: Asked }
+
+/** What a time's own spots say under Advanced. */
+export const SPOTS_HINT = "Only for this time. 0 when it's full."
 
 /** How one time's days are given: weekly, one day, a span of days, or a day it must be done by. */
 type Kind = 'weekly' | 'day' | 'span' | 'until'
 
-/** One time as typed: its kind, its weekdays, its days, its hours, and what the format holds that this doesn't show. */
-type Slot = { id: number; kind: Kind; every: Weekday[]; on: string; from: string; to: string; start: string; end: string; hours: boolean; kept: { from?: string } }
+/** One time as typed: its kind, its weekdays, its days, its hours, its own spots, and what the format holds that this doesn't show. */
+type Slot = { id: number; kind: Kind; every: Weekday[]; on: string; from: string; to: string; start: string; end: string; hours: boolean; spots?: string; kept: { from?: string } }
 
 const DAY_SHORT: Record<Weekday, string> = { monday: 'Mo', tuesday: 'Tu', wednesday: 'We', thursday: 'Th', friday: 'Fr', saturday: 'Sa', sunday: 'Su' }
 const DAY_NAME = (d: Weekday) => d.charAt(0).toUpperCase() + d.slice(1)
@@ -34,16 +43,17 @@ function slotOf(id: number, field: Asked, v: DateValue | undefined): Slot {
   const asksHours = field.start?.hours === true
   const empty: Slot = { id, kind: field.start?.way === 'weekly' ? 'weekly' : otherKind(field), every: [], on: '', from: '', to: '', start: '', end: '', hours: asksHours, kept: {} }
   if (!v) return empty
-  const hours = { start: v.start ?? '', end: v.end ?? '', hours: asksHours || v.start !== undefined }
+  const hours = { start: v.start ?? '', end: v.end ?? '', hours: asksHours || v.start !== undefined, ...(v.spots !== undefined && { spots: v.spots }) }
   if ('on' in v) return { ...empty, ...hours, kind: 'day', on: v.on }
   if ('every' in v) return { ...empty, ...hours, kind: 'weekly', every: WEEKDAYS.filter((d) => v.every.includes(d)), to: v.to ?? '', kept: v.from ? { from: v.from } : {} }
   const kind: Kind = v.from === undefined && otherKind(field) === 'until' ? 'until' : 'span'
   return { ...empty, ...hours, kind, from: v.from ?? '', to: v.to ?? '' }
 }
 
-/** A time as a listing holds it, or nothing while its days are missing. */
+/** A time as a listing holds it, with its own spots when it has some, or nothing while its days are missing. */
 export function dateOf(s: Omit<Slot, 'id'>, zone: string): DateValue | undefined {
-  const hours = s.hours && s.start ? { start: s.start, ...(s.end && { end: s.end }), zone } : {}
+  const spots = s.spots?.trim()
+  const hours = { ...(s.hours && s.start ? { start: s.start, ...(s.end && { end: s.end }), zone } : {}), ...(spots && { spots }) }
   switch (s.kind) {
     case 'weekly':
       return s.every.length ? { every: s.every, ...s.kept, ...(s.to && { to: s.to }), ...hours } : undefined
@@ -56,7 +66,7 @@ export function dateOf(s: Omit<Slot, 'id'>, zone: string): DateValue | undefined
   }
 }
 
-export function DateField({ field, value, onChange }: Props) {
+export function DateField({ field, value, onChange, spots }: Props) {
   const next = useRef(0)
   const zone = deviceZone()
   const [slots, setSlots] = useState<Slot[]>(() => {
@@ -73,7 +83,7 @@ export function DateField({ field, value, onChange }: Props) {
   return (
     <div className="date-input">
       {slots.map((s, i) => (
-        <SlotInput key={s.id} field={field} slot={s} n={slots.length > 1 ? ` ${i + 1}` : ''} onChange={(to) => change(s.id, to)} onRemove={slots.length > 1 ? () => set(slots.filter((o) => o.id !== s.id)) : undefined} />
+        <SlotInput key={s.id} field={field} spots={spots} slot={s} n={slots.length > 1 ? ` ${i + 1}` : ''} onChange={(to) => change(s.id, to)} onRemove={slots.length > 1 ? () => set(slots.filter((o) => o.id !== s.id)) : undefined} />
       ))}
       {field.several && (
         <button type="button" className="quiet add" onClick={() => set([...slots, slotOf(next.current++, field, undefined)])}>
@@ -85,7 +95,7 @@ export function DateField({ field, value, onChange }: Props) {
   )
 }
 
-function SlotInput({ field, slot: s, n, onChange, onRemove }: { field: Asked; slot: Slot; n: string; onChange: (to: Partial<Slot>) => void; onRemove?: () => void }) {
+function SlotInput({ field, spots, slot: s, n, onChange, onRemove }: { field: Asked; spots?: Asked; slot: Slot; n: string; onChange: (to: Partial<Slot>) => void; onRemove?: () => void }) {
   const weekly = s.kind === 'weekly'
   return (
     <div className="date-slot" role="group" aria-label={`Time${n}`}>
@@ -150,6 +160,28 @@ function SlotInput({ field, slot: s, n, onChange, onRemove }: { field: Asked; sl
         </button>
       )}
       {weekly && <Until slot={s} n={n} onChange={onChange} />}
+      {spots && <Advanced spots={spots} slot={s} n={n} onChange={onChange} />}
+    </div>
+  )
+}
+
+/** Advanced, at a time's foot: that time's own spots, open by itself when it holds some. */
+function Advanced({ spots, slot: s, n, onChange }: { spots: Asked; slot: Slot; n: string; onChange: (to: Partial<Slot>) => void }) {
+  const [open, setOpen] = useState((s.spots ?? '') !== '')
+  const id = useId()
+  const label = `${spots.label} at this time`
+  return (
+    <div className="until">
+      <button type="button" className="text-link small-link" aria-expanded={open} aria-controls={id} onClick={() => setOpen(!open)}>
+        Advanced <Icon name={open ? 'caret-up' : 'caret-down'} />
+      </button>
+      {open && (
+        <div className="until" id={id}>
+          <span className="label">{label}</span>
+          <p className="hint">{SPOTS_HINT}</p>
+          <One label={`${label}${n}`} text={s.spots ?? ''} onText={(spots) => onChange({ spots })} />
+        </div>
+      )}
     </div>
   )
 }

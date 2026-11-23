@@ -2,8 +2,8 @@
 // preview's first, each after the fields its `when` names, contact last, with the market's own words
 // for each; a field shown only while the answers it depends on hold, and dropped, through a chain,
 // when they no longer do; contact on every listing, though no market lists it; a choice by the
-// markets' words for it; days or a range that run backwards; and what still fits of a listing or a
-// review an older market shaped. Every market and field is found by its shape (directory.ts), never
+// markets' words for it; spots, a listing's and each time's own; days or a range that run backwards;
+// and what still fits of a listing or a review an older market shaped. Every market and field is found by its shape (directory.ts), never
 // named.
 
 import { expect, test } from 'vitest'
@@ -12,8 +12,9 @@ import type { Body } from '@foundationforest/folders'
 
 import { applies, backwards, fits, fitted, fitting, formFields, settled } from '../src/form.ts'
 import { type Asked, type Field, askOf, choiceWords, markets, pairs } from '../src/markets.ts'
+import { dateOf } from '../src/fields/Date.tsx'
 import { answerText } from '../src/show.ts'
-import { fieldWith, labelled, marketWith, opening, sides } from './directory.ts'
+import { fieldWith, labelled, marketWith, opening, sides, twoSides } from './directory.ts'
 
 /** The fields a form shows for these answers, in its order. */
 const shown = (fields: Asked[], values: Body) => fields.filter((f) => applies(f, values)).map((f) => f.name)
@@ -157,18 +158,28 @@ test('days that run from a later day to an earlier one, and a range from more to
     expect(backwards(fields, fine), JSON.stringify(fine)).toBeUndefined()
 })
 
-test('an old review: what still fits, checked against the role of whom it is about', () => {
-  const found = fieldWith(
-    markets,
-    'a choice for reviews of one role, in a market with another',
-    (f, _, side) => f.piece === 'choice' && f.roles !== undefined && side.market.roles.some((r) => !f.roles!.includes(r.role)),
-    'review',
-  )
-  const other = found.market.roles.find((r) => !found.field.roles!.includes(r.role))!.role
-  const yes = (found.field.values as string[])[0]!
-  const old = { subject: 'TheirAddress', score: '8', text: 'Quick.', [found.name]: yes, speed: 'fast' }
-  expect(fitting(found.market.name, other, old, 'review', found.role)).toEqual({ subject: 'TheirAddress', score: '8', text: 'Quick.', [found.name]: yes })
-  expect(fitting(found.market.name, found.role, old, 'review', other), `${found.name} is for reviews of ${found.field.roles!.join(' or ')}`).toEqual({ subject: 'TheirAddress', score: '8', text: 'Quick.' })
+test('an old review: what still fits, a score and words, either way between the two sides', () => {
+  const { market, offer, request } = twoSides(markets)
+  const old = { subject: 'TheirAddress', score: '8', text: 'Quick.', speed: 'fast' }
+  expect(fitting(market.name, request.role, old, 'review', offer.role)).toEqual({ subject: 'TheirAddress', score: '8', text: 'Quick.' })
+  expect(fitting(market.name, offer.role, old, 'review', request.role)).toEqual({ subject: 'TheirAddress', score: '8', text: 'Quick.' })
+})
+
+test("spots: one whole number from 0, with no unit; where a listing holds them, each time may hold its own, as the date input writes it, read with the time", () => {
+  const found = fieldWith(markets, 'spots, with a date beside them', (_, name, side) => name === 'spots' && Object.values(side.market.listing).some((f) => f.piece === 'date'))
+  expect([found.field.piece, found.field.unit, found.field.several]).toEqual(['number', undefined, undefined])
+  const date = formFields(found.market, found.role).find((f) => f.piece === 'date')!
+  const one = (v: unknown) => (date.several ? [v] : v)
+  const time = { on: '2026-11-28', start: '10:00', zone: 'Europe/Lisbon', spots: '3' }
+  expect(dateOf({ kind: 'day', every: [], on: '2026-11-28', from: '', to: '', start: '10:00', end: '', hours: true, spots: ' 3 ', kept: {} }, 'Europe/Lisbon'), 'as the date input writes it').toEqual(time)
+  expect(dateOf({ kind: 'day', every: [], on: '2026-11-28', from: '', to: '', start: '', end: '', hours: false, spots: '', kept: {} }, 'Europe/Lisbon'), 'none of its own').toEqual({ on: '2026-11-28' })
+  const body = { description: 'Saturday morning.', spots: '8', [date.name]: one(time) } as Body
+  expect(markets.checkEntry(found.market.name, found.role, 'listing', body)).toBeNull()
+  expect(answerText(date, one(time)), 'read with its time').toContain('3 spots')
+  expect(answerText(date, one({ ...time, spots: '0' }))).toContain('full')
+  // Spots that aren't a whole number from 0, the listing's or a time's own, don't fit.
+  expect(fitting(found.market.name, found.role, { ...body, spots: '2.5' })).not.toHaveProperty('spots')
+  expect(fitting(found.market.name, found.role, { ...body, [date.name]: one({ ...time, spots: '-1' }) } as Body)).not.toHaveProperty(date.name)
 })
 
 test('a market the directory has, found by its shape: the finders name what they could not find', () => {

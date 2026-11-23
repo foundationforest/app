@@ -32,13 +32,13 @@ const VERIFIER: Record<string, Line> = {
   bad_return_url: ["The ID check can't be paid for from this address.", false],
   not_json: OURS,
   not_an_object: OURS,
-  expected_empty_body: OURS,
   expected_exactly_returnUrl: OURS,
-  expected_exactly_payment: OURS,
-  expected_exactly_payment_and_returnUrl: OURS,
+  expected_exactly_stampNumber: OURS,
+  expected_exactly_stampNumber_and_returnUrl: OURS,
+  expected_exactly_payment_and_stampNumber: OURS,
+  expected_exactly_payment_and_stampNumber_and_returnUrl: OURS,
   expected_exactly_sessionId_and_stampNumber: OURS,
   expected_exactly_sessionId_and_stampNumber_and_payment: OURS,
-  expected_exactly_stampNumber: OURS,
   bad_session_id: OURS,
   bad_stamp_number: OURS,
   bad_payment: OURS,
@@ -62,8 +62,15 @@ const VERIFIER: Record<string, Line> = {
   no_document_data: DIDNT_PASS,
   // One ID stamp a person: this ID, and the face that goes with it, already gave one to another seed.
   duplicate_document: ['This ID is already verified with another passkey. Nothing was charged.', false],
-  // A face Didit has seen verified before: the selfie check can't give this seed a stamp.
+  // A face Didit has seen verified before, under another seed: the selfie check can't give this
+  // seed a stamp, even when Didit's own page said it passed.
   face_seen: ['A similar face is already verified. Verify with your ID instead.', false],
+  // This seed holds a stamp already, and no face Didit matched is the one that got it (or, on the ID
+  // check, its own earlier ID doesn't fit this one): someone else, on this person's passkey.
+  other_person: ["This doesn't match the person already verified with this passkey.{charged}", false],
+  // Didit's whole list of faces like this one, five, recent tries among them: too many to tell apart.
+  // A refused try leaves Didit's list after its day.
+  too_many_matches: ['Too many recent checks look alike. Try again tomorrow.{charged}', false],
   // 409
   session_used: [`That check was already used. ${START_AGAIN}`, false],
   // Its three tries opened, or its hold cancelled. One whose stamp was given is never said: the
@@ -95,12 +102,18 @@ export const TRIES_USED = 'Your tries are used up. Nothing was charged. Pay agai
 /** The codes the verifier answers that the app has its own line for. */
 export const VERIFIER_CODES = Object.keys(VERIFIER)
 
-/** The verifier's `code`, said for the check the person is on. A check that didn't pass offers the selfie's way on: the ID. */
+/** Where a person's stamps all come from keys the verifier no longer signs with, Get verified's one line at the top. */
+export const CHECK_AGAIN = 'Your earlier check no longer counts: the verifier changed its keys. Check again.'
+
+/** A new profile, while no stamp of the person's counts: none is made. */
+export const CHECK_FIRST = 'Get verified first: your earlier check no longer counts.'
+
+/** The verifier's `code`, said for the check the person is on. A check that didn't pass offers the selfie's way on: the ID. `{charged}`: on the ID check, that nothing was charged. */
 export function verifierSays(code: string, check: 'face' | 'id' = 'face'): Said {
   const [text, red] = VERIFIER[code] ?? [SOMETHING, false]
   if (text === DIDNT_PASS[0]) return new Said(check === 'id' ? "That ID check didn't pass. Try again." : "That selfie didn't pass. Try again, or use your ID.")
   if (text === '{triesUsed}') return new Said(TRIES_USED)
-  return new Said(text.replace('{check}', check === 'id' ? 'ID check' : 'selfie check'), red)
+  return new Said(text.replace('{check}', check === 'id' ? 'ID check' : 'selfie check').replace('{charged}', check === 'id' ? ' Nothing was charged.' : ''), red)
 }
 
 /** Each host refusal: of an entry or an inbox entry (the standard's codes and the host's), and of a credit route. */
