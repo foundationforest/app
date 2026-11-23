@@ -63,9 +63,11 @@ const KEYS = {
   profiles: 'forest.profiles',
   theme: 'forest.theme',
   under: 'forest.setup',
-  // Not forest.checks, which lists kept before this key counted every stamp the folder held, an old
-  // ID key's among them: cleared once by cleanOld, then worked out fresh at the next unlock.
-  checks: 'forest.verified',
+  // Not forest.verified, nor forest.checks before it: each was kept while the verifier signed with
+  // keys it has since replaced (both, when it began signing the standard's facts as a list; the ID
+  // key before that), so it can name a check whose stamp counts for nothing. Cleared by cleanOld; until Start or a check works it out
+  // again, the person's checks are what their profiles show.
+  checks: 'forest.counted',
   read: 'forest.read',
   seen: 'forest.seen',
   connections: 'forest.connections',

@@ -29,7 +29,7 @@ test('at every start: what this app keeps stays, anything else goes, in sessionS
   sessionStorage.setItem(RELOADED, 'v')
   device.keepWaiting({ to: 'some-address' })
   device.cleanOld()
-  expect(Object.keys(localStorage).sort()).toEqual(['forest.folder', 'forest.names', 'forest.passkey', 'forest.passkeys', 'forest.profiles', 'forest.read', 'forest.seen', 'forest.setup', 'forest.theme', 'forest.used', 'forest.verified'])
+  expect(Object.keys(localStorage).sort()).toEqual(['forest.counted', 'forest.folder', 'forest.names', 'forest.passkey', 'forest.passkeys', 'forest.profiles', 'forest.read', 'forest.seen', 'forest.setup', 'forest.theme', 'forest.used'])
   expect({ ...sessionStorage }, "the tab's reload flag and what waits through a check, nothing else").toEqual({ [RELOADED]: 'v', 'forest.waiting': JSON.stringify({ to: 'some-address' }) })
   expect(device.under(), "the ID check's payment, kept while it is under way").toEqual({ passkey: ID, check: 'id', payment: 'cs_test_abc' })
   expect(device.theme()).toBe('dark')
@@ -153,12 +153,15 @@ test("how the person is verified, and where they left off in each inbox: kept as
   expect(device.checks()).toEqual(['face', 'id'])
   device.saveChecks(['face'])
   expect(device.checks(), 'worked out fresh: the list given, in place of the one before').toEqual(['face'])
-  localStorage.setItem('forest.verified', JSON.stringify(['face', 'palm']))
+  localStorage.setItem('forest.counted', JSON.stringify(['face', 'palm']))
   expect(device.checks()).toEqual(['face'])
-  // Kept before the verifier's ID key changed, so maybe from the old key: cleared at the next start.
+  // Kept before the verifier's keys changed (both at services#144, the ID key at services#123), so
+  // maybe from a key it no longer signs with: cleared at the next start.
   localStorage.setItem('forest.checks', JSON.stringify(['face', 'id']))
+  localStorage.setItem('forest.verified', JSON.stringify(['face']))
   device.cleanOld()
-  expect(localStorage.getItem('forest.checks')).toBeNull()
+  expect([localStorage.getItem('forest.checks'), localStorage.getItem('forest.verified')]).toEqual([null, null])
+  expect(device.checks()).toEqual(['face'])
   device.saveCursors({ A: 3 })
   device.saveCursors({ B: 5 })
   expect(device.cursors()).toEqual({ A: 3, B: 5 })

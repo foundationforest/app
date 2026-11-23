@@ -9,9 +9,10 @@
 //      charged only once a stamp comes from it. Back from Stripe's page without paying, the payment
 //      is dropped, and nothing is said;
 //   2. open: the gift's buy (one buy at the host for exactly the check's gift, as services'
-//      end-to-end test buys it), then a session at the verifier, kept on the device with its page, so
-//      a tab closed midway opens the same check again; the ID check's with its payment, each session
-//      one of its three tries, counted on the device, so the third that doesn't pass says so;
+//      end-to-end test buys it), then a session at the verifier, opened for the seed's stamp number,
+//      which alone it can give a stamp to, kept on the device with its page, so a tab closed midway
+//      opens the same check again; the ID check's with its payment, each session one of its three
+//      tries, counted on the device, so the third that doesn't pass says so;
 //   3. ask: the session's stamp, with the buy's reference (and the payment); the gift's ticket comes
 //      with it and is kept. The same session and stamp number give the same stamp and ticket within
 //      its hour, and after it the verifier hands the stamp back by its stamp number. A session that
@@ -19,19 +20,23 @@
 //      dropped, and the next open is a new one;
 //   4. collect: the buy collected with the ticket, its credits spent into the wallet, the Profiles
 //      folder's balance. Collected again, a buy gets the same answer;
-//   5. keep: the stamp in the Profiles folder, its first write paid from the wallet;
+//   5. keep: the stamp in the Profiles folder, its first write paid from the wallet, with the list of
+//      what the check saw beside it (`factList`), which the person needs to show any of it later.
+//      The same stamp is never kept twice, so one asked back, which comes without its list, never
+//      takes the place of one that has it;
 //   6. show: each profile's entry written again with a verification of the new stamp (stamps.ts).
 //      Then nothing of the verification is left on the device, but an ID check's payment no stamp
 //      used (paid, then left for the face check), so the ID check added later opens paid.
 //
 // The device keeps the check's session and the gift's buy because both are lost otherwise: a second
 // check of the same face is refused as a face seen before, and a gift is given once a stamp number.
-// It keeps the payment because it holds the person's $5. Going back to the two checks and picking one
-// again changes none of it (`choose`).
+// It keeps the payment because it holds the person's $5. Going back to the two checks and picking
+// one again changes none of it (`choose`).
 //
 // How the person is verified is worked out fresh from the Profiles folder's stamps each time it is
-// opened here, against the verifier's current keys: a stamp from a key it no longer signs with (the
-// ID key before services#123) counts for nothing.
+// opened here, against the verifier's current keys: a stamp from a key it no longer signs with
+// (either key from before it signed the standard's facts as a list) counts for nothing, so a person
+// whose stamps all come from such keys checks again.
 
 import { seedNumber, stampNumberOf } from '@foundationforest/keys'
 
@@ -39,7 +44,7 @@ import type { Services } from '../config.ts'
 import { type Check, type Under, endUnder, keepUnder, saveChecks, under, usePasskey } from '../device.ts'
 import { collectGift, giftBuy } from '../services/credits.ts'
 import { Refused } from '../services/http.ts'
-import { type About, about, askStamp, checkOfStamp, faceSession, idPayment, idSession, stampBack, stamps, stampsBack } from '../services/verifier.ts'
+import { type About, about, askStamp, checkOfStamp, counted, faceSession, idPayment, idSession, stampBack, stamps, stampsBack } from '../services/verifier.ts'
 import { Said, TRIES_USED, verifierSays } from '../words.ts'
 import type { Prove } from './profile.ts'
 import { addTo, openProfiles } from './profiles.ts'
@@ -206,10 +211,11 @@ const noSession = (u: Under): Under => {
 
 /**
  * The check chosen for `passkey`, opened: the same session again while one is kept, else the gift's
- * buy when none is kept, then a new session, kept with its page. Gives back the page the person does
- * the check on. `returnUrl` is where the verifier has Didit send them after.
+ * buy when none is kept, then a new session for the seed's stamp number, asked of `stampNumber` only
+ * then (it takes the seed), kept with its page. Gives back the page the person does the check on.
+ * `returnUrl` is where the verifier has Didit send them after.
  */
-export async function open(s: Services, passkey: string, returnUrl?: string): Promise<string> {
+export async function open(s: Services, passkey: string, stampNumber: () => Promise<bigint>, returnUrl?: string): Promise<string> {
   let u: Under = mine(passkey) ?? { passkey, check: 'face' }
   if (u.session && u.url) return u.url
   const check = u.check
@@ -222,7 +228,8 @@ export async function open(s: Services, passkey: string, returnUrl?: string): Pr
   keepUnder(u)
   let session
   try {
-    session = check === 'face' ? await faceSession(s.verifier, returnUrl) : await idSession(s.verifier, u.payment!, returnUrl)
+    const n = await stampNumber()
+    session = check === 'face' ? await faceSession(s.verifier, n, returnUrl) : await idSession(s.verifier, u.payment!, n, returnUrl)
   } catch (err) {
     // Not paid after all, or its tries used, or its hold over: the payment dropped, so the next tap
     // pays again. One that opened no session was never paid (back from Stripe's page): nothing said.
@@ -265,7 +272,9 @@ export async function ask(s: Services, passkey: string, stampNumber: bigint): Pr
     return { at: 'start' }
   }
   // An ID already verified with another seed: the verifier cancels the hold and uses the payment
-  // up, so it is dropped too, and the next tap pays again.
+  // up, so it is dropped too, and the next tap pays again. Every other refusal (the two that read
+  // the faces Didit matched, other_person and too_many_matches, among them) ends the session, and a
+  // payment's last try with it.
   if (got.code === 'duplicate_document') {
     keepUnder(unpaid(u))
     throw new NotPassed(got.code, check)
@@ -289,7 +298,7 @@ export async function collect(s: Services, passkey: string, wallet: string): Pro
   return n
 }
 
-/** The same stamp, by its signature. */
+/** The same stamp, by its signature, with its list of facts or without. */
 async function sameStamp(a: string, b: string): Promise<boolean> {
   const { stampFromJson } = await stamps()
   const [x, y] = [stampFromJson(JSON.parse(a)), stampFromJson(JSON.parse(b))]
@@ -304,7 +313,8 @@ async function noteChecks(s: Services, held: string[]): Promise<void> {
 
 /**
  * The stamp's last steps: the gift collected, the stamp kept in the Profiles folder unless it is
- * there, every profile made to show it, and the verification over: the passkey is in use here from
+ * there (by its signature, so one asked back without its list never takes the place of the one kept
+ * with it), every profile made to show it, and the verification over: the passkey is in use here from
  * now.
  */
 export async function finish(s: Services, passkey: string, seed: Uint8Array, stamp: string, prove: Prove): Promise<void> {
@@ -343,17 +353,21 @@ export async function advance(s: Services, passkey: string, seed: Uint8Array, pr
   return null
 }
 
+/** Where a person stands: verified, with the labels their Profiles folder lists; or not, at the step their verification stopped at, with `again` when the folder holds stamps that all count for nothing, and its labels. */
+export type Standing = { verified: true; labels: string[] } | { verified: false; step: Step; again?: { labels: string[] } }
+
 /**
- * Where the person whose seed this is stands: verified, with the labels their Profiles folder
- * lists, or the step their verification stopped at, taken up as far as it goes. A stamp the
- * verifier signed and the app had not kept yet is kept now. A verified person's ID check under way
- * stays under way, to go on from You or Home.
+ * Where the person whose seed this is stands: verified, with a stamp from one of the verifier's
+ * current keys, and the labels their Profiles folder lists; or the step their verification stopped
+ * at, taken up as far as it goes. A stamp the verifier signed and the app had not kept yet is kept
+ * now. A verified person's ID check under way stays under way, to go on from You or Home. One whose
+ * stamps all come from keys the verifier no longer signs with is not verified: they check again.
  */
-export async function resume(s: Services, passkey: string, seed: Uint8Array, prove: Prove): Promise<{ verified: true; labels: string[] } | { verified: false; step: Step }> {
+export async function resume(s: Services, passkey: string, seed: Uint8Array, prove: Prove): Promise<Standing> {
   const folder = await openProfiles(seed, s.host)
   const u = mine(passkey)
-  if (folder.stamps.length) {
-    await noteChecks(s, folder.stamps)
+  if (folder.stamps.length) await noteChecks(s, folder.stamps)
+  if ((await counted(s.verifier, folder.stamps)).length) {
     if (u?.kept) await finishShowing(s, passkey, seed, prove)
     else if (u?.check === 'face') {
       // The face stamp is kept: only its gift may be left to collect.
@@ -372,7 +386,7 @@ export async function resume(s: Services, passkey: string, seed: Uint8Array, pro
     const stamp = back[first] ?? back[first === 'face' ? 'id' : 'face']
     if (stamp) step = { at: 'signed', stamp }
   }
-  if (step.at !== 'signed') return { verified: false, step }
+  if (step.at !== 'signed') return { verified: false, step, ...(folder.stamps.length > 0 && { again: { labels: folder.labels } }) }
   await finish(s, passkey, seed, step.stamp, prove)
   return { verified: true, labels: folder.labels }
 }

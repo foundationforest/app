@@ -2202,7 +2202,8 @@ button.ghost .icon {
 }
 
 /* A text link: in ink, underlined. Under Get verified's cards, I already use Forest, in the
-   middle, and What the checks keep, smaller, at the left; Connect your AI's Forest not there?. */
+   middle, and What the checks keep, smaller, at the left; Connect your AI's Forest not there?; and
+   a time's Advanced, smaller, at the left. */
 button.text-link {
   align-self: center;
   min-height: 34px;
@@ -2216,7 +2217,8 @@ button.text-link {
   gap: 6px;
 }
 
-button.text-link.keeps-link {
+button.text-link.keeps-link,
+button.text-link.small-link {
   align-self: flex-start;
   min-height: 30px;
   font-size: 14.5px;

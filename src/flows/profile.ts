@@ -2,11 +2,12 @@
 // `addProfile`), its folder funded first (its `fund`): one credit from the wallet into the new
 // folder, since a folder's first entry costs a write; the profile entry, with its market and role,
 // its host, its main key's open key (so it takes messages), both pay addresses, and a verification
-// for each stamp the Profiles folder holds from the verifier's current keys, made on the device (the
-// reference app makes one for every stamp it holds; one from a key the verifier no longer signs with
-// counts for nothing); then its label in the Profiles folder. When the host refuses a write for its
-// price, one more credit goes in and it is written again (paid.ts). The device keeps its label and
-// address, and marks it new: all that comes to it from now shows as new.
+// for each stamp the Profiles folder holds from the verifier's current keys, made on the device
+// (the reference app makes one for every stamp it holds; one from a key the verifier no longer
+// signs with counts for nothing); then its label in the Profiles folder. With no stamp that counts,
+// it makes nothing and says so: a profile with no verification counts at no index. When the host
+// refuses a write for its price, one more credit goes in and it is written again (paid.ts). The
+// device keeps its label and address, and marks it new: all that comes to it from now shows as new.
 
 import { type Body, entry, nextTime } from '@foundationforest/folders'
 import { mainKey, openingHalf, payAddresses } from '@foundationforest/keys'
@@ -16,6 +17,7 @@ import { type Profile, addProfile, markNew } from '../device.ts'
 import { fund } from '../services/credits.ts'
 import { readView, writeAll } from '../services/host.ts'
 import { counted } from '../services/verifier.ts'
+import { CHECK_FIRST, Said } from '../words.ts'
 import { paid } from './paid.ts'
 import { addTo, openProfiles } from './profiles.ts'
 
@@ -26,15 +28,17 @@ export async function makeProfile(s: Services, seed: Uint8Array, label: string, 
   const [market, role] = label.split('/') as [string, string]
   const folder = await openProfiles(seed, s.host)
   const main = await mainKey(seed, label)
+  const stamps = await counted(s.verifier, folder.stamps)
+  if (!stamps.length) throw new Said(CHECK_FIRST)
   const proofs: Body[] = []
-  for (const stamp of await counted(s.verifier, folder.stamps)) proofs.push({ circuit: 'verification', ...(await prove(seed, stamp, label)) })
+  for (const stamp of stamps) proofs.push({ circuit: 'verification', ...(await prove(seed, stamp, label)) })
   const body: Body = {
     market,
     role,
     hosts: [s.host],
     openKey: (await openingHalf(main.secret)).openKey,
     pay: { ...(await payAddresses(seed, label)) },
-    ...(proofs.length > 0 && { proofs }),
+    proofs,
   }
   const view = await readView(s.host, main.address)
   if (view.current.size === 0) await fund(s.host, main.address, 1, folder.key)

@@ -70,8 +70,8 @@ export function NumberField({ field, value, onChange }: Props) {
   )
 }
 
-/** One number, − and + beside it, its unit after it. */
-function One({ label, unit, text, onText }: { label: string; unit?: string; text: string; onText: (t: string) => void }) {
+/** One number, − and + beside it, its unit after it: a time's own spots too (Date.tsx). */
+export function One({ label, unit, text, onText }: { label: string; unit?: string; text: string; onText: (t: string) => void }) {
   const step = (by: number) => {
     const n = Number(text.trim() || '0')
     if (Number.isFinite(n)) onText(String(Math.max(0, Math.round((n + by) * 100) / 100)))

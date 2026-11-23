@@ -124,10 +124,10 @@ export function lessons(ms: Directory) {
 
 /**
  * Things sold, as a seller posts them: a market with two sides whose offers hold photos, a price with
- * no per, and places both sides may hold, shown on a choice of several (in person); a long list of
- * one value (a kind) that opens a few values of several (who it's for) and a labelled list (a size),
- * and with who it's for a long list further down the chain; a few values of several waiting on
- * nothing; and a review field kept for reviews of the side that offers.
+ * no per, and places both sides may hold, shown on a choice of several (in person); a choice of one
+ * with more than a few values, waiting on nothing (what is sold), one of which opens a choice of one
+ * (a kind), which opens a few values of several (who it's for) and a labelled list (a size), and with
+ * who it's for a long list further down the chain; and a few values of several waiting on nothing.
  */
 export function shop(ms: Directory) {
   const shape = (m: Market) => {
@@ -135,20 +135,21 @@ export function shop(ms: Directory) {
     if (!seller || !buyer || !m.listing.description || m.listing.price?.piece !== 'price' || m.listing.price.per) return null
     const has = (fits: (f: Field, name: string) => boolean) => named(m, seller, fits)
     const long = (f: Field) => isLong(f, ms.lists)
+    const on = (f: Field, ...names: string[]) => Object.keys(f.when ?? {}).sort().join() === [...names].sort().join()
     const photos = has((f) => f.piece === 'photo' && f.several === true)
     const place = has((f) => f.piece === 'place' && Object.keys(f.when ?? {}).length === 1 && isFor(f, buyer))
-    const opener = has((f) => f.piece === 'choice' && !f.several && !f.when && long(f))
-    if (!photos || !place || !opener) return null
+    const top = has((f) => f.piece === 'choice' && !f.several && !f.when && valuesOf(f, ms.lists).length > 3)
+    const opener = top && has((f) => f.piece === 'choice' && !f.several && on(f, top))
+    if (!photos || !place || !top || !opener) return null
     const handover = Object.keys(m.listing[place]!.when!)[0]!
-    const on = (f: Field, ...names: string[]) => Object.keys(f.when ?? {}).sort().join() === [...names].sort().join()
     const follow = has((f) => f.piece === 'choice' && f.several === true && !long(f) && on(f, opener))
     const sized = has((f) => f.piece === 'choice' && Object.keys(f.ask?.labels ?? {}).length > 0 && on(f, opener))
     const chain = follow && has((f) => f.piece === 'choice' && long(f) && on(f, opener, follow))
     const several = has((f, n) => f.piece === 'choice' && f.several === true && !f.when && !long(f) && valuesOf(f, ms.lists).length >= 3 && n !== handover)
-    const review = Object.entries(m.review ?? {}).find(([, f]) => f.piece === 'choice' && f.roles?.includes(seller) && !f.roles.includes(buyer))?.[0]
-    if (!follow || !sized || !chain || !several || !review) return null
+    if (!follow || !sized || !chain || !several) return null
     const L = m.listing
-    // A kind that opens who it's for, the size, and the chain's list: clothes.
+    // What is sold that opens the kind: clothing. A kind that opens who it's for, the size, and the chain's list: clothes.
+    const topValue = L[opener]!.when![top]![0]!
     const kind = valuesOf(L[opener]!, ms.lists).find((v) => [follow, sized, chain].every((n) => L[n]!.when![opener]!.includes(v)))
     // Who it's for, one that opens the chain's list (children) and one that doesn't (women).
     const opens = L[chain]!.when![follow]![0]!
@@ -156,7 +157,7 @@ export function shop(ms: Directory) {
     const inPerson = L[place]!.when![handover]![0]!
     const away = valuesOf(L[handover]!, ms.lists).find((v) => v !== inPerson)
     if (!kind || !other || !away) return null
-    return { seller, buyer, photos, place, handover, inPerson, away, opener, kind, follow, opens, other, sized, chain, several, review }
+    return { seller, buyer, photos, place, handover, inPerson, away, top, topValue, opener, kind, follow, opens, other, sized, chain, several }
   }
   const market = marketWith(ms, 'things sold, with photos, a chain of lists and chips', (m) => shape(m) !== null)
   return { market, ...shape(market)! }

@@ -39,7 +39,7 @@ import { checkVerification, proofBytes, proveVerification, stampFromJson } from 
 import { readConfig, startHost } from '../services/host/src/host.ts'
 import type { Decision as Decided } from '../services/verifier/src/didit.ts'
 import { readConfig as verifierConfig, startVerifier } from '../services/verifier/src/service.ts'
-import { FACE_WORKFLOW, FakeFaceCheck, FakePayments, ID_WORKFLOW, namedFaces, passed } from '../services/verifier/test/fakes.ts'
+import { FACE_WORKFLOW, FakeApplication, FakeFaceCheck, FakePayments, ID_WORKFLOW, namedFaces, passed } from '../services/verifier/test/fakes.ts'
 import type { Services } from '../src/config.ts'
 import type { CheckProofs } from '../src/flows/inbox.ts'
 import { type Prove, makeProfile } from '../src/flows/profile.ts'
@@ -102,7 +102,7 @@ export class FaceDidit extends FakeFaceCheck {
   #all: Decision = 'approved'
   readonly #alone = new Set<string>()
 
-  override async createSession(options: { callback?: string } = {}) {
+  override async createSession(options: { vendorData: string; callback?: string }) {
     const session = await super.createSession(options)
     this.#apply(session.sessionId, this.#all)
     return session
@@ -169,14 +169,15 @@ export async function world({ entryPerKb, filePerKb, forSale = true }: { entryPe
   const dir = mkdtempSync(join(tmpdir(), 'forest-app-'))
   const hostPort = await freePort()
   const host = `http://127.0.0.1:${hostPort}`
-  const faceCheck = new FaceDidit()
-  const idCheck = new FakeFaceCheck()
+  // One Didit application, as both checks share it: one list of faces, one list of users.
+  const application = new FakeApplication()
+  const faceCheck = new FaceDidit(application)
+  const idCheck = new FakeFaceCheck(application)
   const payments = forSale ? new FakePayments() : undefined
   const verifier = await startVerifier(
     verifierConfig({
       VERIFIER_NAME,
-      DIDIT_FACE_API_KEY: 'stand-in',
-      DIDIT_ID_API_KEY: 'stand-in',
+      DIDIT_API_KEY: 'stand-in',
       DIDIT_FACE_WORKFLOW_ID: FACE_WORKFLOW,
       DIDIT_ID_WORKFLOW_ID: ID_WORKFLOW,
       DIDIT_BASE_URL: 'http://127.0.0.1:9',
@@ -262,7 +263,7 @@ export const person = () => ({ seed: newSeed(), id: `passkey-${crypto.randomUUID
 /** A person verified by the face check as the app verifies them, Didit approving it, with a profile for each of `labels`. */
 export async function verifiedWith(w: Services, ...labels: string[]) {
   const p = person()
-  await open(w, p.id)
+  await open(w, p.id, () => stampNumberAt(w, p.seed))
   const step = await ask(w, p.id, await stampNumberAt(w, p.seed))
   if (step.at !== 'signed') throw new Error(`not signed: ${step.at}`)
   await finish(w, p.id, p.seed, step.stamp, proveHere)

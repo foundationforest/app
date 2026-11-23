@@ -3,23 +3,26 @@
 // paid on Stripe's page, the payment's id kept on the device from the moment it is made; the check
 // in its session, each one of the payment's three tries; its stamp and its gift; then every profile showing it, in one unlock. And
 // every way it stops: not paid, declined, expired, its tries used up, not for sale, an ID already
-// used, a page closed after the stamp was kept. And before it is sold, an ID stamp the verifier signed
+// used, someone else on a seed verified already, too many tries alike, a page closed after the stamp
+// was kept. Its stamp kept with its list of facts, which the ID stamp handed back never replaces. And before it is sold, an ID stamp the verifier signed
 // this seed already, kept with nothing paid.
 
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'vitest'
 
 import { proofsOf, readFolder, verificationCheck } from '@foundationforest/folders'
 import { newSeed } from '@foundationforest/keys'
-import { checkVerification, stampFromJson } from '@foundationforest/proofs'
+import { checkVerification, factListOf, stampFromJson } from '@foundationforest/proofs'
 
 import { App } from '../services/mcp/test/app.ts'
+import { MATCHES_LISTED } from '../services/verifier/src/didit.ts'
 import { CONSENT } from '../services/verifier/src/service.ts'
 import { doc, passed, passedId } from '../services/verifier/test/fakes.ts'
 import * as device from '../src/device.ts'
 import { readCard, strongest } from '../src/flows/cards.ts'
 import { whoIs } from '../src/flows/inbox.ts'
 import { makeProfile } from '../src/flows/profile.ts'
-import { walletKey } from '../src/flows/profiles.ts'
+import { openProfiles, walletKey } from '../src/flows/profiles.ts'
+import { about } from '../src/services/verifier.ts'
 import { NotPassed, TRIES, Unpaid, advance, ask, consentOf, creditLines, creditsOf, finish, idCheckOf, open, pay, resume, stampNumberAt, stepOf } from '../src/flows/verify.ts'
 import { Said } from '../src/words.ts'
 import { OFFERS, OTHER_OFFERS, OTHER_REQUESTS } from './labels.ts'
@@ -39,9 +42,19 @@ type Person = ReturnType<typeof person>
 /** The session the device keeps for the check under way. */
 const session = () => device.under()!.session!
 
+/** Each person's face check that gave them a stamp, by passkey id. */
+const faces = new Map<string, string>()
+
+/** What Didit lists of `p`'s faces as their next check's face is searched: the face check that stamped them, as the template Didit keeps of it, as the verifier needs to see it is theirs. */
+const own = (p: Person) => {
+  const face = faces.get(p.id)
+  return face ? [{ vendorData: w.faceCheck.vendorData.get(face)!, sessionId: null }] : []
+}
+
 /** The face check, as the app does it from Start, Didit approving it. */
 async function faceChecked(p: Person) {
-  await open(w, p.id)
+  await open(w, p.id, () => stampNumberAt(w, p.seed))
+  faces.set(p.id, session())
   w.faceCheck.set(session(), passed(p.name))
   const step = await ask(w, p.id, await stampNumberAt(w, p.seed))
   if (step.at !== 'signed') throw new Error(`not signed: ${step.at}`)
@@ -64,8 +77,8 @@ async function paid(p: Person) {
 }
 
 /** The ID check opened, and what Didit came to for it. */
-async function checked(p: Person, decision = passedId(p.name, doc(p.name))) {
-  await open(w, p.id, 'https://app.example/back')
+async function checked(p: Person, decision = passedId(p.name, doc(p.name), { matches: own(p) })) {
+  await open(w, p.id, () => stampNumberAt(w, p.seed), 'https://app.example/back')
   w.idCheck.set(session(), decision)
 }
 
@@ -130,6 +143,46 @@ describe('the ID check', () => {
     expect(device.under(), 'nothing of the verification left').toBeNull()
     expect(device.checks()).toEqual(['face', 'id'])
     expect(JSON.stringify({ ...localStorage }).includes(payment), 'nor its payment').toBe(false)
+
+    // The ID stamp, kept with its list: its facts by the names GET / gives the ID key, the face's first.
+    const stamps = (await openProfiles(p.seed, w.host)).stamps
+    const idStamp = stamps.find((text) => stampFromJson(JSON.parse(text)).verifier === w.keys.id)!
+    const names = factListOf(stampFromJson(JSON.parse(idStamp))).map((fact) => fact.name)
+    const listed = (await about(w.verifier)).id.facts!
+    expect(names.slice(0, 2)).toEqual(['model', 'embedding'])
+    expect(names.filter((name) => !listed.includes(name) && !name.startsWith('extra_fields.')), 'every fact a name GET / gives').toEqual([])
+    // Verify with your ID again: the verifier hands it back, without its list, and it takes no one's place.
+    const back = await pay(w, p.id, RETURN, await stampNumberAt(w, p.seed))
+    expect(JSON.parse((back as { stamp: string }).stamp).factList, 'handed back: no list').toBeUndefined()
+    await finish(w, p.id, p.seed, (back as { stamp: string }).stamp, proveHere)
+    expect((await openProfiles(p.seed, w.host)).stamps, 'the one with its list, kept as it was').toEqual(stamps)
+  })
+
+  test('someone else on a seed verified already (other_person), and too many tries alike (too_many_matches): its line, nothing charged, and the next try on the same payment', async () => {
+    const p = person('ada')
+    await faceChecked(p)
+    const payment = await paid(p)
+    // Approved at Didit, with no face of this seed's own among those it lists.
+    await checked(p, passedId('mallory', doc('mallory')))
+    let err = await advance(w, p.id, p.seed, proveHere).catch((e: unknown) => e)
+    expect([(err as NotPassed).code, (err as Said).message]).toEqual(['other_person', "This doesn't match the person already verified with this passkey. Nothing was charged."])
+    expect([stepOf(p.id), device.under()!.payment, device.under()!.tries], 'the session done; the same payment, one try used').toEqual([{ at: 'start' }, payment, 1])
+
+    // A new person whose five earlier tries, none stamped, fill Didit's list.
+    freshDevice()
+    const q = person('pia')
+    const tries: string[] = []
+    for (let i = 0; i < MATCHES_LISTED; i++) {
+      await open(w, q.id, () => stampNumberAt(w, q.seed))
+      tries.push(session())
+      w.faceCheck.set(session(), passed(q.name, { status: 'Declined' }))
+      await ask(w, q.id, await stampNumberAt(w, q.seed)).catch(() => undefined)
+    }
+    const held = await paid(q)
+    await checked(q, passedId(q.name, doc(q.name), { matches: tries.map((t) => ({ vendorData: w.faceCheck.vendorData.get(t)!, sessionId: t })), full: true }))
+    err = await advance(w, q.id, q.seed, proveHere).catch((e: unknown) => e)
+    expect([(err as NotPassed).code, (err as Said).message]).toEqual(['too_many_matches', 'Too many recent checks look alike. Try again tomorrow. Nothing was charged.'])
+    expect([stepOf(q.id), device.under()!.payment], 'the payment kept for its next try').toEqual([{ at: 'start' }, held])
   })
 
   test('a new person can take the ID check first: verified by it alone', async () => {
@@ -145,7 +198,7 @@ describe('the ID check', () => {
     const p = person('alan')
     await faceChecked(p)
     await sold(p)
-    const err = await open(w, p.id).catch((e: unknown) => e)
+    const err = await open(w, p.id, () => stampNumberAt(w, p.seed)).catch((e: unknown) => e)
     expect(err).toBeInstanceOf(Unpaid)
     expect(stepOf(p.id)).toEqual({ at: 'consent' })
     expect(device.under()!.payment, 'the payment dropped').toBeUndefined()
@@ -159,7 +212,7 @@ describe('the ID check', () => {
     await advance(w, p.id, p.seed, proveHere).catch(() => undefined)
     // Its hold cancelled at Stripe, as the verifier's sweep does a day on.
     await w.payments!.cancel(payment)
-    const err = await open(w, p.id).catch((e: unknown) => e)
+    const err = await open(w, p.id, () => stampNumberAt(w, p.seed)).catch((e: unknown) => e)
     expect(err).toBeInstanceOf(NotPassed)
     expect([(err as NotPassed).code, (err as Said).message]).toEqual(['not_paid', 'Your tries are used up. Nothing was charged. Pay again to continue.'])
     expect(stepOf(p.id)).toEqual({ at: 'consent' })
@@ -180,10 +233,10 @@ describe('the ID check', () => {
       expect([(err as Said).message, (err as Said).red]).toEqual([line, red])
       expect(stepOf(p.id), 'Start again').toEqual({ at: 'start' })
       expect(device.under()!.payment, 'on the same payment').toBe(payment)
-      await open(w, p.id)
+      await open(w, p.id, () => stampNumberAt(w, p.seed))
       expect(session()).not.toBe(was)
     }
-    w.idCheck.set(session(), passedId(p.name, doc(p.name)))
+    w.idCheck.set(session(), passedId(p.name, doc(p.name), { matches: own(p) }))
     expect(await advance(w, p.id, p.seed, proveHere)).toBeNull()
     expect(device.checks()).toEqual(['face', 'id'])
   })
@@ -214,7 +267,7 @@ describe('the ID check', () => {
     // Its tries counted as one fewer, so the device asks once more, and the verifier answers.
     const u = device.under()!
     device.keepUnder({ ...u, payment, tries: TRIES - 1 })
-    const err = await open(w, p.id).catch((e: unknown) => e)
+    const err = await open(w, p.id, () => stampNumberAt(w, p.seed)).catch((e: unknown) => e)
     expect(err).toBeInstanceOf(NotPassed)
     expect([(err as NotPassed).code, (err as Said).message]).toEqual(['payment_used', 'Your tries are used up. Nothing was charged. Pay again to continue.'])
     expect(stepOf(p.id)).toEqual({ at: 'consent' })
@@ -278,7 +331,7 @@ describe('the ID check', () => {
 
   test('the face check declined at services\' own verifier: the selfie\'s one line, the ID offered, and a new check next', async () => {
     const p = person('katherine')
-    await open(w, p.id)
+    await open(w, p.id, () => stampNumberAt(w, p.seed))
     w.faceCheck.set(session(), passed(p.name, { status: 'Declined' }))
     const err = await ask(w, p.id, await stampNumberAt(w, p.seed)).catch((e: unknown) => e)
     expect([(err as Said).message, (err as NotPassed).check]).toEqual(["That selfie didn't pass. Try again, or use your ID.", 'face'])

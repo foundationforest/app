@@ -3,7 +3,10 @@
 // labels and addresses (those in a market the directory lists) and their AI apps, found from the seed as the reference app finds them (so a
 // new device lists them), and the person is in. Not yet: the verification takes up where it
 // stopped, and the passkey is in use once it ends; a check that will never pass, found as it is
-// taken up, goes with them to Get verified, which says so.
+// taken up, goes with them to Get verified, which says so. Someone whose stamps all come from keys
+// the verifier no longer signs with has their profiles and AI apps listed as if verified, then goes
+// to Get verified, which says their earlier check no longer counts; once they check again, Continue
+// takes them to Home.
 
 import { mainKey } from '@foundationforest/keys'
 
@@ -15,7 +18,7 @@ import { type Where, findConnections } from './connections.ts'
 import type { Prove } from './profile.ts'
 import { NotPassed, type Step, resume, stepOf } from './verify.ts'
 
-export type Entered = { to: 'profiles' } | { to: 'verify'; step: Step; failed?: NotPassed }
+export type Entered = { to: 'profiles' } | { to: 'verify'; step: Step; failed?: NotPassed; again?: true }
 
 /** Where the person goes after Start. The seed is the caller's, held in the page as after any unlock (held.ts). */
 export async function enter(s: Services & Where, passkey: Passkey, prove: Prove): Promise<Entered> {
@@ -27,11 +30,12 @@ export async function enter(s: Services & Where, passkey: Passkey, prove: Prove)
     if (err instanceof NotPassed) return { to: 'verify', step: stepOf(passkey.id), failed: err }
     throw err
   }
-  if (!r.verified) return { to: 'verify', step: r.step }
-  const labels = r.labels.filter(listed)
+  if (!r.verified && !r.again) return { to: 'verify', step: r.step }
+  const labels = (r.verified ? r.labels : r.again!.labels).filter(listed)
   const profiles = await Promise.all(labels.map(async (label) => ({ label, address: (await mainKey(passkey.seed, label)).address })))
   await findConnections(s, passkey.seed, labels)
-  usePasskey(passkey.id)
   saveProfiles(profiles)
+  if (!r.verified) return { to: 'verify', step: r.step, again: true }
+  usePasskey(passkey.id)
   return { to: 'profiles' }
 }

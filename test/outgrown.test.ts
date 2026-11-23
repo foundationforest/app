@@ -1,8 +1,8 @@
 // What a market outgrew, against services' own host (world.ts): each entry one of the person's
 // profiles posted that its market's file no longer takes as it is, a listing checked against its
-// role, a review against the role of the profile it is about too; what still fits of such a review;
-// held in the page once read, and let go after Forget; and nothing for a profile whose market left
-// the directory.
+// role, a review against the role of the profile it is about too, such as one holding a field its
+// market asked once; what still fits of such a review; held in the page once read, and let go after
+// Forget; and nothing for a profile whose market left the directory.
 
 import { afterAll, beforeAll, beforeEach, expect, test } from 'vitest'
 
@@ -10,15 +10,14 @@ import { post } from '../src/flows/entries.ts'
 import { letGoOutgrown, outgrownHeld, outgrownOf, readOutgrown } from '../src/flows/outgrown.ts'
 import { fitting } from '../src/form.ts'
 import { markets } from '../src/markets.ts'
-import { fieldWith } from './directory.ts'
+import { twoSides } from './directory.ts'
 import { type World, freshDevice, verifiedWith, world } from './world.ts'
 
-// A market with a review field kept for reviews of one role, and another role, which writes them.
-const found = fieldWith(markets, 'a choice for reviews of one role, in a market with another', (f, _, side) => f.piece === 'choice' && f.roles !== undefined && side.market.roles.some((r) => !f.roles!.includes(r.role)), 'review')
-const name = found.market.name
-const reviewed = found.role
-const writer = found.market.roles.find((r) => !found.field.roles!.includes(r.role))!.role
-const answer = { [found.name]: (found.field.values as string[])[0]! }
+// A market with two sides: the one that offers is reviewed, the one that requests writes.
+const { market, offer, request } = twoSides(markets)
+const name = market.name
+const reviewed = offer.role
+const writer = request.role
 
 let w: World
 beforeAll(async () => void (w = await world()))
@@ -28,7 +27,7 @@ beforeEach(() => {
   w.decideAll('approved')
 })
 
-test("a listing and a review a market outgrew, among those it takes: a review's fields checked against whom it is about", async () => {
+test('a listing and a review a market outgrew, among those it takes, either way between its sides', async () => {
   const seller = (await verifiedWith(w, `${name}/${reviewed}`)).profiles[0]!
   const b = await verifiedWith(w, `${name}/${writer}`)
   const buyer = b.profiles[0]!
@@ -36,16 +35,16 @@ test("a listing and a review a market outgrew, among those it takes: a review's 
   const other = s.profiles[0]!
 
   // An older app's check let these through; post writes what it is given.
-  await post(w, b.seed, buyer, 'review', { subject: seller.address, score: '9', ...answer })
+  await post(w, b.seed, buyer, 'review', { subject: seller.address, score: '9', text: 'Quick and kind.' })
   const oldReview = { subject: seller.address, score: '8', text: 'Quick.', speed: 'fast' }
   const old = await post(w, b.seed, buyer, 'review', oldReview)
   const oldListing = await post(w, b.seed, buyer, 'listing', { description: 'A wool coat.', colour: 'red' })
   await post(w, b.seed, buyer, 'listing', { description: 'A linen shirt.' })
-  // The field is for reviews of the other role only: about this one it doesn't fit.
-  const aboutBuyer = await post(w, s.seed, other, 'review', { subject: buyer.address, score: '7', ...answer })
+  // A field its market asked once, about the other side too.
+  const aboutBuyer = await post(w, s.seed, other, 'review', { subject: buyer.address, score: '7', speed: 'fast' })
 
   expect((await outgrownOf(w, buyer)).map((e) => e.path).sort(), 'what fits is no notice').toEqual([old, oldListing].sort())
-  expect((await outgrownOf(w, other)).map((e) => e.path), 'checked against the role of whom it is about').toEqual([aboutBuyer])
+  expect((await outgrownOf(w, other)).map((e) => e.path), 'about the other side').toEqual([aboutBuyer])
 
   const kept = fitting(name, writer, oldReview, 'review', reviewed)
   expect(kept, 'what still fits of the review').toEqual({ subject: seller.address, score: '8', text: 'Quick.' })

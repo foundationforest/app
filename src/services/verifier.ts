@@ -12,7 +12,12 @@ import { Refused, call } from './http.ts'
  */
 export const stamps = () => lazy(() => import('@foundationforest/proofs'))
 
-/** A stamp as the Profiles folder keeps it: the standard's JSON of it, as text, checked as the standard reads it. The fields a verifier adds beside it (the ID check's name and birth date among them) are kept too: the standard's stampToJson passes them through, so the person keeps what the facts were made from. */
+/**
+ * A stamp as the Profiles folder keeps it: the standard's JSON of it, as text, checked as the standard
+ * reads it. What a verifier adds beside it is kept too, since the standard's stampToJson passes it
+ * through: our verifier's `factList`, the list of what the check saw that its facts were made from,
+ * which the person needs to show any of those facts later. A stamp asked back comes without it.
+ */
 export async function stampText(json: unknown): Promise<string> {
   const { stampFromJson, stampToJson } = await stamps()
   return JSON.stringify(stampToJson(stampFromJson(json)))
@@ -24,12 +29,20 @@ const SERVICE = 'verifier'
 export type Check = 'face' | 'id'
 
 /**
- * What the verifier says of itself in GET /: its name, its two keys, whether the ID check is for sale
- * (`forSale`, false while it has no Stripe key) and whether its payments are test payments, which
- * charge nobody (`testPayments`), the consent screen an app shows before the ID check, and its gifts,
- * credits at one host.
+ * What the verifier says of itself in GET /: its name, its two keys, each with the names of its facts
+ * in their list's order (`facts`), whether the ID check is for sale (`forSale`, false while it has no
+ * Stripe key) and whether its payments are test payments, which charge nobody (`testPayments`); the
+ * recipe its facts are made by (`recipe`, the standard's facts as a list); the consent screen an app
+ * shows before the ID check; and its gifts, credits at one host. Nothing shows the facts' names yet.
  */
-export type About = { name: string; face: { key: string }; id: { key: string; forSale?: boolean; testPayments?: boolean }; consent?: string; gift?: { face: number; id: number; host: string; sponsor: string } }
+export type About = {
+  name: string
+  face: { key: string; facts?: string[] }
+  id: { key: string; facts?: string[]; forSale?: boolean; testPayments?: boolean }
+  recipe?: string
+  consent?: string
+  gift?: { face: number; id: number; host: string; sponsor: string }
+}
 
 const known = new Map<string, Promise<About>>()
 
@@ -68,9 +81,12 @@ function sessionOf(status: number, body: any, check: Check): Session {
   return body
 }
 
-/** A face check: its session. `returnUrl` is where Didit sends the person after, on an app the verifier lists. */
-export async function faceSession(origin: string, returnUrl?: string): Promise<Session> {
-  const { status, body } = await call(SERVICE, `${origin}/face/session`, returnUrl ? { returnUrl } : {})
+/**
+ * A face check: its session, opened for this stamp number, which alone it can give a stamp to.
+ * `returnUrl` is where Didit sends the person after, on an app the verifier lists.
+ */
+export async function faceSession(origin: string, stampNumber: bigint, returnUrl?: string): Promise<Session> {
+  const { status, body } = await call(SERVICE, `${origin}/face/session`, { stampNumber: stampNumber.toString(), ...(returnUrl && { returnUrl }) })
   return sessionOf(status, body, 'face')
 }
 
@@ -81,9 +97,9 @@ export async function idPayment(origin: string, returnUrl: string): Promise<{ pa
   return body
 }
 
-/** An ID check: its session, for a paid payment with a try left. */
-export async function idSession(origin: string, payment: string, returnUrl?: string): Promise<Session> {
-  const { status, body } = await call(SERVICE, `${origin}/id/session`, { payment, ...(returnUrl && { returnUrl }) })
+/** An ID check: its session, for a paid payment with a try left, opened for this stamp number, which alone it can give a stamp to. */
+export async function idSession(origin: string, payment: string, stampNumber: bigint, returnUrl?: string): Promise<Session> {
+  const { status, body } = await call(SERVICE, `${origin}/id/session`, { payment, stampNumber: stampNumber.toString(), ...(returnUrl && { returnUrl }) })
   return sessionOf(status, body, 'id')
 }
 
@@ -112,7 +128,7 @@ export async function askStamp(origin: string, check: Check, ask: { sessionId: s
   throw new Refused(SERVICE, status, body?.error ?? 'internal', check)
 }
 
-/** The stamps the verifier signed for this stamp number, asked back, each as the Profiles folder keeps it, or null; or null for one not from the current key of its check. */
+/** The stamps the verifier signed for this stamp number, asked back, each as the Profiles folder keeps it but without its list of facts, which only the answer that signed it carries; or null for none, or for one not from the current key of its check. */
 export async function stampsBack(origin: string, stampNumber: bigint): Promise<Record<Check, string | null>> {
   const { status, body } = await call(SERVICE, `${origin}/stamp`, { stampNumber: stampNumber.toString() })
   if (status === 404) return { face: null, id: null }
