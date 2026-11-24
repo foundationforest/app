@@ -1,14 +1,14 @@
 // The seed, held in this page's memory after an unlock, so the actions that follow ask nothing: for
-// 5 minutes since the last action, each action restarting them as it starts and as it ends, or until
+// 15 minutes since the last action, each action restarting them as it starts and as it ends, or until
 // the page closes, and on Forget; it is never stored. Hidden is not closed: a page another window
-// covers, or one in another tab, keeps it, as a locked phone does, until the 5 minutes run out. Only
+// covers, or one in another tab, keeps it, as a locked phone does, until the 15 minutes run out. Only
 // the passkey in use is held, one at a time.
 //
 // An action already running when the seed is dropped finishes with it: its bytes are zeroed as the
 // last action using them ends, never under one, which would make it mix the wrong keys.
 
 /** How long the seed is held after an unlock, or after the last action that used it. */
-export const HOLD_MS = 5 * 60_000
+export const HOLD_MS = 15 * 60_000
 
 type Held = { id: string; seed: Uint8Array; using: number }
 
@@ -20,7 +20,7 @@ const told = () => {
   for (const l of listeners) l()
 }
 
-/** The 5 minutes started again. */
+/** The 15 minutes started again. */
 function restart(): void {
   clearTimeout(timer)
   timer = setTimeout(drop, HOLD_MS)
@@ -58,7 +58,7 @@ export function drop(): void {
   told()
 }
 
-/** `action` with the held seed `h`, which it keeps from being zeroed while it runs; the 5 minutes restarted as it starts and as it ends, unless `quiet`. */
+/** `action` with the held seed `h`, which it keeps from being zeroed while it runs; the 15 minutes restarted as it starts and as it ends, unless `quiet`. */
 async function using<T>(h: Held, action: (seed: Uint8Array) => Promise<T>, quiet: boolean): Promise<T> {
   h.using++
   if (!quiet) restart()
@@ -74,7 +74,7 @@ async function using<T>(h: Held, action: (seed: Uint8Array) => Promise<T>, quiet
 
 /**
  * `action` with the seed of passkey `id`: the one held, or, with none held, the one `unlock` gives,
- * held from now. Each action restarts the 5 minutes as it starts and as it ends.
+ * held from now. Each action restarts the 15 minutes as it starts and as it ends.
  */
 export async function withHeld<T>(id: string, unlock: () => Promise<Uint8Array>, action: (seed: Uint8Array) => Promise<T>): Promise<T> {
   if (held && held.id !== id) drop()
@@ -85,7 +85,7 @@ export async function withHeld<T>(id: string, unlock: () => Promise<Uint8Array>,
 /**
  * `action` with the seed of passkey `id` if it is held, else nothing: what the page does by itself
  * while a seed is held (messages opened again as new ones come), never the person's own action, so
- * it asks nothing and restarts nothing, and a screen left open never keeps the seed past its 5
+ * it asks nothing and restarts nothing, and a screen left open never keeps the seed past its 15
  * minutes.
  */
 export async function ifHeld<T>(id: string, action: (seed: Uint8Array) => Promise<T>): Promise<T | undefined> {

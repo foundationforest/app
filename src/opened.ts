@@ -5,6 +5,7 @@
 // open. Forget, or a closed page, lets them go.
 
 import type { Thread } from './flows/inbox.ts'
+import type { Found } from './list.ts'
 
 type Held = { threads: Thread[]; fresh: Set<string>; all: boolean } | null
 
@@ -36,6 +37,12 @@ export const allOpened = (): boolean => held?.all === true
 
 /** Whether a thread holds a message that was new when it was opened. */
 export const isFresh = (thread: Thread): boolean => thread.messages.some((m) => held?.fresh.has(m.id))
+
+/** The new inbox entries not opened yet, by profile: those the list found (list.ts) that no thread opened in this page holds. */
+export function unopenedOf(found: Found): Record<string, string[]> {
+  const ids = new Set((held?.threads ?? []).flatMap((t) => t.messages.map((m) => m.id)))
+  return Object.fromEntries(Object.entries(found).map(([address, list]) => [address, list.filter((id) => !ids.has(id))]))
+}
 
 /** A thread looked at: its messages new no more. */
 export function looked(thread: Thread): void {

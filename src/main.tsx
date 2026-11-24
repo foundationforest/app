@@ -3,6 +3,8 @@ import './theme.css'
 
 import { createRoot } from 'react-dom/client'
 
+import './unlocked.ts'
+
 import { App } from './App.tsx'
 import { cleanOld, profiles, saveProfiles, theme } from './device.ts'
 import { listed } from './markets.ts'

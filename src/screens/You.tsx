@@ -1,28 +1,28 @@
-// You, one column on a phone and a laptop alike. At the top, one card: how the person is verified,
-// Selfie and ID, each with its badge's square: a check done its badge, the black square, and
-// Verified on the soft green; one not done its badge's outline, dashed, which starts it, one line on
-// what it gives, from the verifier's gifts as Get verified says it, and Add, outlined, which opens Get
-// verified too. The ID shows only where the verifier sells it (GET /, `forSale`), or once it is done.
-// Then one card of rows: Your AI, with the apps' names (AiApps.tsx), and Passkeys, with how many
-// (Passkeys.tsx), and Email, with Every morning or Off at its right (Email.tsx), and About Forest
-// (About.tsx), each opening its own screen; last, Appearance, with
-// three icon buttons at its right, Auto, Light and Dark, each named for screen readers, a tap
-// applying it at once. At the foot, Forget this device, red text, asking again in its own place, Forget
-// this device?, with Cancel and Forget (forget.ts). Nothing here asks the passkey.
+// You, one column on a phone and a laptop alike. At the top, You, with the person's badges beside
+// it: a check done its badge, the black square, a tap saying its words; one not done its badge's
+// outline, dashed, which opens Get verified (the ID's only where the verifier sells it, GET /,
+// `forSale`, or once it is done). Then one card of settings rows, each its icon, its name, its detail
+// under it and a caret, opening a page of its own: Your checks, with what the person holds (Selfie,
+// ID card), or Not yet (YourChecks.tsx); Your AI, with the apps' names (AiApps.tsx); Passkeys, with
+// their names, the main one first (Passkeys.tsx); Email, Every morning or Off (Email.tsx); and About
+// Forest (About.tsx); last, Appearance, with three icon buttons at its right, Auto, Light and Dark,
+// each named for screen readers, a tap applying it at once. At the foot, Forget this device, red
+// text, asking again in its own place, Forget this device?, with Cancel and Forget (forget.ts).
+// Nothing here asks the passkey.
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 
-import { config } from '../config.ts'
-import { type Check, type Theme, saveTheme, theme as savedTheme } from '../device.ts'
-import { type CreditLines, creditsOf } from '../flows/verify.ts'
+import { type Check, FIRST, type Theme, madeHere, saveTheme, theme as savedTheme } from '../device.ts'
+import { idName } from '../documents.ts'
 import { forgetDevice } from '../forget.ts'
-import { useBackups, useChecks, useConnections, useEmail, useIdCheck } from '../hooks.ts'
+import { useBackups, useChecks, useConnections, useEmail, useIdCheck, useIds } from '../hooks.ts'
 import { type IconName, Icon } from '../icons.tsx'
+import { nameOf, numbered } from '../managers.ts'
 import { applyTheme } from '../theme.ts'
 import { FORGET_LINE } from '../forget.ts'
-import { AskAgain, CHECK_ICON, Opens, Seg, Top } from '../ui.tsx'
+import { AskAgain, Opens, Seg, Top, Unverified, Verified } from '../ui.tsx'
 
-type Props = { onForgot: () => void; onCheck: (check: Check) => void; onPasskeys: () => void; onAiApps: () => void; onEmail: () => void; onAbout: () => void }
+type Props = { onForgot: () => void; onCheck: (check: Check) => void; onChecks: () => void; onPasskeys: () => void; onAiApps: () => void; onEmail: () => void; onAbout: () => void }
 
 /** The looks, each by its words and icon: the device's own is Auto. */
 export const THEMES: Array<[Theme, string, IconName]> = [
@@ -31,32 +31,21 @@ export const THEMES: Array<[Theme, string, IconName]> = [
   ['dark', 'Dark', 'moon'],
 ]
 
-const CHECKS: Array<{ check: Check; name: string; add: string }> = [
-  { check: 'face', name: 'Selfie', add: 'Add, free' },
-  { check: 'id', name: 'ID', add: 'Add, $5' },
-]
+/** What Your checks' row says the person holds: Selfie, then each ID stamp by its kind (ID card), or Not yet. */
+export function checksLine(has: Set<Check>, ids: ReturnType<typeof useIds>): string {
+  const held = [...(has.has('face') ? ['Selfie'] : []), ...(has.has('id') ? (ids.length ? ids.map(idName) : ['ID']) : [])]
+  return held.length ? held.join(', ') : 'Not yet'
+}
 
-/** What a check not done gives, in one line: the selfie its credits, the ID stronger trust and its credits. */
-const givesOf = (check: Check, credits: CreditLines) => (check === 'id' ? ['Stronger trust', credits.id] : [credits.face]).filter(Boolean).join(', ')
-
-/** How many passkeys: 1 passkey, 2 passkeys. */
-const passkeyCount = (n: number) => `${n} passkey${n === 1 ? '' : 's'}`
-
-export function You({ onForgot, onCheck, onPasskeys, onAiApps, onEmail, onAbout }: Props) {
+export function You({ onForgot, onCheck, onChecks, onPasskeys, onAiApps, onEmail, onAbout }: Props) {
   const has = useChecks()
+  const ids = useIds()
   const { forSale } = useIdCheck()
   const backups = useBackups()
   const aiApps = useConnections()
   const emailOn = useEmail() !== null
-  const [credits, setCredits] = useState<CreditLines>({})
-  useEffect(() => {
-    let live = true
-    creditsOf(config).then(
-      (lines) => live && setCredits(lines),
-      () => undefined,
-    )
-    return () => void (live = false)
-  }, [])
+  const made = madeHere()
+  const passkeys = backups ? numbered([FIRST, ...backups.map((b) => b.id)].map((id) => nameOf(made[id]))).join(', ') : ''
   const [theme, setTheme] = useState(savedTheme)
   const pick = (t: Theme) => {
     saveTheme(t)
@@ -66,41 +55,20 @@ export function You({ onForgot, onCheck, onPasskeys, onAiApps, onEmail, onAbout 
   return (
     <main>
       <Top>
-        <h1>You</h1>
+        <div className="titled">
+          <h1>You</h1>
+          <span className="badges" role="group" aria-label="How you're verified">
+            {(['face', 'id'] as const)
+              .filter((c) => c === 'face' || forSale || has.has(c))
+              .map((c) => (has.has(c) ? <Verified key={c} check={c} big alone /> : <Unverified key={c} check={c} onClick={() => onCheck(c)} />))}
+          </span>
+        </div>
       </Top>
-      <div className="rows" role="group" aria-label="Verified">
-        {CHECKS.filter(({ check }) => check === 'face' || forSale || has.has(check)).map(({ check, name, add }) => (
-          <div key={check} className="row">
-            {has.has(check) ? (
-              <span className="sq sm ink">
-                <Icon name={CHECK_ICON[check]} fill />
-              </span>
-            ) : (
-              <button type="button" className="sq sm outline" aria-label={`Verify with ${check === 'id' ? 'ID' : 'a selfie'}`} onClick={() => onCheck(check)}>
-                <Icon name={CHECK_ICON[check]} />
-              </button>
-            )}
-            <span className="two">
-              <strong>{name}</strong>
-              {!has.has(check) && givesOf(check, credits) && <span className="wraps">{givesOf(check, credits)}</span>}
-            </span>
-            {has.has(check) ? (
-              <span className="chip new">
-                <Icon name="check" bold />
-                Verified
-              </span>
-            ) : (
-              <button className="small" onClick={() => onCheck(check)}>
-                {add}
-              </button>
-            )}
-          </div>
-        ))}
-      </div>
       <div className="rows">
-        <Opens icon="sparkle" words="Your AI" line={aiApps.map((c) => c.name).join(', ')} onClick={onAiApps} />
-        <Opens icon="key" words="Passkeys" line={backups ? passkeyCount(backups.length + 1) : ''} onClick={onPasskeys} />
-        <Opens icon="envelope-simple" words="Email" value={emailOn ? 'Every morning' : 'Off'} onClick={onEmail} />
+        <Opens icon="seal-check" words="Your checks" line={checksLine(has, ids)} onClick={onChecks} />
+        <Opens icon="sparkle" words="Your AI" line={aiApps.length ? aiApps.map((c) => c.name).join(', ') : 'Not yet'} onClick={onAiApps} />
+        <Opens icon="key" words="Passkeys" line={passkeys} onClick={onPasskeys} />
+        <Opens icon="envelope-simple" words="Email" line={emailOn ? 'Every morning' : 'Off'} onClick={onEmail} />
         <Opens icon="info" words="About Forest" onClick={onAbout} />
         <div className="row looks">
           <span className="sq sm plain">

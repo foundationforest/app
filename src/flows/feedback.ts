@@ -4,15 +4,15 @@
 // can. Those a profile wrote come from its own folder.
 //
 // What is new about a profile is what the index counted after the time the device keeps for it, the
-// newest its Reviews or Notifications has shown (device.ts). A profile the device has no time
+// newest its Reviews has shown (device.ts). A profile the device has no time
 // for yet is marked at the newest the index holds now, so nothing old shows as new on a new device.
 //
-// Notifications lists every review, vouch and report the index counted about any of the person's
-// profiles, newest first, each new one marked; messages are the inbox's.
+// What came about a profile counts on its mark and its rating (counts.ts), and shows on its Reviews,
+// each new one marked; messages are the inbox's.
 
 import type { Profile } from '../device.ts'
 import { saveSeen, seen } from '../device.ts'
-import { type Held, holdRated } from '../rated.ts'
+import { holdRated } from '../rated.ts'
 import { type Rated, type Received, readRated } from '../services/index.ts'
 import type { Posted } from './entries.ts'
 
@@ -41,19 +41,3 @@ export async function rate(index: string, list: Profile[]): Promise<void> {
 
 /** What a profile wrote about others, of its entries: its reviews, vouches and reports, newest first. */
 export const givenOf = (entries: Posted[]): Posted[] => entries.filter((e) => e.kind !== 'listing')
-
-/** One of Notifications' rows: a review, vouch or report about one of the person's profiles (`on`), and whether it is new. */
-export type Notice = { received: Received; on: string; fresh: boolean }
-
-/**
- * Notifications' rows: every review, vouch and report the index counted about any profile in
- * `list`, newest first, each new when it came after `since`, the time the device kept for its
- * profile as the screen opened (none: nothing is new).
- */
-export function notices(list: Profile[], rated: Record<string, Held | undefined>, since: Record<string, number>): Notice[] {
-  const said = list.flatMap((p) => {
-    const held = rated[p.address]
-    return held && 'rated' in held ? held.rated.received.map((r) => ({ received: r, on: p.address, fresh: (r.time ?? 0) > (since[p.address] ?? Infinity) })) : []
-  })
-  return said.sort((a, b) => (b.received.time ?? 0) - (a.received.time ?? 0))
-}

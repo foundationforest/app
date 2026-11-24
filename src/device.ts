@@ -1,11 +1,12 @@
 // What this device keeps, in localStorage, none of it secret: the id of the passkey in use and of
 // every passkey this device has made or used (so Start never makes a second one where one is), the
-// person's profiles' labels and addresses, when each was last used here (opened, posted from or
-// written from), the Profiles folder's address and the label entries it has read there, how they
-// are verified, their AI apps (each one's name, when it connected, its connection folder's address
+// person's profiles' labels and addresses, the Profiles folder's address and the label entries it
+// has read there, with when each was made (the entry says), how they are verified, of each
+// ID stamp the kind of document, its country and when it runs out (from the stamp's facts, a copy,
+// so Your checks shows them with nothing unlocked), their AI apps (each one's name, when it connected, its connection folder's address
 // and its profiles' labels), the addresses of the access keys it knows of, where they left off in
 // each profile's inbox, the time of the newest review, vouch or report about each profile its
-// Reviews or Notifications has shown, their theme, and, while a verification is under way, its
+// Reviews has shown, their theme, and, while a verification is under way, its
 // check and session, the ID check's payment and how many tries it opened, and the gift's buy, then
 // an ID check's payment no stamp has used yet (flows/verify.ts); and, of each passkey it made or
 // added, its maker, read from the id it sent as it was made, and the name the person gave it here
@@ -42,8 +43,8 @@ import { RELOADED } from './version.ts'
 export type { Check }
 
 export type Profile = { label: string; address: string }
-/** The Profiles folder, as this device last opened it: its address (the wallet's), and each label entry it read there, by the random id of its path, with its label. Never a key. */
-export type Folder = { address: string; labels: Record<string, string> }
+/** The Profiles folder, as this device last opened it: its address (the wallet's), and each label entry it read there, by the random id of its path, with its label, and when it says the profile was made. Never a key. */
+export type Folder = { address: string; labels: Record<string, string>; made: Record<string, number> }
 /** An AI app connected: its connection folder's address, the AI app's name, when it connected, and the labels of the profiles it acts for. Never a key. */
 export type Connection = { address: string; name: string; time: number; labels: string[] }
 export type Theme = 'device' | 'light' | 'dark'
@@ -74,7 +75,7 @@ const KEYS = {
   known: 'forest.known',
   folder: 'forest.folder',
   backups: 'forest.backups',
-  used: 'forest.used',
+  ids: 'forest.ids',
   names: 'forest.names',
   email: 'forest.email',
 } as const
@@ -146,12 +147,31 @@ export const addProfile = (p: Profile) => saveProfiles([...profiles().filter((q)
 export const folder = (): Folder | null => {
   const f = read<Folder | null>(KEYS.folder, null)
   if (typeof f?.address !== 'string' || typeof f.labels !== 'object' || f.labels === null) return null
-  return { address: f.address, labels: Object.fromEntries(Object.entries(f.labels).filter((e): e is [string, string] => typeof e[1] === 'string')) }
+  const made = typeof f.made === 'object' && f.made !== null ? f.made : {}
+  return {
+    address: f.address,
+    labels: Object.fromEntries(Object.entries(f.labels).filter((e): e is [string, string] => typeof e[1] === 'string')),
+    made: Object.fromEntries(Object.entries(made).filter((e): e is [string, number] => Number.isSafeInteger(e[1]))),
+  }
 }
-/** The Profiles folder at `address` opened, with these label entries read in it, by id: kept beside those read before, unless they were another folder's. */
-export function readLabels(address: string, labels: Record<string, string>): void {
+/** The Profiles folder at `address` opened, with these label entries read in it, by id, and when each says its profile was made: kept beside those read before, unless they were another folder's. */
+export function readLabels(address: string, labels: Record<string, string>, made: Record<string, number> = {}): void {
   const was = folder()
-  write(KEYS.folder, { address, labels: { ...(was?.address === address ? was.labels : {}), ...labels } })
+  const same = was?.address === address
+  write(KEYS.folder, { address, labels: { ...(same ? was.labels : {}), ...labels }, made: { ...(same ? was.made : {}), ...made } })
+}
+
+/** When the profile of each label was made, as the label entries this device read say: the earliest, for a label written twice. */
+export function madeOf(): Record<string, number> {
+  const f = folder()
+  const out: Record<string, number> = {}
+  if (!f) return out
+  for (const [id, label] of Object.entries(f.labels)) {
+    const t = f.made[id]
+    const before = out[label]
+    if (label && t !== undefined && (before === undefined || t < before)) out[label] = t
+  }
+  return out
 }
 
 /** How the person is verified: the checks whose stamps their Profiles folder holds from the verifier's current keys, as this device last worked them out. */
@@ -160,6 +180,19 @@ export const checks = (): Check[] => {
   return (['face', 'id'] as const).filter((c) => kept.includes(c))
 }
 export const saveChecks = (list: Check[]) => write(KEYS.checks, [...new Set(list)].sort())
+
+/** One ID stamp, as Your checks shows it: the kind of document, the country that issued it and the day it runs out, as its facts say them (Didit's `document_type`, `issuing_state`, `expiration_date`); none for a stamp kept without its list. */
+export type IdShown = { kind?: string; country?: string; until?: string }
+
+const isText = (v: unknown): v is string => typeof v === 'string' && v.length > 0
+
+/** The person's ID stamps from the verifier's current ID key, as this device last read them in the Profiles folder. */
+export const ids = (): IdShown[] =>
+  read<unknown[]>(KEYS.ids, [])
+    .filter((v): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v))
+    .map((v) => ({ ...(isText(v.kind) && { kind: v.kind }), ...(isText(v.country) && { country: v.country }), ...(isText(v.until) && { until: v.until }) }))
+/** The ID stamps as the Profiles folder holds them now, in place of what this device kept. */
+export const keepIds = (list: IdShown[]) => write(KEYS.ids, list.length ? list : undefined)
 
 const isConnection = (v: unknown): v is Connection => {
   const c = v as Connection | null
@@ -184,14 +217,8 @@ export const cursors = (): Record<string, number> => {
 }
 export const saveCursors = (more: Record<string, number>) => write(KEYS.read, { ...cursors(), ...more })
 
-/** When each profile was last used on this device, by its address: opened, posted from (a listing, a review, a vouch or a report) or written from (a message). */
-export const used = (): Record<string, number> => {
-  const kept = read<Record<string, unknown>>(KEYS.used, {})
-  return Object.fromEntries(Object.entries(kept).filter((e): e is [string, number] => Number.isSafeInteger(e[1])))
-}
-export const markUsed = (address: string, time = Date.now()) => write(KEYS.used, { ...used(), [address]: time })
 
-/** The time of the newest review, vouch or report about each profile, by its address, that its Reviews or Notifications has shown. */
+/** The time of the newest review, vouch or report about each profile, by its address, that its Reviews has shown. */
 export const seen = (): Record<string, number> => {
   const kept = read<Record<string, unknown>>(KEYS.seen, {})
   return Object.fromEntries(Object.entries(kept).filter((e): e is [string, number] => Number.isSafeInteger(e[1])))
@@ -285,9 +312,9 @@ export const under = (): Under | null => {
 export const keepUnder = (u: Under) => write(KEYS.under, u)
 export const endUnder = () => write(KEYS.under, undefined)
 
-/** Forget this device: the profiles, when each was last used, and the Profiles folder, the names given others, the morning email, how they are verified, the AI apps and the keys it knows of, what was new on each, what it knew of the passkeys it made, the theme, the passkey in use and any verification under way. The ids of the passkeys it knows stay, so Start asks for them and never makes a second one. */
+/** Forget this device: the profiles, and the Profiles folder, the names given others, the morning email, how they are verified and their ID stamps, the AI apps and the keys it knows of, what was new on each, what it knew of the passkeys it made, the theme, the passkey in use and any verification under way. The ids of the passkeys it knows stay, so Start asks for them and never makes a second one. */
 export function forget(): void {
-  for (const key of [KEYS.passkey, KEYS.profiles, KEYS.used, KEYS.folder, KEYS.names, KEYS.email, KEYS.checks, KEYS.connections, KEYS.known, KEYS.read, KEYS.seen, KEYS.backups, KEYS.theme, KEYS.under]) store().removeItem(key)
+  for (const key of [KEYS.passkey, KEYS.profiles, KEYS.ids, KEYS.folder, KEYS.names, KEYS.email, KEYS.checks, KEYS.connections, KEYS.known, KEYS.read, KEYS.seen, KEYS.backups, KEYS.theme, KEYS.under]) store().removeItem(key)
   globalThis.dispatchEvent?.(new Event(CHANGED))
 }
 

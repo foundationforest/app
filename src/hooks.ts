@@ -1,30 +1,33 @@
 // What the screens read from the device, the host and the index, kept fresh: the person's profiles
-// and AI apps as the device keeps them, and the profiles in the app's order (order.ts); how each is
-// verified, as its profile entry at the host says, and so how the person is;
-// the new entries in their inboxes, one list for the page (list.ts); what the index says of
-// each, read as a screen showing it opens and held in the page meanwhile, and what a market outgrew
-// of what each posted, the same way; what is new on each;
+// and AI apps as the device keeps them, and the profiles in the order they were made (order.ts); how
+// each is verified, as its profile entry at the host says, and so how the person is; what each
+// posted, read from its folder as a screen showing it opens; the new entries in their inboxes, one
+// list for the page (list.ts); what the index says of each, read as a screen showing it opens and
+// held in the page meanwhile, and what a market outgrew of what each posted, the same way; each
+// place's mark, what is new on it (counts.ts); a list's order kept while it is on screen;
 // whether a profile was made on another device; the messages opened in this page; the passkeys added
 // to the Profiles folder (backups, as the standard names them); whether a seed is held in it;
 // the names the person gave others and the morning email; what the index says of anyone's profile;
 // the captions places gives the places a screen shows; and whether a newer version of the app is live.
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { config } from './config.ts'
 import { sawKeys } from './elsewhere-ai.ts'
-import { CHANGED, type Check, type Connection, type Email, type Profile, checks, connections, email, folder, names, profiles, seen, used } from './device.ts'
+import { aboutOf } from './about.ts'
+import { type Mark, allMessagesMark, messagesMark, offerMark, profileMark } from './counts.ts'
+import { CHANGED, type Check, type Connection, type Email, type IdShown, type Profile, checks, connections, email, folder, ids, madeOf, names, profiles, seen } from './device.ts'
 import { type Card, readCard } from './flows/cards.ts'
 import { type Backup, backupsAt } from './flows/backups.ts'
 import { type IdCheck, idCheckOf } from './flows/verify.ts'
 import { anyNew, labelIds } from './flows/elsewhere.ts'
 import { type Received, newOf, rate } from './flows/feedback.ts'
-import type { Posted } from './flows/entries.ts'
+import { type Posted, readEntries } from './flows/entries.ts'
 import { onOutgrown, outgrownHeld, readOutgrown } from './flows/outgrown.ts'
 import { isHeld, onHeld } from './held.ts'
 import { newMessagesList } from './list.ts'
-import { onOpened, opened } from './opened.ts'
-import { ordered } from './order.ts'
+import { isFresh, onOpened, opened, unopenedOf } from './opened.ts'
+import { inMadeOrder, steady } from './order.ts'
 import { type Held, onRated, ratedOf } from './rated.ts'
 import { readRated } from './services/index.ts'
 import { captionOf } from './services/places.ts'
@@ -192,37 +195,88 @@ export function useOutgrown(list: Profile[]): Record<string, Posted[] | undefine
   return useHeldOutgrown(list)
 }
 
-/** What is new on one profile: how many new messages, and the new reviews, vouches and reports. */
-export type News = { messages: number; received: Received[] }
+/** What is new on one profile: its mark (counts.ts); its messages' mark, what its messages button shows; its new reviews, vouches and reports; and what of it a market outgrew. */
+export type News = { mark: Mark; messages: Mark; received: Received[]; outgrown: Posted[] }
 
-/** What is new on each profile in `list`, by address; and in all, how many messages (what Messages counts) and how many reviews, vouches and reports (what the bell counts, with what a market outgrew). */
-export function useNews(list: Profile[]): { of: Record<string, News>; messages: number; received: number } {
+/** What is new on each profile in `list`, by address, and the Messages tab's mark: the conversations with something new, the dot while new messages are not opened yet (counts.ts). */
+export function useMarks(list: Profile[]): { of: Record<string, News>; messages: Mark } {
   useDevice()
-  const messages = useNewMessages()
+  const found = useNewMessages()
+  const held = useOpened()
   const rated = useHeldRated(list)
+  const outgrownOf = useHeldOutgrown(list)
   const marks = seen()
+  const unopened = unopenedOf(found)
   const of: Record<string, News> = {}
-  let [allMessages, allReceived] = [0, 0]
   for (const p of list) {
-    const held = rated[p.address]
-    const received = held && 'rated' in held && p.address in marks ? newOf(held.rated, marks[p.address]!) : []
-    const n = messages[p.address]?.length ?? 0
-    of[p.address] = { messages: n, received }
-    allMessages += n
-    allReceived += received.length
+    const r = rated[p.address]
+    const received = r && 'rated' in r && p.address in marks ? newOf(r.rated, marks[p.address]!) : []
+    const fresh = (held?.threads ?? []).filter((t) => t.mine === p.address && isFresh(t)).length
+    const messages = messagesMark(unopened[p.address]?.length ?? 0, fresh)
+    const outgrown = outgrownOf[p.address] ?? []
+    of[p.address] = { mark: profileMark(messages, received.length, outgrown.length), messages, received, outgrown }
   }
-  return { of, messages: allMessages, received: allReceived }
+  return { of, messages: allMessagesMark(list.map((p) => of[p.address]!.messages)) }
 }
 
-/** The person's profiles in the app's order (order.ts): those with something new first (a message, a review, a vouch or a report, an entry a market outgrew), then the most recently used here. */
-export function useOrdered(list: Profile[]) {
-  const news = useNews(list)
-  const outgrown = useHeldOutgrown(list)
-  const fresh = (address: string) => {
-    const n = news.of[address]
-    return (n ? n.messages + n.received.length : 0) + (outgrown[address]?.length ?? 0) > 0
+/** An offer's mark, and when it was last new: the ! when its market outgrew it; once the messages are opened, its conversations with something new; and the time of its last message, sent or received, else when it was posted or last edited. */
+export function useOffers(address: string, listings: Posted[], outgrown: Posted[]): Record<string, { mark: Mark; time: number }> {
+  const held = useOpened()
+  const threads = (held?.threads ?? []).filter((t) => t.mine === address)
+  const out: Record<string, { mark: Mark; time: number }> = {}
+  for (const l of listings) {
+    const at = `${address}/${l.path}`
+    const about = threads.filter((t) => aboutOf(t.messages, t.mine, t.them) === at)
+    const last = Math.max(0, ...about.map((t) => t.messages.at(-1)?.time ?? 0))
+    out[l.path] = { mark: offerMark(outgrown.some((o) => o.path === l.path), held?.all ?? false, about.filter(isFresh).length), time: about.length ? last : l.time }
   }
-  return ordered(list, fresh, used())
+  return out
+}
+
+/** The person's profiles in the order they were made in (order.ts). */
+export function useInOrder(list: Profile[]) {
+  useDevice()
+  return inMadeOrder(list, madeOf())
+}
+
+/** `items` in the order they first showed in, while the screen is open: any new since on top (order.ts, `steady`). */
+export function useSteady<T>(items: T[], key: (item: T) => string): T[] {
+  const kept = useRef<string[] | null>(null)
+  const order = steady(kept.current, items.map(key))
+  kept.current = order
+  const by = new Map(items.map((t) => [key(t), t]))
+  return order.map((k) => by.get(k)!)
+}
+
+/** What a profile posted, as its folder holds it: its listings, and its reviews, vouches and reports; or why it couldn't be read. */
+export type Entries = { entries: Posted[] } | { failed: unknown }
+
+/** Each profile's entries read in this page, so a screen opening shows the last read at once. */
+const entriesHeld = new Map<string, Entries>()
+const ENTRIES = 'forest:entries'
+
+/** Each profile's entries in `list`, by address: read from its folder as the screen opens, the last read meanwhile; undefined until read. */
+export function useEntries(list: Profile[]): Record<string, Entries | undefined> {
+  const [, tick] = useState(0)
+  const addresses = list.map((p) => p.address).join(',')
+  useEffect(() => {
+    const changed = () => tick((n) => n + 1)
+    addEventListener(ENTRIES, changed)
+    for (const p of list) {
+      readEntries(config, p.address).then(
+        (entries) => entriesHeld.set(p.address, { entries }),
+        (failed: unknown) => entriesHeld.set(p.address, { failed }),
+      ).finally(() => dispatchEvent(new Event(ENTRIES)))
+    }
+    return () => removeEventListener(ENTRIES, changed)
+  }, [addresses])
+  return Object.fromEntries(list.map((p) => [p.address, entriesHeld.get(p.address)]))
+}
+
+/** The person's ID stamps, as the device last read them (device.ts). */
+export function useIds(): IdShown[] {
+  useDevice()
+  return ids()
 }
 
 /** Whether the Profiles folder holds a profile made on another device: its list read with nothing unlocked as the screen opens, and again whenever the page comes back into view. */

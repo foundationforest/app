@@ -7,11 +7,11 @@ import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'vitest'
 
 import * as device from '../src/device.ts'
 import { post, readEntries } from '../src/flows/entries.ts'
-import { givenOf, newOf, newest, notices, rate } from '../src/flows/feedback.ts'
+import { givenOf, newOf, newest, rate } from '../src/flows/feedback.ts'
 import { ratedOf } from '../src/rated.ts'
 import { readListing, readRated } from '../src/services/index.ts'
 import { Unreachable } from '../src/services/http.ts'
-import { OFFERS, OTHER_OFFERS, OTHER_REQUESTS, REQUESTS } from './labels.ts'
+import { OTHER_OFFERS, OTHER_REQUESTS } from './labels.ts'
 import { type IndexPage, type World, freshDevice, verifiedWith, world } from './world.ts'
 
 let w: World
@@ -141,25 +141,6 @@ describe('what is new on a profile', () => {
     device.forget()
     expect(device.seen(), 'Forget lets the marks go').toEqual({})
   })
-})
-
-test("Notifications: every review, vouch and report about any of the person's profiles, newest first, those after the marks new; no message among them", async () => {
-  const p = await verifiedWith(w, OTHER_OFFERS, OFFERS)
-  const [seller, tutor] = p.profiles as [device.Profile, device.Profile]
-  const other = (await verifiedWith(w, OTHER_REQUESTS, REQUESTS)).profiles
-  w.indexSays(seller.address, page(seller.address, { reviews: [{ writer: other[0]!.address, id: 'a', body: { score: '9' }, time: 100 }], reports: [{ writer: other[0]!.address, id: 'b', body: { text: 'Late.' }, time: 300 }] }))
-  w.indexSays(tutor.address, page(tutor.address, { vouches: [{ writer: other[1]!.address, id: 'c', body: { text: 'Real.' }, time: 200 }] }))
-  const list = [seller, tutor]
-  await rate(w.index, list)
-  const rated = Object.fromEntries(list.map((x) => [x.address, ratedOf(x.address)]))
-  const rows = notices(list, rated, { [seller.address]: 150, [tutor.address]: 200 })
-  expect(rows.map((n) => [n.received.kind, n.on, n.fresh])).toEqual([
-    ['report', seller.address, true],
-    ['vouch', tutor.address, false],
-    ['review', seller.address, false],
-  ])
-  expect(notices(list, rated, {}).every((n) => !n.fresh), 'a profile with no mark: nothing new').toBe(true)
-  expect(notices(list, {}, {}), 'nothing read yet: no rows').toEqual([])
 })
 
 test("what a profile gave: its reviews, vouches and reports, from its own folder, each naming who it is about", async () => {

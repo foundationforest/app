@@ -1,5 +1,5 @@
 // A listing a message or a review names, as the index holds it (services/index.ts, `readListing`),
-// read once a page. Two ways to show it:
+// read once a page. Four ways to show it:
 // - the About box: "About", the listing's first photo (else its market's icon on its color), its
 //   title and its first price; a tap opens it on the index, in a new tab. One the index no longer
 //   lists (deleted, or its profile or its fit gone), or doesn't hold: "No longer listed", its
@@ -7,23 +7,26 @@
 //   written from a listing; a review that names its listing, wherever the review shows; each only
 //   for a listing of someone in it (about.ts). While it is read, or with the index out of reach,
 //   nothing.
+// - pinned under a conversation's header (Thread.tsx), a small card: its photo, its title and its
+//   price, no "About"; a tap opening it: the person's own listing's page in the app (Offer.tsx), or
+//   theirs on the index, in a new tab; "No longer listed" for one the index no longer lists;
+// - its title alone, beside who a conversation is with, in Messages' rows, cut with "…";
 // - the listing a message is written from, at the top of the writing screen (Message.tsx): its
 //   photo, its title, its price, and who posted it, their animal, the person's name for them else
 //   their short key, and their rating.
 // Of a listing its market outgrew, only what still fits shows (form.ts, `fitting`), so it never breaks
 // a screen.
 
-import { type CSSProperties, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 
-import { Avatar, MarketIcon, colorOf, iconOf } from '../avatar.tsx'
+import { Avatar } from '../avatar.tsx'
 import { config } from '../config.ts'
-import { photoUrl } from '../flows/photos.ts'
 import { fitting } from '../form.ts'
 import { markets, pairs } from '../markets.ts'
 import { type IndexedListing, readListing } from '../services/index.ts'
-import { cardLines, ratingText } from '../show.ts'
+import { cardLines, ratingText, titleOf } from '../show.ts'
 import { Rating } from '../ui.tsx'
-import { firstPhoto } from './ListingCard.tsx'
+import { Thumb, firstPhoto } from './Offers.tsx'
 import { pageOf } from './Profile.tsx'
 import { NameOf } from './Who.tsx'
 
@@ -68,17 +71,39 @@ function shownOf(l: IndexedListing): { market: string; title: string; price: str
   if (!pair || !market) return null
   const body = fitting(pair.market, pair.role, l.body)
   const { title, price } = cardLines(market, body, { request: !pair.offers })
-  return { market: pair.market, title: title || 'A listing', price: price ? [price.amount, price.per].filter(Boolean).join(' ') : null, photo: firstPhoto(market, body) }
+  // Its own title, as the index holds it, even where the market this app reads takes none yet.
+  const own = titleOf(l.body)
+  return { market: pair.market, title: (typeof l.body.title === 'string' && own) || title || 'A listing', price: price ? [price.amount, price.per].filter(Boolean).join(' ') : null, photo: firstPhoto(market, body) }
 }
 
-/** A listing's picture: its first photo, else its market's icon on its color, else a blank square. */
-function Thumb({ market, photo, big = false }: { market: string | null; photo?: string | undefined; big?: boolean }) {
-  if (photo) return <img className={big ? 'thumb lg' : 'thumb'} src={photoUrl(config.host, photo)} alt="" loading="lazy" />
-  const icon = market ? iconOf(market) : null
+/** The title of the listing at `address`, cut with "…"; nothing while it is read, or for one the index no longer lists. */
+export function ListingTitle({ address }: { address: string }) {
+  const l = useListing(address)
+  const shown = l?.listed ? shownOf(l) : null
+  return <span className="about-title">{shown?.title ?? ''}</span>
+}
+
+/** The listing a conversation is about, pinned under its header: its photo, title and price; a tap opens it, the person's own in the app (`onMine`, with its path), theirs on the index. */
+export function PinnedListing({ address, mine, onMine }: { address: string; mine: string; onMine?: (path: string) => void }) {
+  const l = useListing(address)
+  if (l === undefined) return null
+  const shown = l?.listed ? shownOf(l) : null
+  const inner = (
+    <>
+      <Thumb market={shown?.market ?? l?.market ?? null} {...(shown && { photo: shown.photo })} />
+      <span className="two">
+        <strong>{shown ? shown.title : 'No longer listed'}</strong>
+        {shown?.price && <span>{shown.price}</span>}
+      </span>
+    </>
+  )
+  const [profile, path] = [address.split('/')[0], address.slice(address.indexOf('/') + 1)]
+  if (profile === mine && onMine) return <button type="button" className="pinned" onClick={() => onMine(path)}>{inner}</button>
+  if (!shown) return <div className="pinned gone">{inner}</div>
   return (
-    <span className={big ? 'thumb lg mthumb' : 'thumb mthumb'} style={market ? ({ '--h': colorOf(market) } as CSSProperties) : undefined} aria-hidden>
-      {icon ? <MarketIcon name={icon} /> : null}
-    </span>
+    <a className="pinned" href={pageOf(address)} target="_blank" rel="noopener noreferrer">
+      {inner}
+    </a>
   )
 }
 

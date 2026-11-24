@@ -4,8 +4,8 @@
 // (the same black square, the picture inside telling them apart; their words a label, shown on a
 // tap only where a badge stands alone), and a check not done as its badge's outline, which starts it; the unlock icon, the
 // fingerprint before the word on a labeled button that asks the passkey, only while a tap will ask,
-// never on a list row; the round way into messages, always there, with how many are new once any
-// is; a checkbox's box, one choice's radio mark, the dot that marks what is new, a rating with its
+// never on a list row; a place's mark on its corner (counts.ts), and a profile's round way into its
+// messages, with its conversations' mark; a checkbox's box, one choice's radio mark, the dot that marks what is new, a rating with its
 // star, the chips of a review, vouch or report, You're verified, a profile's name (its market in
 // bold, then its role, muted: Clothing seller), Search Forest (the index, in a new tab), a notice in
 // the sun, the bars, a choice of a few side by side, a row that opens a screen of its own, a button
@@ -16,6 +16,7 @@
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 
 import { config } from './config.ts'
+import { type Mark, countText, markWords, marked } from './counts.ts'
 import { useHeld } from './hooks.ts'
 import { Icon, type IconName } from './icons.tsx'
 import { Loader } from './mark.tsx'
@@ -139,16 +140,35 @@ export const YoureVerified = ({ check }: { check: Check }) => (
   </span>
 )
 
-/** The way into messages, at a screen's top right: a round button with its own icon, always there, and how many are new once any is. */
-export function MessagesButton({ count, onOpen }: { count: number; onOpen: () => void }) {
+/**
+ * A place's mark, on its corner (counts.ts): how many things inside have something new, black, up to
+ * 9+; the black new dot, while new messages among them are not opened yet; or the yellow !, when
+ * something there needs updating. Nothing with nothing new. Said in words to screen readers, unless
+ * what it sits on says it (`hidden`).
+ */
+export function Corner({ mark, hidden = false }: { mark: Mark; hidden?: boolean }) {
+  if (!marked(mark)) return null
+  const said = hidden ? { 'aria-hidden': true } : { role: 'img', 'aria-label': markWords(mark) }
+  if (mark === 'warn')
+    return (
+      <span className="corner warn" {...said}>
+        !
+      </span>
+    )
+  if (mark === 'dot') return <span className="corner dot" {...said} />
   return (
-    <button className="round" aria-label={count > 0 ? `Messages, ${count} new` : 'Messages'} onClick={onOpen}>
+    <span className="corner" {...said}>
+      {countText(mark)}
+    </span>
+  )
+}
+
+/** A profile's way into its messages, at its page's top right: a round button with its own icon, and its conversations' mark. */
+export function MessagesButton({ mark, onOpen }: { mark: Mark; onOpen: () => void }) {
+  return (
+    <button className="round" aria-label={marked(mark) ? `Messages, ${markWords(mark)}` : 'Messages'} onClick={onOpen}>
       <Icon name="chat-circle" />
-      {count > 0 && (
-        <span className="count" aria-hidden>
-          {count}
-        </span>
-      )}
+      <Corner mark={mark} hidden />
     </button>
   )
 }
@@ -160,7 +180,7 @@ export const TickBox = ({ ticked }: { ticked: boolean }) => (
   </span>
 )
 
-/** A row that opens a screen of its own: its icon on a square, its words, a quiet line, `value` at its right (Every morning), and a chevron unless it adds (`adds`). */
+/** A settings row, which opens a page of its own: its icon on a square, its words, its detail under them, `value` at its right, and the caret, the one place a caret shows, unless it adds (`adds`). */
 export function Opens({ icon, words, line, value, adds = false, caret = !adds, onClick }: { icon: IconName; words: string; line?: string; value?: string; adds?: boolean; caret?: boolean; onClick: () => void }) {
   return (
     <button className="row" onClick={onClick}>
@@ -372,5 +392,5 @@ export function lastOfRun(messages: Array<{ mine: boolean; time: number }>, i: n
   return !next || next.mine !== m.mine || newDay(m.time, next.time)
 }
 
-/** An address cut short, its start and end: enough to tell two apart at a glance. */
-export const short = (address: string) => `${address.slice(0, 4)}…${address.slice(-4)}`
+/** Someone's short key: their address's first 6 characters, and "…". */
+export const short = (address: string) => `${address.slice(0, 6)}…`
