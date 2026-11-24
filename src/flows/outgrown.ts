@@ -2,9 +2,10 @@
 // longer takes as it is (markets' checkEntry, as the index checks one before it lists it), read
 // from the profile's folder with nothing unlocked. A listing is checked against its role; a review,
 // a vouch or a report against the role of the profile it is about too, read from that profile's
-// entry at the host, since a review's fields can be for some roles only. Notifications lists each
-// with its Update, whose edit opens with what still fits (form.ts). Read as the places open, and held
-// in this page's memory meanwhile, as what the index says is (rated.ts); never stored.
+// entry at the host, since a review's fields can be for some roles only. Each shows as the yellow !
+// on its profile and on itself (counts.ts), and its edit opens with what still fits (form.ts). Read
+// as the places and a profile's pages open, and held in this page's memory meanwhile, as what the
+// index says is (rated.ts); never stored.
 
 import type { Services } from '../config.ts'
 import type { Profile } from '../device.ts'

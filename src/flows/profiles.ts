@@ -7,8 +7,9 @@
 // on (flows/email.ts). Its balance at the host is the wallet, where
 // the gift lands and which funds every new folder; its own writes are paid from it.
 // Each time it is opened, and each label written, the device keeps the folder's address and the
-// label entries read, so Profiles can tell, with nothing unlocked, one made on another device; and,
-// each time it is opened, the names it holds and whether the morning email is on.
+// label entries read, each with the time it says its profile was made, so Home can tell, with
+// nothing unlocked, one made on another device, and lists the profiles in the order they were made;
+// and, each time it is opened, the names it holds and whether the morning email is on.
 
 import { type Body, type View, entry, hex, liveContent } from '@foundationforest/folders'
 import { isLocked, lock, openLocked } from '@foundationforest/folders/locked'
@@ -53,9 +54,14 @@ export async function openProfiles(seed: Uint8Array, host: string): Promise<Open
   const { identity } = await openingHalf(key.secret)
   // Every label entry, read: one that does not open, or names no label, as the empty label, which is no profile's.
   const read: Record<string, string> = Object.fromEntries(labelPaths(view).map((path) => [labelId(path), '']))
-  for (const o of await opened(view, 'label', identity)) if (typeof o.body.label === 'string') read[labelId(o.path)] = o.body.label
+  const made: Record<string, number> = {}
+  for (const o of await opened(view, 'label', identity)) {
+    if (typeof o.body.label !== 'string') continue
+    read[labelId(o.path)] = o.body.label
+    if (Number.isSafeInteger(o.body.time)) made[labelId(o.path)] = o.body.time as number
+  }
   const stamps = (await opened(view, 'stamp', identity)).map((o) => o.body.stamp).filter((s): s is string => typeof s === 'string')
-  readLabels(key.address, read)
+  readLabels(key.address, read, made)
   keepNames(await namesIn(view, identity))
   keepEmail(await emailIn(view, identity))
   return { key, view, labels: [...new Set(Object.values(read).filter(Boolean))].sort(), stamps }
@@ -70,6 +76,6 @@ export async function addTo(folder: Pick<Opened, 'key' | 'view'>, host: string, 
   await writeAll(host, [...first, entry(folder.key, `${kind}/${id}`, locked, now)]).catch((err: unknown) => {
     throw err instanceof NotWritten && err.code === 'refused' ? new NoCredits() : err
   })
-  if (kind === 'label' && typeof body.label === 'string') readLabels(folder.key.address, { [id]: body.label })
+  if (kind === 'label' && typeof body.label === 'string') readLabels(folder.key.address, { [id]: body.label }, Number.isSafeInteger(body.time) ? { [id]: body.time as number } : {})
   return id
 }

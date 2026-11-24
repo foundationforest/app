@@ -12,7 +12,7 @@ import { expect, test } from 'vitest'
 import { UNITS } from '@foundationforest/markets/browser'
 
 import { type Field, choiceWords, markets, previewOf } from '../src/markets.ts'
-import { amountText, answerLines, answerText, cardLines, dateText, lengthWords, perPlural, placeText, previewLines, priceParts, priceText, saidCount, zoneWords } from '../src/show.ts'
+import { amountText, answerLines, answerText, cardLines, dateText, lengthWords, perPlural, placeText, previewLines, priceParts, priceText, saidCount, titleOf, zoneWords } from '../src/show.ts'
 import { unitWords } from '../src/units.ts'
 import { dayWords, lastOfRun, newDay } from '../src/ui.tsx'
 import { fieldWith, sides } from './directory.ts'
@@ -102,7 +102,7 @@ function previewing(pieces: Field['piece'][]) {
   throw new Error(`No market in the directory previews ${pieces.join(', then ')} first`)
 }
 
-test("a listing's card in every market: its description's first line, else its preview's first; the next of its preview it holds; its price in two parts, a request's Up to", () => {
+test("a listing's card in every market: its title, else its description's first line, else its preview's first; the next of its preview it holds; its price in two parts, a request's Up to", () => {
   const { market, names } = previewing(['choice', 'choice'])
   const [a, b] = names as [string, string]
   const value = (n: string) => (market.listing[n]!.values as string[])[0]!
@@ -114,6 +114,9 @@ test("a listing's card in every market: its description's first line, else its p
   expect(cardLines(market, { ...lesson, price: [price, pack] }).price, 'its first price, then +1 more').toEqual({ ...priceParts(price), more: 1 })
   expect(cardLines(market, lesson, { request: true }).price, 'a request').toEqual({ amount: `Up to ${priceParts(price).amount}`, per: priceParts(price).per, more: 0 })
   expect(cardLines(market, { [a]: held(a), [b]: held(b) }), 'no description, no price: the preview as it runs').toEqual({ title: choiceWords(market.listing[a]!, value(a)), line: choiceWords(market.listing[b]!, value(b)), price: null })
+  expect(cardLines(market, { ...lesson, title: '  Maths, online ' }).title, 'its title when it has one, as markets#44 lets every listing hold').toBe('Maths, online')
+  expect(cardLines(market, { ...lesson, title: ' ' }).title, 'an empty one: the description').toBe('One hour online.')
+  expect([titleOf({ title: 'Coat' }), titleOf({ description: '\n Blue coat \nWarm' }), titleOf({ title: 7, description: 'Red' }), titleOf({})], 'the title, else the first line, else nothing').toEqual(['Coat', 'Blue coat', 'Red', ''])
   const priced = { ...market, preview: ['price'] }
   expect(previewLines(priced, { ...lesson, price: [price, pack] }), 'small: the first and +1 more').toEqual([`${priceText(price)}, +1 more`])
 })

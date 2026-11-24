@@ -4,7 +4,7 @@
 // box (AboutListing.tsx): its photo, title and price, a tap opening it on the index, or No longer
 // listed. Then From, who
 // wrote it, as a row: their avatar, who they are to the person (the name they gave them, else their
-// short key) with their badges, their market and role, their rating, a chevron; a tap opens their
+// short key) with their badges, their market and role, their rating; a tap opens their
 // profile (Them.tsx). At the foot, Message them and Review back, side by side, both outlined, Review
 // back's star in the sun, and Report under them, in red.
 
@@ -78,7 +78,6 @@ export function Received({ mine, at, onBack, onMessage, onReview, onReport, onWh
             <WhoAvatar address={r.writer} />
             <Who address={r.writer} />
             {writerRating != null && <Rating value={ratingText(writerRating)} />}
-            <Icon name="caret-right" className="car" />
           </button>
           <div className="fill" />
           <div className="foot">

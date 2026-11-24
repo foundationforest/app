@@ -41,7 +41,7 @@
 import { seedNumber, stampNumberOf } from '@foundationforest/keys'
 
 import type { Services } from '../config.ts'
-import { type Check, type Under, endUnder, keepUnder, saveChecks, under, usePasskey } from '../device.ts'
+import { type Check, type IdShown, type Under, endUnder, keepIds, keepUnder, saveChecks, under, usePasskey } from '../device.ts'
 import { collectGift, giftBuy } from '../services/credits.ts'
 import { Refused } from '../services/http.ts'
 import { type About, about, askStamp, checkOfStamp, counted, faceSession, idPayment, idSession, stampBack, stamps, stampsBack } from '../services/verifier.ts'
@@ -305,10 +305,26 @@ async function sameStamp(a: string, b: string): Promise<boolean> {
   return x.verifier === y.verifier && x.signature.S === y.signature.S
 }
 
-/** How the person is verified, worked out fresh from the stamps their Profiles folder holds, against the verifier's current keys, and kept on the device in place of what it kept before. */
-async function noteChecks(s: Services, held: string[]): Promise<void> {
+/** An ID stamp as Your checks shows it, from the list of facts beside it: its document's kind, its country and when it runs out; nothing for one kept without its list. */
+export function idShownOf(stamp: string): IdShown {
+  const list = (JSON.parse(stamp) as { factList?: unknown }).factList
+  const fact = (name: string) => {
+    const f = Array.isArray(list) ? (list as Array<{ name?: unknown; value?: unknown }>).find((x) => x?.name === name) : undefined
+    return typeof f?.value === 'string' && f.value ? f.value : undefined
+  }
+  const [kind, country, until] = [fact('document_type'), fact('issuing_state'), fact('expiration_date')]
+  return { ...(kind && { kind }), ...(country && { country }), ...(until && { until }) }
+}
+
+/**
+ * How the person is verified, worked out fresh from the stamps their Profiles folder holds, against
+ * the verifier's current keys, and kept on the device in place of what it kept before; with each ID
+ * stamp's kind, country and end, so Your checks shows them with nothing unlocked.
+ */
+export async function noteChecks(s: Services, held: string[]): Promise<void> {
   const found = await Promise.all(held.map((stamp) => checkOfStamp(s.verifier, stamp)))
   saveChecks(found.filter((c): c is Check => c !== null))
+  keepIds(held.filter((_, i) => found[i] === 'id').map(idShownOf))
 }
 
 /**

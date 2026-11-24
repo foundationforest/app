@@ -1,40 +1,55 @@
-// A profile's second tab, Reviews: the reviews, vouches and reports this profile wrote, from its own
-// folder, newest first, under one quiet line that says what they are. Each a card: its score or
-// chip, who it is about, by the person's name for them or their short key, never this profile's own
-// name; a tap on the card edits it, a tap on who opens their profile. Review someone at its foot.
-// Nothing here asks the passkey.
+// You wrote, from "You wrote 2 ›" on a profile's Reviews: the reviews, vouches and reports this
+// profile wrote, from its own folder. Back and You wrote at the top; then each a card: "About", the
+// avatar of who it is about, the person's name for them or their short key, never this profile's own
+// name, and a pencil at the right, since a tap edits what the person wrote; then its score with its
+// star, or its chip, and their words; one its market outgrew says Needs updating, in yellow. The whole
+// card opens it to edit (Review.tsx). Those needing the person first, newest first, then the rest
+// (order.ts). Nothing here asks the passkey.
 
-import type { Posted } from '../flows/entries.ts'
 import { givenOf } from '../flows/feedback.ts'
+import type { Posted } from '../flows/entries.ts'
+import { useEntries, useOutgrown, useProfiles, useSteady } from '../hooks.ts'
 import { Icon } from '../icons.tsx'
-import { listingOf } from '../about.ts'
-import { SaidCard } from './SaidCard.tsx'
+import { newFirst } from '../order.ts'
+import { Line, SaidChip, Top, noteOf } from '../ui.tsx'
+import { NameOf, WhoAvatar } from './Who.tsx'
 
-type Props = { address: string; entries: Posted[] | null; onEdit: (given: Posted) => void; onReview?: () => void; onWho: (address: string) => void }
+type Props = { address: string; onBack: () => void; onEdit: (given: Posted) => void }
 
-export function Written({ address, entries, onEdit, onReview, onWho }: Props) {
-  const written = entries ? givenOf(entries) : null
+export function Written({ address, onBack, onEdit }: Props) {
+  const me = useProfiles().find((p) => p.address === address)
+  const mine = me ? [me] : []
+  const read = useEntries(mine)[address]
+  const outgrown = useOutgrown(mine)[address] ?? []
+  const update = (g: Posted) => outgrown.some((o) => o.path === g.path)
+  const written = read && 'entries' in read ? givenOf(read.entries).filter((g) => typeof g.body.subject === 'string') : []
+  const shown = useSteady(newFirst(written, update, (g) => g.time), (g) => g.path)
+  if (!me) return null
   return (
-    <>
-      <p className="ctx">Reviews you've written about others.</p>
-      {written && written.length > 0 && (
-        <div className="cards">
-          {written.map((g) => {
-            const subject = typeof g.body.subject === 'string' ? g.body.subject : null
-            return subject ? (
-              <SaidCard key={g.path} kind={g.kind as 'review' | 'vouch' | 'report'} score={g.body.score} text={g.body.text} listing={listingOf(g.body.listing, [subject, address])} who={subject} time={g.time} onClick={() => onEdit(g)} does={`Edit your ${g.kind}`} onWho={() => onWho(subject)} />
-            ) : null
-          })}
-        </div>
-      )}
-      {onReview && (
-        <div className="foot">
-          <button onClick={onReview}>
-            <Icon name="star" fill className="sun" />
-            Review someone
-          </button>
-        </div>
-      )}
-    </>
+    <main>
+      <Top onBack={onBack} clear>
+        <h1>You wrote</h1>
+      </Top>
+      {read && 'failed' in read && <Line note={noteOf(read.failed)} />}
+      <div className="cards">
+        {shown.map((g) => {
+          const subject = g.body.subject as string
+          return (
+            <button key={g.path} className="card wrote" aria-label={`Edit your ${g.kind}`} onClick={() => onEdit(g)}>
+              <span className="wrote-head">
+                <span className="about-word">About</span>
+                <WhoAvatar address={subject} size="sm" />
+                <NameOf address={subject} />
+                <span className="grow" />
+                <Icon name="pencil-simple" className="pen" />
+              </span>
+              <SaidChip kind={g.kind as 'review' | 'vouch' | 'report'} score={g.body.score} />
+              {typeof g.body.text === 'string' && g.body.text && <span className="said-text">{g.body.text}</span>}
+              {update(g) && <span className="needs">Needs updating</span>}
+            </button>
+          )
+        })}
+      </div>
+    </main>
   )
 }

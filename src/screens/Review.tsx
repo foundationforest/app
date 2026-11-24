@@ -1,5 +1,5 @@
-// Review someone, one screen, from a conversation's Review or a review received, who it is about
-// known; or from a profile, which first asks who, on a page of its own (WhoStep.tsx). At the top, Close, then
+// Review someone, one screen, from a conversation's Review, someone's profile or a review received,
+// who it is about known; or a review written, to edit, from You wrote. At the top, Close, then
 // their avatar, market and role and badge. A switch of three, Score, Vouch and Report, and one quiet
 // line under it saying what the one picked is. Score: the score big with its star, over a slider, 1
 // to 10 in tenths, its thumb hidden until touched, so no score looks chosen. Vouch: says they're
@@ -33,7 +33,6 @@ import { withSeed } from '../passkey.ts'
 import { AskAgain, Line, type Note, Quiet, Seg, Top, UnlockIcon, noteOf, useAction } from '../ui.tsx'
 import { clean } from './Listing.tsx'
 import { Who, WhoAvatar } from './Who.tsx'
-import { WhoStep } from './WhoStep.tsx'
 
 type Props = {
   me: Profile
@@ -67,8 +66,7 @@ export function Review({ me, subject: given, edit, report = false, onDone, onBac
   const { market: name, role } = pairOf(me.label)
   const market = markets.market(name)
   const [kind, setKind] = useState<Said>(edit && edit.kind !== 'listing' ? edit.kind : report ? 'report' : 'review')
-  const [about, setAbout] = useState(given ?? (typeof edit?.body.subject === 'string' ? edit.body.subject : ''))
-  const [asking, setAsking] = useState(!about)
+  const about = given ?? (typeof edit?.body.subject === 'string' ? edit.body.subject : '')
   const [subject, setSubject] = useState<Subject | null>(null)
   const [subjectNote, setSubjectNote] = useState<Note | null>(null)
   const [score, setScore] = useState(typeof edit?.body.score === 'string' ? edit.body.score : '')
@@ -125,18 +123,6 @@ export function Review({ me, subject: given, edit, report = false, onDone, onBac
 
   // The device keeps no profile in a market the directory doesn't list (markets.ts, `listed`).
   if (!market) return null
-  if (asking)
-    return (
-      <WhoStep
-        me={me}
-        mine={mine}
-        onPick={(picked) => {
-          setAbout(picked)
-          setAsking(false)
-        }}
-        onClose={onBack}
-      />
-    )
   const fields = kind === 'review' ? askOf(name, role, 'review', subject?.role).filter((f) => !SHARED.includes(f.name)) : []
   const busy = send.busy || remove.busy
   const k = KINDS[kind]

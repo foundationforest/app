@@ -2,7 +2,8 @@
 // and the label entries it has read there, each with its label (device.ts). Anyone lists a folder's
 // entries, so with nothing unlocked the app tells a new one: a label entry this device never read,
 // or one whose label it doesn't list. One unlock reads them, as Start does: the Profiles folder
-// opened, each label's main key mixed for its address, and the profiles kept beside those listed.
+// opened, each label's main key mixed for its address, and the profiles kept beside those listed;
+// Home's Sync profiles asks it, and every other unlock does it by itself (unlocked.ts).
 // Each is new to this device, so marked at what it holds when first read, as on a new device. A label
 // in a market the directory no longer lists is never new: the device forgets those (markets.ts).
 
@@ -26,7 +27,11 @@ export function anyNew(ids: string[], kept: Folder, held: Set<string>): boolean 
 
 /** The profiles made elsewhere, read with the seed and kept on the device beside those it lists. Gives back those it did not list. */
 export async function takeElsewhere(s: Services, seed: Uint8Array): Promise<Profile[]> {
-  const { labels } = await openProfiles(seed, s.host)
+  return keepElsewhere(seed, (await openProfiles(seed, s.host)).labels)
+}
+
+/** Of the `labels` the Profiles folder lists, those this device doesn't, in a market the directory lists, kept beside those it does. Gives them back. */
+export async function keepElsewhere(seed: Uint8Array, labels: string[]): Promise<Profile[]> {
   const held = new Set(profiles().map((p) => p.label))
   const found = await Promise.all(labels.filter((label) => !held.has(label) && listed(label)).map(async (label) => ({ label, address: (await mainKey(seed, label)).address })))
   saveProfiles([...profiles(), ...found])

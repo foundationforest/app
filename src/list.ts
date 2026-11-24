@@ -1,5 +1,5 @@
 // The new inbox entries of every profile, listed with nothing unlocked: one list for the whole page,
-// however many screens show what is new (the bottom bar, Profiles, Notifications, a profile,
+// however many screens show what is new (the bottom bar, the sidebar, Home, a profile,
 // Messages, a thread). It starts with the first that follows it and stops with the last; while it runs, it
 // lists now, every half minute, and whenever the device changes. A screen that starts following
 // while it runs is shown the last list at once.

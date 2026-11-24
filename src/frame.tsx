@@ -1,33 +1,35 @@
 // The places, and the frame every screen past setup sits in. Three places: Home (the person's
-// profiles), Notifications and You. On a phone, each place has three tabs at its bottom, Home,
-// Notifications and You, the one selected filled on a soft green pill, and so does Messages, reached from
-// Notifications, with Notifications selected; the Notifications tab counts everything new, messages
-// included. From 900px wide, no tabs: a sidebar on the left, on every screen past setup. Its first
-// line: the mark alone, a link to Home, and Search Forest beside it, filling the rest. Then Home,
-// Notifications (what came about the profiles, and what a market outgrew), Messages and You with
-// their counts, the one where the person is on the soft green; then Profiles, with a small outlined
-// + New at its right while a market's role has no profile of theirs, which opens New profile; under it every profile,
-// in the app's order (order.ts), those with something new first, then the most recently used here,
-// each with how many things are new on it, the sidebar scrolling on its own when they run long. The
-// screen sits to its right. A place opening reads what the index says of every profile, and what a
-// market outgrew of what each posted; the counts elsewhere are what the page holds.
+// profiles), Messages and You. On a phone, each place has three tabs at its bottom, Home, Messages
+// and You, the one selected filled on a soft green pill; the Messages tab carries its mark, the
+// conversations with something new across every profile (counts.ts). From 900px wide, no tabs: a
+// sidebar on the left, on every screen past setup. Its first line: the mark alone, a link to Home,
+// and Search Forest beside it, filling the rest. Then Home, Messages, with its mark, and You, the
+// one where the person is on the soft green; then Profiles, with a small outlined + New at its right
+// while a market's role has no profile of theirs, which opens New profile; under it every profile,
+// in the order they were made (order.ts), each with its mark, the sidebar scrolling on its own when
+// they run long. The screen sits to its right. A tap into Messages, the tab or the sidebar's, opens
+// them: with no seed held, the tap itself asks the passkey (opening.ts). A place opening reads what
+// the index says of every profile, and what a market outgrew of what each posted; and whenever a
+// seed is held, the messages open by themselves, so every mark is exact.
 
 import { type ReactNode, useEffect, useState } from 'react'
 
 import { Avatar } from './avatar.tsx'
-import { useHeldOutgrown, useNews, useOrdered, useOutgrown, useProfiles, useRated } from './hooks.ts'
+import { useInOrder, useMarks, useOutgrown, useProfiles, useRated } from './hooks.ts'
 import { Icon, type IconName } from './icons.tsx'
 import { Mark } from './mark.tsx'
+import type { Mark as Marked } from './counts.ts'
 import { pairs } from './markets.ts'
-import { Named, Search } from './ui.tsx'
+import { useQuietOpening } from './opening.ts'
+import { Corner, Named, Search } from './ui.tsx'
 
-export type Place = 'home' | 'notifications' | 'you'
+export type Place = 'home' | 'messages' | 'you'
 
-/** What the frame shows selected: a place, Messages, New profile, or one of the person's profiles. */
-export type On = Place | 'messages' | 'new' | { profile: string }
+/** What the frame shows selected: a place, New profile, or one of the person's profiles. */
+export type On = Place | 'new' | { profile: string }
 
 /** Where the frame's buttons go. */
-export type FrameGo = { place: (to: Place) => void; messages: () => void; profile: (address: string) => void; newProfile: () => void }
+export type FrameGo = { place: (to: Place) => void; profile: (address: string) => void; newProfile: () => void }
 
 const WIDE = '(min-width: 900px)'
 
@@ -43,18 +45,10 @@ export function useWide(): boolean {
   return wide
 }
 
-/** How many things are new, by what counts them: on every profile, its messages and what came about it; in all, what came, what a market outgrew, and the messages. */
-function useCounts() {
-  const list = useProfiles()
-  const news = useNews(list)
-  const outgrown = useHeldOutgrown(list)
-  const notices = news.received + Object.values(outgrown).reduce((n, o) => n + (o?.length ?? 0), 0)
-  return { list, news, notices, messages: news.messages }
-}
-
-/** A screen in its frame. `place`, when the screen is one: its tabs on a phone, and the reads it does as it opens; `tab`, the tabs alone on a screen reached from a place (Messages, from Notifications), that place picked. */
-export function Frame({ on, place, tab = place, go, children }: { on: On; place?: Place; tab?: Place | undefined; go: FrameGo; children: ReactNode }) {
+/** A screen in its frame. `place`, when the screen is one: its tabs on a phone, and the reads it does as it opens. */
+export function Frame({ on, place, go, children }: { on: On; place?: Place; go: FrameGo; children: ReactNode }) {
   const wide = useWide()
+  useQuietOpening()
   // The frame stays as the screens change; what a place reads, it reads each time it opens.
   const opening = place && <Opening key={place} />
   if (!wide)
@@ -62,7 +56,7 @@ export function Frame({ on, place, tab = place, go, children }: { on: On; place?
       <>
         {opening}
         {children}
-        {tab && <Tabs at={tab} go={go.place} />}
+        {place && <Tabs at={place} go={go.place} />}
       </>
     )
   return (
@@ -84,25 +78,20 @@ function Opening() {
 
 const TABS: Array<[Place, string, IconName]> = [
   ['home', 'Home', 'house'],
-  ['notifications', 'Notifications', 'bell'],
+  ['messages', 'Messages', 'chat-circle'],
   ['you', 'You', 'user-circle'],
 ]
 
 /** The phone's three tabs. */
 function Tabs({ at, go }: { at: Place; go: (to: Place) => void }) {
-  const { notices, messages } = useCounts()
-  const count = notices + messages
+  const { messages } = useMarks(useProfiles())
   return (
     <nav className="tabbar" aria-label="Places">
       {TABS.map(([place, words, icon]) => (
         <button key={place} className={at === place ? 'on' : ''} aria-current={at === place ? 'page' : undefined} onClick={() => go(place)}>
           <span className="ti">
             <Icon name={icon} fill={at === place} />
-            {place === 'notifications' && count > 0 && (
-              <span className="count" aria-label={`${count} new`}>
-                {count}
-              </span>
-            )}
+            {place === 'messages' && <Corner mark={messages} />}
           </span>
           {words}
         </button>
@@ -111,25 +100,22 @@ function Tabs({ at, go }: { at: Place; go: (to: Place) => void }) {
   )
 }
 
-/** One of the sidebar's places, with its count. */
-function Nav({ on, icon, words, count = 0, onClick }: { on: boolean; icon: IconName; words: string; count?: number; onClick: () => void }) {
+/** One of the sidebar's places, with its mark. */
+function Nav({ on, icon, words, mark = 0, onClick }: { on: boolean; icon: IconName; words: string; mark?: Marked; onClick: () => void }) {
   return (
     <button className={on ? 'nav on' : 'nav'} aria-current={on ? 'page' : undefined} onClick={onClick}>
       <Icon name={icon} fill={on} />
       <span className="grow">{words}</span>
-      {count > 0 && (
-        <span className="count" aria-label={`${count} new`}>
-          {count}
-        </span>
-      )}
+      <Corner mark={mark} />
     </button>
   )
 }
 
 /** The laptop's sidebar. */
 function Side({ on, go }: { on: On; go: FrameGo }) {
-  const { list, news, notices, messages } = useCounts()
-  const shown = useOrdered(list)
+  const list = useProfiles()
+  const marks = useMarks(list)
+  const shown = useInOrder(list)
   const held = new Set(list.map((p) => p.label))
   const at = typeof on === 'string' ? on : null
   return (
@@ -142,8 +128,7 @@ function Side({ on, go }: { on: On; go: FrameGo }) {
       </div>
       <nav className="navs" aria-label="Places">
         <Nav on={at === 'home'} icon="house" words="Home" onClick={() => go.place('home')} />
-        <Nav on={at === 'notifications'} icon="bell" words="Notifications" count={notices} onClick={() => go.place('notifications')} />
-        <Nav on={at === 'messages'} icon="chat-circle" words="Messages" count={messages} onClick={go.messages} />
+        <Nav on={at === 'messages'} icon="chat-circle" words="Messages" mark={marks.messages} onClick={() => go.place('messages')} />
         <Nav on={at === 'you'} icon="user-circle" words="You" onClick={() => go.place('you')} />
       </nav>
       <div className="side-head">
@@ -156,8 +141,6 @@ function Side({ on, go }: { on: On; go: FrameGo }) {
         )}
       </div>
       {shown.map((p) => {
-        const n = news.of[p.address]
-        const count = n ? n.messages + n.received.length : 0
         const here = typeof on === 'object' && on.profile === p.address
         return (
           <button key={p.address} className={here ? 'nav profile on' : 'nav profile'} aria-current={here ? 'page' : undefined} onClick={() => go.profile(p.address)}>
@@ -165,11 +148,7 @@ function Side({ on, go }: { on: On; go: FrameGo }) {
             <span className="grow">
               <Named label={p.label} />
             </span>
-            {count > 0 && (
-              <span className="count" aria-label={`${count} new`}>
-                {count}
-              </span>
-            )}
+            <Corner mark={marks.of[p.address]?.mark ?? 0} />
           </button>
         )
       })}

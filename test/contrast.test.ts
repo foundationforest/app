@@ -62,6 +62,7 @@ const TEXT: Array<[string, string]> = [
   ['ink', 'mint'],
   ['ink', 'sunk'],
   ['on-sun', 'sun-bg'],
+  ['on-sun-mark', 'sun'],
   ['danger', 'bg'],
   ['danger', 'card'],
   ['danger', 'danger-bg'],
@@ -132,12 +133,12 @@ test("the device's dark is the chosen dark", () => {
 
 /** The score a review is given, set on its slider: the fill and the thumb, on the page's ground, where the soft green would not be seen (3:1) and the strong one is. */
 const SLIDER = ["input[type='range']::-webkit-slider-runnable-track", "input[type='range']::-webkit-slider-thumb", "input[type='range']::-moz-range-thumb", "input[type='range']::-moz-range-track"].map((s) => `.score ${s}`)
-
+/** What acts, the one place the strong green is a ground: a screen's main button (Home's New among them), Send, Create. And the radio picked, its dot the strong green on the soft. */
 /** What acts, the one place the strong green is a ground: a screen's main button, Send, Create, and Home's round +, its one action. And the radio picked, its dot the strong green on the soft. */
-const ACTS = ['button.primary', 'a.button.primary', 'button.create', 'button.addround', '.radio.on']
+const ACTS = ['button.primary', 'a.button.primary', 'button.create', '.radio.on']
 
 /** Counts, the new dot, the check badges and the score's slider: in ink, never green. */
-const INK = ['.count', '.newpip', '.dot', '.vb', '.vico', '.sq.ink', ...SLIDER]
+const INK = ['.corner', '.dot', '.vb', '.vico', '.sq.ink', ...SLIDER]
 
 test('the greens: the strong green is a ground only where tapping it acts; the soft one is the strong one\'s ground, or the ink\'s on your own messages; counts, the dot, badges and the slider in ink', () => {
   const rules = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(([, selector, body]) => ({ selector: selector!.split('*/').at(-1)!.trim(), body: body! }))

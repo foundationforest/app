@@ -9,14 +9,13 @@
 // main key signs it, at a new random id, or for an edit at its own path after what is there
 // (nextTime); a delete is a null body there, free at the host. Each write is paid from the
 // profile's folder, topped up from the wallet when the host refuses for price; then any new photo
-// it names goes to the host, paid the same way (photos.ts). A profile posted from is used: the
-// device notes when, for the order the app lists profiles in (device.ts).
+// it names goes to the host, paid the same way (photos.ts).
 
 import { type Body, type View, entry, liveContent, nextTime, publicKeyFromAddress } from '@foundationforest/folders'
 import { mainKey } from '@foundationforest/keys'
 
 import type { Services } from '../config.ts'
-import { type Profile, markUsed } from '../device.ts'
+import type { Profile } from '../device.ts'
 import { backwards } from '../form.ts'
 import { KINDS, type Kind, askOf, markets, otherSide, pairOf } from '../markets.ts'
 import { readView, writeAll } from '../services/host.ts'
@@ -124,7 +123,6 @@ export async function post(s: Services, seed: Uint8Array, me: Profile, kind: Kin
   const view = await readView(s.host, main.address)
   await paid(s.host, main.address, wallet, () => writeAll(s.host, [entry(main, path, body, nextTime(Date.now(), view, path))]))
   await sendPhotos(s.host, main.address, wallet, photos)
-  markUsed(main.address)
   return path
 }
 

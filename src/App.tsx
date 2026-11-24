@@ -3,11 +3,14 @@
 // No passkey found opens Your 24 words, which opens a seed from its words, and the person is in as
 // from Start (back to No passkey found). Then a person with no profile yet makes their first, and
 // once it is made, or put off with Later, Connect your AI, whose back goes on to Home; then the three places, Home,
-// Notifications and You, and from them New profile, every profile's messages (the round button at
-// the top of Notifications), what a market outgrew, to update, a profile, its messages, its Reviews
-// and a review received, someone else's profile (a tap on another profile wherever it shows; one
-// of the person's own opens as theirs), a listing, Review someone, a thread, a message to someone, Get verified (a check
-// to add), Passkeys, Add a passkey and Your 24 words, Your AI (an AI app opens in place) and Connect your AI, Email, or About Forest. Back wherever there is somewhere to go back to: Get
+// Messages and You, and from them New profile, a profile, its offers (an offer's page, and editing
+// it), its messages (Messages on its chip, with Back to it), its Reviews, a review received and the
+// ones it wrote (You wrote), someone else's profile (a tap on another profile wherever it shows; one
+// of the person's own opens as theirs), a new listing, a review of someone, a thread, a message to
+// someone, Your checks and Get verified (a check to add), Passkeys, Add a passkey and Your 24 words,
+// Your AI (an AI app opens in place) and Connect your AI, Email, or About Forest. Back wherever there
+// is somewhere to go back to, to where the screen was opened from (a thread's to Messages, the
+// offer, or a profile's messages): Get
 // verified to Start, Your 24 words to No passkey found. A check runs at Stripe and Didit in this tab:
 // back from Stripe's page (/paid) or Didit's (/back), the page opens on Get verified, in setup too,
 // which goes on by itself, and comes back to the checks once it's done; from Start, Continue goes on
@@ -15,10 +18,12 @@
 // back: Get verified has Continue, Your first profile Later, and Connect your AI's back goes on to Home. On a
 // laptop, every setup screen sits beside the Start panel (screens/Setup.tsx); every screen past
 // setup sits in the frame (frame.tsx): on a phone, the places' tabs at the bottom of each place; on a
-// laptop, the sidebar beside every one, and Messages and a thread side by side, in two panes
-// (screens/Panes.tsx).
+// laptop, the sidebar beside every one, Messages and a thread side by side, in two panes
+// (screens/Panes.tsx), and an offer, its conversations and the one open, in three (screens/Offer.tsx).
+// A tap into Messages (the tab, the sidebar's, a profile's messages button) opens them as it goes
+// there: with no seed held, that tap asks the passkey (opening.ts).
 // Each screen the person can come back to has its own path, so a reload opens on it and the phone's
-// back goes back; what a screen is about (a profile's address and its tab, a thread, an entry being
+// back goes back; what a screen is about (a profile's address, an offer, a thread, an entry being
 // edited, whose messages, the market picked on New profile, Connect your AI in setup) is kept in the
 // page's history, never in its path, which a host's logs would keep. Your 24 words, once their page
 // had the passkey give them, are kept in that page's memory alone, never its history, while it is
@@ -44,6 +49,7 @@ import type { Entered } from './flows/start.ts'
 import { NotPassed, type Step, stepOf } from './flows/verify.ts'
 import { useNewVersion, useProfiles } from './hooks.ts'
 import { opened } from './opened.ts'
+import { intoMessages } from './opening.ts'
 import { About } from './screens/About.tsx'
 import { AiApps } from './screens/AiApps.tsx'
 import { AddPasskey } from './screens/AddPasskey.tsx'
@@ -56,10 +62,12 @@ import { Messages } from './screens/Messages.tsx'
 import { NewProfile } from './screens/NewProfile.tsx'
 import { Panes } from './screens/Panes.tsx'
 import { Passkeys } from './screens/Passkeys.tsx'
-import { Notifications } from './screens/Notifications.tsx'
+import { Offer } from './screens/Offer.tsx'
+import { Written } from './screens/Written.tsx'
+import { YourChecks } from './screens/YourChecks.tsx'
 import { ImportWords } from './screens/ImportWords.tsx'
 import { Listing } from './screens/Listing.tsx'
-import { Profile, type Tab } from './screens/Profile.tsx'
+import { Profile } from './screens/Profile.tsx'
 import { Received } from './screens/Received.tsx'
 import { Reviews } from './screens/Reviews.tsx'
 import { Review } from './screens/Review.tsx'
@@ -78,17 +86,19 @@ type Screen =
   | { at: 'verify'; setup: boolean; id: string; step: Step; failed?: NotPassed; again?: true; from?: Back }
   | { at: 'home' }
   | { at: 'new'; market?: string }
-  | { at: 'profile'; address: string; tab?: Tab }
+  | { at: 'profile'; address: string }
+  | { at: 'offer'; address: string; entry: string; them?: string }
   | { at: 'reviews'; address: string }
+  | { at: 'written'; address: string }
   | { at: 'received'; address: string; entry: string }
   | { at: 'them'; address: string }
   | { at: 'listing'; address: string; edit?: Posted }
   | { at: 'review'; address: string; subject?: string; edit?: Posted; report?: boolean }
-  | { at: 'notifications' }
-  | { at: 'messages'; only?: string }
+  | { at: 'messages'; only?: string; back?: true }
   | { at: 'thread'; mine: string; them: string; only?: string }
   | { at: 'message'; to: string; listing?: string }
   | { at: 'you' }
+  | { at: 'checks' }
   | { at: 'connect'; connector: string; request: string }
   | { at: 'connect-ai'; setup?: boolean }
   | { at: 'ai-apps' }
@@ -101,7 +111,7 @@ type Screen =
 const PATHS: Partial<Record<Screen['at'], string>> = SCREEN_PATHS
 
 /** What the page's history keeps of a screen: what it is about, never in the path. */
-type Kept = { address?: string; tab?: Tab; entry?: string; edit?: Posted; subject?: string; report?: boolean; only?: string; mine?: string; them?: string; to?: string; listing?: string; market?: string; connector?: string; request?: string; setup?: boolean; pushed?: boolean }
+type Kept = { address?: string; entry?: string; back?: boolean; edit?: Posted; subject?: string; report?: boolean; only?: string; mine?: string; them?: string; to?: string; listing?: string; market?: string; connector?: string; request?: string; setup?: boolean; pushed?: boolean }
 
 /** An AI app's login, from the connector: what the connect page is about. */
 type Login = { connector: string; request: string }
@@ -162,11 +172,11 @@ function here(): Screen {
       return { at: 'new', ...(isText(now.market) && { market: now.market }) }
     case '/you':
       return { at: 'you' }
-    case '/notifications':
-      return { at: 'notifications' }
-    // A profile's messages, or with none named every profile's.
+    case '/checks':
+      return { at: 'checks' }
+    // A profile's messages, with Back to it, or with none named every profile's.
     case '/messages':
-      return { at: 'messages', ...(isText(now.only) && { only: now.only }) }
+      return { at: 'messages', ...(isText(now.only) && { only: now.only }), ...(now.back && { back: true }) }
     case '/message':
       return isText(now.to) ? { at: 'message', to: now.to, ...(isText(now.listing) && { listing: now.listing }) } : { at: 'messages' }
     case '/passkeys':
@@ -183,8 +193,10 @@ function here(): Screen {
     case '/about':
       return { at: 'about' }
   }
-  if (path === '/profile' && isText(now.address)) return { at: 'profile', address: now.address, ...(now.tab === 'written' && { tab: 'written' }) }
+  if (path === '/profile' && isText(now.address)) return { at: 'profile', address: now.address }
+  if (path === '/offer' && isText(now.address) && isText(now.entry)) return { at: 'offer', address: now.address, entry: now.entry, ...(isText(now.them) && { them: now.them }) }
   if (path === '/reviews' && isText(now.address)) return { at: 'reviews', address: now.address }
+  if (path === '/written' && isText(now.address)) return { at: 'written', address: now.address }
   if (path === '/received' && isText(now.address) && isText(now.entry)) return { at: 'received', address: now.address, entry: now.entry }
   if (path === '/them' && isText(now.address)) return { at: 'them', address: now.address }
   if (path === '/listing' && isText(now.address)) return { at: 'listing', address: now.address, ...(now.edit && { edit: now.edit }) }
@@ -200,9 +212,11 @@ function keptOf(to: Screen): Kept {
     case 'new':
       return to.market ? { market: to.market } : {}
     case 'profile':
-      return { address: to.address, ...(to.tab === 'written' && { tab: 'written' }) }
     case 'reviews':
+    case 'written':
       return { address: to.address }
+    case 'offer':
+      return { address: to.address, entry: to.entry, ...(to.them && { them: to.them }) }
     case 'received':
       return { address: to.address, entry: to.entry }
     case 'them':
@@ -212,7 +226,7 @@ function keptOf(to: Screen): Kept {
     case 'review':
       return { address: to.address, ...(to.edit && { edit: to.edit }), ...(to.subject && { subject: to.subject }), ...(to.report && { report: true }) }
     case 'messages':
-      return to.only ? { only: to.only } : {}
+      return { ...(to.only && { only: to.only }), ...(to.back && { back: true }) }
     case 'thread':
       return { mine: to.mine, them: to.them, ...(to.only && { only: to.only }) }
     case 'message':
@@ -271,7 +285,11 @@ function Screens() {
     setScreen(to)
   }
   const back = () => (kept().pushed ? history.back() : go({ at: 'home' }))
-  const place = (to: Place) => go({ at: to })
+  /** A place in place of this screen, as its tabs do; Messages opened as the tap goes there. */
+  const place = (to: Place) => {
+    if (to === 'messages') intoMessages()
+    go({ at: to })
+  }
   /** In, past Start and the verification: the AI app's login if one waits, once there is a profile to tick; the message link's message if one waits; a first profile to make; else Home. */
   const inside = () => {
     const w = waiting.current
@@ -306,7 +324,6 @@ function Screens() {
   // Where the frame's buttons go: a place in place of this screen, as its tabs do; the rest pushed, as from a card.
   const frameGo: FrameGo = {
     place,
-    messages: () => go({ at: 'messages' }, true),
     profile: (address) => go({ at: 'profile', address }, true),
     newProfile: () => go({ at: 'new' }, true),
   }
@@ -315,7 +332,7 @@ function Screens() {
   const shown = view()
   if (!on) return screen.at === 'start' || screen.at === 'connect' ? shown : <Setup>{shown}</Setup>
   return (
-    <Frame on={on} go={frameGo} {...(isPlace(screen.at) && { place: screen.at })} {...(screen.at === 'messages' && { tab: 'notifications' as const })}>
+    <Frame on={on} go={frameGo} {...(isPlace(screen.at) && { place: screen.at })}>
       {shown}
     </Frame>
   )
@@ -341,7 +358,7 @@ function Screens() {
           />
         )
       case 'home':
-        return <Home onOpen={(address) => go({ at: 'profile', address }, true)} onNew={() => go({ at: 'new' }, true)} onCheck={addCheck} />
+        return <Home onOpen={(address) => go({ at: 'profile', address }, true)} onOffer={(address, entry) => go({ at: 'offer', address, entry }, true)} onNew={() => go({ at: 'new' }, true)} onCheck={addCheck} />
       case 'new':
         return (
           <NewProfile
@@ -360,20 +377,38 @@ function Screens() {
         return (
           <Profile
             address={screen.address}
-            tab={screen.tab ?? 'listings'}
-            // A tab in place of the other, so back leaves the profile.
-            onTab={(tab) => go({ at: 'profile', address: screen.address, ...(tab === 'written' && { tab }) })}
             onBack={back}
-            onListing={(edit) => go({ at: 'listing', address: screen.address, ...(edit && { edit }) }, true)}
+            onNew={() => go({ at: 'listing', address: screen.address }, true)}
+            onOffer={(entry) => go({ at: 'offer', address: screen.address, entry }, true)}
             onReviews={() => go({ at: 'reviews', address: screen.address }, true)}
-            onEdit={(edit) => review(screen.address, { edit })}
-            onReview={() => review(screen.address)}
-            onMessages={() => go({ at: 'messages', only: screen.address }, true)}
+            onMessages={() => {
+              intoMessages()
+              go({ at: 'messages', only: screen.address, back: true }, true)
+            }}
+          />
+        )
+      case 'offer': {
+        const at = screen
+        return (
+          <Offer
+            key={`${at.address} ${at.entry}`}
+            address={at.address}
+            entry={at.entry}
+            wide={wide}
+            {...(at.them && { them: at.them })}
+            onBack={back}
+            onEdit={(edit) => go({ at: 'listing', address: at.address, edit }, true)}
+            // On a phone, the conversation on a screen of its own, Back to the offer; on a laptop, beside its conversations, the offer staying.
+            onThread={(them) => go(wide ? { at: 'offer', address: at.address, entry: at.entry, them } : { at: 'thread', mine: at.address, them }, true)}
+            onReview={(mine, them) => review(mine, { subject: them })}
             onWho={who}
           />
         )
+      }
       case 'reviews':
-        return <Reviews address={screen.address} onBack={back} onOpen={(entry) => go({ at: 'received', address: screen.address, entry }, true)} />
+        return <Reviews address={screen.address} onBack={back} onOpen={(entry) => go({ at: 'received', address: screen.address, entry }, true)} onWritten={() => go({ at: 'written', address: screen.address }, true)} />
+      case 'written':
+        return <Written address={screen.address} onBack={back} onEdit={(edit) => review(screen.address, { edit })} />
       case 'received':
         return (
           <Received
@@ -396,15 +431,6 @@ function Screens() {
             {(me) => <Review me={me} {...(screen.edit && { edit: screen.edit })} {...(screen.subject && { subject: screen.subject })} {...(screen.report && { report: true })} onDone={back} onBack={back} />}
           </For>
         )
-      case 'notifications':
-        return (
-          <Notifications
-            onMessages={() => go({ at: 'messages' }, true)}
-            onReviews={(address) => go({ at: 'reviews', address }, true)}
-            onUpdate={(address, edit) => (edit.kind === 'listing' ? go({ at: 'listing', address, edit }, true) : review(address, { edit }))}
-            onWho={who}
-          />
-        )
       // On a phone, one at a time; on a laptop, side by side, whose kept with the one open.
       case 'messages':
       case 'thread': {
@@ -415,23 +441,25 @@ function Screens() {
             {...(at.only && { only: at.only })}
             pane={wide}
             {...(open && { open: { mine: open.mine, them: open.them } })}
+            // Back to the profile it was opened from, its chip picked.
+            {...(at.at === 'messages' && at.back && { onBack: back })}
             // Whose, in place of the screen as it was, so back leaves Messages.
-            onOnly={(only) => go({ at: 'messages', ...(only && { only }) })}
+            onOnly={(only) => go({ at: 'messages', ...(only && { only }), ...(at.at === 'messages' && at.back && { back: true }) })}
             onThread={(mine, them) => go({ at: 'thread', mine, them, ...(at.only && { only: at.only }) }, true)}
           />
         )
-        const thread = open && <Thread key={`${open.mine} ${open.them}`} mine={open.mine} them={open.them} pane={wide} onBack={back} onReview={(mine, them) => review(mine, { subject: them })} onWho={who} />
+        const thread = open && <Thread key={`${open.mine} ${open.them}`} mine={open.mine} them={open.them} pane={wide} onBack={back} onReview={(mine, them) => review(mine, { subject: them })} onWho={who} onOffer={(entry) => go({ at: 'offer', address: open.mine, entry }, true)} />
         if (wide) return <Panes list={list} open={thread} />
         return thread || list
       }
       case 'message':
         return <Message to={screen.to} {...(screen.listing && { listing: screen.listing })} onSent={(mine, them) => go({ at: 'thread', mine, them })} onBack={back} />
       case 'you':
-        return <You onForgot={() => go({ at: 'start' })} onCheck={addCheck} onPasskeys={() => go({ at: 'passkeys' }, true)} onAiApps={() => go({ at: 'ai-apps' }, true)} onEmail={() => go({ at: 'email' }, true)} onAbout={() => go({ at: 'about' }, true)} />
+        return <You onForgot={() => go({ at: 'start' })} onCheck={addCheck} onChecks={() => go({ at: 'checks' }, true)} onPasskeys={() => go({ at: 'passkeys' }, true)} onAiApps={() => go({ at: 'ai-apps' }, true)} onEmail={() => go({ at: 'email' }, true)} onAbout={() => go({ at: 'about' }, true)} />
+      case 'checks':
+        return <YourChecks onBack={back} onCheck={addCheck} />
       case 'passkeys':
-        return (
-<Passkeys onBack={back} onAdd={() => go({ at: 'add-passkey' }, true)} onWords={() => go({ at: 'words' }, true)} />
-        )
+        return <Passkeys onBack={back} onAdd={() => go({ at: 'add-passkey' }, true)} onWords={() => go({ at: 'words' }, true)} />
       case 'ai-apps':
         return <AiApps onBack={back} onConnect={() => go({ at: 'connect-ai' }, true)} />
       case 'email':
@@ -451,13 +479,12 @@ function Screens() {
   }
 }
 
-const isPlace = (at: Screen['at']): at is Place => at === 'home' || at === 'notifications' || at === 'you'
+const isPlace = (at: Screen['at']): at is Place => at === 'home' || at === 'messages' || at === 'you'
 
 /** What a screen past setup shows selected in the frame; null for a setup screen, which has none. */
 function onOf(s: Screen): On | null {
   switch (s.at) {
     case 'home':
-    case 'notifications':
     case 'you':
       return s.at
     case 'messages':
@@ -466,7 +493,9 @@ function onOf(s: Screen): On | null {
     case 'message':
       return 'messages'
     case 'profile':
+    case 'offer':
     case 'reviews':
+    case 'written':
     case 'received':
     case 'listing':
     case 'review':
@@ -478,6 +507,7 @@ function onOf(s: Screen): On | null {
       return s.setup ? null : 'you'
     case 'connect-ai':
       return s.setup ? null : 'you'
+    case 'checks':
     case 'passkeys':
     case 'add-passkey':
     case 'words':

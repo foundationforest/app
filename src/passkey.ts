@@ -2,7 +2,7 @@
 // salt, which the person's password manager gives only after their device's unlock, the same 32
 // bytes every time for the same passkey, on every device it syncs to. That secret is the seed, used
 // as it is, or a backup's, which names the seed it backs up. After an unlock the seed is held in the
-// page's memory for 5 minutes since the last action, or until the page closes (held.ts); it is never
+// page's memory for 15 minutes since the last action, or until the page closes (held.ts); it is never
 // stored on a device. No server checks these passkeys: the
 // challenge is random and nobody reads the signature; only the PRF secret is used.
 //
@@ -196,7 +196,7 @@ export async function drop(id: string): Promise<void> {
 }
 
 /**
- * The seed for an action, from the passkey in use (`id`): the one held from an unlock less than 5
+ * The seed for an action, from the passkey in use (`id`): the one held from an unlock less than 15
  * minutes ago, or, with none held, asked for now, after the device's unlock, followed when the
  * passkey is a backup, and held from then (held.ts). The action mixes the keys it needs and keeps
  * none.

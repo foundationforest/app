@@ -2,7 +2,7 @@
 // elsewhere are: a profile entry this page has read (Home reads every one, for the badges) that
 // lists an access key this device doesn't know means one was made there. Then the next unlock reads
 // them (flows/connections.ts, `findConnections`) in the background, with the seed it holds, asking
-// nothing and restarting none of its 5 minutes. What that reads: each profile's folder, one after
+// nothing and restarting none of its 15 minutes. What that reads: each profile's folder, one after
 // another, and each connection folder their notes name; reads are free at the host, and nothing is
 // written. Every key listed is known from then, so it runs once; a read that failed runs at the
 // next unlock again.

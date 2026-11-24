@@ -20,7 +20,7 @@
 // Every button on Start and its questions asks the passkey, so none shows the unlock icon; Save does,
 // its one button that asks where the one beside it doesn't. Nobody is in yet, so Start drops any
 // seed still held (held.ts) as it opens. The seed a passkey gives is held from then, as after any
-// unlock, so the verification and the first profile ask again only once 5 minutes went by with
+// unlock, so the verification and the first profile ask again only once 15 minutes went by with
 // nothing done. A passkey that answers is followed first: one added to a first names the person's
 // seed in its seed entry, and that one is held (flows/seed.ts). A passkey just made names none: it
 // is a first passkey, made for this device, which the device notes with its manager's name, for

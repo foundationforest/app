@@ -24,8 +24,14 @@ import { setLocked } from './locked.ts'
 /** The entry's path in the Profiles folder: the app's own. */
 export const NAMES_PATH = 'names'
 
-/** The longest name, in characters. */
-export const NAME_MOST = 40
+/** The longest name, in characters: a name never shrinks on screen, so it stays short. */
+export const NAME_MOST = 12
+
+/** A name as it shows: one saved longer, before names were this short, cut to its first NAME_MOST characters and "…" until it is edited. */
+export function nameShown(name: string): string {
+  const chars = [...name]
+  return chars.length > NAME_MOST ? `${chars.slice(0, NAME_MOST).join('').trimEnd()}…` : name
+}
 
 const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v)
 

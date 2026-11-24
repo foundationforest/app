@@ -11,6 +11,7 @@ import { type CSSProperties, type ReactNode, useEffect, useState } from 'react'
 import { Avatar, MarketBadge, colorOf } from '../avatar.tsx'
 import { config } from '../config.ts'
 import { type Who as Known, whoIs } from '../flows/inbox.ts'
+import { nameShown } from '../flows/names.ts'
 import { useNames } from '../hooks.ts'
 import { marketWords } from '../markets.ts'
 import { checkInWorker } from '../proof/prove.ts'
@@ -58,7 +59,7 @@ export const labelOf = (who: NonNullable<Known>) => `${who.market}/${who.role}`
 /** Who the profile at `address` is to the person, alone: the name they gave it, else its short key, in the key's own face. */
 export function NameOf({ address }: { address: string }) {
   const name = useNames()[address]
-  return name ? <b className="name">{name}</b> : <b className="name key">{short(address)}</b>
+  return name ? <b className="name">{nameShown(name)}</b> : <b className="name key">{short(address)}</b>
 }
 
 /** A profile's market in its color, then its role, muted, when given: Tennis matches player. */

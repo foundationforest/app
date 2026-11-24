@@ -173,19 +173,25 @@ export function previewLines(market: Market, body: Body, o: { request?: boolean;
     .filter(Boolean)
 }
 
+/** A listing's title: its `title` when it holds one (every listing may, since markets#44), else its description's first line; empty with neither. */
+export function titleOf(body: Body): string {
+  if (typeof body.title === 'string' && body.title.trim()) return body.title.trim()
+  return typeof body.description === 'string' ? (body.description.trim().split('\n')[0] ?? '').trim() : ''
+}
+
 /**
- * A listing's card, in every market: its title, its description's first line, else its preview's
- * first; one quiet line, the next of its preview's fields it holds (but its description, its price
- * and its photos); and its first price in its two parts, with how many more it gives, wherever the
- * market's preview puts it, or none. A request's price says Up to.
+ * A listing's card, in every market: its title (titleOf), else its preview's first; one quiet line,
+ * the next of its preview's fields it holds (but its description, its price and its photos); and its
+ * first price in its two parts, with how many more it gives, wherever the market's preview puts it,
+ * or none. A request's price says Up to.
  */
 export function cardLines(market: Market, body: Body, o: { request?: boolean; caption?: Caption } = {}): { title: string; line: string; price: { amount: string; per: string; more: number } | null } {
   const shown = previewOf(market)
     .filter((name) => name !== 'price' && name !== 'description' && market.listing[name] && market.listing[name].piece !== 'photo')
     .map((name) => answerText(market.listing[name]!, body[name], o))
     .filter(Boolean)
-  const description = market.listing.description && typeof body.description === 'string' ? (body.description.trim().split('\n')[0] ?? '').trim() : ''
-  const [title = '', line = ''] = description ? [description, ...shown] : shown
+  const named = market.listing.description || typeof body.title === 'string' ? titleOf(body) : ''
+  const [title = '', line = ''] = named ? [named, ...shown] : shown
   const field = market.listing.price
   const [first, ...more] = field?.piece === 'price' ? answersOf(field, body.price).filter(isPrice) : []
   if (!first) return { title, line, price: null }

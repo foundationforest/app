@@ -1,5 +1,5 @@
 // Someone else's profile, opened by a tap on another profile wherever it shows: a conversation's
-// header, a review's From, who a review is about, a notification, a reviewer of theirs. Back, and a
+// header, a review's From, a reviewer of theirs. Back, and a
 // quiet Not yours. Then its header as a profile of the person's has it: its avatar, large; its
 // market, small, in its color; its role, big, with its badges; and under it who they are to the
 // person, the name they gave them or else their short key, on a chip with a pencil that opens the
@@ -20,6 +20,7 @@ import { kindWords, marketWords, otherSide, roleWords } from '../markets.ts'
 import { ratingText, reviewCount } from '../show.ts'
 import { Badges, Line, type Note, Top, short } from '../ui.tsx'
 import { Naming } from './Naming.tsx'
+import { nameShown } from '../flows/names.ts'
 import { pageOf } from './Profile.tsx'
 import { listingOf } from '../about.ts'
 import { SaidCard } from './SaidCard.tsx'
@@ -33,7 +34,8 @@ const many = (n: number, word: string) => `${word}${n === 1 ? '' : 's'}`
 export function Them({ address, onBack, onMessage, onReview, onWho }: Props) {
   const who = useWho(address)
   const held = useIndexed(address)
-  const name = useNames()[address]
+  const given = useNames()[address]
+  const name = given && nameShown(given)
   const list = useProfiles()
   const [naming, setNaming] = useState(false)
   const [note, setNote] = useState<Note | null>(null)

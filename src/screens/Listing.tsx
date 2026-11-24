@@ -8,7 +8,8 @@
 // the listing holds spots, each of its times may hold its own (Date.tsx). On a laptop, beside the
 // form, How it reads: the listing as others see it, as it is filled in (ListingRead.tsx). An edit
 // opens with what still fits its market today, so a listing an older market shaped is posted again
-// in today's, in place of the old one; each field whose answer no longer fit says so under its name
+// in today's, in place of the old one: one yellow note at its top, "This market changed. Answers to
+// redo are in yellow.", and each field whose answer no longer fit in yellow, saying so under its name
 // until it is answered again. Everything is checked before the unlock (flows/entries.ts); then one
 // unlock moves each circle set on the map by up to a tenth of its radius (near.ts), signs it,
 // writes it and sends its new photos. Its path is set as the form opens, so posting again after a
@@ -37,6 +38,9 @@ import { AskAgain, Line, Top, UnlockIcon, useAction } from '../ui.tsx'
 import { ListingRead } from './ListingRead.tsx'
 
 type Props = { me: Profile; edit?: Posted; onDone: () => void; onBack: () => void }
+
+/** What an edit of a listing its market outgrew says at its top. */
+export const REDO = 'This market changed. Answers to redo are in yellow.'
 
 /** A body with what was left out left out. */
 export const clean = (body: Body): Body => Object.fromEntries(Object.entries(body).filter(([, v]) => v !== undefined)) as Body
@@ -80,6 +84,7 @@ export function Listing({ me, edit, onDone, onBack }: Props) {
         <h1 className="bar-title">{edit ? word : `New ${word.toLowerCase()}`}</h1>
       </Top>
       {market.status === 'beta' && <p className="hint">{BETA}</p>}
+      {start.dropped.length > 0 && <p className="redo">{REDO}</p>}
       <div className="posting">
         <form
           id="listing"
