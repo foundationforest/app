@@ -22,7 +22,7 @@ export function sync(seed: Uint8Array): Promise<void> {
   reading ??= (async () => {
     const folder = await openProfiles(seed, config.host)
     await keepElsewhere(seed, folder.labels)
-    await noteChecks(config, folder.stamps)
+    await noteChecks(config, folder.held)
   })().finally(() => (reading = null))
   return reading
 }

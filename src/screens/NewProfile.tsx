@@ -1,85 +1,57 @@
-// Your first profile, once the person is verified, or New profile, from Home: every market as a
-// tile, live and beta alike, two to a row on a phone, on a laptop as many columns of about 170px as
-// fit: its color filling it, its icon big and faint at the top right, cut by the tile's edge, and its
-// whole name in white at the bottom left; nothing else, Beta saying itself on the market's page.
-// Over them, a search box over the markets' whole names and their roles'. A tile opens the market's page (Market.tsx), its roles; one tap on a role asks the passkey if
-// no seed is held and makes the profile: its folder funded, its verification proven on the device,
-// its profile entry written, its label in the Profiles folder. Meanwhile, the loader and "Making
-// your Tutoring tutor". Your first profile is a setup step: being verified can't be undone, so it
-// has no back, but Later, at its top right, which goes on to Connect your AI, and "You're verified"
-// under its title. New profile has a back. The market's page takes the tiles' place, the market
-// kept in the page's history (App.tsx), so a reload keeps it open; its Back is the tiles again.
+// Your first profiles, in setup, or New profile, from Home (with a back arrow): one screen. Over the
+// markets, a search over their whole names and their roles' words; then every market as a tile, live
+// and beta alike, two to a row on a phone, on a laptop as many columns of about 170px as fit: its
+// color filling it, its icon big and faint at the top right, cut by the tile's edge, its whole name in
+// white at the bottom left, and a round mark at its top left: a + while none of its roles is the
+// person's, a ✓ once one is, with the names of the roles they have small under the market's name. A
+// tap opens the market's roles in a sheet (MarketSheet.tsx), where Create makes a profile and the sheet
+// stays; the open sheet's market is kept in the page's history, so a reload (a new version's) or Back
+// from a profile its ✓ opened finds it open again. In setup, Continue, strong green, at the foot,
+// always, since profiles are optional: on to Connect your AI, or back to an AI app's login when one
+// waits (App.tsx).
 
 import { type CSSProperties, useState } from 'react'
 
 import { MarketIcon, colorOf, iconOf } from '../avatar.tsx'
-import { config } from '../config.ts'
-import { checks, passkey } from '../device.ts'
-import { makeProfile } from '../flows/profile.ts'
 import { useProfiles } from '../hooks.ts'
-import { Loader } from '../mark.tsx'
-import { marketList, pairOf } from '../markets.ts'
-import { withSeed } from '../passkey.ts'
-import { proveInWorker } from '../proof/prove.ts'
-import { Top, YoureVerified, useAction } from '../ui.tsx'
-import { Market } from './Market.tsx'
+import { Icon } from '../icons.tsx'
+import { marketList, roleWords } from '../markets.ts'
+import { Top } from '../ui.tsx'
+import { MarketSheet } from './MarketSheet.tsx'
 
 type Props = {
-  market?: string
-  /** A tile tapped, its market's page open; null, the tiles again. */
-  onMarket: (name: string | null) => void
-  onMade: (address: string, first: boolean) => void
+  /** Your first profiles, in setup: Continue at the foot, and no back. */
+  setup: boolean
+  /** A role the person has: its profile. */
   onOpen: (address: string) => void
   onBack: () => void
-  onLater: () => void
+  onContinue: () => void
 }
 
-export function NewProfile({ market: name, onMarket, onMade, onOpen, onBack, onLater }: Props) {
+/** The market whose sheet the page's history keeps open, or null. */
+const sheetKept = (): string | null => {
+  const sheet = (history.state as { sheet?: unknown } | null)?.sheet
+  return typeof sheet === 'string' ? sheet : null
+}
+
+export function NewProfile({ setup, onOpen, onBack, onContinue }: Props) {
   const list = useProfiles()
-  const [first] = useState(list.length === 0)
   const [query, setQuery] = useState('')
-  const [making, setMaking] = useState<string | null>(null)
-  const make = useAction(async (label: string) => {
-    setMaking(label)
-    try {
-      const made = await withSeed(passkey()!, (seed) => makeProfile(config, seed, label, proveInWorker))
-      onMade(made.address, first)
-    } finally {
-      setMaking(null)
-    }
-  })
-  const market = marketList.find((m) => m.market === name)
-
-  if (making)
-    return (
-      <main>
-        <div className="fill" />
-        <div className="waiting">
-          <Loader big />
-          <span>Making your {pairOf(making).words}</span>
-        </div>
-        <div className="fill" />
-      </main>
-    )
-
-  if (market) return <Market market={market} mine={list} note={make.note} busy={make.busy} onPick={(label) => void make.run(label)} onOpen={onOpen} onBack={() => onMarket(null)} />
+  const [open, setShown] = useState<string | null>(sheetKept)
+  /** A market's sheet opened, or closed with null, and kept so in this page's history entry. */
+  const setOpen = (market: string | null) => {
+    const { sheet: _, ...rest } = (history.state ?? {}) as Record<string, unknown>
+    history.replaceState(market ? { ...rest, sheet: market } : rest, '')
+    setShown(market)
+  }
+  const market = marketList.find((m) => m.market === open)
 
   const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean)
   const shown = marketList.filter((m) => words.every((w) => [m.words, ...m.roles.map((p) => p.role)].join(' ').toLowerCase().includes(w)))
   return (
     <main className="new-profile">
-      {first ? (
-        <>
-          <div className="titled-row">
-            <h1>Your first profile</h1>
-            <button className="quiet" onClick={onLater}>
-              Later
-            </button>
-          </div>
-          <div>
-            <YoureVerified check={checks().includes('id') ? 'id' : 'face'} />
-          </div>
-        </>
+      {setup ? (
+        <h1>Your first profiles</h1>
       ) : (
         <>
           <Top onBack={onBack} />
@@ -90,14 +62,33 @@ export function NewProfile({ market: name, onMarket, onMade, onOpen, onBack, onL
       <div className="market-tiles">
         {shown.map((m) => {
           const icon = iconOf(m.market)
+          const mine = m.roles.filter((p) => list.some((q) => q.label === p.label))
+          const label = [m.words, ...(m.beta ? ['beta'] : []), ...(mine.length ? [`yours: ${mine.map((p) => roleWords(p.role)).join(', ')}`] : [])].join(', ')
           return (
-            <button key={m.market} className="market-tile" style={{ '--h': colorOf(m.market) } as CSSProperties} aria-label={m.beta ? `${m.words}, beta` : m.words} onClick={() => onMarket(m.market)}>
+            <button key={m.market} className="market-tile" style={{ '--h': colorOf(m.market) } as CSSProperties} aria-label={label} onClick={() => setOpen(m.market)}>
               {icon ? <MarketIcon name={icon} /> : <span className="letter" aria-hidden>{m.words.charAt(0)}</span>}
-              <span className="tile-name">{m.words}</span>
+              <span className={mine.length ? 'tile-mark yours' : 'tile-mark'} aria-hidden>
+                <Icon name={mine.length ? 'check' : 'plus'} bold />
+              </span>
+              <span className="tile-name">
+                {m.words}
+                {mine.length > 0 && <span className="tile-roles">{mine.map((p) => roleWords(p.role)).join(', ')}</span>}
+              </span>
             </button>
           )
         })}
       </div>
+      {setup && (
+        <>
+          <div className="fill" />
+          <div className="foot">
+            <button className="primary" onClick={onContinue}>
+              Continue
+            </button>
+          </div>
+        </>
+      )}
+      {market && <MarketSheet market={market} mine={list} onOpen={onOpen} onClose={() => setOpen(null)} />}
     </main>
   )
 }

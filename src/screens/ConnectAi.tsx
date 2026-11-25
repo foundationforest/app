@@ -1,110 +1,130 @@
-// Connect your AI: its sparkle on a neutral square, what an AI app then does for the person, three
-// choices, Claude, ChatGPT and Other, the one picked on the soft green, Claude when the screen
-// opens, and one card with three steps for it:
-// - an AI app whose plugin directory lists Forest (config.ts, `listedIn`): open Plugins in it (in
-//   Claude, under it, Customize, then Plugins: Claude's own path, so no other app's step says it),
-//   search Forest and add it, connect it and accept in Forest; under the card, "Forest not there?
-//   Add it by its address", which picks Other;
-// - any other, Other too: copy Forest's address (this app's connector, in full, as an AI app's
-//   connector field takes it), add it in that app, or in your AI, and the same accept step; at the
-//   foot, Copy address, strong green, which copies it and says so a moment, the steps staying in view
-//   while the person does them.
-// Accepting is the connect page (Connect.tsx): Forest opens there, the person unlocks and picks the
-// profiles it can use. No links to other sites. A back at the top, always: from Your AI, back to it;
-// right after the first profile (or its Later), on to Home, since a profile made can't be undone.
+// Connect your AI: a back arrow (in setup it goes on to Home: a profile made can't be undone; from
+// Your AI, back to it), and its title. In the middle, "Ask your AI to", small and grey, and under it
+// one green line at a time, big and bold, rolling up every couple of seconds through what an AI can
+// then do, each line fully in view; with reduced motion, the first alone. At the foot: Add to ChatGPT
+// and Add to Claude, side by side, both strong green, each opening that app's own page for adding
+// Forest (config.ts, `addPages`), in a new tab, or, while config names none for it, Add manually;
+// Add manually under them, outlined, the whole width; then, small and grey, "Forest can't see your
+// chats or memory."
+//
+// Add manually is a sheet, "Add Forest to any AI", four numbered steps, the connector's address in a
+// grey pill with a round copy button, which says Copied a moment. Accepting is the connect page
+// (Connect.tsx): Forest opens there, the person unlocks and picks the profiles it can use.
 
-import { type ReactNode, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { AI_APPS, type AiApp, config } from '../config.ts'
 import { Icon } from '../icons.tsx'
+import { Sheet } from '../sheet.tsx'
 import { Line, Top, useAction } from '../ui.tsx'
 
-type Choice = AiApp | 'Other'
+/** What the middle rolls through, one at a time. */
+export const ASKS = ['find a tennis coach', 'sell my old bike', 'post me as a math tutor', 'find a plumber', 'find a city tour', 'hire a web developer']
 
-const CHOICES: Choice[] = [...AI_APPS, 'Other']
+/** How long each line stays. */
+const ROLL_MS = 2200
 
 type Props = { onBack: () => void }
 
-/** One step of the card: its number, its words, and a small line or more under them. */
-function Step({ n, words, small, children }: { n: number; words: string; small?: string; children?: ReactNode }) {
+/** The lines, one at a time, rolling up; with reduced motion, the first alone. */
+function Asks() {
+  const still = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches
+  const [at, setAt] = useState(0)
+  useEffect(() => {
+    if (still) return
+    const t = setInterval(() => setAt((n) => (n + 1) % ASKS.length), ROLL_MS)
+    return () => clearInterval(t)
+  }, [still])
   return (
-    <li>
-      <span className="bul" aria-hidden>
-        {n}
-      </span>
-      <div className="grow">
-        <span className="t">{words}</span>
-        {small && <span className="s">{small}</span>}
-        {children}
-      </div>
-    </li>
+    <div className="asks">
+      <p className="xs">Ask your AI to</p>
+      <p className="ask-line" aria-live="off">
+        <span key={at} className={still ? undefined : 'rolled'}>
+          {ASKS[at]}
+        </span>
+      </p>
+    </div>
   )
 }
 
-const ACCEPT = { words: 'Connect it, then accept in Forest', small: 'Forest opens here: unlock, and pick the profiles it can use.' }
-
 export function ConnectAi({ onBack }: Props) {
-  const [app, setApp] = useState<Choice>('Claude')
+  const [manual, setManual] = useState(false)
+  const add = (app: AiApp) => {
+    const page = config.addPages[app]
+    if (page) open(page, '_blank', 'noopener,noreferrer')
+    else setManual(true)
+  }
+  return (
+    <main className="connect-ai">
+      <Top onBack={onBack} />
+      <h1>Connect your AI</h1>
+      <div className="fill" />
+      <Asks />
+      <div className="fill" />
+      <div className="foot">
+        <div className="pair">
+          {AI_APPS.map((app) => (
+            <button key={app} className="primary" onClick={() => add(app)}>
+              Add to {app}
+            </button>
+          ))}
+        </div>
+        <button onClick={() => setManual(true)}>Add manually</button>
+        <p className="xs center">Forest can't see your chats or memory.</p>
+      </div>
+      {manual && <AddManually onClose={() => setManual(false)} />}
+    </main>
+  )
+}
+
+/** Add manually: the four steps, and the connector's address to copy. */
+export function AddManually({ onClose }: { onClose: () => void }) {
   const [flash, setFlash] = useState(false)
   const copy = useAction(async () => {
     await navigator.clipboard.writeText(config.connector)
     setFlash(true)
     setTimeout(() => setFlash(false), 2000)
   })
-  const listed = app !== 'Other' && config.listedIn.includes(app)
   return (
-    <main className="connect-ai">
-      <Top onBack={onBack} />
-      <span className="ai-mark">
-        <Icon name="sparkle" fill />
-      </span>
-      <div className="stack">
-        <h1>Connect your AI</h1>
-        <p className="lead">Claude or ChatGPT can then search, post and reply for you.</p>
-      </div>
-      <div className="choice" role="group" aria-label="AI app">
-        {CHOICES.map((a) => (
-          <button key={a} className={a === app ? 'here' : undefined} aria-pressed={a === app} onClick={() => setApp(a)}>
-            {a}
-          </button>
-        ))}
-      </div>
-      {listed ? (
-        <>
-          <ol className="step-card">
-            <Step n={1} words={`In ${app}, open Plugins`} {...(app === 'Claude' && { small: 'Customize, then Plugins.' })} />
-            <Step n={2} words="Search Forest, and add it" />
-            <Step n={3} {...ACCEPT} />
-          </ol>
-          <button className="text-link" onClick={() => setApp('Other')}>
-            Forest not there? Add it by its address
-          </button>
-        </>
-      ) : (
-        <ol className="step-card">
-          <Step n={1} words="Copy Forest's address">
-            <div className="copy-field">
+    <Sheet label="Add Forest to any AI" onClose={onClose}>
+      <h2>Add Forest to any AI</h2>
+      <ol className="steps">
+        <li>
+          <span className="bul" aria-hidden>
+            1
+          </span>
+          <span className="grow">
+            In your AI's settings, open <strong>Connectors</strong> or <strong>Plugins</strong> and add a custom one.
+          </span>
+        </li>
+        <li>
+          <span className="bul" aria-hidden>
+            2
+          </span>
+          <span className="grow">
+            Name it <strong>Forest</strong>. As its server URL, paste:
+            <span className="copy-field">
               <span className="address">{config.connector}</span>
-              <button className="round clear" aria-label={flash ? 'Copied' : 'Copy'} onClick={() => copy.run()}>
+              <button type="button" className="round clear" aria-label={flash ? 'Copied' : 'Copy'} onClick={() => copy.run()}>
                 <Icon name={flash ? 'check' : 'copy'} />
               </button>
-            </div>
-          </Step>
-          <Step n={2} words={`Add it in ${app === 'Other' ? 'your AI' : app}`} small="Where it adds connectors or plugins. Some call them MCP servers." />
-          <Step n={3} {...ACCEPT} />
-        </ol>
-      )}
-      <div className="fill" />
-      {!listed && (
-        <>
-          <Line note={copy.note} />
-          <div className="foot">
-            <button className="primary" onClick={() => copy.run()}>
-              <Icon name={flash ? 'check' : 'copy'} bold /> {flash ? 'Copied' : 'Copy address'}
-            </button>
-          </div>
-        </>
-      )}
-    </main>
+            </span>
+          </span>
+        </li>
+        <li>
+          <span className="bul" aria-hidden>
+            3
+          </span>
+          <span className="grow">If it asks how to sign in, choose to sign in.</span>
+        </li>
+        <li>
+          <span className="bul" aria-hidden>
+            4
+          </span>
+          <span className="grow">When Forest opens, pick your profiles and accept.</span>
+        </li>
+      </ol>
+      <Line note={copy.note} />
+    </Sheet>
   )
 }

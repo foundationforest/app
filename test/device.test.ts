@@ -28,22 +28,30 @@ test('at every start: what this app keeps stays, anything else goes, in sessionS
   localStorage.setItem('forest.v', '"2"')
   sessionStorage.setItem('forest.door', '/message')
   sessionStorage.setItem(RELOADED, 'v')
-  device.keepWaiting({ to: 'some-address' })
+  sessionStorage.setItem('forest.waiting', JSON.stringify({ to: 'some-address' }))
   device.cleanOld()
   expect(Object.keys(localStorage).sort(), 'when each profile was last used, kept no more, goes too').toEqual(['forest.counted', 'forest.folder', 'forest.ids', 'forest.names', 'forest.passkey', 'forest.passkeys', 'forest.profiles', 'forest.read', 'forest.seen', 'forest.setup', 'forest.theme'])
-  expect({ ...sessionStorage }, "the tab's reload flag and what waits through a check, nothing else").toEqual({ [RELOADED]: 'v', 'forest.waiting': JSON.stringify({ to: 'some-address' }) })
+  expect({ ...sessionStorage }, "the tab's reload flag, nothing else: a check never leaves the page, so nothing waits through one").toEqual({ [RELOADED]: 'v' })
   expect(device.under(), "the ID check's payment, kept while it is under way").toEqual({ passkey: ID, check: 'id', payment: 'cs_test_abc' })
   expect(device.theme()).toBe('dark')
 })
 
-test('what waits through a check in this tab: kept as the page closes, taken back once as the next opens', () => {
-  expect(device.takeWaiting(), 'nothing waited').toBeNull()
-  device.keepWaiting({ login: { connector: 'https://mcp.example', request: 'r' } })
-  expect(device.takeWaiting()).toEqual({ login: { connector: 'https://mcp.example', request: 'r' } })
-  expect(device.takeWaiting(), 'taken once').toBeNull()
-  sessionStorage.setItem('forest.waiting', '{not json')
-  expect(device.takeWaiting(), 'what can not be read is nothing').toBeNull()
-  expect(sessionStorage.getItem('forest.waiting')).toBeNull()
+test('a passkey deleted is asked for no more, and with the last nothing is kept; Add a backup, once offered, is never offered again on this device', () => {
+  device.knowPasskey('PasskeyOnePasskeyOnePass')
+  device.knowPasskey('PasskeyTwoPasskeyTwoPass')
+  device.unknowPasskey('PasskeyOnePasskeyOnePass')
+  expect(device.passkeys()).toEqual(['PasskeyTwoPasskeyTwoPass'])
+  device.unknowPasskey('PasskeyTwoPasskeyTwoPass')
+  expect(localStorage.getItem('forest.passkeys')).toBeNull()
+  expect(device.backupAsked()).toBe(false)
+  device.askedBackup()
+  expect(device.backupAsked()).toBe(true)
+})
+
+test("an ID as the device keeps it: its kind and own name, its country, its end and its entry's path, nothing else", () => {
+  device.keepIds([{ kind: 'Identity Card', subtype: 'INE', country: 'MEX', until: '2031-04-30', path: 'stamp/0a1b' }])
+  localStorage.setItem('forest.ids', JSON.stringify([...JSON.parse(localStorage.getItem('forest.ids')!), { kind: 'Passport', path: '../names', name: 'Someone' }]))
+  expect(device.ids()).toEqual([{ kind: 'Identity Card', subtype: 'INE', country: 'MEX', until: '2031-04-30', path: 'stamp/0a1b' }, { kind: 'Passport' }])
 })
 
 test('Forget this device: everything but the ids of the passkeys it knows, so Start never makes a second one', () => {

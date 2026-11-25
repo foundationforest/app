@@ -2,8 +2,8 @@
 // it: a check done its badge, the black square, a tap saying its words; one not done its badge's
 // outline, dashed, which opens Get verified (the ID's only where the verifier sells it, GET /,
 // `forSale`, or once it is done). Then one card of settings rows, each its icon, its name, its detail
-// under it and a caret, opening a page of its own: Your checks, with what the person holds (Selfie,
-// ID card), or Not yet (YourChecks.tsx); Your AI, with the apps' names (AiApps.tsx); Passkeys, with
+// under it and a caret, opening a page of its own: Your checks, with what the person holds (Face,
+// INE), or Not yet (YourChecks.tsx); Your AI, with the apps' names (AiApps.tsx); Passkeys, with
 // their names, the main one first (Passkeys.tsx); Email, Every morning or Off (Email.tsx); and About
 // Forest (About.tsx); last, Appearance, with three icon buttons at its right, Auto, Light and Dark,
 // each named for screen readers, a tap applying it at once. At the foot, Forget this device, red
@@ -31,9 +31,9 @@ export const THEMES: Array<[Theme, string, IconName]> = [
   ['dark', 'Dark', 'moon'],
 ]
 
-/** What Your checks' row says the person holds: Selfie, then each ID stamp by its kind (ID card), or Not yet. */
+/** What Your checks' row says the person holds: Face, then each ID stamp by its own name (INE), or Not yet. */
 export function checksLine(has: Set<Check>, ids: ReturnType<typeof useIds>): string {
-  const held = [...(has.has('face') ? ['Selfie'] : []), ...(has.has('id') ? (ids.length ? ids.map(idName) : ['ID']) : [])]
+  const held = [...(has.has('face') ? ['Face'] : []), ...(has.has('id') ? (ids.length ? ids.map(idName) : ['ID']) : [])]
   return held.length ? held.join(', ') : 'Not yet'
 }
 

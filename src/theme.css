@@ -2293,9 +2293,10 @@ button.market-tile {
   flex-direction: column;
   align-items: flex-start;
   justify-content: flex-end;
+  /* About 104px; taller only when the names of the person's roles add a line, its round mark's
+     place at the top always kept clear. */
   min-height: 104px;
-  height: 104px;
-  padding: 14px 16px;
+  padding: 46px 16px 14px;
   border-radius: 22px;
   background:
     linear-gradient(to bottom, rgb(0 0 0 / 0) 50%, rgb(0 0 0 / 0.25)),
@@ -4739,4 +4740,596 @@ button.card.wrote {
   color: var(--on-sun);
   font-size: 15px;
   font-weight: 600;
+}
+
+/* Start's own screens: its back arrow, round, in Start's light tones; its buttons the whole column. */
+main.start > .top {
+  min-height: 44px;
+}
+
+button.round.on-start {
+  color: var(--on-start);
+  box-shadow: inset 0 0 0 1.5px var(--on-start2);
+}
+
+main.start > .stack {
+  gap: 10px;
+}
+
+main.start .line {
+  color: var(--on-start2);
+}
+
+main.start .line.red {
+  color: var(--on-start-danger);
+}
+
+/* A check's box: a white card with rounded corners filling the screen (on a laptop, the side Get
+   verified sits in), under a round × at its top left; a framed page fills the card. */
+.box-shell {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: max(10px, env(safe-area-inset-top)) 10px max(10px, env(safe-area-inset-bottom));
+  background: var(--bg);
+}
+
+.box-x {
+  align-self: flex-start;
+  background: var(--card);
+}
+
+.box {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 24px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+}
+
+.box.framed iframe {
+  flex: 1;
+  width: 100%;
+  border: 0;
+  background: #ffffff;
+}
+
+.box-middle {
+  flex: 1;
+  display: grid;
+  place-items: center;
+}
+
+@media (min-width: 900px) {
+  .setup .box-shell {
+    left: 40%;
+  }
+
+  .desk .box-shell {
+    left: 264px;
+  }
+
+  .box-shell {
+    padding: 20px 28px;
+  }
+}
+
+/* Before a check: its title, the verifier's words scrolling with a fade at their foot, a line, the
+   one tick, the button, and Terms · Privacy. */
+.before {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 22px 20px 16px;
+  max-width: 560px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.before h1 {
+  font-size: 24px;
+}
+
+.consent-scroll {
+  position: relative;
+  flex: 1;
+  min-height: 120px;
+  overflow-y: auto;
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 48px), transparent);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 48px), transparent);
+  padding-bottom: 40px;
+}
+
+.consent {
+  white-space: pre-wrap;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--ink2);
+}
+
+.before hr {
+  width: 100%;
+  margin: 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+}
+
+button.tick-row {
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 12px;
+  min-height: 0;
+  padding: 4px 0;
+  background: none;
+  box-shadow: none;
+  text-align: left;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.tick-row .tick .icon {
+  width: 16px;
+  height: 16px;
+  color: inherit;
+}
+
+.tick-row .agree {
+  display: grid;
+  gap: 6px;
+}
+
+.before > button.primary {
+  width: 100%;
+}
+
+.legal a,
+.company a {
+  color: inherit;
+}
+
+/* An answer in the box: the yellow round !, the bold title, one line, the buttons at the foot. */
+.answer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 20px 20px;
+  text-align: center;
+  max-width: 520px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.answer h1 {
+  font-size: 24px;
+}
+
+.answer > .stack {
+  width: 100%;
+  gap: 10px;
+}
+
+.answer .text-link {
+  align-self: center;
+}
+
+a.text-link {
+  display: block;
+  color: var(--ink);
+  font-size: 15px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.sun-round {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--sun);
+  color: var(--on-sun-mark);
+}
+
+.sun-round .icon {
+  width: 32px;
+  height: 32px;
+  color: inherit;
+}
+
+/* A sheet: from the bottom on a phone, the screen dimmed behind it; centred on a laptop, its round
+   × at its top right. */
+.sheet-shade {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgb(0 0 0 / 0.36);
+}
+
+.sheet {
+  position: relative;
+  width: 100%;
+  max-width: 32rem;
+  max-height: 90dvh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 22px 20px max(20px, env(safe-area-inset-bottom));
+  border-radius: 24px 24px 0 0;
+  background: var(--card);
+  outline: none;
+}
+
+.sheet h2 {
+  padding: 0;
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.sheet .rows {
+  background: var(--bg);
+  box-shadow: none;
+}
+
+.sheet > button.sheet-x {
+  display: none;
+}
+
+@media (min-width: 900px) {
+  .sheet-shade {
+    align-items: center;
+  }
+
+  .sheet {
+    max-width: 460px;
+    border-radius: 24px;
+    padding: 28px 24px 24px;
+  }
+
+  .sheet > button.sheet-x {
+    display: inline-flex;
+    position: absolute;
+    top: 12px;
+    right: 12px;
+  }
+
+  .sheet > h2:first-of-type,
+  .sheet > .sheet-head {
+    padding-right: 40px;
+  }
+
+  /* In setup, beside Start's panel: dimmed and centred on the setup's side alone, as the box is. */
+  .setup-main .sheet-shade {
+    left: 40%;
+  }
+}
+
+.bullets {
+  margin: 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 8px;
+  color: var(--ink2);
+  line-height: 1.4;
+}
+
+/* A market's tile: its round mark at its top left, a + to make one, a ✓ once one is the person's,
+   with the names of the roles they have small under the market's name. */
+.market-tile .tile-mark {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.9);
+  color: #111a15;
+}
+
+.market-tile .tile-mark.yours {
+  background: var(--mint);
+  color: var(--forest);
+}
+
+.market-tile .tile-mark .icon {
+  width: 15px;
+  height: 15px;
+  color: inherit;
+}
+
+.market-tile .tile-roles {
+  display: block;
+  margin-top: 2px;
+  font-size: 13px;
+  font-weight: 700;
+  color: rgb(255 255 255 / 0.92);
+}
+
+/* A market's sheet: its icon on its color beside its name, Beta and its summary; then its roles,
+   each its avatar, its name and Create, or the round soft green ✓. */
+.sheet-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.sheet-head .market-icon {
+  flex: none;
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+}
+
+.sheet-head .market-icon .icon {
+  width: 28px;
+  height: 28px;
+}
+
+.sheet-head .stack {
+  gap: 4px;
+}
+
+.row.role-row strong {
+  font-size: 16.5px;
+}
+
+button.round.yours-round {
+  background: var(--mint);
+  color: var(--forest);
+  box-shadow: none;
+}
+
+button.round.yours-round .icon {
+  color: inherit;
+}
+
+.made {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  text-align: center;
+  padding: 6px 0 4px;
+}
+
+.done-round {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--mint);
+  color: var(--forest);
+}
+
+.done-round .icon {
+  width: 28px;
+  height: 28px;
+  color: inherit;
+}
+
+h3.sec {
+  margin: 4px 0 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink2);
+}
+
+/* A round tick: its ring, or the soft green with its tick. */
+.tick.round {
+  border-radius: 50%;
+}
+
+/* Connect your AI: Ask your AI to, small and grey, and one green line at a time, big and bold,
+   rolling up; the two Add to buttons side by side, Add manually under them. */
+.asks {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.asks .xs {
+  font-size: 15px;
+}
+
+.ask-line {
+  min-height: 2.5em;
+  overflow: hidden;
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: var(--forest);
+}
+
+.ask-line > span {
+  display: block;
+}
+
+.ask-line > .rolled {
+  animation: roll-up 0.5s ease-out both;
+}
+
+@keyframes roll-up {
+  from {
+    transform: translateY(70%);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ask-line > .rolled {
+    animation: none;
+  }
+}
+
+.connect-ai .foot {
+  display: grid;
+  gap: 10px;
+}
+
+.pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.pair > button {
+  padding: 0 12px;
+}
+
+/* Add manually's four steps, numbered. */
+ol.steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 16px;
+}
+
+ol.steps > li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+ol.steps .bul {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--sunk);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+ol.steps .copy-field {
+  background: var(--sunk);
+  box-shadow: none;
+  border-radius: 999px;
+}
+
+/* About Forest's company lines: the mark, then each line set, small and grey, centred. */
+.company {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--ink3);
+}
+
+.company .mark {
+  color: var(--ink3);
+  margin-bottom: 4px;
+}
+
+.company strong {
+  color: var(--ink2);
+}
+
+/* Privacy and Terms: the site's page framed, filling the rest of the screen. */
+main.framed-page iframe {
+  flex: 1;
+  width: 100%;
+  min-height: 60dvh;
+  border: 0;
+  border-radius: 18px;
+  background: var(--card);
+}
+
+main.framed-page .top-title .xs {
+  margin-top: 2px;
+}
+
+/* Your data: four blocks, each an icon in a soft square, a bold title and its words. */
+.data-blocks {
+  display: grid;
+  gap: 18px;
+}
+
+.data-block {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.data-block .two > span {
+  color: var(--ink2);
+  white-space: normal;
+}
+
+/* An ID's page: its badge and Verified, then its facts, each its name small over its value. */
+.row.plainrow {
+  background: none;
+  box-shadow: none;
+  padding-left: 0;
+}
+
+.rows.read .two > span {
+  font-size: 13px;
+  color: var(--ink3);
+}
+
+.rows.read .two > strong {
+  font-size: 16.5px;
+}
+
+/* A profile's ··· and the small menu under it. */
+.more {
+  position: relative;
+}
+
+.more .menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 20;
+  min-width: 190px;
+  display: grid;
+  padding: 6px;
+  border-radius: 16px;
+  background: var(--card);
+  box-shadow: var(--shadow), 0 0 0 1px var(--line);
+}
+
+.more .menu > button {
+  justify-content: flex-start;
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: 10px;
+  box-shadow: none;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.more .menu > button.danger {
+  color: var(--danger);
 }

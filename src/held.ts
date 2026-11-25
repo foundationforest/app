@@ -93,6 +93,15 @@ export async function ifHeld<T>(id: string, action: (seed: Uint8Array) => Promis
   return using(held, action, true)
 }
 
+/**
+ * The person is still at it, where the app can't see them act: inside a check's own page, which the
+ * box frames (screens/CheckBox.tsx), each of its messages restarts the 15 minutes as an action does,
+ * so the seed held as the check began is held as it ends.
+ */
+export function stillHere(): void {
+  if (held) restart()
+}
+
 /** A listener told whenever a seed is held or dropped. */
 export function onHeld(listener: () => void): () => void {
   listeners.add(listener)

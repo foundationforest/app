@@ -1,23 +1,21 @@
 // What this device keeps, in localStorage, none of it secret: the id of the passkey in use and of
-// every passkey this device has made or used (so Start never makes a second one where one is), the
-// person's profiles' labels and addresses, the Profiles folder's address and the label entries it
-// has read there, with when each was made (the entry says), how they are verified, of each
-// ID stamp the kind of document, its country and when it runs out (from the stamp's facts, a copy,
-// so Your checks shows them with nothing unlocked), their AI apps (each one's name, when it connected, its connection folder's address
-// and its profiles' labels), the addresses of the access keys it knows of, where they left off in
-// each profile's inbox, the time of the newest review, vouch or report about each profile its
-// Reviews has shown, their theme, and, while a verification is under way, its
-// check and session, the ID check's payment and how many tries it opened, and the gift's buy, then
-// an ID check's payment no stamp has used yet (flows/verify.ts); and, of each passkey it made or
-// added, its maker, read from the id it sent as it was made, and the name the person gave it here
-// (flows/backups.ts, Passkeys.tsx), which no entry holds; the names the person gave other
+// every passkey this device has made or used (so Start asks for those), the person's profiles'
+// labels and addresses, the Profiles folder's address and the label entries it has read there, with
+// when each was made (the entry says), how they are verified, of each ID stamp the kind of document
+// and its own name for it, its country, when it runs out and the path of its entry (from the stamp's
+// facts, a copy, so Your checks lists them with nothing unlocked; never the name, birth date or number
+// on it), their AI apps (each one's name, when it connected, its connection folder's address and its
+// profiles' labels), the addresses of the access keys it knows of, where they left off in each
+// profile's inbox, the time of the newest review, vouch or report about each profile its Reviews has
+// shown, their theme, whether setup has offered Add a backup here, and, while a verification is under
+// way, its check and session, the ID check's payment and how many tries it opened, and the gift's
+// buy, then an ID check's payment no stamp has used yet (flows/verify.ts); and, of each passkey it
+// made or added, its maker, read from the id it sent as it was made, and the name the person gave it
+// here (flows/backups.ts, Passkeys.tsx), which no entry holds; the names the person gave other
 // profiles, a copy of their Profiles folder's own (flows/names.ts), so they show with nothing
 // unlocked; the morning email, if it is on, the same way (flows/email.ts): the host's id for it, the
 // email address and the profiles it counts. Nothing of where a listing's place is: its centre is
-// moved from the seed alone (near.ts). And in sessionStorage, for one
-// tab: while an AI app's login or a Share link's address waits through Start and the verification,
-// that login or address, since the check runs at Stripe and Didit in the same tab. Never the seed,
-// its 24 words, a key, a stamp or a message.
+// moved from the seed alone (near.ts). Never the seed, its 24 words, a key, a stamp or a message.
 //
 // A label entry in the Profiles folder that this device never read, or whose label it doesn't list,
 // is a profile made elsewhere, on another device with the same seed: Profiles offers to read them
@@ -78,29 +76,11 @@ const KEYS = {
   ids: 'forest.ids',
   names: 'forest.names',
   email: 'forest.email',
+  backupAsked: 'forest.backupAsked',
 } as const
 
-/** What waits through a check in this tab, in sessionStorage: an AI app's login, or a Share link's address (App.tsx). */
-const WAITING = 'forest.waiting'
-
-/** The keys this app keeps in sessionStorage, for one tab: version.ts's, and what waits through a check. */
-export const SESSION_KEYS = [RELOADED, WAITING]
-
-/** What waits through Start, the verification and a first profile, kept for this tab while the page closes: the check runs at Stripe and Didit in this tab, and comes back to a new page. */
-export const keepWaiting = (waiting: unknown) => globalThis.sessionStorage?.setItem(WAITING, JSON.stringify(waiting))
-
-/** What waited as the page closed in this tab, taken back once: null when nothing did. */
-export function takeWaiting(): unknown {
-  const session = globalThis.sessionStorage
-  const text = session?.getItem(WAITING)
-  if (text == null) return null
-  session!.removeItem(WAITING)
-  try {
-    return JSON.parse(text) as unknown
-  } catch {
-    return null
-  }
-}
+/** The keys this app keeps in sessionStorage, for one tab: version.ts's. */
+export const SESSION_KEYS = [RELOADED]
 
 /** The event a change here sends, so what shows it reads it again. */
 export const CHANGED = 'forest:device'
@@ -133,6 +113,17 @@ export const passkeys = (): string[] => read<unknown[]>(KEYS.passkeys, []).filte
 /** A passkey that answered here, or was made here: known for good, so Start asks for it and never makes another beside it. */
 export const knowPasskey = (id: string) => write(KEYS.passkeys, [...new Set([...passkeys(), id])])
 
+/** A passkey deleted: this device asks for it no more. */
+export function unknowPasskey(id: string): void {
+  const rest = passkeys().filter((p) => p !== id)
+  // The last one gone: the device keeps nothing of Forest's.
+  write(KEYS.passkeys, rest.length ? rest : undefined)
+}
+
+/** Whether setup has offered Add a backup on this device: it does so once. */
+export const backupAsked = (): boolean => read<unknown>(KEYS.backupAsked, false) === true
+export const askedBackup = () => write(KEYS.backupAsked, true)
+
 /** The passkey of a person verified here: in use from now, so the app opens on their profiles. */
 export function usePasskey(id: string): void {
   knowPasskey(id)
@@ -142,6 +133,8 @@ export function usePasskey(id: string): void {
 export const profiles = (): Profile[] => read<Profile[]>(KEYS.profiles, [])
 export const saveProfiles = (list: Profile[]) => write(KEYS.profiles, [...new Map(list.map((p) => [p.label, p])).values()].sort((a, b) => a.label.localeCompare(b.label)))
 export const addProfile = (p: Profile) => saveProfiles([...profiles().filter((q) => q.label !== p.label), p])
+/** A profile deleted: this device lists it no more. */
+export const dropProfile = (label: string) => saveProfiles(profiles().filter((p) => p.label !== label))
 
 /** The Profiles folder, once this device has opened it; else null. */
 export const folder = (): Folder | null => {
@@ -181,8 +174,13 @@ export const checks = (): Check[] => {
 }
 export const saveChecks = (list: Check[]) => write(KEYS.checks, [...new Set(list)].sort())
 
-/** One ID stamp, as Your checks shows it: the kind of document, the country that issued it and the day it runs out, as its facts say them (Didit's `document_type`, `issuing_state`, `expiration_date`); none for a stamp kept without its list. */
-export type IdShown = { kind?: string; country?: string; until?: string }
+/**
+ * One ID stamp, as Your checks lists it: the kind of document and its own name for it, the country
+ * that issued it and the day it runs out, as its facts say them (Didit's `document_type`,
+ * `document_subtype`, `issuing_state`, `expiration_date`), none for a stamp kept without its list;
+ * and the path of its entry in the Profiles folder, which its page opens. Nothing else of its facts.
+ */
+export type IdShown = { kind?: string; subtype?: string; country?: string; until?: string; path?: string }
 
 const isText = (v: unknown): v is string => typeof v === 'string' && v.length > 0
 
@@ -190,7 +188,13 @@ const isText = (v: unknown): v is string => typeof v === 'string' && v.length > 
 export const ids = (): IdShown[] =>
   read<unknown[]>(KEYS.ids, [])
     .filter((v): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v))
-    .map((v) => ({ ...(isText(v.kind) && { kind: v.kind }), ...(isText(v.country) && { country: v.country }), ...(isText(v.until) && { until: v.until }) }))
+    .map((v) => ({
+      ...(isText(v.kind) && { kind: v.kind }),
+      ...(isText(v.subtype) && { subtype: v.subtype }),
+      ...(isText(v.country) && { country: v.country }),
+      ...(isText(v.until) && { until: v.until }),
+      ...(isText(v.path) && /^stamp\/[0-9a-f]+$/.test(v.path) && { path: v.path }),
+    }))
 /** The ID stamps as the Profiles folder holds them now, in place of what this device kept. */
 export const keepIds = (list: IdShown[]) => write(KEYS.ids, list.length ? list : undefined)
 
