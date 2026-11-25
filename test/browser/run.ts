@@ -175,7 +175,8 @@
 //     browser holding only that one, answered through the QR code, Not now, opens the same profiles;
 //     Remove, asking again, then Remove, the line back, and that browser's next unlock, its page closed and
 //     opened again, says "This passkey no longer opens your profiles."; after Forget, its Start
-//     opens its own seed, with no stamp: Get verified.
+//     opens its own seed, with no stamp and no profile: This passkey has never been verified, then
+//     Continue to verification, Get verified.
 //     Then a browser signed in through the QR code saves a passkey: Save makes one there, added to
 //     the first, the one in use there, so its next unlock asks it and not the phone; the first lists
 //     it, Passkey 2, and removes it again, in place.
@@ -2582,7 +2583,7 @@ async function passkeysHome(page: Page) {
   await button(page, 'Home').click()
 }
 
-test("passkeys, every one a row, the same key on each: the first Main, by the name it was given else Passkey after Forget, opened in place and renamed and back, with no Remove; the same manager refused; a security key made one, Passkey 2, since it sends no maker, renamed; a browser holding only that one opens the same profiles; removed in place, asking again first, it opens them no more; after Forget, its own seed, Get verified", async () => {
+test("passkeys, every one a row, the same key on each: the first Main, by the name it was given else Passkey after Forget, opened in place and renamed and back, with no Remove; the same manager refused; a security key made one, Passkey 2, since it sends no maker, renamed; a browser holding only that one opens the same profiles; removed in place, asking again first, it opens them no more; after Forget, its own seed, never verified, then Get verified", async () => {
   const { page, cdp, counts } = first
   const wallet = (await mainKey(seed, '')).address
   const passkeys = page.getByRole('list', { name: 'Your passkeys' })
@@ -2724,13 +2725,16 @@ test("passkeys, every one a row, the same key on each: the first Main, by the na
   assert.equal(await gone.getAttribute('class'), 'line red')
   await shot(other.page, 'not-yours')
 
-  // After Forget, Start with it: its own seed, with no stamp, so Get verified. Messages has no back: the phone's own.
+  // After Forget, Start with it: its own seed, with no stamp and no profile, met here, not made here: This passkey
+  // has never been verified, in Start's place; Continue to verification, Get verified. Messages has no back: the phone's own.
   await other.page.goBack()
   await button(other.page, 'Back').click()
   await button(other.page, 'You').click()
   await button(other.page, 'Forget this device').click()
   await button(other.page, 'Forget').click()
   await button(other.page, 'Start').click()
+  await other.page.getByRole('region', { name: 'This passkey has never been verified' }).waitFor({ timeout: 60_000 })
+  await button(other.page, 'Continue to verification').click()
   await other.page.getByRole('heading', { name: 'Get verified' }).waitFor({ timeout: 60_000 })
   await other.context.close()
   await cdp.send('WebAuthn.removeVirtualAuthenticator', { authenticatorId: key })
