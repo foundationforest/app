@@ -302,8 +302,8 @@
 //     browser's is added to it as a backup, and they're in, on Your first profiles; opened again, the
 //     first profile asks this browser's own passkey, which opens their Forest, and their Profiles
 //     folder lists it; the other browser asked nothing more.
-// 11. A manager that gives no PRF secret: its passkey dropped, the line naming another. A browser
-//     that cannot ask for PRF: one quiet line.
+// 11. A manager that gives no PRF secret, in a browser that can ask for it: its passkey dropped, the
+//     line naming another. A browser that cannot ask for PRF: Passkeys don't work here, nothing asked.
 // 12. The passkey belongs to app.forest.foundation: another page under forest.foundation is refused.
 // 13. The build: its manifest, its service worker in control, installable, and nothing of the map
 //     precached: its code comes with the place screen alone.
@@ -1080,10 +1080,10 @@ const closeTheSheetOnce = (page: Page) =>
     }
   })
 
-/** A service's route in `context` answered with `status` and `body` (or what `body` gives at the time), and CORS as the services answer it. */
+/** A service's route in `context` answered with `status` and `body` (or what `body` gives at the time), and CORS as the services answer it; while `when` says no, the route answered before it, else the service. */
 async function answer(context: BrowserContext, url: string, status: number, body: unknown, when: () => boolean = () => true) {
   await context.route(url, (route) => {
-    if (!when()) return route.continue()
+    if (!when()) return route.fallback()
     const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': 'content-type', 'access-control-allow-methods': 'POST' }
     if (route.request().method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors })
     return route.fulfill({ status, headers: { ...cors, 'content-type': 'application/json' }, body: JSON.stringify(typeof body === 'function' ? body() : body) })
@@ -1809,8 +1809,12 @@ test("Your first profiles: every market a tile, its color filling it, its round 
   await yours.click()
   await badge(page.getByRole('heading', { name: TUTOR_WORDS })).waitFor()
   assert.equal(counts.asserted - asked2, 0, 'opened, nothing unlocked')
+  // Back: New profile, the sheet its ✓ was in open again; closed, Back goes Home.
   await button(page, 'Back').click()
   await page.getByRole('heading', { name: 'New profile' }).waitFor()
+  await tutoringRoles.getByRole('button', { name: `Open ${L.offer.role}`, exact: true }).waitFor()
+  await page.keyboard.press('Escape')
+  await tutoringRoles.waitFor({ state: 'detached' })
   await button(page, 'Back').click()
   await card.waitFor()
 })
@@ -3285,8 +3289,13 @@ test('clothing, with the index: a coat with two photos redrawn on the device, no
   }
   await buyer.context.close()
 
-  // The seller: the index's rating on the card, with its star, and what is new.
+  // The seller: back from the profile to New profile, its sheet open again where its ✓ opened it;
+  // closed, then Home; the index's rating on the card, with its star, and what is new.
   await button(page, 'Back').click()
+  await marketSheet(page, split(SELLER_WORDS)[0]).waitFor()
+  await page.keyboard.press('Escape')
+  await button(page, 'Back').click()
+  await homeTitle(page).waitFor()
   const card = await untilCard(page, SELLER_WORDS, '10.0')
   assert.deepEqual(await card.locator('.rt2 > *').allTextContents(), ['10.0', '1 review'], 'its rating over how many reviews')
   assert.equal(await card.locator('.rate .icon').getAttribute('data-icon'), 'star')
@@ -4191,7 +4200,7 @@ test("a new phone at a connect page, nothing set up: Start, finding nothing; I'm
   const deleting = p.page.getByRole('dialog', { name: 'Delete this profile?' })
   await deleting.getByRole('heading', { name: 'Delete this profile?' }).waitFor()
   assert.deepEqual(await deleting.locator('.bullets li').allTextContents(), ['Your profile and its listings disappear from Forest.', "Reviews people left you don't go away.", 'If you make this profile again, it comes back with the same reviews.'])
-  assert.deepEqual(await deleting.locator(':scope > button').evaluateAll((b) => b.map((x) => [x.textContent?.trim(), x.className])), [['Delete profile', 'danger solid'], ['Cancel', '']])
+  assert.deepEqual(await deleting.locator(':scope > button:not(.sheet-x)').evaluateAll((b) => b.map((x) => [x.textContent?.trim(), x.className])), [['Delete profile', 'danger solid'], ['Cancel', '']])
   await shot(p.page, 'delete-profile')
   await deleting.getByRole('button', { name: 'Cancel' }).click()
   await deleting.waitFor({ state: 'detached' })
@@ -4396,8 +4405,11 @@ test("the ID check's answers, in the box: an ID it couldn't accept, Keep trying 
   await p.context.close()
 })
 
-test('a manager that gives no PRF secret: its passkey dropped, and one red line names another; a browser that cannot ask for it: one quiet line', async () => {
+test("a manager that gives no PRF secret: its passkey dropped, and one red line names another; a browser that cannot ask for it: Passkeys don't work here, nothing asked", async () => {
   const p = await phone({ prf: false })
+  // The browser can ask for PRF, as Chrome can, though this manager gives none: Chromium's DevTools
+  // say a browser with only a manager like it can't, so the test says what a real one says.
+  await p.context.addInitScript(() => void ((PublicKeyCredential as any).getClientCapabilities = async () => ({ 'extension:prf': true })))
   await p.page.goto(APP)
   await imNew(p)
   const line = p.page.getByText("This password manager can't keep a Forest passkey. Save it in another password manager instead.")
@@ -4411,11 +4423,9 @@ test('a manager that gives no PRF secret: its passkey dropped, and one red line 
   const old = await phone()
   await old.context.addInitScript(() => void ((PublicKeyCredential as any).getClientCapabilities = async () => ({ 'extension:prf': false })))
   await old.page.goto(APP)
-  await imNew(old)
-  const quiet = old.page.getByText("This browser can't open Forest. Use a newer one.")
-  await quiet.waitFor()
-  assert.equal(await quiet.getAttribute('class'), 'line')
-  assert.equal(old.counts.created + old.counts.asserted, 0)
+  await old.page.getByRole('region', { name: "Passkeys don't work here" }).waitFor()
+  assert.equal(await button(old.page, 'Start').count(), 0, 'no Start')
+  assert.equal(old.counts.created + old.counts.asserted, 0, 'nothing asked')
   await old.context.close()
 })
 
@@ -4456,7 +4466,7 @@ test('the build: its manifest, its service worker in control, installable', asyn
   }
 })
 
-test("a deploy while the app is open: one quiet line says a new version is ready, with Reload; the old proof worker gone, the page reloads once, back on a market's roles, and the profile is made", async () => {
+test("a deploy while the app is open: one quiet line says a new version is ready, with Reload; the old proof worker gone, the page reloads once, back on a market's roles, its sheet kept open, and the profile is made", async () => {
   const { page } = first
   await page.goto(`${APP}new`)
   await tile(page, DEPLOY).click()
@@ -4488,9 +4498,11 @@ test("a deploy while the app is open: one quiet line says a new version is ready
   await page.waitForEvent('load', { timeout: 60_000 })
   assert.deepEqual(loads.map((u) => new URL(u).pathname), ['/new'], 'one reload, back on New profile')
   assert.ok((await page.evaluate(() => document.querySelector('script[type=module]')?.getAttribute('src') ?? '')).includes('-next-'), 'on the next version')
-  await page.getByRole('heading', { name: DEPLOY }).waitFor()
+  // The market's sheet open again, kept in the history: Create makes the profile there, its ✓, or the made sheet when an AI app acts for the person.
+  await marketSheet(page, DEPLOY).waitFor()
   await seller.click()
-  await page.getByRole('heading', { name: `${DEPLOY} ${D.offer.role}` }).waitFor({ timeout: 120_000 })
+  const madeIt = page.getByRole('dialog', { name: `${roleWords(D.offer.role)} profile created` }).or(marketSheet(page, DEPLOY).getByRole('button', { name: `Open ${D.offer.role}`, exact: true }))
+  await madeIt.first().waitFor({ timeout: 120_000 })
   assert.equal(loads.length, 1, 'and no reload more')
   say('a deploy while open: one reload onto the next version, and the profile made')
 })
@@ -4536,7 +4548,10 @@ test("the ID check, in its box, from the ID's dashed badge beside You: Get verif
   assert.equal(await button(page, 'Continue').count(), 0, 'no Continue from You')
   const payment = [...services.payments.clientSecrets.keys()].at(-1)!
   assert.equal(services.payments.state(payment), 'taken', 'its price taken, for the stamp')
+  // Back where the badge opened it, since the page never left: You; then Home.
   await button(page, 'Back').click()
+  await page.getByRole('heading', { name: 'You', exact: true }).waitFor()
+  await button(page, 'Home').click()
   await homeTitle(page).waitFor()
   // On a laptop, beside Your profiles, both of the person's badges now, the ID's an ID card on the mint square; no outline, and none on a card.
   await page.setViewportSize({ width: 1280, height: 800 })
@@ -5245,7 +5260,9 @@ test("Email: Off to start; Turn on, then Which profiles? in a sheet, every profi
   assert.equal(await atHost(id1), 'there', 'the old one stays until the new one is on')
   await page.getByLabel('6-digit code').fill(codeSentTo(services.sent, ELSEWHERE))
   await button(page, 'Turn on').click()
-  await page.locator('main .rows > .row', { hasText: ELSEWHERE }).waitFor({ timeout: 60_000 })
+  // On, once the code's step is gone: its own row already shows the address while the code is asked.
+  await page.getByLabel('6-digit code').waitFor({ state: 'detached', timeout: 60_000 })
+  await page.locator('main .rows > .row', { hasText: ELSEWHERE }).waitFor()
   const kept2 = (await entryNow()).opened as { id: string; email: string; profiles: string[] }
   assert.deepEqual([kept2.email, kept2.profiles, kept2.id === id1], [ELSEWHERE, [tutorAt], false], 'a new id, the new address, the tutor')
   assert.equal(await atHost(id1), 'gone', 'the old one gone')

@@ -114,7 +114,11 @@ export const passkeys = (): string[] => read<unknown[]>(KEYS.passkeys, []).filte
 export const knowPasskey = (id: string) => write(KEYS.passkeys, [...new Set([...passkeys(), id])])
 
 /** A passkey deleted: this device asks for it no more. */
-export const unknowPasskey = (id: string) => write(KEYS.passkeys, passkeys().filter((p) => p !== id))
+export function unknowPasskey(id: string): void {
+  const rest = passkeys().filter((p) => p !== id)
+  // The last one gone: the device keeps nothing of Forest's.
+  write(KEYS.passkeys, rest.length ? rest : undefined)
+}
 
 /** Whether setup has offered Add a backup on this device: it does so once. */
 export const backupAsked = (): boolean => read<unknown>(KEYS.backupAsked, false) === true

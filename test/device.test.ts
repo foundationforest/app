@@ -36,11 +36,13 @@ test('at every start: what this app keeps stays, anything else goes, in sessionS
   expect(device.theme()).toBe('dark')
 })
 
-test('a passkey deleted is asked for no more; Add a backup, once offered, is never offered again on this device', () => {
+test('a passkey deleted is asked for no more, and with the last nothing is kept; Add a backup, once offered, is never offered again on this device', () => {
   device.knowPasskey('PasskeyOnePasskeyOnePass')
   device.knowPasskey('PasskeyTwoPasskeyTwoPass')
   device.unknowPasskey('PasskeyOnePasskeyOnePass')
   expect(device.passkeys()).toEqual(['PasskeyTwoPasskeyTwoPass'])
+  device.unknowPasskey('PasskeyTwoPasskeyTwoPass')
+  expect(localStorage.getItem('forest.passkeys')).toBeNull()
   expect(device.backupAsked()).toBe(false)
   device.askedBackup()
   expect(device.backupAsked()).toBe(true)

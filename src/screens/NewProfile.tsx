@@ -5,8 +5,10 @@
 // white at the bottom left, and a round mark at its top left: a + while none of its roles is the
 // person's, a ✓ once one is, with the names of the roles they have small under the market's name. A
 // tap opens the market's roles in a sheet (MarketSheet.tsx), where Create makes a profile and the sheet
-// stays. In setup, Continue, strong green, at the foot, always, since profiles are optional: on to
-// Connect your AI, or back to an AI app's login when one waits (App.tsx).
+// stays; the open sheet's market is kept in the page's history, so a reload (a new version's) or Back
+// from a profile its ✓ opened finds it open again. In setup, Continue, strong green, at the foot,
+// always, since profiles are optional: on to Connect your AI, or back to an AI app's login when one
+// waits (App.tsx).
 
 import { type CSSProperties, useState } from 'react'
 
@@ -26,10 +28,22 @@ type Props = {
   onContinue: () => void
 }
 
+/** The market whose sheet the page's history keeps open, or null. */
+const sheetKept = (): string | null => {
+  const sheet = (history.state as { sheet?: unknown } | null)?.sheet
+  return typeof sheet === 'string' ? sheet : null
+}
+
 export function NewProfile({ setup, onOpen, onBack, onContinue }: Props) {
   const list = useProfiles()
   const [query, setQuery] = useState('')
-  const [open, setOpen] = useState<string | null>(null)
+  const [open, setShown] = useState<string | null>(sheetKept)
+  /** A market's sheet opened, or closed with null, and kept so in this page's history entry. */
+  const setOpen = (market: string | null) => {
+    const { sheet: _, ...rest } = (history.state ?? {}) as Record<string, unknown>
+    history.replaceState(market ? { ...rest, sheet: market } : rest, '')
+    setShown(market)
+  }
   const market = marketList.find((m) => m.market === open)
 
   const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean)
