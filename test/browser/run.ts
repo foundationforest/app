@@ -60,8 +60,8 @@
 //     tile opens its market's roles in a sheet from the bottom over the tiles: its icon white on its
 //     color, its name, Beta in one quiet line for a beta market, its summary in one quiet line, its
 //     roles, each a row, its avatar (solid where it offers, light where it requests), its name and
-//     Create, in the strong green, its plus while the seed is held; on a laptop, the sheet centred, its
-//     round × at its top right; a tap on the dimmed screen closes it; Create, nothing asked, the seed
+//     Create, in the strong green, its plus while the seed is held; on a laptop, the sheet centred on
+//     the setup's side, its round × at its top right; a tap on the dimmed screen closes it; Create, nothing asked, the seed
 //     held since the last unlock, the loader in its row, the verification proven in the worker, the
 //     sheet staying, its row a round ✓; the tile's ✓ and the role named under the market's name;
 //     Continue, on to Connect your AI: Ask your AI to, small and grey, one green line at a time
@@ -1584,10 +1584,10 @@ test("Your first profiles: every market a tile, its color filling it, its round 
   const forest = await tokenColor(page, 'forest')
   assert.deepEqual(await roles.getByRole('button', create(S.seller)).evaluate((b) => [getComputedStyle(b).backgroundColor, (b.querySelector('.icon') as SVGElement).dataset.icon]), [forest, 'plus'], 'Create in the strong green, its plus: the seed is held, so no unlock icon')
   await shot(page, 'first-profile-roles')
-  // On a laptop: the sheet centred, its round × at its top right.
+  // On a laptop: the sheet centred on the setup's side, beside Start's panel (40% of the window), its round × at its top right.
   await page.setViewportSize({ width: 1280, height: 800 })
   const centred = (await page.locator('.sheet').boundingBox())!
-  assert.ok(Math.abs(centred.x + centred.width / 2 - 640) < 2 && Math.abs(centred.y + centred.height / 2 - 400) < 2, `centred: ${JSON.stringify(centred)}`)
+  assert.ok(Math.abs(centred.x + centred.width / 2 - (512 + 768 / 2)) < 2 && Math.abs(centred.y + centred.height / 2 - 400) < 2, `centred on the setup's side: ${JSON.stringify(centred)}`)
   const sx = (await page.locator('.sheet .sheet-x').boundingBox())!
   assert.ok(centred.x + centred.width - (sx.x + sx.width) < 20 && sx.y - centred.y < 20, `its round × at its top right: ${JSON.stringify(sx)}`)
   await shot(page, 'laptop-market')
@@ -5301,8 +5301,10 @@ test("Email: Off to start; Turn on, then Which profiles? in a sheet, every profi
   const asking = page.getByRole('group', { name: 'Delete your email?' })
   await asking.waitFor()
   assert.deepEqual((await asking.getByRole('button').allTextContents()).map((t) => t.trim()), ['Cancel', 'Delete'])
+  assert.equal(await edit.getByRole('button', { name: 'Save', exact: true }).count(), 0, 'Save gives way while Delete email asks')
   await shot(page, 'email-delete')
   await asking.getByRole('button', { name: 'Cancel' }).click()
+  await edit.getByRole('button', { name: 'Save', exact: true }).waitFor()
   assert.equal(await atHost(kept2.id), 'there', 'Cancel keeps it')
   await edit.getByRole('button', { name: 'Delete email' }).click()
   await asking.getByRole('button', { name: 'Delete' }).click()

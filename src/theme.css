@@ -2293,9 +2293,10 @@ button.market-tile {
   flex-direction: column;
   align-items: flex-start;
   justify-content: flex-end;
+  /* About 104px; taller only when the names of the person's roles add a line, its round mark's
+     place at the top always kept clear. */
   min-height: 104px;
-  height: 104px;
-  padding: 14px 16px;
+  padding: 46px 16px 14px;
   border-radius: 22px;
   background:
     linear-gradient(to bottom, rgb(0 0 0 / 0) 50%, rgb(0 0 0 / 0.25)),
@@ -5011,6 +5012,11 @@ a.text-link {
   .sheet > .sheet-head {
     padding-right: 40px;
   }
+
+  /* In setup, beside Start's panel: dimmed and centred on the setup's side alone, as the box is. */
+  .setup-main .sheet-shade {
+    left: 40%;
+  }
 }
 
 .bullets {
@@ -5287,12 +5293,12 @@ main.framed-page .top-title .xs {
   padding-left: 0;
 }
 
-.rows.facts .two > span {
+.rows.read .two > span {
   font-size: 13px;
   color: var(--ink3);
 }
 
-.rows.facts .two > strong {
+.rows.read .two > strong {
   font-size: 16.5px;
 }
 

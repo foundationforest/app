@@ -79,7 +79,7 @@ export function IdPage({ path, onBack }: { path: string; onBack: () => void }) {
         </span>
       </div>
       {stamp ? (
-        <div className="rows facts" aria-label="What the check read">
+        <div className="rows read" aria-label="What the check read">
           {rowsOf(stamp).map(([label, value]) => (
             <div key={label} className="row">
               <span className="two">

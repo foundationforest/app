@@ -47,6 +47,8 @@ export function Email({ onBack }: { onBack: () => void }) {
   const [picked, setPicked] = useState<Set<string> | null>(null)
   // On, its row opened by the pencil.
   const [editing, setEditing] = useState(false)
+  // Delete email asking again, in its own place: Save out of the way meanwhile.
+  const [deleting, setDeleting] = useState(false)
   // On, the tick being saved.
   const [saving, setSaving] = useState<string | null>(null)
 
@@ -187,11 +189,16 @@ export function Email({ onBack }: { onBack: () => void }) {
               </label>
               <Line note={save.note} />
               <div className="exp-buttons">
-                <AskAgain words="Delete email" yes="Delete" ask="Delete your email?" icon="trash" unlock busy={off.busy} disabled={save.busy} note={off.note} onYes={() => off.run()} />
-                <span className="grow" />
-                <button type="button" className="primary small" disabled={busy} onClick={() => save.run()}>
-                  {save.busy ? <Loader /> : 'Save'}
-                </button>
+                <AskAgain words="Delete email" yes="Delete" ask="Delete your email?" icon="trash" unlock busy={off.busy} disabled={save.busy} note={off.note} onAsking={setDeleting} onYes={() => off.run()} />
+                {/* Save gives way while Delete email asks, as a passkey's Save does while Remove asks. */}
+                {!deleting && (
+                  <>
+                    <span className="grow" />
+                    <button type="button" className="primary small" disabled={busy} onClick={() => save.run()}>
+                      {save.busy ? <Loader /> : 'Save'}
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           ) : (
@@ -208,6 +215,7 @@ export function Email({ onBack }: { onBack: () => void }) {
                   disabled={busy}
                   onClick={() => {
                     setTyped(on!.email)
+                    setDeleting(false)
                     setEditing(true)
                   }}
                 >
