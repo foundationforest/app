@@ -21,7 +21,7 @@ import { proofFiles } from '../build/proofs.ts'
 import { BG, INK } from '../build/shell.ts'
 import { config } from '../src/config.ts'
 import { kindWords, listOf, listed, marketList, marketWords, markets, otherSide, pairOf, pairs, roleWords } from '../src/markets.ts'
-import { PATHS, RETURNS } from '../src/paths.ts'
+import { PATHS } from '../src/paths.ts'
 import { contactHref } from '../src/show.ts'
 import { BG as THEME_BG } from '../src/theme.ts'
 import { HOST_CODES, SOMETHING, VERIFIER_CODES, entrySays, fieldWords, hostSays, verifierSays } from '../src/words.ts'
@@ -38,23 +38,29 @@ test('Vercel installs, then runs ./standard.sh, then the build', () => {
   expect(vercel.outputDirectory).toBe('dist')
 })
 
-test("the CSP: the page reaches its own origin, its verifier, host, connector and index, places, and the map's tiles, and nothing else; it shows photos from the host and its bucket, and those picked here; About Forest's pages are links, never reached", () => {
+test("the CSP: the page reaches its own origin, its verifier, host, connector and index, places, and the map's tiles, and nothing else; it frames the verifier's payment page, Didit's check and the site's privacy and terms, and nothing else; it shows photos from the host and its bucket, and those picked here", () => {
   expect(config).toEqual({
     app: 'https://app.forest.foundation',
     verifier: 'https://verifier.forest.foundation',
+    didit: 'https://verify.didit.me',
     host: 'https://host.forest.foundation',
     connector: 'https://mcp.forest.foundation',
-    // No plugin directory lists Forest yet: Connect your AI adds it by its address everywhere.
-    listedIn: [],
+    // No AI app has a page for adding Forest yet: both buttons open Add manually.
+    addPages: {},
     index: 'https://index.forest.foundation',
     places: 'https://places.forest.foundation',
     tiles: 'https://tiles.openfreemap.org',
     privacy: 'https://forest.foundation/privacy',
     terms: 'https://forest.foundation/terms',
     source: 'https://github.com/foundationforest/app',
+    contact: 'support@forest.foundation',
+    // The foundation isn't registered yet: no company lines.
+    company: {},
   })
   const sources = csp.split('; ').flatMap((d) => d.split(' ').slice(1))
-  for (const link of [config.privacy, config.terms, config.source]) expect(sources, link).not.toContain(new URL(link).origin)
+  expect(sources, 'the source code is a link, never reached').not.toContain(new URL(config.source).origin)
+  expect(directive('frame-src')).toEqual([config.verifier, config.didit, new URL(config.privacy).origin])
+  expect(new URL(config.terms).origin).toBe(new URL(config.privacy).origin)
   expect(directive('connect-src')).toEqual(["'self'", config.verifier, config.host, config.connector, config.index, config.places, config.tiles])
   // The host answers a photo with a redirect to its bucket, at either address its FILES_STYLE gives.
   expect(directive('img-src')).toEqual(["'self'", 'blob:', config.host, 'https://t3.storageapi.dev', 'https://reserved-basket-15it-i6omre.t3.storageapi.dev'])
@@ -65,12 +71,11 @@ test("the CSP: the page reaches its own origin, its verifier, host, connector an
   expect(csp.match(/blob:/g), 'blob: only for photos picked and not sent yet').toHaveLength(1)
 })
 
-test("every screen's path is the page, and Stripe's and Didit's ways back; a missing chunk or proving file is a 404", () => {
+test("every screen's path is the page; a missing chunk or proving file is a 404", () => {
   const [rule] = vercel.rewrites
   const page = (path: string) => new RegExp(`^(?:${rule.source})$`).test(path)
   expect(Object.keys(PATHS).length, 'the screens with a path of their own').toBeGreaterThan(10)
-  expect(RETURNS, "Stripe's way back, and Didit's").toEqual({ paid: '/paid', checked: '/back' })
-  for (const path of ['/', ...Object.values(RETURNS), ...Object.values(PATHS)]) expect(page(path), path).toBe(true)
+  for (const path of ['/', ...Object.values(PATHS)]) expect(page(path), path).toBe(true)
   for (const path of ['/assets/index-abc.js', '/assets/x', '/proofs/abc', '/sw.js', '/manifest.webmanifest']) expect(page(path), path).toBe(false)
   expect(vercel.redirects).toBeUndefined()
 })
@@ -152,11 +157,10 @@ test("every code the verifier, the host and the standard list has its own plain 
   for (const code of [...STANDARD_CODES, ...HOST_LIST]) expect(HOST_CODES, code).toContain(code)
   for (const code of VERIFIER_CODES) expect(verifierSays(code, 'id').message, code).not.toMatch(/[a-z]+_[a-z]+|\{check\}/)
   for (const code of HOST_CODES) expect(hostSays(code).message, code).not.toMatch(/[a-z]+_[a-z]+/)
-  expect(verifierSays('face_check_unavailable').message).toBe("The selfie check isn't available right now. Try again in a minute.")
-  expect([verifierSays('declined').message, verifierSays('no_face_match', 'id').message]).toEqual(["That selfie didn't pass. Try again, or use your ID.", "That ID check didn't pass. Try again."])
-  expect(verifierSays('duplicate_document', 'id').message).toBe('This ID is already verified with another passkey. Nothing was charged.')
-  expect(verifierSays('face_seen').message).toBe('A similar face is already verified. Verify with your ID instead.')
-  for (const code of ['not_paid', 'payment_used']) expect(verifierSays(code, 'id').message, code).toBe('Your tries are used up. Nothing was charged. Pay again to continue.')
+  expect(VERIFIER_CODES.filter((c) => !VERIFIER_LIST.includes(c as never)), "only the app's own beside the verifier's").toEqual(['not_a_verifier', 'another_stamp_number'])
+  expect(verifierSays('face_check_unavailable').message).toBe("The face check isn't available right now. Try again in a minute.")
+  for (const code of ['known_person', 'known_face', 'too_young', 'face_mismatch', 'id_unclear', 'face_unclear', 'other']) expect(verifierSays(code, 'id').message, `${code}: its answer is the box's`).toBe("That check didn't pass.")
+  for (const code of ['not_paid', 'payment_used']) expect(verifierSays(code, 'id').message, code).toBe('Pay again to continue. Nothing was charged.')
   expect(verifierSays('not_for_sale').message).toBe("The ID check isn't available yet.")
   // The morning email's: each in its own line; `unknown` is shown as Off, never said, and the rest are the general line.
   expect(['too_soon', 'not_sent', 'code', 'not_here'].map((code) => hostSays(code).message)).toEqual([
@@ -219,11 +223,16 @@ test('two greens, exactly: in each look the strong one (--forest) and the soft o
   for (const name of GREEN_NAMES) expect(declared.filter((v) => new RegExp(`(?<![-\\w])${name}(?![-\\w])`, 'i').test(v)), name).toEqual([])
 })
 
-test('nothing floats: no sheet, no dialog, no scrim, anywhere in the app; only the device\'s own passkey prompt floats', () => {
-  const code = (dir: URL): string[] =>
-    readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? code(new URL(`${e.name}/`, dir)) : /\.(tsx?|css)$/.test(e.name) ? [readFileSync(new URL(e.name, dir), 'utf8')] : []))
-  const all = code(new URL('../src/', import.meta.url)).join('\n')
-  expect(all).not.toMatch(/role="dialog"|aria-modal|<Sheet\b|\.sheet\b|\.scrim\b|--scrim/)
+test("what floats, and nothing else: a sheet for a short choice or a confirmation, the box for a check, the ··· menu under its button", () => {
+  const files = (dir: URL): Array<[string, string]> =>
+    readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? files(new URL(`${e.name}/`, dir)) : /\.(tsx?|css)$/.test(e.name) ? [[e.name, readFileSync(new URL(e.name, dir), 'utf8')] as [string, string]] : []))
+  const all = files(new URL('../src/', import.meta.url))
+  const where = (re: RegExp) => all.filter(([, text]) => re.test(text)).map(([name]) => name).sort()
+  expect(where(/role="dialog"/), 'a dialog: the sheet and the box alone').toEqual(['CheckBox.tsx', 'sheet.tsx'])
+  // A market's roles and the made sheet, Add manually, Which profiles?, Delete this profile?, Report.
+  expect(where(/<Sheet\b/), 'the sheets').toEqual(['ConnectAi.tsx', 'Email.tsx', 'MarketSheet.tsx', 'Profile.tsx', 'Them.tsx'])
+  expect(where(/role="menu"/), 'a menu: the ··· alone').toEqual(['MoreMenu.tsx'])
+  expect(where(/\.scrim\b|--scrim/)).toEqual([])
 })
 
 test("CI runs in Playwright's own image at the version package.json pins, so its Chromium is the one the browser test drives", () => {

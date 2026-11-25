@@ -9,7 +9,10 @@
 // person's profile on the other side of their market, or one line on why it can't be. Reviews they
 // received, each its score, who wrote it, by name or key, and the day, and what they wrote. Then
 // See everything on the index, their page there, in a new tab. Read from the host (who they are) and
-// the index (what it counts), as the person's own ratings are; nothing kept, nothing unlocked.
+// the index (what it counts), as the person's own ratings are; nothing kept, nothing unlocked. Its
+// ··· (MoreMenu.tsx): Share profile, and Report, a sheet of two ways: Warn others, a report people
+// will see on this profile, written from the person's profile on the other side; and Illegal
+// content, an email to Forest's host, naming the profile's page on the index.
 
 import { type CSSProperties, useState } from 'react'
 
@@ -18,7 +21,10 @@ import { useIndexed, useNames, useProfiles } from '../hooks.ts'
 import { Icon } from '../icons.tsx'
 import { kindWords, marketWords, otherSide, roleWords } from '../markets.ts'
 import { ratingText, reviewCount } from '../show.ts'
+import { config } from '../config.ts'
+import { Sheet } from '../sheet.tsx'
 import { Badges, Line, type Note, Top, short } from '../ui.tsx'
+import { MoreMenu } from './MoreMenu.tsx'
 import { Naming } from './Naming.tsx'
 import { nameShown } from '../flows/names.ts'
 import { pageOf } from './Profile.tsx'
@@ -26,12 +32,16 @@ import { listingOf } from '../about.ts'
 import { SaidCard } from './SaidCard.tsx'
 import { labelOf, useWho } from './Who.tsx'
 
-type Props = { address: string; onBack: () => void; onMessage: (to: string) => void; onReview: (mine: string, subject: string) => void; onWho: (address: string) => void }
+type Props = { address: string; onBack: () => void; onMessage: (to: string) => void; onReview: (mine: string, subject: string) => void; onReport: (mine: string, subject: string) => void; onWho: (address: string) => void }
+
+/** Illegal content: an email to Forest's host, its subject said, its body the profile's page on the index. */
+export const illegalMail = (address: string) => `mailto:${config.contact}?subject=${encodeURIComponent('Illegal content')}&body=${encodeURIComponent(pageOf(address))}`
 
 /** How many of something, its word after: 1 request, 2 requests. */
 const many = (n: number, word: string) => `${word}${n === 1 ? '' : 's'}`
 
-export function Them({ address, onBack, onMessage, onReview, onWho }: Props) {
+export function Them({ address, onBack, onMessage, onReview, onReport, onWho }: Props) {
+  const [reporting, setReporting] = useState(false)
   const who = useWho(address)
   const held = useIndexed(address)
   const given = useNames()[address]
@@ -48,9 +58,23 @@ export function Them({ address, onBack, onMessage, onReview, onWho }: Props) {
     if (mine) return onReview(mine.address, address)
     if (who && side) setNote({ text: `To review them, first make your ${marketWords(who.market)} ${side} profile.`, red: false })
   }
+  const warn = () => {
+    setReporting(false)
+    if (mine) return onReport(mine.address, address)
+    if (who && side) setNote({ text: `To report them, first make your ${marketWords(who.market)} ${side} profile.`, red: false })
+  }
   return (
     <main className="them">
-      <Top onBack={onBack} clear right={<span className="chip">Not yours</span>} />
+      <Top
+        onBack={onBack}
+        clear
+        right={
+          <>
+            <span className="chip">Not yours</span>
+            <MoreMenu url={pageOf(address)} items={[{ words: 'Report', onPick: () => setReporting(true) }]} />
+          </>
+        }
+      />
       <div className="titled" style={who ? ({ '--h': colorOf(who.market) } as CSSProperties) : undefined}>
         {who ? <Avatar label={labelOf(who)} address={address} size="lg" /> : <span className="av lg blank" aria-hidden />}
         <div className="ph2">
@@ -112,6 +136,27 @@ export function Them({ address, onBack, onMessage, onReview, onWho }: Props) {
         See everything on the index
         <Icon name="arrow-up-right" bold />
       </a>
+      {reporting && (
+        <Sheet label="Report" onClose={() => setReporting(false)}>
+          <h2>Report</h2>
+          <div className="rows">
+            <button type="button" className="row" onClick={warn}>
+              <span className="two">
+                <strong>Warn others</strong>
+                <span>People will see it on this profile</span>
+              </span>
+              <Icon name="caret-right" className="car" />
+            </button>
+            <a className="row" href={illegalMail(address)} onClick={() => setReporting(false)}>
+              <span className="two">
+                <strong>Illegal content</strong>
+                <span>Tell Forest's host by email</span>
+              </span>
+              <Icon name="arrow-up-right" bold />
+            </a>
+          </div>
+        </Sheet>
+      )}
     </main>
   )
 }

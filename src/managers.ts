@@ -74,6 +74,9 @@ export const makerOf = (aaguid: string | undefined): string | undefined => (aagu
 /** The maker a full name the device kept before names, if it is one. */
 export const makerBefore = (name: string): string | undefined => (Object.hasOwn(BEFORE, name) ? BEFORE[name] : undefined)
 
+/** Where a maker keeps its passkeys, as people know it: Apple's in Apple Passwords, Google's in Google Password Manager, any other by the maker's own name. */
+export const managerOf = (maker: string): string => (maker === 'Apple' ? 'Apple Passwords' : maker === 'Google' ? 'Google Password Manager' : maker)
+
 /** A passkey with nothing to name it by. */
 export const PASSKEY = 'Passkey'
 

@@ -1,12 +1,12 @@
 // Start, once a passkey has answered: the device knows it from now, and the person's Profiles folder
 // says where they stand. Verified: it is the passkey in use here, the device keeps their profiles'
-// labels and addresses (those in a market the directory lists) and their AI apps, found from the seed as the reference app finds them (so a
-// new device lists them), and the person is in. Not yet: the verification takes up where it
-// stopped, and the passkey is in use once it ends; a check that will never pass, found as it is
-// taken up, goes with them to Get verified, which says so. Someone whose stamps all come from keys
-// the verifier no longer signs with has their profiles and AI apps listed as if verified, then goes
-// to Get verified, which says their earlier check no longer counts; once they check again, Continue
-// takes them to Home.
+// labels and addresses (those in a market the directory lists) and their AI apps, found from the
+// seed as the reference app finds them (so a new device lists them), and the person is in. Not yet:
+// the verification takes up where it stopped, and the passkey is in use once it ends; a seed whose
+// Profiles folder holds no stamp and no profile at all is `never`, so Start can ask about a passkey
+// met there that was never verified. Someone whose stamps all come from keys the verifier no longer
+// signs with has their profiles and AI apps listed as if verified, then goes to Get verified, which
+// says their earlier check no longer counts; once they check again, Continue takes them to Home.
 
 import { mainKey } from '@foundationforest/keys'
 
@@ -16,21 +16,15 @@ import { listed } from '../markets.ts'
 import type { Passkey } from '../passkey.ts'
 import { type Where, findConnections } from './connections.ts'
 import type { Prove } from './profile.ts'
-import { NotPassed, type Step, resume, stepOf } from './verify.ts'
+import { type Step, resume } from './verify.ts'
 
-export type Entered = { to: 'profiles' } | { to: 'verify'; step: Step; failed?: NotPassed; again?: true }
+export type Entered = { to: 'profiles' } | { to: 'verify'; step: Step; again?: true; never?: true }
 
 /** Where the person goes after Start. The seed is the caller's, held in the page as after any unlock (held.ts). */
 export async function enter(s: Services & Where, passkey: Passkey, prove: Prove): Promise<Entered> {
   knowPasskey(passkey.id)
-  let r
-  try {
-    r = await resume(s, passkey.id, passkey.seed, prove)
-  } catch (err) {
-    if (err instanceof NotPassed) return { to: 'verify', step: stepOf(passkey.id), failed: err }
-    throw err
-  }
-  if (!r.verified && !r.again) return { to: 'verify', step: r.step }
+  const r = await resume(s, passkey.id, passkey.seed, prove)
+  if (!r.verified && !r.again) return { to: 'verify', step: r.step, ...(r.never && { never: true }) }
   const labels = (r.verified ? r.labels : r.again!.labels).filter(listed)
   const profiles = await Promise.all(labels.map(async (label) => ({ label, address: (await mainKey(passkey.seed, label)).address })))
   await findConnections(s, passkey.seed, labels)

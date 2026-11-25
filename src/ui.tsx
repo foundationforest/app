@@ -72,9 +72,9 @@ export function UnlockIcon({ always = false }: { always?: boolean }) {
   return <Icon name="fingerprint-simple" className="unlock" />
 }
 /** What each check's badge says, tapped: its words, and its accessible name. */
-const VERIFIED: Record<Check, string> = { face: 'Verified with a selfie', id: 'Verified with ID' }
+const VERIFIED: Record<Check, string> = { face: 'Verified with Face', id: 'Verified with Face + ID' }
 
-/** Each check's icon: a face being scanned for the selfie, an ID card for the ID. */
+/** Each check's icon: a face being scanned for the face check, an ID card for the ID. */
 export const CHECK_ICON: Record<Check, IconName> = { face: 'scan-smiley', id: 'identification-card' }
 
 /**
@@ -121,7 +121,7 @@ export function Badges({ checks, big = false, alone = false }: { checks: readonl
 }
 
 /** What each check's outline says: what a tap on it starts. */
-const UNVERIFIED: Record<Check, string> = { face: 'Verify with a selfie', id: 'Verify with ID' }
+const UNVERIFIED: Record<Check, string> = { face: 'Verify with Face', id: 'Verify with Face + ID' }
 
 /** A check the person hasn't done, beside the badges they have, on Home and in You: its badge's outline, dashed, its icon quiet, a button that starts it. */
 export function Unverified({ check, onClick }: { check: Check; onClick: () => void }) {
@@ -131,14 +131,6 @@ export function Unverified({ check, onClick }: { check: Check; onClick: () => vo
     </button>
   )
 }
-
-/** You're verified: the soft green chip, done, with the icon of the check that verified the person. */
-export const YoureVerified = ({ check }: { check: Check }) => (
-  <span className="chip new">
-    <Icon name={CHECK_ICON[check]} fill />
-    You're verified
-  </span>
-)
 
 /**
  * A place's mark, on its corner (counts.ts): how many things inside have something new, black, up to

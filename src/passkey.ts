@@ -101,6 +101,21 @@ export async function oldBrowser(): Promise<boolean> {
   return (await capabilities())['extension:prf'] === false
 }
 
+/**
+ * The browsers an app opens a link in, inside itself, by their user agent: Instagram's, Facebook's
+ * (and Messenger's), TikTok's, LinkedIn's and Snapchat's. Each keeps a storage of its own and reaches
+ * no password manager, so a passkey can't work there, whatever it says it can do.
+ */
+const IN_APP = /Instagram|FBAN|FBAV|FB_IAB|FBIOS|BytedanceWebview|musical_ly|TikTok|LinkedInApp|Snapchat/
+
+/** Whether `agent` is one of those apps' own browsers. */
+export const inAppBrowser = (agent = globalThis.navigator?.userAgent ?? ''): boolean => IN_APP.test(agent)
+
+/** Whether a Forest passkey can work in this browser: WebAuthn with PRF, not inside another app. */
+export async function passkeysWork(): Promise<boolean> {
+  return !inAppBrowser() && !(await oldBrowser())
+}
+
 /** The seed from a PRF secret: its 32 bytes, not copied, so zeroing the seed zeroes them. */
 function seedOf(secret: BufferSource): Uint8Array {
   const seed = ArrayBuffer.isView(secret) ? new Uint8Array(secret.buffer, secret.byteOffset, secret.byteLength) : new Uint8Array(secret)

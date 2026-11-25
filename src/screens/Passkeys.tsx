@@ -9,7 +9,7 @@
 // field with Save at its right, on the same line, kept on this device alone, asking nothing; and, on
 // any passkey but the first, Remove under it, at the left, in red text, which asks again in its own
 // place, Remove this passkey?, with Cancel and Remove, then one unlock (Save gives way while it
-// asks). The first is the seed itself: the app never removes it, so it has no Remove. Under If you lose every passkey, Your 24 words, which
+// asks). The first is the seed itself: the app never removes it, so it has no Remove. Under If you lose every passkey, Your 24 recovery words, which
 // opens its own page (Words.tsx). Nothing floats.
 
 import { useState } from 'react'
@@ -107,7 +107,7 @@ export function Passkeys({ onBack, onAdd, onWords }: Props) {
       {backups?.length === 0 && <p className="line">{WHY_SECOND}</p>}
       <h2>If you lose every passkey</h2>
       <div className="rows">
-        <Opens icon="list-numbers" words="Your 24 words" line="Write them down to get back in" onClick={onWords} />
+        <Opens icon="list-numbers" words="Your 24 recovery words" line="Write them down to get back in" onClick={onWords} />
       </div>
     </main>
   )

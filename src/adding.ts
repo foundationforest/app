@@ -10,11 +10,30 @@ import { passkey, passkeys, usePasskey } from './device.ts'
 import { addBackup } from './flows/backups.ts'
 import { moveTo } from './held.ts'
 import { backupsChanged } from './hooks.ts'
+import { makerOf } from './managers.ts'
 import { drop, make, withSeed } from './passkey.ts'
 
-export async function addPasskey({ here = false }: { here?: boolean } = {}): Promise<void> {
+/** The passkey made is from the maker it must not be from (Add a backup's, the first passkey's): dropped, nothing added. */
+export class SameMaker extends Error {
+  readonly maker: string
+  constructor(maker: string) {
+    super('Same maker.')
+    this.name = 'SameMaker'
+    this.maker = maker
+  }
+}
+
+/**
+ * A passkey more. `notFrom`, a maker: one made there is asked to be dropped before anything is
+ * written, and `SameMaker` says so, since a backup kept where the first is goes with it.
+ */
+export async function addPasskey({ here = false, notFrom }: { here?: boolean; notFrom?: string } = {}): Promise<void> {
   await withSeed(passkey()!, async (seed) => {
     const made = await make({ exclude: passkeys() })
+    if (notFrom && makerOf(made.aaguid) === notFrom) {
+      await drop(made.id)
+      throw new SameMaker(notFrom)
+    }
     try {
       await addBackup(config, seed, made)
     } catch (err) {

@@ -19,85 +19,60 @@ type Line = [text: string, red: boolean]
 /** What the app says of an error it has no line for. */
 export const SOMETHING = 'Something went wrong. Try again.'
 
-const START_AGAIN = 'Start again.'
-/** A check that did not pass, whatever Didit saw: one line for the check, by verifierSays, never by its code. */
-const DIDNT_PASS: Line = ['{didnt}', false]
 const VERIFIER_DOWN: Line = ["The verifier isn't working right now. Try again later.", false]
 /** What the app says of a request it should never have made: a code the person can do nothing about. */
 const OURS: Line = [SOMETHING, false]
+/** A check that did not count: its answer shows in the box (answers.ts); a line, where one is said, says only that. */
+const DIDNT_COUNT: Line = ["That check didn't pass.", false]
 
-/** Each verifier code. `{check}` is the check the person is on: the selfie check or the ID check. */
+/** Each verifier code (services' verifier/src/codes.ts), in one line where one shows outside the box. `{check}` is the check the person is on. */
 const VERIFIER: Record<string, Line> = {
-  // 400: the app sent what the verifier does not take. Only the return address is the person's place.
-  bad_return_url: ["The ID check can't be paid for from this address.", false],
+  // 400: the app sent what the verifier does not take.
   not_json: OURS,
   not_an_object: OURS,
-  expected_exactly_returnUrl: OURS,
   expected_exactly_stampNumber: OURS,
   expected_exactly_stampNumber_and_returnUrl: OURS,
-  expected_exactly_payment_and_stampNumber: OURS,
-  expected_exactly_payment_and_stampNumber_and_returnUrl: OURS,
+  expected_exactly_payment: OURS,
+  expected_exactly_payment_and_returnUrl: OURS,
   expected_exactly_sessionId_and_stampNumber: OURS,
   expected_exactly_sessionId_and_stampNumber_and_payment: OURS,
   bad_session_id: OURS,
   bad_stamp_number: OURS,
+  bad_return_url: OURS,
   bad_payment: OURS,
-  // 402: no hold on the person's card for this check: held over a day ago, or held for another
-  // check. (Never paid at all, back from Stripe's page: flows/verify.ts says nothing of it.)
-  not_paid: ['{triesUsed}', false],
-  // 403: the check does not count. All but not_approved end the session; every one the person can
-  // try again after says one line, the same whatever Didit saw.
+  // 402: no hold on the person's card for this check: never paid, held over a day ago, or held for another.
+  not_paid: ['Pay again to continue. Nothing was charged.', false],
+  // 403: Didit's refusal, as one code, and a session not the verifier's to judge, or unfinished.
+  known_person: DIDNT_COUNT,
+  known_face: DIDNT_COUNT,
+  too_young: DIDNT_COUNT,
+  face_mismatch: DIDNT_COUNT,
+  id_unclear: DIDNT_COUNT,
+  face_unclear: DIDNT_COUNT,
+  other: DIDNT_COUNT,
+  unknown_session: OURS,
+  wrong_workflow: OURS,
+  expired: ['That check ran out of time. Start again.', false],
   not_approved: ['Not finished.', false],
-  unknown_session: [`That check was lost. ${START_AGAIN}`, false],
-  wrong_workflow: DIDNT_PASS,
-  declined: DIDNT_PASS,
-  expired: DIDNT_PASS,
-  no_liveness: DIDNT_PASS,
-  liveness_not_passed: DIDNT_PASS,
-  no_face: DIDNT_PASS,
-  no_document: DIDNT_PASS,
-  document_not_passed: DIDNT_PASS,
-  no_face_match: DIDNT_PASS,
-  face_match_not_passed: DIDNT_PASS,
-  no_document_data: DIDNT_PASS,
-  // One ID stamp a person: this ID, and the face that goes with it, already gave one to another seed.
-  duplicate_document: ['This ID is already verified with another passkey. Nothing was charged.', false],
-  // A face Didit has seen verified before, under another seed: the selfie check can't give this
-  // seed a stamp, even when Didit's own page said it passed.
-  face_seen: ['A similar face is already verified. Verify with your ID instead.', false],
-  // This seed holds a stamp already, and no face Didit matched is the one that got it (or, on the ID
-  // check, its own earlier ID doesn't fit this one): someone else, on this person's passkey.
-  other_person: ["This doesn't match the person already verified with this passkey.{charged}", false],
-  // Didit's whole list of faces like this one, five, recent tries among them: too many to tell apart.
-  // A refused try leaves Didit's list after its day.
-  too_many_matches: ['Too many recent checks look alike. Try again tomorrow.{charged}', false],
   // 409
-  session_used: [`That check was already used. ${START_AGAIN}`, false],
-  // Its three tries opened, or its hold cancelled. One whose stamp was given is never said: the
-  // stamp is asked back first (flows/verify.ts).
-  payment_used: ['{triesUsed}', false],
-  // 502, 503
-  face_check_unavailable: ["The {check} isn't available right now. Try again in a minute.", false],
-  payment_unavailable: ["Payment isn't available right now. Try again in a minute.", false],
-  not_for_sale: ["The ID check isn't available yet.", false],
-  // 404, 405, 413, 500, and what the app makes of an answer no verifier gives.
+  session_used: OURS,
+  payment_used: ['Pay again to continue. Nothing was charged.', false],
+  face_tries_used: ['Your free face check is used. Verify with your ID.', false],
+  // 404, 405, 413, 502, 503, 500, and what the app makes of an answer no verifier gives.
   not_found: VERIFIER_DOWN,
   post_only: VERIFIER_DOWN,
   get_only: VERIFIER_DOWN,
   too_large: VERIFIER_DOWN,
+  face_check_unavailable: ["The {check} isn't available right now. Try again in a minute.", false],
+  payment_unavailable: ["Payment isn't available right now. Try again in a minute.", false],
+  not_for_sale: ["The ID check isn't available yet.", false],
   internal: VERIFIER_DOWN,
   not_a_verifier: VERIFIER_DOWN,
   another_stamp_number: VERIFIER_DOWN,
 }
 
-/** A face seen before, while the ID check isn't for sale: nothing to point to yet. */
-export const FACE_SEEN_NOT_FOR_SALE = 'A similar face is already verified. The ID check opens soon.'
-
 /** The ID card's one quiet line while the verifier's payments are test payments, which charge nobody: Stripe's own test card. */
 export const TEST_PAYMENTS = 'Test mode: pay with the card 4242 4242 4242 4242.'
-
-/** What the app says when a payment ends with no stamp from it (its third try didn't pass, its tries used, or its hold over): nothing was charged. */
-export const TRIES_USED = 'Your tries are used up. Nothing was charged. Pay again to continue.'
 
 /** The codes the verifier answers that the app has its own line for. */
 export const VERIFIER_CODES = Object.keys(VERIFIER)
@@ -108,12 +83,10 @@ export const CHECK_AGAIN = 'Your earlier check no longer counts: the verifier ch
 /** A new profile, while no stamp of the person's counts: none is made. */
 export const CHECK_FIRST = 'Get verified first: your earlier check no longer counts.'
 
-/** The verifier's `code`, said for the check the person is on. A check that didn't pass offers the selfie's way on: the ID. `{charged}`: on the ID check, that nothing was charged. */
+/** The verifier's `code`, said for the check the person is on. */
 export function verifierSays(code: string, check: 'face' | 'id' = 'face'): Said {
   const [text, red] = VERIFIER[code] ?? [SOMETHING, false]
-  if (text === DIDNT_PASS[0]) return new Said(check === 'id' ? "That ID check didn't pass. Try again." : "That selfie didn't pass. Try again, or use your ID.")
-  if (text === '{triesUsed}') return new Said(TRIES_USED)
-  return new Said(text.replace('{check}', check === 'id' ? 'ID check' : 'selfie check').replace('{charged}', check === 'id' ? ' Nothing was charged.' : ''), red)
+  return new Said(text.replace('{check}', check === 'id' ? 'ID check' : 'face check'), red)
 }
 
 /** Each host refusal: of an entry or an inbox entry (the standard's codes and the host's), and of a credit route. */

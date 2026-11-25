@@ -7,9 +7,10 @@
 import { expect, test } from 'vitest'
 
 import { allMessagesMark, countText, markWords, messagesMark, newText, offerMark, profileMark } from '../src/counts.ts'
-import { countryOf, documentWords, idLine, idName } from '../src/documents.ts'
+import { countryOf, dayOf, documentWords, idName } from '../src/documents.ts'
 import { NAME_MOST, nameShown } from '../src/flows/names.ts'
 import { idShownOf } from '../src/flows/verify.ts'
+import { rowsOf } from '../src/screens/IdPage.tsx'
 import { short } from '../src/ui.tsx'
 
 test('a count up to 9, then 9+; beside a rating, 1 new up to 9+ new; in words for screen readers', () => {
@@ -44,25 +45,39 @@ test('an offer: the ! when its market outgrew it; nothing before the messages ar
   expect(offerMark(false, true, 2)).toBe(2)
 })
 
-test("an ID in words: its kind, its country by name, the year it runs out; a stamp kept without its list, just ID", () => {
+test("an ID in words: its own name, else its kind; its country by name; its days in words; a stamp kept without its list, just ID", () => {
   expect(['Identity Card', 'ID', 'National ID Card', 'Passport', "Driver's License", 'RESIDENCE PERMIT'].map(documentWords)).toEqual(['ID card', 'ID card', 'ID card', 'Passport', "Driver's license", 'Residence permit'])
   expect(['MEX', 'esp', 'KGZ', 'GBR', 'XKX', 'ZZZ'].map(countryOf)).toEqual(['Mexico', 'Spain', 'Kyrgyzstan', 'United Kingdom', 'Kosovo', 'ZZZ'])
   expect(idName({ kind: 'Identity Card' })).toBe('ID card')
-  expect(idLine({ kind: 'Identity Card', country: 'MEX', until: '2031-04-30' })).toBe('Mexico · until 2031')
-  expect(idLine({ country: 'ESP' })).toBe('Spain')
-  expect([idName({}), idLine({})]).toEqual(['ID', ''])
+  expect(idName({ kind: 'Identity Card', subtype: 'INE' }), "the document's own name for itself").toBe('INE')
+  expect(idName({})).toBe('ID')
+  expect(dayOf('2031-04-30')).toBe(new Date(Date.UTC(2031, 3, 30)).toLocaleDateString(undefined, { dateStyle: 'long', timeZone: 'UTC' }))
+  expect(dayOf('someday'), 'any other as it was written').toBe('someday')
 })
 
-test("an ID stamp's three facts, from the list beside it; none for one kept without its list", () => {
+test("an ID stamp's four facts the device keeps, from the list beside it, and its entry's path; none for one kept without its list; and its page's rows, the facts it holds", () => {
   const list = [
     { name: 'model', value: 'm', salt: '1' },
     { name: 'document_type', value: 'Identity Card', salt: '2' },
+    { name: 'document_subtype', value: 'INE', salt: '2' },
     { name: 'issuing_state', value: 'MEX', salt: '3' },
     { name: 'expiration_date', value: '2031-04-30', salt: '4' },
-    { name: 'full_name', value: 'Someone', salt: '5' },
+    { name: 'full_name', value: 'Someone Else', salt: '5' },
+    { name: 'date_of_birth', value: '1990-04-01', salt: '6' },
+    { name: 'document_number', value: 'ABC123', salt: '7' },
   ]
-  expect(idShownOf(JSON.stringify({ stampNumber: '1', factList: list })), 'those three, nothing else').toEqual({ kind: 'Identity Card', country: 'MEX', until: '2031-04-30' })
+  const stamp = JSON.stringify({ stampNumber: '1', factList: list })
+  expect(idShownOf(stamp, 'stamp/ab'), 'those four, nothing else').toEqual({ kind: 'Identity Card', subtype: 'INE', country: 'MEX', until: '2031-04-30', path: 'stamp/ab' })
   expect(idShownOf(JSON.stringify({ stampNumber: '1' }))).toEqual({})
+  expect(rowsOf(stamp)).toEqual([
+    ['Name', 'Someone Else'],
+    ['Born', dayOf('1990-04-01')],
+    ['Document', 'ID card, Mexico'],
+    ['Number', 'ABC123'],
+    ['Expires', dayOf('2031-04-30')],
+  ])
+  const lean = JSON.stringify({ stampNumber: '1', factList: [{ name: 'first_name', value: 'Ada', salt: '1' }, { name: 'last_name', value: 'L', salt: '2' }] })
+  expect(rowsOf(lean), 'a row whose fact the stamp lacks is left out').toEqual([['Name', 'Ada L']])
 })
 
 test("someone's short key, the first 6 characters of their address; a name at most 12, one saved longer cut until edited", () => {

@@ -28,19 +28,26 @@ const SERVICE = 'verifier'
 /** The two checks: the face check, free, and the ID check, paid. */
 export type Check = 'face' | 'id'
 
+/** An amount as Stripe's Price says it: in the currency's smallest unit (500 is $5), and its code, lower case. */
+export type Price = { amount: number; currency: string }
+
 /**
  * What the verifier says of itself in GET /: its name, its two keys, each with the names of its facts
- * in their list's order (`facts`), whether the ID check is for sale (`forSale`, false while it has no
- * Stripe key) and whether its payments are test payments, which charge nobody (`testPayments`); the
- * recipe its facts are made by (`recipe`, the standard's facts as a list); the consent screen an app
- * shows before the ID check; and its gifts, credits at one host. Nothing shows the facts' names yet.
+ * in their list's order (`facts`); the face key with `consent`, the text an app shows before the face
+ * check; the ID key with whether it is for sale (`forSale`, false while it has no Stripe key), whether
+ * its payments are test payments, which charge nobody (`testPayments`), its prices (`price` for a
+ * first ID, `addedPrice` for one more, null until Stripe has said them) and `cancelRight`, the line
+ * the person agrees to that starts the ID check at once; the recipe its facts are made by (`recipe`,
+ * the standard's facts as a list); `consent`, the text an app shows before the ID check; `agree`, the
+ * one line the person ticks before either check; and its gifts, credits at one host.
  */
 export type About = {
   name: string
-  face: { key: string; facts?: string[] }
-  id: { key: string; facts?: string[]; forSale?: boolean; testPayments?: boolean }
+  face: { key: string; facts?: string[]; consent?: string }
+  id: { key: string; facts?: string[]; forSale?: boolean; testPayments?: boolean; price?: Price | null; addedPrice?: Price | null; cancelRight?: string }
   recipe?: string
   consent?: string
+  agree?: string
   gift?: { face: number; id: number; host: string; sponsor: string }
 }
 
@@ -81,30 +88,37 @@ function sessionOf(status: number, body: any, check: Check): Session {
   return body
 }
 
-/**
- * A face check: its session, opened for this stamp number, which alone it can give a stamp to.
- * `returnUrl` is where Didit sends the person after, on an app the verifier lists.
- */
-export async function faceSession(origin: string, stampNumber: bigint, returnUrl?: string): Promise<Session> {
-  const { status, body } = await call(SERVICE, `${origin}/face/session`, { stampNumber: stampNumber.toString(), ...(returnUrl && { returnUrl }) })
+/** A face check: its session, opened for this stamp number, which alone it can give a stamp to, while its free try is left. */
+export async function faceSession(origin: string, stampNumber: bigint): Promise<Session> {
+  const { status, body } = await call(SERVICE, `${origin}/face/session`, { stampNumber: stampNumber.toString() })
   return sessionOf(status, body, 'face')
 }
 
-/** The ID check's payment: its id (a Stripe Checkout Session's) and Stripe's page, which sends the person back to `returnUrl`, paid or not. */
-export async function idPayment(origin: string, returnUrl: string): Promise<{ payment: string; url: string }> {
-  const { status, body } = await call(SERVICE, `${origin}/id/payment`, { returnUrl })
-  if (status !== 201 || typeof body?.payment !== 'string' || typeof body?.url !== 'string') throw new Refused(SERVICE, status, body?.error ?? 'internal', 'id')
+/**
+ * The ID check's payment, for this stamp number, which the verifier locks inside it: the payment, which
+ * opens the check's sessions, and the client secret of the verifier's payment page, which the app
+ * frames, so the person pays without leaving it.
+ */
+export async function idPayment(origin: string, stampNumber: bigint): Promise<{ payment: string; clientSecret: string }> {
+  const { status, body } = await call(SERVICE, `${origin}/id/payment`, { stampNumber: stampNumber.toString() })
+  if (status !== 201 || typeof body?.payment !== 'string' || typeof body?.clientSecret !== 'string') throw new Refused(SERVICE, status, body?.error ?? 'internal', 'id')
   return body
 }
 
-/** An ID check: its session, for a paid payment with a try left, opened for this stamp number, which alone it can give a stamp to. */
-export async function idSession(origin: string, payment: string, stampNumber: bigint, returnUrl?: string): Promise<Session> {
-  const { status, body } = await call(SERVICE, `${origin}/id/session`, { payment, stampNumber: stampNumber.toString(), ...(returnUrl && { returnUrl }) })
+/** An ID check: its session, for a paid payment with a try left, opened for the stamp number the payment carries. */
+export async function idSession(origin: string, payment: string): Promise<Session> {
+  const { status, body } = await call(SERVICE, `${origin}/id/session`, { payment })
   return sessionOf(status, body, 'id')
 }
 
-/** What asking for the stamp came to: signed, with the gift's ticket or why none; or the verifier's no, with its code. */
-export type Asked = { signed: true; stamp: string; ticket?: string; noGift?: string } | { signed: false; code: string; status: number }
+/** The ID check cancelled while its payment gave no stamp: its hold cancelled, and the payment opens no more sessions. */
+export async function idCancel(origin: string, payment: string): Promise<void> {
+  const { status, body } = await call(SERVICE, `${origin}/id/cancel`, { payment })
+  if (status !== 200) throw new Refused(SERVICE, status, body?.error ?? 'internal', 'id')
+}
+
+/** What asking for the stamp came to: signed, with the gift's ticket or why none, and on the ID check the face stamp signed from the same selfie, when this stamp number held none; or the verifier's no, with its code. */
+export type Asked = { signed: true; stamp: string; face?: string; ticket?: string; noGift?: string } | { signed: false; code: string; status: number }
 
 /**
  * The stamp for the session `sessionId` of `check`, for this stamp number, with `gift`, a buy's
@@ -119,29 +133,30 @@ export async function askStamp(origin: string, check: Check, ask: { sessionId: s
     ...(ask.gift && { gift: ask.gift }),
   })
   if (status === 200) {
-    if (body?.stamp?.stampNumber !== ask.stampNumber.toString()) throw new Refused(SERVICE, status, 'another_stamp_number', check)
+    const ours = (s: any) => s?.stampNumber === ask.stampNumber.toString()
+    if (!ours(body?.stamp) || (body?.face && !ours(body.face))) throw new Refused(SERVICE, status, 'another_stamp_number', check)
     const ticket = typeof body?.gift?.ticket === 'string' ? body.gift.ticket : undefined
     const noGift = typeof body?.gift?.error === 'string' ? body.gift.error : undefined
-    return { signed: true, stamp: await stampText(body.stamp), ...(ticket && { ticket }), ...(noGift && { noGift }) }
+    const face = check === 'id' && body?.face ? await stampText(body.face) : undefined
+    return { signed: true, stamp: await stampText(body.stamp), ...(face && { face }), ...(ticket && { ticket }), ...(noGift && { noGift }) }
   }
   if (typeof body?.error === 'string' && status >= 400 && status < 500) return { signed: false, code: body.error, status }
   throw new Refused(SERVICE, status, body?.error ?? 'internal', check)
 }
 
-/** The stamps the verifier signed for this stamp number, asked back, each as the Profiles folder keeps it but without its list of facts, which only the answer that signed it carries; or null for none, or for one not from the current key of its check. */
-export async function stampsBack(origin: string, stampNumber: bigint): Promise<Record<Check, string | null>> {
+/** What the verifier keeps for a stamp number: its face stamp and each ID stamp, from its current keys, each as the Profiles folder keeps it but without its list of facts, which only the answer that signed it carries; and how many free face tries it has left. */
+export type Back = { face: string | null; id: string[]; faceTriesLeft: number }
+
+/** The stamps the verifier signed for this stamp number, asked back, and its free face tries left. A stamp not from the current key of its check is left out. */
+export async function stampsBack(origin: string, stampNumber: bigint): Promise<Back> {
   const { status, body } = await call(SERVICE, `${origin}/stamp`, { stampNumber: stampNumber.toString() })
-  if (status === 404) return { face: null, id: null }
   if (status !== 200) throw new Refused(SERVICE, status, body?.error ?? 'internal')
-  const back = async (check: Check): Promise<string | null> => {
-    if (!body?.[check]) return null
-    const stamp = await stampText(body[check])
+  const back = async (check: Check, json: unknown): Promise<string | null> => {
+    if (!json || typeof json !== 'object') return null
+    const stamp = await stampText(json)
     return (await checkOfStamp(origin, stamp)) === check ? stamp : null
   }
-  return { face: await back('face'), id: await back('id') }
-}
-
-/** The stamp of `check` the verifier signed for this stamp number, asked back; null when it signed none. */
-export async function stampBack(origin: string, stampNumber: bigint, check: Check): Promise<string | null> {
-  return (await stampsBack(origin, stampNumber))[check]
+  const ids = Array.isArray(body?.id) ? await Promise.all(body.id.map((s: unknown) => back('id', s))) : []
+  const left = Number.isSafeInteger(body?.faceTriesLeft) ? (body.faceTriesLeft as number) : 0
+  return { face: await back('face', body?.face), id: ids.filter((s): s is string => s !== null), faceTriesLeft: Math.max(0, left) }
 }

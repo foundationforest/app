@@ -5,7 +5,8 @@
 //                  verifier's own code says what each decision, payment, try and refusal comes to.
 //                  Didit approves every face check session it opens unless a test says it is
 //                  unfinished, declined, expired, not passed, or past its hour; an
-//                  ID check's session comes to what a test sets;
+//                  ID check's session comes to what a test sets; Stripe's embedded payments are
+//                  paid with `payments.pay`, as the payment page would;
 //   the host       services' own host (services/host/src), as `npm start` runs it, the plug and the
 //                  credits, taking the verifier's sponsor's tickets;
 //   the index      a stand-in answering /profiles/<address>.json and a listing's own page,
@@ -266,7 +267,7 @@ export async function verifiedWith(w: Services, ...labels: string[]) {
   await open(w, p.id, () => stampNumberAt(w, p.seed))
   const step = await ask(w, p.id, await stampNumberAt(w, p.seed))
   if (step.at !== 'signed') throw new Error(`not signed: ${step.at}`)
-  await finish(w, p.id, p.seed, step.stamp, proveHere)
+  await finish(w, p.id, p.seed, step.stamps, proveHere)
   const profiles = []
   for (const label of labels) profiles.push(await makeProfile(w, p.seed, label, proveHere))
   return { ...p, profiles }

@@ -1,49 +1,63 @@
-// Where this copy of the app is, the services it talks to, the AI apps whose plugin directories list
-// Forest, and the pages About Forest links to (its privacy and terms, and its source code): the one
-// place they are set. A copy hosted elsewhere sets
-// its own here, and in vercel.json's content security policy. The browser
-// test builds the app with its own loopback copies, named in VITE_FOREST_CONFIG at build time.
+// Where this copy of the app is, the services it talks to (Didit's own page among them, which the
+// checks frame), each AI app's own page for adding Forest, the pages About Forest opens (its privacy
+// and terms, framed, and its source code), and who runs it, with an address to write to: the one
+// place they are set. A copy hosted elsewhere sets its own here, and in vercel.json's content security
+// policy. The browser test builds the app with its own loopback copies, named in VITE_FOREST_CONFIG
+// at build time.
 
-/** The AI apps Connect your AI names. */
-export const AI_APPS = ['Claude', 'ChatGPT'] as const
+/** The AI apps Connect your AI names, each with a button of its own. */
+export const AI_APPS = ['ChatGPT', 'Claude'] as const
 export type AiApp = (typeof AI_APPS)[number]
 
+/** Who runs this copy, as About Forest says under its card: each line only when it is set. */
+export type Company = { name?: string; registered?: string; number?: string; office?: string }
+
 export type Config = {
-  /** The app's own address: the verifier sends people back here after a check, and Share links here. */
+  /** The app's own address: Share links here. */
   app: string
-  /** The verifier, which checks a person and signs a stamp to their seed. */
+  /** The verifier, which checks a person and signs a stamp to their seed; its payment page is framed in the ID check's box. */
   verifier: string
+  /** Didit, the verifier's check provider: the origin of the check's own page, which the box frames, and the only one its messages are taken from. */
+  didit: string
   /** The host, which keeps every folder the app writes. */
   host: string
   /** The connector, over MCP, which an AI app acts through. */
   connector: string
-  /** The AI apps whose plugin directory lists Forest: Connect your AI has the person search for it there; any other is added by the connector's address. */
-  listedIn: AiApp[]
+  /** Each AI app's own page for adding Forest, where it has one: its button on Connect your AI opens it, in a new tab; without one, it opens Add manually. */
+  addPages: Partial<Record<AiApp, string>>
   /** The index, which rates each profile: the app reads what it says of the person's own. */
   index: string
   /** Places, services' place lookup: words to towns and colonias for the place screen's search, and the name nearest a place's centre for its caption. Only ever a help: with no answer, a place reads by its size. */
   places: string
   /** The map's tiles, OpenFreeMap: its styles, light and dark, at /styles/positron and /styles/dark, on the place screen alone. */
   tiles: string
-  /** The pages About Forest opens, each in a new tab: how this copy treats what people give it, its terms, and its source code. Links, never fetched. */
+  /** The pages About Forest opens: how this copy treats what people give it, and its terms, each framed on a page of the app's own; and its source code, in a new tab. */
   privacy: string
   terms: string
   source: string
+  /** Where to write: support, illegal content, a lost passkey. */
+  contact: string
+  /** Who runs this copy, under About Forest's card. */
+  company: Company
 }
 
 const OURS: Config = {
   app: 'https://app.forest.foundation',
   verifier: 'https://verifier.forest.foundation',
+  didit: 'https://verify.didit.me',
   host: 'https://host.forest.foundation',
   connector: 'https://mcp.forest.foundation',
-  // No plugin directory lists Forest yet: adding an app's name here switches it to the search steps.
-  listedIn: [],
+  // No AI app has a page for adding Forest yet: each button opens Add manually until one is named here.
+  addPages: {},
   index: 'https://index.forest.foundation',
   places: 'https://places.forest.foundation',
   tiles: 'https://tiles.openfreemap.org',
   privacy: 'https://forest.foundation/privacy',
   terms: 'https://forest.foundation/terms',
   source: 'https://github.com/foundationforest/app',
+  contact: 'support@forest.foundation',
+  // The foundation isn't registered yet: its lines show once they are set here.
+  company: {},
 }
 
 const given = import.meta.env?.VITE_FOREST_CONFIG as string | undefined

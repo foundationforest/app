@@ -21,8 +21,8 @@ import { NotWritten, readView, writeAll } from '../services/host.ts'
 import { emailIn } from './email.ts'
 import { namesIn } from './names.ts'
 
-/** The Profiles folder as the host serves it, opened: its main key, its view, and the labels and stamps it lists. */
-export type Opened = { key: MainKey; view: View; labels: string[]; stamps: string[] }
+/** The Profiles folder as the host serves it, opened: its main key, its view, the labels it lists, and its stamps, alone (`stamps`) and with the path of each one's entry (`held`). */
+export type Opened = { key: MainKey; view: View; labels: string[]; stamps: string[]; held: Array<{ stamp: string; path: string }> }
 
 /** A random id, which names nothing: 16 random bytes, in lowercase hex. */
 export const randomId = () => hex.encode(crypto.getRandomValues(new Uint8Array(16)))
@@ -60,11 +60,11 @@ export async function openProfiles(seed: Uint8Array, host: string): Promise<Open
     read[labelId(o.path)] = o.body.label
     if (Number.isSafeInteger(o.body.time)) made[labelId(o.path)] = o.body.time as number
   }
-  const stamps = (await opened(view, 'stamp', identity)).map((o) => o.body.stamp).filter((s): s is string => typeof s === 'string')
+  const held = (await opened(view, 'stamp', identity)).flatMap((o) => (typeof o.body.stamp === 'string' ? [{ stamp: o.body.stamp, path: o.path }] : []))
   readLabels(key.address, read, made)
   keepNames(await namesIn(view, identity))
   keepEmail(await emailIn(view, identity))
-  return { key, view, labels: [...new Set(Object.values(read).filter(Boolean))].sort(), stamps }
+  return { key, view, labels: [...new Set(Object.values(read).filter(Boolean))].sort(), stamps: held.map((h) => h.stamp), held }
 }
 
 /** One entry more, at `<kind>/<id>`, locked to the folder's own open key alone; its profile entry first, when it has none. Paid from the wallet. A label written is one the device has read. Gives back the id. */

@@ -1,8 +1,8 @@
-// An ID stamp in words, as Your checks shows it, from three of its facts, Didit's own fields (the
-// verifier's README, The stamp): the kind of document (`document_type`: "Identity Card" is "ID card",
-// "Passport" is "Passport"), the country that issued it (`issuing_state`, ISO 3166's three letters,
-// named as the device's browser names a country, in English: MEX is Mexico) and when it runs out
-// (`expiration_date`, its year: until 2031). A kind or a country it doesn't know reads as it was
+// An ID stamp in words, as Your checks shows it, from its facts, Didit's own fields (the verifier's
+// README, The stamp): the document's own name for itself (`document_subtype`, INE), else its kind
+// (`document_type`: "Identity Card" is "ID card", "Passport" is "Passport"); the country that issued
+// it (`issuing_state`, ISO 3166's three letters, named as the device's browser names a country, in
+// English: MEX is Mexico); and its days, in words. A kind or a country it doesn't know reads as it was
 // written.
 
 import type { IdShown } from './device.ts'
@@ -47,11 +47,13 @@ export function documentWords(kind: string): string {
   return k.charAt(0).toUpperCase() + k.slice(1)
 }
 
-/** An ID stamp's name in Your checks: its kind of document, or ID for one kept without its list. */
-export const idName = (id: IdShown) => (id.kind ? documentWords(id.kind) : 'ID')
+/** An ID stamp's name in Your checks: the document's own name for itself (Didit's `document_subtype`, INE), else its kind of document, or ID for one kept without its list. */
+export const idName = (id: IdShown) => id.subtype?.trim() || (id.kind ? documentWords(id.kind) : 'ID')
 
-/** An ID stamp's line in Your checks: its country, then until the year it runs out: Mexico · until 2031; empty for one kept without its list. */
-export function idLine(id: IdShown): string {
-  const year = id.until && /^\d{4}/.exec(id.until)?.[0]
-  return [id.country && countryOf(id.country), year && `until ${year}`].filter(Boolean).join(' · ')
+/** A day as Didit writes it (2031-04-30), in words, as the device's language says a date; any other as it was written. */
+export function dayOf(text: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(text.trim())
+  if (!m) return text
+  const date = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])))
+  return Number.isNaN(date.getTime()) ? text : date.toLocaleDateString(undefined, { dateStyle: 'long', timeZone: 'UTC' })
 }

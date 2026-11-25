@@ -1,9 +1,11 @@
 // A profile of the person's, opened from its card. Its header, on a light tint of its market's color
 // with its bottom corners rounded: Back on the left; on the right, round, its messages, with its
-// conversations' mark (counts.ts), which opens Messages on its chip, then Share. Share hands out the
-// profile's page on the index: the phone's share sheet where there is one, else the page's link
-// copied, the button saying so for a moment. A link, not a fetch: nothing here reaches the index for
-// it. Then its avatar, large; its market, big, in the titles' face; its role, small, with the badges
+// conversations' mark (counts.ts), which opens Messages on its chip, then its ··· (MoreMenu.tsx):
+// Share profile hands out the profile's page on the index (the phone's share sheet where there is one,
+// else the page's link copied), a link, not a fetch; Delete profile opens a sheet, Delete this
+// profile?, with what it does, then Delete profile, red, and Cancel: every live entry in its folder
+// deleted at the host, its AI apps and the morning email let go of it, its label out of the Profiles
+// folder (flows/remove.ts), and the person lands on Home. Then its avatar, large; its market, big, in the titles' face; its role, small, with the badges
 // of its checks after it; and what the index says, a pill with its star, its score and how many
 // reviews it counted, or, with no score yet, what came (1 vouch), or No reviews yet, which opens its
 // Reviews (Reviews.tsx), saying "1 new", up to "9+ new", while something it received is new, and the
@@ -25,7 +27,13 @@ import { useCards, useEntries, useMarks, useOffers, useOutgrown, useProfiles, us
 import { Icon } from '../icons.tsx'
 import { kindWords, marketWords, markets, pairOf, roleWords } from '../markets.ts'
 import { ratingText, reviewCount, saidCount } from '../show.ts'
-import { Badges, Corner, Line, MessagesButton, Rating, noteOf } from '../ui.tsx'
+import { passkey } from '../device.ts'
+import { removeProfile } from '../flows/remove.ts'
+import { Loader } from '../mark.tsx'
+import { withSeed } from '../passkey.ts'
+import { Sheet } from '../sheet.tsx'
+import { Badges, Corner, Line, MessagesButton, Rating, UnlockIcon, noteOf, useAction } from '../ui.tsx'
+import { MoreMenu } from './MoreMenu.tsx'
 import { OfferCard, offersInOrder } from './Offers.tsx'
 
 type Props = {
@@ -35,7 +43,12 @@ type Props = {
   onOffer: (path: string) => void
   onReviews: () => void
   onMessages: () => void
+  /** The profile deleted: Home. */
+  onDeleted: () => void
 }
+
+/** What Delete this profile? says it does. */
+export const DELETE_LINES = ['Your profile and its listings disappear from Forest.', "Reviews people left you don't go away.", 'If you make this profile again, it comes back with the same reviews.']
 
 /** A profile's page on the index, or a listing's: what Share hands out. */
 export const pageOf = (address: string) => `${config.index}/profiles/${address}`
@@ -58,7 +71,13 @@ export function ShareButton({ url }: { url: string }) {
   )
 }
 
-export function Profile({ address, onBack, onNew, onOffer, onReviews, onMessages }: Props) {
+export function Profile({ address, onBack, onNew, onOffer, onReviews, onMessages, onDeleted }: Props) {
+  const [deleting, setDeleting] = useState(false)
+  const remove = useAction(async () => {
+    const p = list.find((q) => q.address === address)!
+    await withSeed(passkey()!, (seed) => removeProfile(config, seed, p))
+    onDeleted()
+  })
   const wide = useWide()
   const list = useProfiles()
   const profile = list.find((p) => p.address === address)
@@ -95,7 +114,7 @@ export function Profile({ address, onBack, onNew, onOffer, onReviews, onMessages
           <span className="grow" />
           <div className="top-right">
             <MessagesButton mark={news?.messages ?? 0} onOpen={onMessages} />
-            <ShareButton url={pageOf(address)} />
+            <MoreMenu url={pageOf(address)} items={[{ words: 'Delete profile', red: true, onPick: () => setDeleting(true) }]} />
           </div>
         </div>
         <div className="titled">
@@ -151,6 +170,23 @@ export function Profile({ address, onBack, onNew, onOffer, onReviews, onMessages
         </>
       )}
       {!wide && <div className="foot">{newOne}</div>}
+      {deleting && (
+        <Sheet label="Delete this profile?" onClose={() => !remove.busy && setDeleting(false)}>
+          <h2>Delete this profile?</h2>
+          <ul className="bullets">
+            {DELETE_LINES.map((l) => (
+              <li key={l}>{l}</li>
+            ))}
+          </ul>
+          <Line note={remove.note} />
+          <button type="button" className="danger solid" disabled={remove.busy} onClick={() => remove.run()}>
+            {remove.busy ? <Loader /> : <><UnlockIcon /> Delete profile</>}
+          </button>
+          <button type="button" disabled={remove.busy} onClick={() => setDeleting(false)}>
+            Cancel
+          </button>
+        </Sheet>
+      )}
     </main>
   )
 }
