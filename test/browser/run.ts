@@ -4354,7 +4354,7 @@ test("the ID check's answers, in the box: an ID it couldn't accept, Keep trying 
   // Its last session: Too many failed tries, nothing charged, Close.
   assert.deepEqual(await answered('Too many failed tries', "You weren't charged."), [['Close', 'primary']])
   await shot(page, 'id-tries-used')
-  await box.getByRole('button', { name: 'Close' }).click()
+  await box.locator('.answer').getByRole('button', { name: 'Close' }).click()
   await box.waitFor({ state: 'detached' })
   assert.equal(JSON.parse((await kept(page))['forest.setup']!).payment, undefined, 'the payment dropped')
 
@@ -4384,7 +4384,7 @@ test("the ID check's answers, in the box: an ID it couldn't accept, Keep trying 
   await pays()
   await checked()
   assert.deepEqual(await answered('Forest is for people 18 and older', "You weren't charged."), [['Close', 'primary']])
-  await box.getByRole('button', { name: 'Close' }).click()
+  await box.locator('.answer').getByRole('button', { name: 'Close' }).click()
 
   // An error of a service's: Something went wrong, it wasn't you; Try again asks again, and the stamps come.
   said.status = 500
@@ -5674,7 +5674,8 @@ test("Report, from someone else's profile: its ··· with Share profile and Rep
   await shot(page, 'report')
   await report.getByRole('button', { name: /Warn others/ }).click()
   await page.getByRole('group', { name: 'Kind' }).getByRole('button', { name: 'Report', pressed: true }).waitFor({ timeout: 30_000 })
-  await button(page, 'Back').click()
+  await button(page, 'Close').click()
+  await page.getByText('Not yours', { exact: true }).waitFor()
   await page.goto(APP)
 })
 
