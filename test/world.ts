@@ -164,9 +164,10 @@ export type World = Services & {
 /**
  * Services' verifier and host, a stand-in index and a stand-in connector, on loopback.
  * `entryPerKb` and `filePerKb` are the host's price of a kilobyte of an entry and of a file, in
- * credits, its own defaults unless a test sets them; `forSale: false` is a verifier with no Stripe.
+ * credits, its own defaults unless a test sets them; `forSale: false` is a verifier with no Stripe;
+ * `faceCredits`, the face check's gift, FACE_CREDITS unless a test needs a wallet that gives more.
  */
-export async function world({ entryPerKb, filePerKb, forSale = true }: { entryPerKb?: string; filePerKb?: string; forSale?: boolean } = {}): Promise<World> {
+export async function world({ entryPerKb, filePerKb, forSale = true, faceCredits = FACE_CREDITS }: { entryPerKb?: string; filePerKb?: string; forSale?: boolean; faceCredits?: number } = {}): Promise<World> {
   const dir = mkdtempSync(join(tmpdir(), 'forest-app-'))
   const hostPort = await freePort()
   const host = `http://127.0.0.1:${hostPort}`
@@ -184,7 +185,7 @@ export async function world({ entryPerKb, filePerKb, forSale = true }: { entryPe
       DIDIT_BASE_URL: 'http://127.0.0.1:9',
       FACE_MODEL: 'stand-in',
       HOST_URL: host,
-      FACE_CREDITS: String(FACE_CREDITS),
+      FACE_CREDITS: String(faceCredits),
       ID_CREDITS: String(ID_CREDITS),
       APP_ORIGINS: APP,
       DATABASE_PATH: join(dir, 'verifier', 'verifier.sqlite'),

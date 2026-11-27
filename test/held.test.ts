@@ -116,3 +116,14 @@ test('moved to another passkey, the same seed: held for that one, asking nothing
   await held.withHeld('b', unlock, async (seed) => expect([...seed].every((x) => x === 7)).toBe(true))
   expect(unlocks).toBe(1)
 })
+
+test("a test account's seed: held while the page is open, with no 15 minutes; dropped when it closes", async () => {
+  const held = await load()
+  const { HOLD_MS } = held
+  const id = 'test:2KsR6wpfN78YfGgvdmt2C1Hxzquj3DQXwsjVn4o31TDY'
+  await held.withHeld(id, unlock, async () => undefined)
+  vi.advanceTimersByTime(HOLD_MS * 8)
+  expect(held.isHeldFor(id)).toBe(true)
+  page.window.dispatchEvent(new Event('pagehide'))
+  expect(held.isHeld()).toBe(false)
+})

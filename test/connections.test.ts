@@ -27,6 +27,7 @@ import * as device from '../src/device.ts'
 import { readCard } from '../src/flows/cards.ts'
 import { connect, ranOut, readRequest } from '../src/flows/connect.ts'
 import { accessEntry, addTo, end, findConnections, removeFrom } from '../src/flows/connections.ts'
+import { makeForAi } from '../src/flows/linked.ts'
 import { walletKey } from '../src/flows/profiles.ts'
 import { enter } from '../src/flows/start.ts'
 import { OFFERS, OTHER_OFFERS, REQUESTS } from './labels.ts'
@@ -239,6 +240,28 @@ describe('a connection changed', () => {
     if (typeof read === 'string' || 'unreached' in read) throw new Error('no connection')
     const student = read.profiles.find((x) => x.label === STUDENT)!
     expect((await accessKey(b64u.decode(student.key))).address, 'the connector acts with the key the profile entry lists').toBe((await keysOf(own[STUDENT]!))[0]!.key)
+  })
+})
+
+describe('a profile made from a link', () => {
+  test('given to every AI app the person connected, in the same unlock, each one as the connector reads it; one connected from another browser too', async () => {
+    const p = await verifiedWith(w, TUTOR)
+    const first = await connected(p.seed, [TUTOR], 'Claude')
+    const second = await connected(p.seed, [TUTOR], 'ChatGPT')
+    // As though the second was connected in another browser: this device doesn't know it.
+    device.dropConnection(second.pointer.folder)
+    const labels = async (pointer: Pointer) => {
+      const read = await asTheConnectorReads(pointer)
+      return typeof read === 'string' || 'unreached' in read ? read : read.profiles.map((x) => x.label).sort()
+    }
+    const apps = await makeForAi(w, p.seed, STUDENT, proveHere)
+    expect(apps.map((c) => c.name).sort()).toEqual(['ChatGPT', 'Claude'])
+    expect(await labels(first.pointer)).toEqual([STUDENT, TUTOR].sort())
+    expect(await labels(second.pointer)).toEqual([STUDENT, TUTOR].sort())
+    expect(device.connections().map((c) => [c.name, c.labels]).sort(), 'the device keeps both, acting for both profiles').toEqual([
+      ['ChatGPT', [STUDENT, TUTOR].sort()],
+      ['Claude', [STUDENT, TUTOR].sort()],
+    ])
   })
 })
 

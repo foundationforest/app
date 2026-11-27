@@ -2,10 +2,13 @@
 // 15 minutes since the last action, each action restarting them as it starts and as it ends, or until
 // the page closes, and on Forget; it is never stored. Hidden is not closed: a page another window
 // covers, or one in another tab, keeps it, as a locked phone does, until the 15 minutes run out. Only
-// the passkey in use is held, one at a time.
+// the passkey in use is held, one at a time. A test account's seed is held while the tab is open,
+// with no 15 minutes (test-account.ts).
 //
 // An action already running when the seed is dropped finishes with it: its bytes are zeroed as the
 // last action using them ends, never under one, which would make it mix the wrong keys.
+
+import { isTestId } from './test-account.ts'
 
 /** How long the seed is held after an unlock, or after the last action that used it. */
 export const HOLD_MS = 15 * 60_000
@@ -20,9 +23,10 @@ const told = () => {
   for (const l of listeners) l()
 }
 
-/** The 15 minutes started again. */
+/** The 15 minutes started again; none for a test account's. */
 function restart(): void {
   clearTimeout(timer)
+  if (held && isTestId(held.id)) return
   timer = setTimeout(drop, HOLD_MS)
 }
 

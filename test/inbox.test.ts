@@ -3,24 +3,27 @@
 // none of those already there; one unlock opens
 // every inbox, each message checked against its sender's own profile entry and shown with who they
 // are; a reply, paid from the profile's folder by its bytes; and what each sent, kept locked in the
-// sender's own folder, showing on any device and never counting as new.
+// sender's own folder, showing on any device and never counting as new. A message from a sender
+// whose profile shows no check from this app's verifier counts for nothing.
 
 import { afterAll, beforeAll, beforeEach, expect, test } from 'vitest'
 
 import { encodeInbox, readFolder } from '@foundationforest/folders'
 import { inboxEntry, isLocked, lockCount } from '@foundationforest/folders/locked'
-import { mainKey, newAccessKey } from '@foundationforest/keys'
+import { mainKey, newAccessKey, newSeed } from '@foundationforest/keys'
 
 import { inboxPayment } from '../services/host/client/client.ts'
 import * as device from '../src/device.ts'
 import type { Profile } from '../src/device.ts'
 import { aboutOf } from '../src/about.ts'
 import { newMessages, openAll, send } from '../src/flows/inbox.ts'
+import { makeProfile } from '../src/flows/profile.ts'
 import { walletKey } from '../src/flows/profiles.ts'
+import { fund } from '../src/services/credits.ts'
 import { leaveAll } from '../src/services/host.ts'
 import { Said } from '../src/words.ts'
 import { OFFERS, REQUESTS, split } from './labels.ts'
-import { type World, checkHere, freshDevice, verifiedWith, world } from './world.ts'
+import { type World, checkHere, freshDevice, proveHere, verifiedWith, world } from './world.ts'
 
 let w: World
 beforeAll(async () => void (w = await world()))
@@ -184,4 +187,32 @@ test('a message refused for its price: one more credit from the wallet, and sent
   } finally {
     await pricey.close()
   }
+})
+
+test("a message from a profile with no check from this app's verifier does not count: listed as anyone lists it, never shown, never new once opened; its sender sees what it sent", async () => {
+  const tutor = await verifiedWith(w, OFFERS)
+  const t = tutor.profiles[0]!
+  // A seed with no check: a test account, which makes profiles with none, a few credits from a checked person's wallet.
+  const seed = newSeed()
+  const wallet = (await walletKey(seed)).address
+  const unchecked = { ...w, testAccounts: [wallet] }
+  await fund(w.host, wallet, 3, await walletKey(tutor.seed))
+  const s = await makeProfile(unchecked, seed, REQUESTS, proveHere)
+
+  await send(unchecked, seed, s.label, t.address, 'Buy my course.')
+  expect(await newCount(w.host, [t]), 'listed with nothing unlocked: its sender is locked inside').toBe(1)
+  const opened = await openAll(w, tutor.seed, [t], checkHere)
+  expect(opened.threads, 'not shown').toEqual([])
+  device.saveCursors(opened.cursors)
+  expect(await newCount(w.host, [t]), 'and nothing new once opened').toBe(0)
+
+  const theirs = await openAll(unchecked, seed, [s], checkHere)
+  expect(theirs.threads.map((x) => x.messages.map((m) => [m.text, m.mine])), 'its own copy, as ever').toEqual([[['Buy my course.', true]]])
+
+  await send(w, tutor.seed, t.label, s.address, 'No thanks.')
+  const reply = await openAll(unchecked, seed, [s], checkHere)
+  expect(reply.threads[0]!.messages.map((m) => [m.text, m.mine]), 'from a checked sender, it arrives').toEqual([
+    ['Buy my course.', true],
+    ['No thanks.', false],
+  ])
 })

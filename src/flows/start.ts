@@ -7,15 +7,17 @@
 // met there that was never verified. Someone whose stamps all come from keys the verifier no longer
 // signs with has their profiles and AI apps listed as if verified, then goes to Get verified, which
 // says their earlier check no longer counts; once they check again, Continue takes them to Home.
+// A test account, from its words, is in at once, with no verification (`enterTest`).
 
 import { mainKey } from '@foundationforest/keys'
 
 import type { Services } from '../config.ts'
-import { knowPasskey, saveProfiles, usePasskey } from '../device.ts'
+import { knowPasskey, saveProfiles, usePasskey, useTestAccount } from '../device.ts'
 import { listed } from '../markets.ts'
 import type { Passkey } from '../passkey.ts'
 import { type Where, findConnections } from './connections.ts'
 import type { Prove } from './profile.ts'
+import { openProfiles } from './profiles.ts'
 import { type Step, resume } from './verify.ts'
 
 export type Entered = { to: 'profiles' } | { to: 'verify'; step: Step; again?: true; never?: true }
@@ -31,5 +33,15 @@ export async function enter(s: Services & Where, passkey: Passkey, prove: Prove)
   saveProfiles(profiles)
   if (!r.verified) return { to: 'verify', step: r.step, again: true }
   usePasskey(passkey.id)
+  return { to: 'profiles' }
+}
+
+/** A test account in, from its words: its profiles and AI apps listed, as Start lists them, and in use here by its id (test-account.ts). The seed is the caller's, held. */
+export async function enterTest(s: Services & Where, id: string, seed: Uint8Array): Promise<Entered> {
+  const labels = (await openProfiles(seed, s.host)).labels.filter(listed)
+  const profiles = await Promise.all(labels.map(async (label) => ({ label, address: (await mainKey(seed, label)).address })))
+  await findConnections(s, seed, labels)
+  saveProfiles(profiles)
+  useTestAccount(id)
   return { to: 'profiles' }
 }

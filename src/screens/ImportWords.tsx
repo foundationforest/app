@@ -6,22 +6,27 @@
 // once it has forgotten, Continue is back. Then a new passkey is added to the seed the words spell
 // as You adds one (flows/backups.ts), the seed held for it as after any unlock, and the person is
 // in, as from Start. Unlike Passkeys', it excludes none of the passkeys this device knows: after Forget
-// they may be another seed's, and a manager keeping one would refuse this one. The words live in
-// this screen's state alone and are never kept; it has no path of its own, so a reload lands on
-// Start and they never reach the page's history. Back goes to No passkey found.
+// they may be another seed's, and a manager keeping one would refuse this one. A test account's
+// words make no passkey: its seed is held and kept in this tab, and it is in at once, with no
+// verification (test-account.ts). The words live in this screen's state alone and are never kept;
+// its path, /type-words, is a link straight here, and a reload there finds the box empty, so they
+// never reach the page's history. Back goes to No passkey found.
 
 import { WORD_COUNT } from '@foundationforest/keys'
 import { useEffect, useState } from 'react'
 
 import { config } from '../config.ts'
 import { addBackup } from '../flows/backups.ts'
+import { keepTestSeed } from '../device.ts'
 import { DifferentForest, seedOfWords, wordCount } from '../flows/imported.ts'
-import { type Entered, enter } from '../flows/start.ts'
+import { walletKey } from '../flows/profiles.ts'
+import { type Entered, enter, enterTest } from '../flows/start.ts'
 import { FORGET_LINE, forgetDevice } from '../forget.ts'
 import { drop as dropHeld, hold } from '../held.ts'
 import { Loader } from '../mark.tsx'
 import { NoAnswer, drop, make, withSeed } from '../passkey.ts'
 import { proveInWorker } from '../proof/prove.ts'
+import { isTestAccount, testIdOf } from '../test-account.ts'
 import { AskAgain, Line, Top, UnlockIcon, useAction } from '../ui.tsx'
 
 type Props = { onEntered: (entered: Entered, passkey: string) => void; onBack: () => void }
@@ -33,10 +38,19 @@ export function ImportWords({ onEntered, onBack }: Props) {
   const count = wordCount(text)
 
   const create = useAction(async () => {
-    const seed = await seedOfWords(config.host, text).catch((err: unknown) => {
+    const seed = await seedOfWords(config.host, text, config.testAccounts).catch((err: unknown) => {
       if (err instanceof DifferentForest) setDifferent(true)
       throw err
     })
+    const wallet = (await walletKey(seed)).address
+    if (isTestAccount(config, wallet)) {
+      const id = testIdOf(wallet)
+      hold(id, seed)
+      keepTestSeed(id, seed)
+      const to = await withSeed(id, (s) => enterTest(config, id, s))
+      setText('')
+      return onEntered(to, id)
+    }
     let made
     try {
       made = await make()
