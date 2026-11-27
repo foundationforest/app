@@ -1,8 +1,8 @@
 // Give credits, from a link alone, /#/give-credits/<Profiles folder address> (links.ts): nothing
-// else in the app opens it. A back arrow; "Give 20 credits to this account?", the address shortened
+// else in the app opens it. A back arrow; "Give 20 credits?", and under it the address, shortened
 // as a short key is (its first 6 characters and "…"); Give 20 credits, strong green, one unlock
 // unless the seed is held, then the credits go from the wallet into that folder (flows/give.ts), and
-// the page says so, with Done. Only a checked person gives: a test account is told so in one line.
+// the page says so, with Done. Only a checked person gives: a test seed is told so in one line.
 
 import { useState } from 'react'
 
@@ -11,7 +11,7 @@ import { passkey } from '../device.ts'
 import { GIVE, ONLY_CHECKED, giveCredits } from '../flows/give.ts'
 import { Loader } from '../mark.tsx'
 import { withSeed } from '../passkey.ts'
-import { isTestId } from '../test-account.ts'
+import { isTestId } from '../test-seed.ts'
 import { Line, Top, UnlockIcon, short, useAction } from '../ui.tsx'
 
 export function Give({ to, onBack }: { to: string; onBack: () => void }) {
@@ -25,8 +25,9 @@ export function Give({ to, onBack }: { to: string; onBack: () => void }) {
     <main>
       <Top onBack={onBack} />
       <h1>Give credits</h1>
+      <p>{given ? `${GIVE} credits given.` : `Give ${GIVE} credits?`}</p>
       <p>
-        {given ? `${GIVE} credits given to` : `Give ${GIVE} credits to this account?`} <strong>{short(to)}</strong>
+        <strong>{short(to)}</strong>
       </p>
       <div className="fill" />
       <Line note={test ? { text: ONLY_CHECKED, red: false } : give.note} />

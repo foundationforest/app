@@ -426,8 +426,8 @@
 //     sheet, Warn others with its caret, Illegal content with its arrow, a mailto to the contact
 //     address, its subject Illegal content, its body their page on the index; Warn others opening a
 //     report, from the person's profile on the other side.
-// 30. A test account, its address in the build's config: Give credits, from its link alone, on the
-//     person checked with the ID ("Give 20 credits to this account?", its short key, one tap with the
+// 30. A test seed, its address in the build's config: Give credits, from its link alone, on the
+//     person checked with the ID ("Give 20 credits?", its short key under it, one tap with the
 //     seed held), 20 in its wallet; then in a browser with no passkey, /type-words, its 24 words,
 //     nothing asked and no passkey made, straight to Your first profiles; a link to a profile it lacks,
 //     its market's sheet open, Create making it with no verification; held after a reload, nothing
@@ -537,7 +537,7 @@ type Went = { to: 'stripe' | 'didit'; page: Page }
 /** The first person's browser, its seed (asked of its passkey by the test itself), and their profile. */
 let first: Phone
 let seed: Uint8Array
-/** The test account's seed, and its Profiles folder's address, which the build's config lists. */
+/** The test seed, and its Profiles folder's address, which the build's config lists. */
 const TESTER = newSeed()
 let TESTER_ADDRESS: string
 let tutor: string
@@ -1178,7 +1178,7 @@ before(async () => {
   // page; ChatGPT with a page for adding Forest, so Connect your AI shows both ways: ChatGPT's page,
   // and Claude's Add manually; and company lines, so About Forest shows each.
   TESTER_ADDRESS = (await mainKey(TESTER, '')).address
-  process.env.VITE_FOREST_CONFIG = JSON.stringify({ ...TEST_CONFIG, testAccounts: [TESTER_ADDRESS], app: APP.slice(0, -1), verifier: services.verifier, host: services.host, connector: mcp.origin, index: services.index, places: services.places, tiles: tiles.origin })
+  process.env.VITE_FOREST_CONFIG = JSON.stringify({ ...TEST_CONFIG, testSeeds: [TESTER_ADDRESS], app: APP.slice(0, -1), verifier: services.verifier, host: services.host, connector: mcp.origin, index: services.index, places: services.places, tiles: tiles.origin })
   await build({ root: app, configFile: `${app}vite.config.ts`, logLevel: 'warn', build: { outDir, emptyOutDir: true } })
   const renamed = { entryFileNames: 'assets/[name]-next-[hash].js', chunkFileNames: 'assets/[name]-next-[hash].js' }
   await build({ root: app, configFile: `${app}vite.config.ts`, logLevel: 'warn', build: { outDir: nextDir, emptyOutDir: true, rolldownOptions: { output: renamed } }, worker: { rolldownOptions: { output: renamed } } })
@@ -4655,17 +4655,17 @@ test("the ID check, in its box, from the ID's dashed badge beside You: Get verif
   say("the ID check: paid on the verifier's page in its box, one unlock, both verifications on every profile, and its badge everywhere")
 })
 
-test("a test account: Give credits from its link, on a checked person's phone; its 24 words at /type-words, no passkey; links to its profiles, its listing and what it lacks; an AI app given a profile made from a link at once", async () => {
+test("a test seed: Give credits from its link, on a checked person's phone; its 24 words at /type-words, no passkey; links to its profiles, its listing and what it lacks; an AI app given a profile made from a link at once", async () => {
   // Give credits, from the link alone, on the first phone: its wallet holds the ID check's gift.
   const giver = first.page
   await giver.goto(`${APP}#/give-credits/${TESTER_ADDRESS}`)
   await giver.getByRole('heading', { name: 'Give credits' }).waitFor()
-  await giver.getByText('Give 20 credits to this account?', { exact: false }).waitFor()
+  await giver.getByText('Give 20 credits?', { exact: true }).waitFor()
   await giver.getByText(short(TESTER_ADDRESS), { exact: true }).waitFor()
   assert.equal(new URL(giver.url()).hash, '', 'the link out of the #, into the history')
   await shot(giver, 'give-credits')
   await button(giver, 'Give 20 credits').click()
-  await giver.getByText('20 credits given to', { exact: false }).waitFor({ timeout: 30_000 })
+  await giver.getByText('20 credits given.', { exact: true }).waitFor({ timeout: 30_000 })
   assert.equal(await balance(TESTER_ADDRESS), 20)
   await button(giver, 'Done').click()
   await homeTitle(giver).waitFor()
@@ -4737,7 +4737,7 @@ test("a test account: Give credits from its link, on a checked person's phone; i
   await inbox(page).waitFor({ timeout: 30_000 })
   assert.deepEqual([counts.created, counts.asserted], [0, 0], 'never a passkey')
   await t.context.close()
-  say('a test account: credits given from a link, in from its words with no passkey, its links, and an AI app given a profile made from a link at once')
+  say('a test seed: credits given from a link, in from its words with no passkey, its links, and an AI app given a profile made from a link at once')
 })
 
 test('the seed held for 15 minutes after the last action: a button that will not ask shows no unlock icon, until the 15 minutes run out', async () => {

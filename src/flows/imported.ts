@@ -5,13 +5,13 @@
 // verified, a stamp in its Profiles folder, since the new passkey's folder is paid for from its
 // wallet. Then a new passkey is made and added to that seed exactly as a passkey added from
 // You is (flows/backups.ts): it opens the seed from then on. The words are never kept. A test
-// account's words need no stamp, and make no passkey (test-account.ts).
+// seed's words need no stamp, and make no passkey (test-seed.ts).
 
 import { openingHalf, importWords, WORD_COUNT } from '@foundationforest/keys'
 
 import { folder } from '../device.ts'
 import { readView } from '../services/host.ts'
-import { isTestAccount } from '../test-account.ts'
+import { isTestSeed } from '../test-seed.ts'
 import { Said } from '../words.ts'
 import { opened, walletKey } from './profiles.ts'
 import { follow } from './seed.ts'
@@ -35,8 +35,8 @@ export class WordsNotVerified extends Said {
 /** How many words `text` holds, between spaces or lines. */
 export const wordCount = (text: string): number => text.trim().split(/\s+/).filter(Boolean).length
 
-/** The seed the 24 words in `text` spell: checked, followed one step, the one this device lists if it lists one, and verified or one of `testAccounts`; else why not, in one line. */
-export async function seedOfWords(host: string, text: string, testAccounts: string[] = []): Promise<Uint8Array> {
+/** The seed the 24 words in `text` spell: checked, followed one step, the one this device lists if it lists one, and verified or one of `testSeeds`; else why not, in one line. */
+export async function seedOfWords(host: string, text: string, testSeeds: string[] = []): Promise<Uint8Array> {
   const count = wordCount(text)
   if (count < WORD_COUNT) throw new Said(`Add all ${WORD_COUNT} words.`)
   if (count > WORD_COUNT) throw new Said(`That's more than ${WORD_COUNT} words.`, true)
@@ -51,7 +51,7 @@ export async function seedOfWords(host: string, text: string, testAccounts: stri
     const key = await walletKey(seed)
     const kept = folder()
     if (kept && kept.address !== key.address) throw new DifferentForest()
-    if (isTestAccount({ testAccounts }, key.address)) return seed
+    if (isTestSeed({ testSeeds }, key.address)) return seed
     const view = await readView(host, key.address)
     if (!(await opened(view, 'stamp', (await openingHalf(key.secret)).identity)).length) throw new WordsNotVerified()
     return seed

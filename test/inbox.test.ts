@@ -192,10 +192,10 @@ test('a message refused for its price: one more credit from the wallet, and sent
 test("a message from a profile with no check from this app's verifier does not count: listed as anyone lists it, never shown, never new once opened; its sender sees what it sent", async () => {
   const tutor = await verifiedWith(w, OFFERS)
   const t = tutor.profiles[0]!
-  // A seed with no check: a test account, which makes profiles with none, a few credits from a checked person's wallet.
+  // A seed with no check: a test seed, which makes profiles with none, a few credits from a checked person's wallet.
   const seed = newSeed()
   const wallet = (await walletKey(seed)).address
-  const unchecked = { ...w, testAccounts: [wallet] }
+  const unchecked = { ...w, testSeeds: [wallet] }
   await fund(w.host, wallet, 3, await walletKey(tutor.seed))
   const s = await makeProfile(unchecked, seed, REQUESTS, proveHere)
 

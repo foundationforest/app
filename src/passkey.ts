@@ -30,7 +30,7 @@ import { seedFor } from './flows/seed.ts'
 import { testSeed } from './device.ts'
 import { withHeld } from './held.ts'
 import { aaguidOf } from './managers.ts'
-import { isTestId } from './test-account.ts'
+import { isTestId } from './test-seed.ts'
 import { Said } from './words.ts'
 
 /**
@@ -216,12 +216,12 @@ export async function drop(id: string): Promise<void> {
  * The seed for an action, from the passkey in use (`id`): the one held from an unlock less than 15
  * minutes ago, or, with none held, asked for now, after the device's unlock, followed when the
  * passkey is a backup, and held from then (held.ts). The action mixes the keys it needs and keeps
- * none. A test account's, with no passkey, is the one this tab keeps (test-account.ts).
+ * none. A test seed's, with no passkey, is the one this tab keeps (test-seed.ts).
  */
 export async function withSeed<T>(id: string, action: (seed: Uint8Array) => Promise<T>): Promise<T> {
   if (isTestId(id)) return withHeld(id, async () => testSeed(id) ?? Promise.reject(new Said(TYPE_AGAIN)), action)
   return withHeld(id, async () => seedFor(config.host, (await ask({ allow: [id] })).seed), action)
 }
 
-/** A test account's seed, gone from this tab. */
+/** A test seed, gone from this tab. */
 export const TYPE_AGAIN = 'Type your 24 words again.'

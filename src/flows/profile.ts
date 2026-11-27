@@ -6,7 +6,7 @@
 // (the reference app makes one for every stamp it holds; one from a key the verifier no longer
 // signs with counts for nothing); then its label in the Profiles folder. With no stamp that counts,
 // it makes nothing and says so: a profile with no verification counts at no index; but a test
-// account's, which has no check, is made with none (test-account.ts). When the host
+// seed's, which has no check, is made with none (test-seed.ts). When the host
 // refuses a write for its price, one more credit goes in and it is written again (paid.ts). The
 // device keeps its label and address, and marks it new: all that comes to it from now shows as new.
 
@@ -18,7 +18,7 @@ import { type Profile, addProfile, markNew } from '../device.ts'
 import { fund } from '../services/credits.ts'
 import { readView, writeAll } from '../services/host.ts'
 import { counted } from '../services/verifier.ts'
-import { isTestAccount } from '../test-account.ts'
+import { isTestSeed } from '../test-seed.ts'
 import { CHECK_FIRST, Said } from '../words.ts'
 import { paid } from './paid.ts'
 import { addTo, openProfiles } from './profiles.ts'
@@ -31,7 +31,7 @@ export async function makeProfile(s: Services, seed: Uint8Array, label: string, 
   const folder = await openProfiles(seed, s.host)
   const main = await mainKey(seed, label)
   const stamps = await counted(s.verifier, folder.stamps)
-  if (!stamps.length && !isTestAccount(s, folder.key.address)) throw new Said(CHECK_FIRST)
+  if (!stamps.length && !isTestSeed(s, folder.key.address)) throw new Said(CHECK_FIRST)
   const proofs: Body[] = []
   for (const stamp of stamps) proofs.push({ circuit: 'verification', ...(await prove(seed, stamp, label)) })
   const body: Body = {

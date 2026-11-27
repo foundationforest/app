@@ -56,8 +56,8 @@ test("the CSP: the page reaches its own origin, its verifier, host, connector an
     contact: 'support@forest.foundation',
     // The foundation isn't registered yet: no company lines.
     company: {},
-    // One test account, for AI testing and app reviewers, by its Profiles folder's address alone.
-    testAccounts: ['2KsR6wpfN78YfGgvdmt2C1Hxzquj3DQXwsjVn4o31TDY'],
+    // One test seed, for AI testing and app reviewers, by its Profiles folder's address alone.
+    testSeeds: ['2KsR6wpfN78YfGgvdmt2C1Hxzquj3DQXwsjVn4o31TDY'],
   })
   const sources = csp.split('; ').flatMap((d) => d.split(' ').slice(1))
   expect(sources, 'the source code is a link, never reached').not.toContain(new URL(config.source).origin)

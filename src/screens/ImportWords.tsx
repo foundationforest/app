@@ -6,9 +6,9 @@
 // once it has forgotten, Continue is back. Then a new passkey is added to the seed the words spell
 // as You adds one (flows/backups.ts), the seed held for it as after any unlock, and the person is
 // in, as from Start. Unlike Passkeys', it excludes none of the passkeys this device knows: after Forget
-// they may be another seed's, and a manager keeping one would refuse this one. A test account's
+// they may be another seed's, and a manager keeping one would refuse this one. A test seed's
 // words make no passkey: its seed is held and kept in this tab, and it is in at once, with no
-// verification (test-account.ts). The words live in this screen's state alone and are never kept;
+// verification (test-seed.ts). The words live in this screen's state alone and are never kept;
 // its path, /type-words, is a link straight here, and a reload there finds the box empty, so they
 // never reach the page's history. Back goes to No passkey found.
 
@@ -26,7 +26,7 @@ import { drop as dropHeld, hold } from '../held.ts'
 import { Loader } from '../mark.tsx'
 import { NoAnswer, drop, make, withSeed } from '../passkey.ts'
 import { proveInWorker } from '../proof/prove.ts'
-import { isTestAccount, testIdOf } from '../test-account.ts'
+import { isTestSeed, testIdOf } from '../test-seed.ts'
 import { AskAgain, Line, Top, UnlockIcon, useAction } from '../ui.tsx'
 
 type Props = { onEntered: (entered: Entered, passkey: string) => void; onBack: () => void }
@@ -38,12 +38,12 @@ export function ImportWords({ onEntered, onBack }: Props) {
   const count = wordCount(text)
 
   const create = useAction(async () => {
-    const seed = await seedOfWords(config.host, text, config.testAccounts).catch((err: unknown) => {
+    const seed = await seedOfWords(config.host, text, config.testSeeds).catch((err: unknown) => {
       if (err instanceof DifferentForest) setDifferent(true)
       throw err
     })
     const wallet = (await walletKey(seed)).address
-    if (isTestAccount(config, wallet)) {
+    if (isTestSeed(config, wallet)) {
       const id = testIdOf(wallet)
       hold(id, seed)
       keepTestSeed(id, seed)

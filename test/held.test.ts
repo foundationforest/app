@@ -117,7 +117,7 @@ test('moved to another passkey, the same seed: held for that one, asking nothing
   expect(unlocks).toBe(1)
 })
 
-test("a test account's seed: held while the page is open, with no 15 minutes; dropped when it closes", async () => {
+test("a test seed: held while the page is open, with no 15 minutes; dropped when it closes", async () => {
   const held = await load()
   const { HOLD_MS } = held
   const id = 'test:2KsR6wpfN78YfGgvdmt2C1Hxzquj3DQXwsjVn4o31TDY'

@@ -4,7 +4,7 @@
 // paths without the screens. Links into a screen from the person's AI are after the # (links.ts).
 
 export const PATHS = {
-  // Your 24 words, typed: a link straight to typing them, as a test account opens (test-account.ts).
+  // Your 24 words, typed: a link straight to typing them, as a test seed opens (test-seed.ts).
   'import-words': '/type-words',
   verify: '/id',
   backup: '/backup',

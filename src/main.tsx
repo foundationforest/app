@@ -10,11 +10,11 @@ import { cleanOld, passkey, profiles, saveProfiles, testSeed, theme } from './de
 import { forgetDevice } from './forget.ts'
 import { hold } from './held.ts'
 import { listed } from './markets.ts'
-import { isTestId } from './test-account.ts'
+import { isTestId } from './test-seed.ts'
 import { applyTheme } from './theme.ts'
 
 cleanOld()
-// A test account in use: held again in the tab that kept its seed; in any other, it isn't in here.
+// A test seed in use: held again in the tab that kept its seed; in any other, it isn't in here.
 const id = passkey()
 if (id && isTestId(id)) {
   const seed = testSeed(id)

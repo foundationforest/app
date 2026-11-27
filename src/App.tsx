@@ -38,8 +38,8 @@
 // opens its screen: a profile of theirs, or New profile with its market's sheet open; one of their
 // listings' offer page; a conversation; or Give credits. Through Start and the verification it
 // waits, as a message link does; one that matches nothing they have says so (screens/Nothing.tsx).
-// A test account, from its words at /type-words, is in with no verification and never opens Get
-// verified (test-account.ts).
+// A test seed, from its words at /type-words, is in with no verification and never opens Get
+// verified (test-seed.ts).
 // Above any screen, once a newer version is live, one quiet line says so, with Reload (version.ts).
 
 import { type ReactNode, useEffect, useRef, useState } from 'react'
@@ -88,7 +88,7 @@ import { Words } from './screens/Words.tsx'
 import { You } from './screens/You.tsx'
 import { Give } from './screens/Give.tsx'
 import { NOT_YOUR_LISTING, NO_CONVERSATION, NO_MARKET, Nothing } from './screens/Nothing.tsx'
-import { isTestId } from './test-account.ts'
+import { isTestId } from './test-seed.ts'
 import { NewVersion } from './ui.tsx'
 import { config } from './config.ts'
 
@@ -192,7 +192,7 @@ function here(): Screen {
   }
   const now = kept()
   switch (path) {
-    // Get verified, from Start, after a check is done: still from Start, so Continue shows. Never a test account's.
+    // Get verified, from Start, after a check is done: still from Start, so Continue shows. Never a test seed's.
     case '/id':
       if (isTestId(id)) return { at: 'home' }
       return now.setup ? { at: 'verify', setup: true, id, ...(now.again && { again: true }) } : checkOf(id)
@@ -379,7 +379,7 @@ function Screens() {
     const t = opened()?.threads.find((x) => x.them === to)
     go(t ? { at: 'thread', mine: t.mine, them: to } : { at: 'message', to }, true)
   }
-  /** A check to add, from You or Home: Get verified; nothing for a test account, which has none. */
+  /** A check to add, from You or Home: Get verified; nothing for a test seed, which has none. */
   const addCheck = () => {
     if (!isTestId(inUse())) go(checkOf(inUse()!), true)
   }
