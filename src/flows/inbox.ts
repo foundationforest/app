@@ -11,7 +11,11 @@
 // who the sender is: their market and role, and each check whose verification, from this app's
 // verifier, checks: the face check's, the ID check's, or both. The message's own `host` names
 // where their folder is; the app reaches its one host only (the CSP), so it reads them there. A
-// message whose body has no text, or that does not count, is not shown.
+// message whose body has no text, or that does not count, is not shown; and one whose sender's
+// profile shows no check from this app's verifier counts no more than one that fails senderCounts:
+// making a seed is free, so without a check anyone could fill an inbox. Only checked people reach
+// the person, as only checked people show in an index's search. What they sent, in their own
+// folder, shows to them as ever.
 //
 // A body is the two apps' to agree (the standard's The inbox): `{ text }`, and, on the first message
 // written from a listing, `listing` beside it, the listing's full address, `<profile
@@ -137,7 +141,8 @@ export async function openAll(s: Services, seed: Uint8Array, list: Profile[], ch
       if (!opened) continue
       const { message } = opened
       const said = saidIn(message.body)
-      if (!said || !senderCounts(message, (await sender(message.from)).body)) continue
+      const from = await sender(message.from)
+      if (!said || !senderCounts(message, from.body) || !from.who?.checks.length) continue
       await add(p.address, message.from, { id: e.id, time: message.time, ...said, mine: false })
     }
     for (const [path, { entry: e }] of liveContent(await readView(s.host, p.address))) {

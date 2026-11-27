@@ -16,7 +16,8 @@ import { config } from '../config.ts'
 import { passkey } from '../device.ts'
 import { seedFor } from '../flows/seed.ts'
 import { Loader } from '../mark.tsx'
-import { ask } from '../passkey.ts'
+import { ask, withSeed } from '../passkey.ts'
+import { isTestId } from '../test-seed.ts'
 import { Line, Top, UnlockIcon, useAction } from '../ui.tsx'
 
 /** The one line on the page. */
@@ -31,9 +32,11 @@ const takeWords = () => {
   return words
 }
 
-/** The seed's 24 words, after a fresh unlock of the passkey in use, the seed dropped at once. */
+/** The seed's 24 words, after a fresh unlock of the passkey in use, the seed dropped at once; a test seed's, which has no passkey, from the seed held. */
 export async function askWords(): Promise<string[]> {
-  const seed = await seedFor(config.host, (await ask({ allow: [passkey()!] })).seed)
+  const id = passkey()!
+  if (isTestId(id)) return withSeed(id, async (held) => exportWords(held).split(' '))
+  const seed = await seedFor(config.host, (await ask({ allow: [id] })).seed)
   try {
     return exportWords(seed).split(' ')
   } finally {

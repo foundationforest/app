@@ -12,6 +12,11 @@
 // AIs can use it" for more than one); each AI app a row, its sparkle, its name and a round tick, on;
 // a tap turns one off; Done, strong green, gives the new profile to each app ticked (as Your AI's Save
 // does, flows/connections.ts, `actFor`, the seed held) and closes the sheet.
+//
+// Opened from a link (links.ts), the linked role's Create gives the new profile to every AI app at
+// once, in the same unlock (flows/linked.ts), with no ticks: the ✓, "<Role> profile created", the
+// market, and one line, "Your AI can use it. Go back to your chat."; Done closes the sheet. With no
+// AI app connected, the row turns to its ✓, as ever.
 
 import { type CSSProperties, useState } from 'react'
 
@@ -19,6 +24,7 @@ import { Avatar, MarketIcon, colorOf, iconOf } from '../avatar.tsx'
 import { config } from '../config.ts'
 import { type Profile, passkey } from '../device.ts'
 import { actFor } from '../flows/connections.ts'
+import { makeForAi } from '../flows/linked.ts'
 import { makeProfile } from '../flows/profile.ts'
 import { useConnections, useHeld } from '../hooks.ts'
 import { Icon } from '../icons.tsx'
@@ -30,7 +36,8 @@ import { Sheet } from '../sheet.tsx'
 import { Line, UnlockIcon, useAction } from '../ui.tsx'
 import { RoundTick } from './Ticks.tsx'
 
-type Props = { market: MarketRoles; mine: Profile[]; onOpen: (address: string) => void; onClose: () => void }
+/** `link`: the label a link opened the sheet for, whose Create gives the profile to every AI app at once. */
+type Props = { market: MarketRoles; mine: Profile[]; link?: string; onOpen: (address: string) => void; onClose: () => void }
 
 /** A market's icon on its color, white, as a profile of it shows. */
 export function MarketMark({ market, words }: { market: string; words: string }) {
@@ -42,19 +49,30 @@ export function MarketMark({ market, words }: { market: string; words: string })
   )
 }
 
-export function MarketSheet({ market, mine, onOpen, onClose }: Props) {
+export function MarketSheet({ market, mine, link, onOpen, onClose }: Props) {
   const held = useHeld()
   const aiApps = useConnections()
   const [making, setMaking] = useState<string | null>(null)
   // The profile just made, while its AI apps are picked.
   const [made, setMade] = useState<string | null>(null)
   const [ticked, setTicked] = useState<Set<string>>(new Set())
+  // The AI apps the linked profile went to, once it is made.
+  const [given, setGiven] = useState(0)
   const make = useAction(async (label: string) => {
     setMaking(label)
+    let apps = 0
     try {
-      await withSeed(passkey()!, (seed) => makeProfile(config, seed, label, proveInWorker))
+      if (label === link) apps = (await withSeed(passkey()!, (seed) => makeForAi(config, seed, label, proveInWorker))).length
+      else await withSeed(passkey()!, (seed) => makeProfile(config, seed, label, proveInWorker))
     } finally {
       setMaking(null)
+    }
+    if (label === link) {
+      if (apps) {
+        setGiven(apps)
+        setMade(label)
+      }
+      return
     }
     if (aiApps.length) {
       setTicked(new Set(aiApps.map((c) => c.address)))
@@ -86,22 +104,33 @@ export function MarketSheet({ market, mine, onOpen, onClose }: Props) {
           <h2>{roleWords(role)} profile created</h2>
           <p className="s">{market.words}</p>
         </div>
-        <h3 className="sec">{aiApps.length > 1 ? 'Your AIs can use it' : 'Your AI can use it'}</h3>
-        <div className="rows">
-          {aiApps.map((c) => (
-            <button key={c.address} type="button" className="row" role="checkbox" aria-checked={ticked.has(c.address)} disabled={done.busy} onClick={() => tick(c.address)}>
-              <span className="sq sm plain">
-                <Icon name="sparkle" fill />
-              </span>
-              <strong className="grow">{c.name}</strong>
-              <RoundTick ticked={ticked.has(c.address)} />
+        {given > 0 ? (
+          <>
+            <p className="lead">{given > 1 ? 'Your AIs can use it.' : 'Your AI can use it.'} Go back to your chat.</p>
+            <button type="button" className="primary" onClick={onClose}>
+              Done
             </button>
-          ))}
-        </div>
-        <Line note={done.note} />
-        <button type="button" className="primary" disabled={done.busy} onClick={() => done.run()}>
-          {done.busy ? <Loader /> : 'Done'}
-        </button>
+          </>
+        ) : (
+          <>
+            <h3 className="sec">{aiApps.length > 1 ? 'Your AIs can use it' : 'Your AI can use it'}</h3>
+            <div className="rows">
+              {aiApps.map((c) => (
+                <button key={c.address} type="button" className="row" role="checkbox" aria-checked={ticked.has(c.address)} disabled={done.busy} onClick={() => tick(c.address)}>
+                  <span className="sq sm plain">
+                    <Icon name="sparkle" fill />
+                  </span>
+                  <strong className="grow">{c.name}</strong>
+                  <RoundTick ticked={ticked.has(c.address)} />
+                </button>
+              ))}
+            </div>
+            <Line note={done.note} />
+            <button type="button" className="primary" disabled={done.busy} onClick={() => done.run()}>
+              {done.busy ? <Loader /> : 'Done'}
+            </button>
+          </>
+        )}
       </Sheet>
     )
   }

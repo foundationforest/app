@@ -32,11 +32,13 @@ import { pairOf } from '../markets.ts'
 import { Line, Top, UnlockIcon, clock, dayWords, lastOfRun, newDay, useAction } from '../ui.tsx'
 import { aboutOf } from '../about.ts'
 import { PinnedListing } from './AboutListing.tsx'
+import { NO_CONVERSATION, Nothing } from './Nothing.tsx'
 import { NameOf, WhoAvatar } from './Who.tsx'
 
-type Props = { mine: string; them: string; pane?: boolean; onBack: () => void; onReview: (mine: string, them: string) => void; onWho: (them: string) => void; onOffer?: (path: string) => void }
+/** `link`: opened from a link (links.ts), so once every message is open, a conversation that isn't there says so. */
+type Props = { mine: string; them: string; pane?: boolean; link?: boolean; onBack: () => void; onReview: (mine: string, them: string) => void; onWho: (them: string) => void; onOffer?: (path: string) => void }
 
-export function Thread({ mine, them, pane = false, onBack, onReview, onWho, onOffer }: Props) {
+export function Thread({ mine, them, pane = false, link = false, onBack, onReview, onWho, onOffer }: Props) {
   const list = useProfiles()
   const me = list.find((p) => p.address === mine)
   const held = useOpened()
@@ -54,6 +56,7 @@ export function Thread({ mine, them, pane = false, onBack, onReview, onWho, onOf
     setText('')
   })
   if (!me) return null
+  if (link && held?.all && !thread) return <Nothing said={NO_CONVERSATION} onBack={onBack} />
   const messages = thread?.messages ?? []
   // The listing the conversation is about: the one the first message written from one of theirs, or of the person's own, names.
   const about = aboutOf(messages, mine, them)

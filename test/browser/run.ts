@@ -426,7 +426,16 @@
 //     sheet, Warn others with its caret, Illegal content with its arrow, a mailto to the contact
 //     address, its subject Illegal content, its body their page on the index; Warn others opening a
 //     report, from the person's profile on the other side.
-// 30. Nothing the app did, through all of it, was refused by the CSP.
+// 30. A test seed, its address in the build's config: Give credits, from its link alone, on the
+//     person checked with the ID ("Give 20 credits?", its short key under it, one tap with the
+//     seed held), 20 in its wallet; then in a browser with no passkey, /type-words, its 24 words,
+//     nothing asked and no passkey made, straight to Your first profiles; a link to a profile it lacks,
+//     its market's sheet open, Create making it with no verification; held after a reload, nothing
+//     asked; a link to a listing that isn't there, to a profile it lacks, to a conversation it doesn't
+//     have and to no market, each its one line; an AI app connected with no passkey; a link to another
+//     role, Create giving it to the AI app at once, "Your AI can use it. Go back to your chat.", and the
+//     AI acting for both; a link to its own profile and to the listing the AI wrote, each opening it.
+// 31. Nothing the app did, through all of it, was refused by the CSP.
 // SHOTS=<dir> keeps a screenshot of each screen there, light and dark.
 
 import assert from 'node:assert/strict'
@@ -444,7 +453,7 @@ import { build } from 'vite'
 
 import { type Body, b64u, entry, liveContent, nextTime, proofsOf, readFolder, verificationCheck, write } from '../../standard/folders/dist/index.js'
 import { isLocked, openLocked } from '../../standard/folders/dist/locked.js'
-import { exportWords, mainKey, openingHalf } from '../../standard/keys/dist/index.js'
+import { exportWords, mainKey, newSeed, openingHalf } from '../../standard/keys/dist/index.js'
 import { checkVerification, stampFromJson } from '../../standard/proofs/dist/index.js'
 import { labelOf, loadMarkets, previewOf, valuesOf } from '../../markets/build/dist/index.js'
 import { type Served, serve } from '../../services/mcp/src/server.ts'
@@ -528,6 +537,9 @@ type Went = { to: 'stripe' | 'didit'; page: Page }
 /** The first person's browser, its seed (asked of its passkey by the test itself), and their profile. */
 let first: Phone
 let seed: Uint8Array
+/** The test seed, and its Profiles folder's address, which the build's config lists. */
+const TESTER = newSeed()
+let TESTER_ADDRESS: string
 let tutor: string
 /** The clothing buyer's profile, another person's. */
 let buyerAt: string
@@ -1165,7 +1177,8 @@ before(async () => {
   // The app's one config file, pointed at these services (src/config.ts) and the stand-in Didit's
   // page; ChatGPT with a page for adding Forest, so Connect your AI shows both ways: ChatGPT's page,
   // and Claude's Add manually; and company lines, so About Forest shows each.
-  process.env.VITE_FOREST_CONFIG = JSON.stringify({ ...TEST_CONFIG, app: APP.slice(0, -1), verifier: services.verifier, host: services.host, connector: mcp.origin, index: services.index, places: services.places, tiles: tiles.origin })
+  TESTER_ADDRESS = (await mainKey(TESTER, '')).address
+  process.env.VITE_FOREST_CONFIG = JSON.stringify({ ...TEST_CONFIG, testSeeds: [TESTER_ADDRESS], app: APP.slice(0, -1), verifier: services.verifier, host: services.host, connector: mcp.origin, index: services.index, places: services.places, tiles: tiles.origin })
   await build({ root: app, configFile: `${app}vite.config.ts`, logLevel: 'warn', build: { outDir, emptyOutDir: true } })
   const renamed = { entryFileNames: 'assets/[name]-next-[hash].js', chunkFileNames: 'assets/[name]-next-[hash].js' }
   await build({ root: app, configFile: `${app}vite.config.ts`, logLevel: 'warn', build: { outDir: nextDir, emptyOutDir: true, rolldownOptions: { output: renamed } }, worker: { rolldownOptions: { output: renamed } } })
@@ -4640,6 +4653,91 @@ test("the ID check, in its box, from the ID's dashed badge beside You: Get verif
   await login.client.close()
   await page.goto(APP)
   say("the ID check: paid on the verifier's page in its box, one unlock, both verifications on every profile, and its badge everywhere")
+})
+
+test("a test seed: Give credits from its link, on a checked person's phone; its 24 words at /type-words, no passkey; links to its profiles, its listing and what it lacks; an AI app given a profile made from a link at once", async () => {
+  // Give credits, from the link alone, on the first phone: its wallet holds the ID check's gift.
+  const giver = first.page
+  await giver.goto(`${APP}#/give-credits/${TESTER_ADDRESS}`)
+  await giver.getByRole('heading', { name: 'Give credits' }).waitFor()
+  await giver.getByText('Give 20 credits?', { exact: true }).waitFor()
+  await giver.getByText(short(TESTER_ADDRESS), { exact: true }).waitFor()
+  assert.equal(new URL(giver.url()).hash, '', 'the link out of the #, into the history')
+  await shot(giver, 'give-credits')
+  await button(giver, 'Give 20 credits').click()
+  await giver.getByText('20 credits given.', { exact: true }).waitFor({ timeout: 30_000 })
+  assert.equal(await balance(TESTER_ADDRESS), 20)
+  await button(giver, 'Done').click()
+  await homeTitle(giver).waitFor()
+
+  // Its 24 words, straight from a link: no passkey asked, none made, in, and Your first profiles.
+  const t = await phone()
+  const { page, counts } = t
+  await page.goto(`${APP}type-words`)
+  await page.getByRole('heading', { name: 'Your 24 words' }).waitFor()
+  await page.getByRole('textbox', { name: 'Your 24 words' }).fill(exportWords(TESTER))
+  await button(page, 'Continue').click()
+  await page.getByRole('heading', { name: 'Your first profiles' }).waitFor({ timeout: 60_000 })
+  assert.deepEqual([counts.created, counts.asserted], [0, 0], 'no passkey made or asked')
+  assert.equal((await kept(page))['forest.passkey'], JSON.stringify(`test:${TESTER_ADDRESS}`))
+
+  // A link to a profile it lacks: its market's sheet, Create a tap away, made with no verification.
+  await page.goto(`${APP}#/${TUTOR_LABEL}`)
+  const sheet = marketSheet(page, TUTORING)
+  await sheet.waitFor()
+  await sheet.getByRole('button', create(L.offer.role)).click()
+  await sheet.getByRole('button', { name: `Open ${L.offer.role}`, exact: true }).waitFor({ timeout: 60_000 })
+  const tutor = (await mainKey(TESTER, TUTOR_LABEL)).address
+  const body = (await readFolder([services.host], tutor, Date.now())).current.get('profile')!.entry.body!
+  assert.deepEqual(body.proofs, [], 'no verification')
+  assert.deepEqual([counts.created, counts.asserted], [0, 0], 'nothing asked')
+
+  // A reload: still in, the seed held in the tab, nothing asked.
+  await page.reload()
+  await page.goto(APP)
+  await homeTitle(page).waitFor({ timeout: 30_000 })
+  await page.goto(`${APP}#/${TUTOR_LABEL}/listing/nothing-here`)
+  await page.getByText("This listing isn't one of yours.", { exact: true }).waitFor({ timeout: 30_000 })
+  await page.goto(`${APP}#/${STUDENT_LABEL}/listing/nothing-here`)
+  await page.getByText("This listing isn't one of yours.", { exact: true }).waitFor()
+  await page.goto(`${APP}#/${STUDENT_LABEL}/messages/${tutor}`)
+  await page.getByText('You have no conversation with this profile.', { exact: true }).waitFor()
+  await page.goto(`${APP}#/${TUTOR_LABEL}/messages/${TESTER_ADDRESS}`)
+  await page.getByText('You have no conversation with this profile.', { exact: true }).waitFor({ timeout: 30_000 })
+  await page.goto(`${APP}#/no-such/market`)
+  await page.getByText('Forest has no such market.', { exact: true }).waitFor()
+  assert.deepEqual([counts.created, counts.asserted], [0, 0], 'nothing asked, all along')
+
+  // An AI app, connected with no passkey.
+  const bot = await aiLogin()
+  await page.goto(bot.app.authorization!.href)
+  await page.getByRole('heading', { name: 'An AI app' }).waitFor()
+  assert.deepEqual(await ticks(page), { [TUTOR_WORDS]: 'true' }, 'its one profile, ticked')
+  const code = backToTheAiApp(page)
+  await button(page, 'Connect').click()
+  await bot.transport.finishAuth(await code)
+  await backToTheApp(page)
+
+  // A link to another role: Create gives it to the AI app at once, and says to go back to the chat.
+  await page.goto(`${APP}#/${STUDENT_LABEL}`)
+  await sheet.waitFor()
+  await sheet.getByRole('button', create(L.request.role)).click()
+  await page.getByText('Your AI can use it. Go back to your chat.', { exact: true }).waitFor({ timeout: 60_000 })
+  await page.getByRole('heading', { name: `${roleWords(L.request.role)} profile created` }).waitFor()
+  await shot(page, 'made-from-a-link')
+  const theirs = await tool(bot, 'my_profiles')
+  assert.deepEqual(theirs.profiles.map((x: { label: string }) => x.label).sort(), [STUDENT_LABEL, TUTOR_LABEL].sort(), 'the AI acts for both')
+  await button(page, 'Done').click()
+
+  // The AI posts a listing; a link to it opens its offer page, and one to the profile, the profile.
+  await tool(bot, 'write', { label: TUTOR_LABEL, path: 'listing/from-the-test', body: BY_THE_AI_BODY })
+  await page.goto(`${APP}#/${TUTOR_LABEL}/listing/from-the-test`)
+  await page.locator('main .offer-page, main').getByText(BY_THE_AI, { exact: false }).first().waitFor({ timeout: 30_000 })
+  await page.goto(`${APP}#/${TUTOR_LABEL}`)
+  await inbox(page).waitFor({ timeout: 30_000 })
+  assert.deepEqual([counts.created, counts.asserted], [0, 0], 'never a passkey')
+  await t.context.close()
+  say('a test seed: credits given from a link, in from its words with no passkey, its links, and an AI app given a profile made from a link at once')
 })
 
 test('the seed held for 15 minutes after the last action: a button that will not ask shows no unlock icon, until the 15 minutes run out', async () => {

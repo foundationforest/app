@@ -26,6 +26,8 @@ type Props = {
   onOpen: (address: string) => void
   onBack: () => void
   onContinue: () => void
+  /** A link's label (links.ts): its market's sheet opens with the page, and its Create gives the profile to every AI app at once (MarketSheet.tsx). */
+  link?: string
 }
 
 /** The market whose sheet the page's history keeps open, or null. */
@@ -34,7 +36,7 @@ const sheetKept = (): string | null => {
   return typeof sheet === 'string' ? sheet : null
 }
 
-export function NewProfile({ setup, onOpen, onBack, onContinue }: Props) {
+export function NewProfile({ setup, onOpen, onBack, onContinue, link }: Props) {
   const list = useProfiles()
   const [query, setQuery] = useState('')
   const [open, setShown] = useState<string | null>(sheetKept)
@@ -88,7 +90,7 @@ export function NewProfile({ setup, onOpen, onBack, onContinue }: Props) {
           </div>
         </>
       )}
-      {market && <MarketSheet market={market} mine={list} onOpen={onOpen} onClose={() => setOpen(null)} />}
+      {market && <MarketSheet market={market} mine={list} {...(link && { link })} onOpen={onOpen} onClose={() => setOpen(null)} />}
     </main>
   )
 }

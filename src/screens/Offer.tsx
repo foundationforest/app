@@ -31,6 +31,7 @@ import { ListingRead } from './ListingRead.tsx'
 import { Closed, ThreadRow } from './Messages.tsx'
 import { Thumb, offerShown } from './Offers.tsx'
 import type { Posted } from '../flows/entries.ts'
+import { NOT_YOUR_LISTING, Nothing } from './Nothing.tsx'
 import { ShareButton, pageOf } from './Profile.tsx'
 import { Thread } from './Thread.tsx'
 
@@ -46,9 +47,11 @@ type Props = {
   onThread: (them: string) => void
   onReview: (mine: string, them: string) => void
   onWho: (address: string) => void
+  /** Opened from a link (links.ts): a listing that isn't there says so, in place of going back. */
+  link?: boolean
 }
 
-export function Offer({ address, entry, wide, them, onBack, onEdit, onThread, onReview, onWho }: Props) {
+export function Offer({ address, entry, wide, them, onBack, onEdit, onThread, onReview, onWho, link = false }: Props) {
   const me = useProfiles().find((p) => p.address === address)
   const mine = me ? [me] : []
   const read = useEntries(mine)[address]
@@ -57,7 +60,7 @@ export function Offer({ address, entry, wide, them, onBack, onEdit, onThread, on
   const listing = read && 'entries' in read ? read.entries.find((e) => e.path === entry && e.kind === 'listing') : undefined
   const gone = !!read && 'entries' in read && !listing
   useEffect(() => {
-    if (gone) onBack()
+    if (gone && !link) onBack()
   }, [gone])
   const outgrown = (news?.outgrown ?? []).some((o) => o.path === entry)
   if (read && 'failed' in read)
@@ -67,6 +70,7 @@ export function Offer({ address, entry, wide, them, onBack, onEdit, onThread, on
         <Line note={noteOf(read.failed)} />
       </main>
     )
+  if (gone && link) return <Nothing said={NOT_YOUR_LISTING} onBack={onBack} />
   if (!me || !listing) return null
   const pair = pairOf(me.label)
   const market = markets.market(pair.market)

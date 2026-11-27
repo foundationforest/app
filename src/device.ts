@@ -15,7 +15,9 @@
 // profiles, a copy of their Profiles folder's own (flows/names.ts), so they show with nothing
 // unlocked; the morning email, if it is on, the same way (flows/email.ts): the host's id for it, the
 // email address and the profiles it counts. Nothing of where a listing's place is: its centre is
-// moved from the seed alone (near.ts). Never the seed, its 24 words, a key, a stamp or a message.
+// moved from the seed alone (near.ts). Never the seed, its 24 words, a key, a stamp or a message;
+// but a test seed, whose words are no secret, in the tab's sessionStorage while the tab is
+// open (test-seed.ts).
 //
 // A label entry in the Profiles folder that this device never read, or whose label it doesn't list,
 // is a profile made elsewhere, on another device with the same seed: Profiles offers to read them
@@ -32,6 +34,8 @@
 //
 // Anything else in this origin's storage is not this app's, or no longer: each start clears it
 // (`cleanOld`).
+
+import { hex } from '@foundationforest/folders'
 
 import type { Pending } from '../services/host/client/client.ts'
 import { PASSKEY, makerBefore } from './managers.ts'
@@ -79,8 +83,11 @@ const KEYS = {
   backupAsked: 'forest.backupAsked',
 } as const
 
-/** The keys this app keeps in sessionStorage, for one tab: version.ts's. */
-export const SESSION_KEYS = [RELOADED]
+/** A test seed, in the tab that opened it: its id in use and its seed, in hex. */
+const TEST_SEED = 'forest.test'
+
+/** The keys this app keeps in sessionStorage, for one tab: version.ts's, and a test seed. */
+export const SESSION_KEYS = [RELOADED, TEST_SEED]
 
 /** The event a change here sends, so what shows it reads it again. */
 export const CHANGED = 'forest:device'
@@ -128,6 +135,22 @@ export const askedBackup = () => write(KEYS.backupAsked, true)
 export function usePasskey(id: string): void {
   knowPasskey(id)
   write(KEYS.passkey, id)
+}
+
+/** A test seed's, in use from now, by its id (test-seed.ts): no passkey is known for it, so Start never asks for one. */
+export const useTestSeed = (id: string) => write(KEYS.passkey, id)
+
+/** A test seed, kept in this tab until it closes, so a reload here asks nothing. */
+export const keepTestSeed = (id: string, seed: Uint8Array) => globalThis.sessionStorage?.setItem(TEST_SEED, JSON.stringify({ id, seed: hex.encode(seed) }))
+
+/** The seed this tab keeps for the test seed `id`, or null. */
+export function testSeed(id: string): Uint8Array | null {
+  try {
+    const kept = JSON.parse(globalThis.sessionStorage?.getItem(TEST_SEED) ?? 'null') as { id?: unknown; seed?: unknown } | null
+    return kept?.id === id && typeof kept.seed === 'string' ? hex.decode(kept.seed) : null
+  } catch {
+    return null
+  }
 }
 
 export const profiles = (): Profile[] => read<Profile[]>(KEYS.profiles, [])
@@ -316,9 +339,10 @@ export const under = (): Under | null => {
 export const keepUnder = (u: Under) => write(KEYS.under, u)
 export const endUnder = () => write(KEYS.under, undefined)
 
-/** Forget this device: the profiles, and the Profiles folder, the names given others, the morning email, how they are verified and their ID stamps, the AI apps and the keys it knows of, what was new on each, what it knew of the passkeys it made, the theme, the passkey in use and any verification under way. The ids of the passkeys it knows stay, so Start asks for them and never makes a second one. */
+/** Forget this device: a test seed in this tab, the profiles, and the Profiles folder, the names given others, the morning email, how they are verified and their ID stamps, the AI apps and the keys it knows of, what was new on each, what it knew of the passkeys it made, the theme, the passkey in use and any verification under way. The ids of the passkeys it knows stay, so Start asks for them and never makes a second one. */
 export function forget(): void {
   for (const key of [KEYS.passkey, KEYS.profiles, KEYS.ids, KEYS.folder, KEYS.names, KEYS.email, KEYS.checks, KEYS.connections, KEYS.known, KEYS.read, KEYS.seen, KEYS.backups, KEYS.theme, KEYS.under]) store().removeItem(key)
+  globalThis.sessionStorage?.removeItem(TEST_SEED)
   globalThis.dispatchEvent?.(new Event(CHANGED))
 }
 

@@ -39,6 +39,8 @@ export type Config = {
   contact: string
   /** Who runs this copy, under About Forest's card. */
   company: Company
+  /** Test seeds, by their Profiles folder's address: for AI testing and app reviewers. Their 24 words open them with no passkey, they skip Get verified and make profiles with no check, and nothing else changes: they post, message and spend credits like anyone (test-seed.ts). */
+  testSeeds: string[]
 }
 
 const OURS: Config = {
@@ -58,11 +60,14 @@ const OURS: Config = {
   contact: 'support@forest.foundation',
   // The foundation isn't registered yet: its lines show once they are set here.
   company: {},
+  // One, for AI testing of the app and for Claude's and OpenAI's reviewers. Its words are given to
+  // them, never kept in this repo.
+  testSeeds: ['2KsR6wpfN78YfGgvdmt2C1Hxzquj3DQXwsjVn4o31TDY'],
 }
 
 const given = import.meta.env?.VITE_FOREST_CONFIG as string | undefined
 
 export const config: Config = given ? { ...OURS, ...(JSON.parse(given) as Partial<Config>) } : OURS
 
-/** The services a flow uses: the verifier and the one host everything is written to. */
-export type Services = Pick<Config, 'verifier' | 'host'>
+/** The services a flow uses: the verifier and the one host everything is written to; and the test seeds, which make profiles with no check (none when not given). */
+export type Services = Pick<Config, 'verifier' | 'host'> & Partial<Pick<Config, 'testSeeds'>>
